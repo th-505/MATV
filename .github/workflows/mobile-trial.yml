@@ -74,17 +74,18 @@ jobs:
           flutter test --dart-define="AL_QAHTANI_TARGET=$APP_TARGET"
       - name: Build APK with deployed API and requested architecture
         working-directory: flutter_app
-        run: flutter build apk --release --target-platform="$TARGET_PLATFORM" --dart-define="AL_QAHTANI_TARGET=$APP_TARGET" --dart-define="MATV_API_BASE=$MATV_API_BASE"
+        run: flutter build apk --release --split-per-abi --target-platform="$TARGET_PLATFORM" --dart-define="AL_QAHTANI_TARGET=$APP_TARGET" --dart-define="MATV_API_BASE=$MATV_API_BASE"
       - name: Verify and stage APK
         run: |
           set -euo pipefail
-          APK=flutter_app/build/app/outputs/flutter-apk/app-release.apk
+          APK="flutter_app/build/app/outputs/flutter-apk/app-$EXPECTED_ABI-release.apk"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           "$APKSIGNER" verify "$APK"
-          "$AAPT" dump permissions "$APK" | grep -q android.permission.INTERNET
+          "$AAPT" dump permissions "$APK" > /tmp/matv-permissions.txt
+          grep -q android.permission.INTERNET /tmp/matv-permissions.txt
           "$AAPT" dump badging "$APK" > /tmp/matv-badging.txt
-          grep -q "native-code: '$EXPECTED_ABI'" /tmp/matv-badging.txt
+          grep -qx "native-code: '$EXPECTED_ABI'" /tmp/matv-badging.txt || { cat /tmp/matv-badging.txt; exit 1; }
           if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/matv-badging.txt; fi
           mkdir -p trial
           cp "$APK" "trial/$ARTIFACT_NAME.apk"
