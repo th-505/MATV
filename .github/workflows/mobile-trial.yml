@@ -127,6 +127,7 @@ jobs:
           cp -R flutter_app/build/ios/iphoneos/Runner.app trial/Payload/Runner.app
           rm -rf trial/Payload/Runner.app/_CodeSignature
           rm -f trial/Payload/Runner.app/embedded.mobileprovision
+          codesign --remove-signature trial/Payload/Runner.app 2>/dev/null || true
           if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
           lipo -info trial/Payload/Runner.app/Runner | grep -q arm64
           cd trial
