@@ -6,7 +6,7 @@ Imported from `theeb505/Al-Qahtani`, preserving its Git history, Flutter app, No
 
 Run `npm install` and `npm run check` from the repository root. Run `npm run poc:3isk` to resolve the agreed episode. See [Phase 1 validation](docs/PHASE1_3ISK_VALIDATION.md) for live playback evidence and the user's successful Safari/4G test.
 
-Phase 2 integrates 3isk Turkish/dubbed catalogs, shared search, direct HLS playback in Flutter/web, and an expiry-aware backend Supabase cache. See [integration and setup](docs/PHASE2_3ISK_INTEGRATION.md). The Supabase schema is applied; Node requires server secrets to use persistent caching.
+Phase 2 integrates 3isk Turkish/dubbed catalogs, shared search, direct HLS playback in Flutter/web, and an expiry-aware backend Supabase cache. See [integration and setup](docs/PHASE2_3ISK_INTEGRATION.md). The Supabase schema and live persistent caching are verified, including cache retrieval after a Node restart. Server secrets remain local and are excluded from Git.
 
 ## Original project
 
