@@ -63,3 +63,15 @@ Android: build الأساسي 35؛ يضيف Flutter رقم المعمارية ع
 iPhone: بناء macOS بـ `--no-codesign`، تغليف `Payload/Runner.app` داخل IPA، إزالة توقيع التطبيق وملف provisioning إن وُجدا، والتحقق من ARM64. **يلزم توقيع IPA خارجيًا قبل تثبيتها** كما طلب المستخدم؛ لا يلزم تسليم بيانات Apple لهذا البناء غير الموقّع.
 
 كل artifact يتضمن الملف وSHA-256 ويُحفظ في Actions مدة 14 يومًا. [تشغيل بناء الإصدار 35](https://github.com/th-505/MATV/actions/runs/38313378978).
+
+## نتيجة البناء والفحص النهائي
+
+نجحت مهام البناء الثلاث في run `38313378978`، ونجح الفحص المستقل في [run `38314425911`](https://github.com/th-505/MATV/actions/runs/38314425911). يثبت التقرير مطابقة المعمارية الوحيدة في كل APK، وصحة ELF/Mach-O، وعدم وجود توقيع التطبيق أو provisioning في IPA، وتطابق SHA-256، ووجود عنوان Render داخل كود التطبيق. تحققت أرقام إصدار Android الداخلية 2035 و1035 واسم الإصدار 1.0.35؛ وتحقق إصدار iPhone 1.0.35/build 35. الأرقام والبصمات في `docs/DEVICE_TRIAL_1.0.35.json`.
+
+روابط تنزيل ZIP (تتطلب تسجيل الدخول إلى GitHub، وتنتهي بعد 14 يومًا):
+
+- [Android Mobile ARM64](https://github.com/th-505/MATV/actions/runs/38313378978/artifacts/11775482872).
+- [Android TV / Google TV ARM32](https://github.com/th-505/MATV/actions/runs/38313378978/artifacts/11776355533).
+- [iPhone unsigned IPA](https://github.com/th-505/MATV/actions/runs/38313378978/artifacts/11775124968).
+
+لم يُختبر تثبيت هذه الملفات على أجهزة المستخدم بعد؛ اختبار Safari/4G السابق يخص مسار الفيديو، ولا يعادل اختبار APK أو IPA بعد تثبيتهما. Android تجريبي بتوقيع البناء الافتراضي. يجب توقيع IPA خارجيًا قبل تثبيتها.
