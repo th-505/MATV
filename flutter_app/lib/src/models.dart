@@ -68,6 +68,8 @@ class TitleDetails {
     required this.playbackReason,
     this.playbackMode = 'proxy',
     this.playbackHeaders = const {},
+    this.resolverUrl = '',
+    this.resolverHeaders = const {},
     this.expiresAt,
     this.downloadAvailable = true,
   });
@@ -81,11 +83,15 @@ class TitleDetails {
   final String playbackReason;
   final String playbackMode;
   final Map<String, String> playbackHeaders;
+  final String resolverUrl;
+  final Map<String, String> resolverHeaders;
   final DateTime? expiresAt;
   final bool downloadAvailable;
 
   bool get hasEpisodes => episodes.isNotEmpty;
   bool get hasDirectMedia => mediaPath.isNotEmpty;
+  bool get needsClientResolution => playbackMode == 'client_resolve' && resolverUrl.isNotEmpty;
+  bool get canPlay => hasDirectMedia || needsClientResolution;
 
   factory TitleDetails.fromJson(Map<String, dynamic> json) {
     final rawEpisodes = json['episodes'];
@@ -104,6 +110,13 @@ class TitleDetails {
       playbackUnavailable: json['playback_unavailable'] == true,
       playbackReason: '${json['playback_reason'] ?? ''}',
       playbackMode: '${json['playback_mode'] ?? 'proxy'}',
+      resolverUrl: '${json['resolver_url'] ?? ''}',
+      resolverHeaders: Map.unmodifiable({
+        for (final key in const ['Referer', 'User-Agent'])
+          if (json['resolver_headers'] is Map && json['resolver_headers'][key] is String &&
+              !(json['resolver_headers'][key] as String).contains(RegExp(r'[\r\n]')))
+            key: json['resolver_headers'][key] as String,
+      }),
       playbackHeaders: Map.unmodifiable({
         for (final key in const ['Referer', 'User-Agent'])
           if (json['playback_headers'] is Map && json['playback_headers'][key] is String &&

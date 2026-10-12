@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { assert3iskStream } from '../server/providers/3isk.mjs';
+import { assert3iskStream, unpack3iskPlayer } from '../server/providers/3isk.mjs';
 
 const base = new URL(process.argv[2]);
 assert.equal(base.protocol, 'https:');
@@ -17,6 +17,19 @@ for (const category of ['3isk-latest', '3isk-turkish', '3isk-dubbed', '3isk-movi
   if (playback.episodes?.length) {
     ref = playback.episodes[0].ref;
     playback = await json(`/api/cinema/details?ref=${encodeURIComponent(ref)}&refresh=1`);
+  }
+  const resolutionMode = playback.playback_mode;
+  if (resolutionMode === 'client_resolve') {
+    const player = new URL(playback.resolver_url);
+    assert.equal(player.origin, 'https://miravd.com');
+    assert(/^\/embed-[a-zA-Z0-9]+\.html$/.test(player.pathname));
+    const response = await fetch(player, { headers: playback.resolver_headers, signal: AbortSignal.timeout(30_000) });
+    assert.equal(response.status, 200);
+    const body = unpack3iskPlayer(await response.text());
+    const stream = body.match(/https:\/\/[^\s"'<>]+\.(?:m3u8|mp4)(?:\?[^\s"'<>]*)?/)?.[0];
+    assert3iskStream(stream);
+    playback = { ...playback, playback_mode: 'direct', media_url: stream,
+      playback_headers: { Referer: 'https://miravd.com/', 'User-Agent': playback.resolver_headers['User-Agent'] } };
   }
   assert.equal(playback.playback_mode, 'direct');
   assert(playback.playback_headers['User-Agent']);
@@ -43,7 +56,7 @@ for (const category of ['3isk-latest', '3isk-turkish', '3isk-dubbed', '3isk-movi
   assert(segmentStatus, 'Missing media segment');
   const row = { category, count: catalog.data.length, title: catalog.data[0].title,
     host: new URL(playback.media_url).hostname, referer: playback.playback_headers.Referer,
-    manifest_status: 200, segment_status: segmentStatus, direct: true };
+    manifest_status: 200, segment_status: segmentStatus, direct: true, resolution_mode: resolutionMode };
   results.push(row); console.log(JSON.stringify(row));
 }
 console.log(JSON.stringify({ passed: true, api: base.origin, results }));

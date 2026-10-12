@@ -79,3 +79,15 @@ assert.equal(film.media_url, 'https://s43.grzcdn.com/hls/master.m3u8');
 assert.equal(film.playback_headers.Referer, 'https://miravd.com/');
 assert.equal(Date.parse(film.expires_at), now + 5 * 60_000);
 console.log('3isk four-section classification and packed movie resolver passed');
+
+const deniedMovie = create3iskProvider({ now: () => now, fetchImpl: async url => {
+  if (url === movie || url === `${movie}see/`) return new Response('<body class="single-movies postid-12345"></body>');
+  if (url === `${ISK_ORIGIN}/embed/1/12345/1/`) return new Response('<iframe src="https://miravd.com/embed-fixture.html"></iframe>');
+  if (url === 'https://miravd.com/embed-fixture.html') return new Response('Forbidden', {status: 403});
+  throw new Error('unexpected denied-player request');
+} });
+const handoff = await deniedMovie.resolve(encode3iskRef(movie));
+assert.equal(handoff.playback_mode, 'client_resolve');
+assert.equal(handoff.resolver_url, 'https://miravd.com/embed-fixture.html');
+assert.equal(handoff.media_url, undefined);
+console.log('3isk hosting-network denial returns bounded native metadata handoff');

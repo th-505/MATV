@@ -251,7 +251,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       onCancelDownload: () => _cancelDownload(key),
                     );
                   }),
-                ] else if (details.hasDirectMedia) ...[
+                ] else if (details.canPlay) ...[
                   Card(child: ListTile(
                     focusNode: _directPlayFocus,
                     leading: const Icon(Icons.play_circle_outline),

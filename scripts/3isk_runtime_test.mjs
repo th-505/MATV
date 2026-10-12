@@ -51,3 +51,7 @@ assert.equal(requests[0].init.headers.Authorization, undefined);
 assert.equal(requests[1].init.headers.Prefer, 'resolution=merge-duplicates,return=minimal');
 assert.throws(() => createSupabaseProviderStore({ url: 'https://test.supabase.co', key: 'sb_publishable_test' }), /SERVER_KEY/);
 console.log('3isk runtime: coalescing, durable cache, expiry, renewal and database outage passed');
+
+const handoffRuntime = create3iskRuntime({ store: { get: async () => null, event: async (key, outcome) => { assert.equal(outcome, 'resolved'); assert(key.endsWith(':client-metadata')); } }, provider: { resolve: async () => ({status:'success',playback_mode:'client_resolve',resolver_url:'https://miravd.com/embed-demo.html'}) } });
+assert.equal((await handoffRuntime.details(ref)).playback_mode, 'client_resolve');
+assert.equal(handoffRuntime.status().cache_entries, 0, 'unresolved client metadata must never be cached as a stream');

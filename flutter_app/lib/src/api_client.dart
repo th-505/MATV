@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'models.dart';
+import 'miravd_resolver.dart';
 
 class AlQahtaniApi {
   AlQahtaniApi({http.Client? client, Uri? baseUri})
@@ -137,11 +138,50 @@ class AlQahtaniApi {
 
   Future<TitleDetails> resolvePlayback(String ref, {bool refresh = false}) async {
     final resolved = refresh ? await _details(ref, refresh: true) : await details(ref);
+    if (resolved.needsClientResolution) return _resolveClientPlayer(resolved);
     if (resolved.hasDirectMedia) return resolved;
     if (resolved.playbackUnavailable) {
       throw ApiException(resolved.playbackReason.isEmpty ? 'PLAYBACK_UNAVAILABLE' : resolved.playbackReason);
     }
     throw const ApiException('NO_PLAYABLE_MEDIA');
+  }
+
+  Future<TitleDetails> _resolveClientPlayer(TitleDetails details) async {
+    var uri = Uri.parse(details.resolverUrl);
+    for (var redirects = 0; redirects <= 3; redirects++) {
+      if (uri.scheme != 'https' || uri.host != 'miravd.com' || uri.userInfo.isNotEmpty || uri.hasPort ||
+          uri.hasQuery || uri.hasFragment || !RegExp(r'^/embed-[a-zA-Z0-9]+\.html$').hasMatch(uri.path)) {
+        throw const ApiException('INVALID_PLAYER_METADATA');
+      }
+      final request = http.Request('GET', uri)..followRedirects = false;
+      request.headers.addAll(details.resolverHeaders);
+      final response = await _client.send(request).timeout(const Duration(seconds: 20));
+      if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
+        final location = response.headers['location'];
+        await response.stream.listen((_) {}).cancel();
+        if (location == null) throw const ApiException('INVALID_PLAYER_REDIRECT');
+        uri = uri.resolve(location);
+        continue;
+      }
+      if (response.statusCode != 200) {
+        await response.stream.listen((_) {}).cancel();
+        throw ApiException('PLAYER_HTTP_${response.statusCode}');
+      }
+      final bytes = <int>[];
+      await for (final chunk in response.stream.timeout(const Duration(seconds: 20))) {
+        if (bytes.length + chunk.length > 2 * 1024 * 1024) throw const ApiException('PLAYER_METADATA_TOO_LARGE');
+        bytes.addAll(chunk);
+      }
+      final media = miravdMediaUrl(utf8.decode(bytes));
+      final expiry = DateTime.now().toUtc().add(const Duration(minutes: 5));
+      mediaUri(media, playbackMode: 'direct', expiresAt: expiry);
+      return TitleDetails(title: details.title, poster: details.poster, episodes: const [],
+        mediaPath: media, mediaType: Uri.parse(media).path.endsWith('.mp4') ? 'mp4' : 'm3u8',
+        playbackMode: 'direct', playbackHeaders: {'Referer': 'https://miravd.com/',
+          if (details.resolverHeaders['User-Agent'] != null) 'User-Agent': details.resolverHeaders['User-Agent']!},
+        expiresAt: expiry, downloadAvailable: false, playbackUnavailable: false, playbackReason: '');
+    }
+    throw const ApiException('PLAYER_REDIRECT_LIMIT');
   }
 
   Uri mediaUri(String mediaPath, {bool download = false, String playbackMode = 'proxy', DateTime? expiresAt}) {

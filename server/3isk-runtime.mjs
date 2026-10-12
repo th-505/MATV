@@ -41,6 +41,10 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
       const started = now();
       try {
         const payload = await fetcher();
+        if (payload.playback_mode === 'client_resolve') {
+          await persisted(() => store.event(`${key}:client-metadata`, 'resolved', now() - started, now()));
+          return { ...payload, cached: false };
+        }
         const expiry = key.startsWith('playback:') ? Math.min(now() + ttl, Date.parse(payload.expires_at) - 60_000) : now() + ttl;
         if (!valid(payload, key, expiry)) throw new Error('3ISK_INVALID_CACHE_PAYLOAD');
         cache.set(key, payload, expiry - now(), now());

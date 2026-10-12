@@ -182,7 +182,16 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       const embedHtml = await page(embed.href, { cookies, referer: ISK_ORIGIN });
       const playerValue = embedHtml.match(/https:\/\/ukrcdn\.club\/e\/[a-zA-Z0-9-]+/)?.[0] || embedHtml.match(/https:\/\/miravd\.com\/embed-[a-zA-Z0-9]+\.html/)?.[0];
       if (!playerValue) throw new Error('3ISK_PLAYER_NOT_FOUND');
-      const playerHtml = unpack3iskPlayer(await page(playerValue, { referer: embed.href }));
+      let playerHtml;
+      try {
+        playerHtml = unpack3iskPlayer(await page(playerValue, { referer: embed.href }));
+      } catch (error) {
+        // Some hosting networks are denied by miravd. Native clients can fetch
+        // this public metadata in the background; no WebView or video relay.
+        if (new URL(playerValue).hostname !== 'miravd.com' || error.message !== '3ISK_HTTP_403') throw error;
+        return { ...details, episodes: [], playback_mode: 'client_resolve', resolver_url: playerValue,
+          resolver_headers: { Referer: `${ISK_ORIGIN}/`, 'User-Agent': ISK_UA }, download_available: false };
+      }
       const literal = playerHtml.match(/\bfetch\(\s*("(?:\\.|[^"\\])*")/);
       let stream;
       if (literal) {
