@@ -150,9 +150,9 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
         // instead of the see page. Derive the same public player route from
         // the episode's WordPress post metadata, not from a hardcoded post ID.
         const episodeDocument = load(episodeHtml);
-        const post = episodeDocument('body').attr('class')?.match(/\bpostid-(\d+)\b/)?.[1];
-        const watchLink = episodeDocument('a.single-watch-btn').attr('href');
-        if (post && watchLink && assertSource(watchLink).href === `${episode.href}see/`) {
+        const bodyClass = episodeDocument('body').attr('class') || '';
+        const post = bodyClass.match(/\bpostid-(\d+)\b/)?.[1];
+        if (post && /\bsingle-episodes\b/.test(bodyClass)) {
           embedValue = `${ISK_ORIGIN}/embed/1/${post}/2/`;
         }
       }
