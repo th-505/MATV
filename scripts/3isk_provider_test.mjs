@@ -43,4 +43,17 @@ const redirectProvider = create3iskProvider({ fetchImpl: async () => new Respons
 await assert.rejects(redirectProvider.category('3isk-turkish'), /3ISK_BAD_SOURCE/);
 const httpProvider = create3iskProvider({ fetchImpl: async () => new Response('Forbidden', { status: 403 }) });
 await assert.rejects(httpProvider.category('3isk-turkish'), /3ISK_HTTP_403/);
+// Hosting-network see redirects must resolve the source's public player route
+// using episode post metadata, without hardcoding a specific episode's ID.
+const fallbackRequests = [];
+const fallbackProvider = create3iskProvider({ now: () => now, fetchImpl: async (url, options) => {
+  fallbackRequests.push(url);
+  if (url === episode || url === `${episode}see/`) return new Response(`<body class="single-episodes postid-987654"><a class="single-watch-btn" href="${episode}see/">Watch</a></body>`);
+  if (url === `${ISK_ORIGIN}/embed/1/987654/2/`) return new Response('<iframe src="https://ukrcdn.club/e/demo"></iframe>');
+  if (url.includes('/e/')) return new Response(`fetch("https://ukrcdn.club/api/videos/demo/playback?g=fixture")`);
+  if (url.includes('/api/videos/')) return Response.json({ url: master });
+  throw new Error('Unexpected fallback request');
+} });
+assert.equal((await fallbackProvider.resolve(ref)).media_url, master);
+assert(fallbackRequests.includes(`${ISK_ORIGIN}/embed/1/987654/2/`));
 console.log('3isk provider: references, parsers, session, redirects and direct resolver passed');

@@ -78,7 +78,8 @@ export function parse3iskDetails(html) {
     episodes: [...episodes.values()].sort((a, b) => a.season - b.season || a.num - b.num), download_available: false };
 }
 
-export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.now } = {}) {
+export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.now,
+  onPage = process.env.ISK_DIAGNOSTICS === '1' ? info => console.info(JSON.stringify({ event: '3isk_source_page', ...info })) : () => {} } = {}) {
   async function page(value, { referer = ISK_ORIGIN + '/', cookies = new Map(), redirects = 0, json = false } = {}) {
     const url = new URL(value);
     const source = url.origin === ISK_ORIGIN;
@@ -93,6 +94,7 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       if (split > 0) cookies.set(pair.slice(0, split), pair.slice(split + 1));
     }
     if ([301, 302, 303, 307, 308].includes(response.status)) {
+      onPage({ host: url.hostname, path: url.pathname, status: response.status, redirect_path: new URL(response.headers.get('location'), url).pathname, cookie_names: [...cookies.keys()] });
       await response.body?.cancel();
       if (redirects >= 3) throw new Error('3ISK_REDIRECT_LIMIT');
       return page(new URL(response.headers.get('location'), url).href, { referer, cookies, redirects: redirects + 1, json });
@@ -104,7 +106,13 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       size += chunk.length; if (size > 2 * 1024 * 1024) throw new Error('3ISK_PAGE_TOO_LARGE');
       body += decoder.decode(chunk, { stream: true });
     }
-    return body + decoder.decode();
+    body += decoder.decode();
+    if (source) {
+      const parsed = load(body);
+      onPage({ host: url.hostname, path: url.pathname, status: response.status, cookie_names: [...cookies.keys()],
+        title: parsed('title').text().slice(0, 100), iframe_count: parsed('iframe').length, bytes: size });
+    }
+    return body;
   }
 
   return {
@@ -131,10 +139,23 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       const episode = decode3iskRef(ref);
       if (!episode.pathname.startsWith('/watch/episodes/')) throw new Error('3ISK_EXPECTED_EPISODE');
       const cookies = new Map();
-      const details = parse3iskDetails(await page(episode.href, { cookies }));
+      const episodeHtml = await page(episode.href, { cookies });
+      const details = parse3iskDetails(episodeHtml);
       const html = await page(`${episode.href}see/`, { cookies, referer: episode.href });
       const $ = load(html);
-      const embedValue = $('iframe#iframe_player').attr('src') || html.match(/https?:\/\/[^\s"'<>]+\/embed\/\d+\/\d+\/\d+\/?/)?.[0];
+      let embedValue = $('iframe#iframe_player').attr('src') || html.match(/https?:\/\/[^\s"'<>]+\/embed\/\d+\/\d+\/\d+\/?/)?.[0];
+      if (!embedValue) {
+        // The source's own front.theme JS constructs embed/<server>/<post>/2/
+        // for TV episodes. Some hosting networks receive the episode redirect
+        // instead of the see page. Derive the same public player route from
+        // the episode's WordPress post metadata, not from a hardcoded post ID.
+        const episodeDocument = load(episodeHtml);
+        const post = episodeDocument('body').attr('class')?.match(/\bpostid-(\d+)\b/)?.[1];
+        const watchLink = episodeDocument('a.single-watch-btn').attr('href');
+        if (post && watchLink && assertSource(watchLink).href === `${episode.href}see/`) {
+          embedValue = `${ISK_ORIGIN}/embed/1/${post}/2/`;
+        }
+      }
       if (!embedValue) throw new Error('3ISK_EMBED_NOT_FOUND');
       const embed = assertSource(embedValue);
       if (!/^\/embed\/\d+\/\d+\/\d+\/$/.test(embed.pathname)) throw new Error('3ISK_BAD_EMBED');

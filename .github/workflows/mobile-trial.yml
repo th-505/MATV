@@ -1,4 +1,4 @@
-name: MATV Android trial
+name: MATV device trials
 
 on:
   workflow_dispatch:
@@ -12,13 +12,11 @@ permissions:
   contents: read
 
 jobs:
-  android:
+  verify-api:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     env:
       MATV_API_BASE: ${{ inputs.api_base }}
     steps:
-      - uses: actions/checkout@v4
       - name: Validate deployment URL and health
         run: |
           python3 - <<'PY'
@@ -26,9 +24,34 @@ jobs:
           url = urllib.parse.urlsplit(os.environ['MATV_API_BASE'])
           assert url.scheme == 'https' and url.hostname and not url.username and not url.password
           assert not url.query and not url.fragment and url.path in ('', '/')
-          with urllib.request.urlopen(os.environ['MATV_API_BASE'].rstrip('/') + '/health', timeout=60) as response:
+          with urllib.request.urlopen(os.environ['MATV_API_BASE'].rstrip('/') + '/health', timeout=90) as response:
               assert response.status == 200
           PY
+
+  android:
+    needs: verify-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: mobile
+            platform: android-arm64
+            abi: arm64-v8a
+            artifact: MATV-Android-Mobile-ARM64
+          - target: tv
+            platform: android-arm
+            abi: armeabi-v7a
+            artifact: MATV-Android-TV-ARM32
+    env:
+      MATV_API_BASE: ${{ inputs.api_base }}
+      APP_TARGET: ${{ matrix.target }}
+      TARGET_PLATFORM: ${{ matrix.platform }}
+      EXPECTED_ABI: ${{ matrix.abi }}
+      ARTIFACT_NAME: ${{ matrix.artifact }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.7'
@@ -37,8 +60,10 @@ jobs:
       - name: Create Android scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=android --org com.alqahtani --project-name al_qahtani .
-      - name: Apply native branding
-        run: python3 scripts/apply_native_branding.py flutter_app
+      - name: Apply native branding and TV manifest
+        run: |
+          python3 scripts/apply_native_branding.py flutter_app
+          if [ "$APP_TARGET" = tv ]; then python3 scripts/configure_tv_manifest.py flutter_app; fi
       - name: Resolve dependencies
         working-directory: flutter_app
         run: flutter pub get --enforce-lockfile
@@ -46,10 +71,10 @@ jobs:
         working-directory: flutter_app
         run: |
           flutter analyze
-          flutter test
-      - name: Build trial APK with deployed API
+          flutter test --dart-define="AL_QAHTANI_TARGET=$APP_TARGET"
+      - name: Build APK with deployed API and requested architecture
         working-directory: flutter_app
-        run: flutter build apk --release --dart-define=AL_QAHTANI_TARGET=mobile --dart-define="MATV_API_BASE=$MATV_API_BASE"
+        run: flutter build apk --release --target-platform="$TARGET_PLATFORM" --dart-define="AL_QAHTANI_TARGET=$APP_TARGET" --dart-define="MATV_API_BASE=$MATV_API_BASE"
       - name: Verify and stage APK
         run: |
           set -euo pipefail
@@ -57,12 +82,59 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           "$APKSIGNER" verify "$APK"
-          "$AAPT" dump permissions "$APK" | grep -q "android.permission.INTERNET"
+          "$AAPT" dump permissions "$APK" | grep -q android.permission.INTERNET
+          "$AAPT" dump badging "$APK" > /tmp/matv-badging.txt
+          grep -q "native-code: '$EXPECTED_ABI'" /tmp/matv-badging.txt
+          if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/matv-badging.txt; fi
           mkdir -p trial
-          cp "$APK" trial/MATV-Android-Trial.apk
-          sha256sum trial/MATV-Android-Trial.apk > trial/MATV-Android-Trial.apk.sha256
+          cp "$APK" "trial/$ARTIFACT_NAME.apk"
+          sha256sum "trial/$ARTIFACT_NAME.apk" > "trial/$ARTIFACT_NAME.apk.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: MATV-Android-Trial
+          name: ${{ matrix.artifact }}
+          path: trial/
+          retention-days: 14
+
+  ios-unsigned:
+    needs: verify-api
+    runs-on: macos-latest
+    timeout-minutes: 40
+    env:
+      MATV_API_BASE: ${{ inputs.api_base }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Create iOS scaffolding
+        working-directory: flutter_app
+        run: flutter create --platforms=ios --org com.alqahtani --project-name al_qahtani .
+      - name: Apply native branding
+        run: python3 scripts/apply_native_branding.py flutter_app
+      - name: Resolve dependencies
+        working-directory: flutter_app
+        run: flutter pub get --enforce-lockfile
+      - name: Build unsigned iPhone app with deployed API
+        working-directory: flutter_app
+        run: flutter build ios --release --no-codesign --dart-define=AL_QAHTANI_TARGET=ios --dart-define="MATV_API_BASE=$MATV_API_BASE"
+      - name: Package unsigned IPA for external signing
+        run: |
+          set -euo pipefail
+          test -s flutter_app/build/ios/iphoneos/Runner.app/Runner
+          mkdir -p trial/Payload
+          cp -R flutter_app/build/ios/iphoneos/Runner.app trial/Payload/Runner.app
+          rm -rf trial/Payload/Runner.app/_CodeSignature
+          rm -f trial/Payload/Runner.app/embedded.mobileprovision
+          if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
+          lipo -info trial/Payload/Runner.app/Runner | grep -q arm64
+          cd trial
+          ditto -c -k --keepParent Payload MATV-iPhone-Unsigned.ipa
+          shasum -a 256 MATV-iPhone-Unsigned.ipa > MATV-iPhone-Unsigned.ipa.sha256
+          rm -rf Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MATV-iPhone-Unsigned
           path: trial/
           retention-days: 14
