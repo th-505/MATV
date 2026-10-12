@@ -17,11 +17,11 @@ jobs:
     steps:
       - name: Report verification failure
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$JOB_ID/logs" > build.log
+          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$JOB_ID/logs" > build.log 2>&1 || true
           python3 - <<'PY'
           import pathlib
           lines = pathlib.Path('build.log').read_text().splitlines()
-          index = next(i for i, line in enumerate(lines) if '##[group]Run set -euo pipefail' in line)
+          index = next((i for i, line in enumerate(lines) if '##[group]Run set -euo pipefail' in line), max(0, len(lines) - 70))
           excerpt = '\n'.join(lines[index:index+70])
           excerpt = excerpt.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
           print('::notice title=Build verification log::' + excerpt)
