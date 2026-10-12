@@ -1,3 +1,4 @@
+import { selectPlayerIframe } from '../server/providers/3isk-playback/router.mjs';
 import assert from 'node:assert/strict';
 import { create3iskProvider, encode3iskRef, decode3iskRef, parse3iskCatalog, parse3iskDetails, assert3iskStream, ISK_ORIGIN, ISK_UA, ISK_CATEGORIES, unpack3iskPlayer } from '../server/providers/3isk.mjs';
 
@@ -29,13 +30,13 @@ const provider = create3iskProvider({ now: () => now, fetchImpl: async (url, opt
   }
   if (url.includes('/embed/')) { assert.equal(options.headers.Cookie, 'PHPSESSID=fixture'); return new Response('<iframe src="https://ukrcdn.club/e/demo"></iframe>'); }
   assert.equal(options.headers.Cookie, undefined);
-  if (url.includes('/e/')) return new Response(`fetch(${JSON.stringify('https://ukrcdn.club/api/videos/demo/playback?g=fixture').replaceAll('/', '\\/')}, {})`);
+  if (url.includes('/e/')) { assert.equal(options.headers.Referer, `${ISK_ORIGIN}/`); return new Response(`fetch(${JSON.stringify('https://ukrcdn.club/api/videos/demo/playback?g=fixture').replaceAll('/', '\\/')}, {})`); }
   if (url.includes('/api/videos/')) { assert.equal(options.headers.Referer, 'https://ukrcdn.club/e/demo'); return Response.json({ url: master }); }
   throw new Error('Unexpected test request');
 } });
 const playback = await provider.resolve(ref);
 assert.equal(playback.playback_mode, 'direct'); assert.equal(playback.media_path, master);
-assert.equal(playback.download_available, false); assert.equal(playback.playback_headers.Referer, `${ISK_ORIGIN}/`); assert.equal(playback.playback_headers['User-Agent'], ISK_UA);
+assert.equal(playback.download_available, false); assert.equal(playback.playback_headers.Referer, new URL(master).origin + '/'); assert.equal(playback.playback_headers['User-Agent'], ISK_UA);
 assert.equal(Date.parse(playback.expires_at), now + 3600_000); assert.equal(requests.length, 5);
 await assert.rejects(provider.category('unknown'), /3ISK_BAD_CATEGORY/);
 await assert.rejects(provider.category('3isk-turkish', Infinity), /3ISK_BAD_PAGE/);
@@ -68,10 +69,10 @@ for (const kind of ['series', 'movie', 'episode']) assert.equal(parse3iskCatalog
 const packed = "eval(function(p,a,c,k,e,d){}('0://1.2.3/4/5.6',36,7,'https|s43|grzcdn|com|hls|master|m3u8'.split('|')))";
 assert.equal(unpack3iskPlayer(packed), 'https://s43.grzcdn.com/hls/master.m3u8');
 assert.throws(() => assert3iskStream('https://s43.grzcdn.com.evil.example/hls/master.m3u8'));
-const movieProvider = create3iskProvider({ now: () => now, fetchImpl: async url => {
+const movieProvider = create3iskProvider({ now: () => now, fetchImpl: async (url, options) => {
   if (url === movie || url === `${movie}see/`) return new Response('<body class="single-movies postid-12345"></body>');
   if (url === `${ISK_ORIGIN}/embed/1/12345/1/`) return new Response('<iframe src="https://miravd.com/embed-fixture.html"></iframe>');
-  if (url === 'https://miravd.com/embed-fixture.html') return new Response(packed);
+  if (url === 'https://miravd.com/embed-fixture.html') { assert.equal(options.headers.Referer, `${ISK_ORIGIN}/embed/1/12345/1/`); return new Response(packed); }
   throw new Error('unexpected movie request');
 } });
 const film = await movieProvider.resolve(encode3iskRef(movie));
@@ -80,7 +81,7 @@ assert.equal(film.playback_headers.Referer, 'https://miravd.com/');
 assert.equal(Date.parse(film.expires_at), now + 5 * 60_000);
 console.log('3isk four-section classification and packed movie resolver passed');
 
-const deniedMovie = create3iskProvider({ now: () => now, fetchImpl: async url => {
+const deniedMovie = create3iskProvider({ now: () => now, fetchImpl: async (url, options) => {
   if (url === movie || url === `${movie}see/`) return new Response('<body class="single-movies postid-12345"></body>');
   if (url === `${ISK_ORIGIN}/embed/1/12345/1/`) return new Response('<iframe src="https://miravd.com/embed-fixture.html"></iframe>');
   if (url === 'https://miravd.com/embed-fixture.html') return new Response('Forbidden', {status: 403});
@@ -91,3 +92,19 @@ assert.equal(handoff.playback_mode, 'client_resolve');
 assert.equal(handoff.resolver_url, 'https://miravd.com/embed-fixture.html');
 assert.equal(handoff.media_url, undefined);
 console.log('3isk hosting-network denial returns bounded native metadata handoff');
+
+assert.equal(playback.stream_url, playback.media_url);
+assert.deepEqual(playback.headers, playback.playback_headers);
+assert.equal(playback.extractor, 'ukrcdn');
+assert.equal(film.extractor, 'miravd');
+assert.equal(handoff.resolver_headers.Referer, `${ISK_ORIGIN}/embed/1/12345/1/`);
+await assert.rejects(deniedMovie.resolve(encode3iskRef(movie), {allowClientResolution:false}), /3ISK_HTTP_403/);
+const base62 = Array.from({length: 37}, () => '').fill('', 0); base62[36] = 'https://s43.grzcdn.com/hls/master.m3u8';
+assert.equal(unpack3iskPlayer(`eval(function(){return p}   ('A', 62, 37, '${base62.join('|')}'.split('|'))) `), base62[36]);
+console.log('dual engines: canonical JSON, exact wrapper referer, whitespace/base62 and strict server failure passed');
+
+const wrapper = `${ISK_ORIGIN}/embed/1/12345/1/`;
+assert.equal(selectPlayerIframe('<script>const unrelated="https://ukrcdn.club/e/ad"</script><iframe src="https://miravd.com/embed-video.html"></iframe>', wrapper).extractor, 'miravd');
+assert.throws(() => selectPlayerIframe('<iframe src="https://ukrcdn.club.evil.example/e/demo"></iframe>', wrapper), /3ISK_PLAYER_NOT_FOUND/);
+assert.throws(() => selectPlayerIframe('<iframe src="http://127.0.0.1/private"></iframe>', wrapper), /3ISK_PLAYER_NOT_FOUND/);
+assert.throws(() => selectPlayerIframe('<iframe src="https://miravd.com/embed-video.html"></iframe>', 'https://evil.example/embed/1/12345/1/'), /3ISK_BAD_WRAPPER/);

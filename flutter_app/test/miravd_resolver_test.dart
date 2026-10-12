@@ -6,6 +6,12 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('base62 and spaced Dean Edwards arguments decode consistently', () {
+    final words = List.filled(37, '');
+    words[36] = 'https://s43.grzcdn.com/hls/master.m3u8';
+    final packed = "eval(function(){return p}   ('A', 62, 37, '${words.join('|')}'.split('|')))";
+    expect(miravdMediaUrl(packed), words[36]);
+  });
   test('client metadata becomes a direct stream with CDN referer', () async {
     final api = AlQahtaniApi(client: MockClient((request) async {
       if (request.url.path == '/api/cinema/details') { return http.Response(jsonEncode({

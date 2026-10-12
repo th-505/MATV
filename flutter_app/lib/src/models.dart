@@ -105,7 +105,7 @@ class TitleDetails {
       title: '${json['movie_title'] ?? json['title'] ?? 'التفاصيل'}',
       poster: '${json['poster'] ?? ''}',
       episodes: episodes,
-      mediaPath: '${json['playback_mode'] == 'direct' ? (json['media_url'] ?? json['media_path'] ?? '') : (json['media_path'] ?? '')}',
+      mediaPath: '${json['playback_mode'] == 'direct' ? (json['stream_url'] ?? json['media_url'] ?? json['media_path'] ?? '') : (json['media_path'] ?? '')}',
       mediaType: '${json['media_type'] ?? ''}',
       playbackUnavailable: json['playback_unavailable'] == true,
       playbackReason: '${json['playback_reason'] ?? ''}',
@@ -119,9 +119,9 @@ class TitleDetails {
       }),
       playbackHeaders: Map.unmodifiable({
         for (final key in const ['Referer', 'User-Agent'])
-          if (json['playback_headers'] is Map && json['playback_headers'][key] is String &&
-              !(json['playback_headers'][key] as String).contains(RegExp(r'[\r\n]')))
-            key: json['playback_headers'][key] as String,
+          if ((json['headers'] ?? json['playback_headers']) is Map && (json['headers'] ?? json['playback_headers'])[key] is String &&
+              !((json['headers'] ?? json['playback_headers'])[key] as String).contains(RegExp(r'[\r\n]')))
+            key: (json['headers'] ?? json['playback_headers'])[key] as String,
       }),
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       downloadAvailable: json['download_available'] != false,

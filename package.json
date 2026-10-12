@@ -7,7 +7,7 @@
     "check": "node --check server/app.mjs && node --check server/index.mjs && node --check server/index-runtime.mjs && node --check server/tmdb-runtime.mjs && node --check server/fallback-providers.mjs && node --check server/fallback-runtime.mjs && node --check server/fallback-probe.mjs && node --check server/news-runtime.mjs && NODE_ENV=test node scripts/hls_manifest_proxy_test.mjs && node scripts/tmdb_runtime_test.mjs && node scripts/fallback_provider_registry_test.mjs && node scripts/fallback_runtime_test.mjs && node scripts/fallback_probe_test.mjs && node scripts/fallback_runtime_http_test.mjs && node --check server/providers/akoam.mjs && node --check server/test-poc-3isk.mjs && node scripts/poc_3isk_test.mjs && npm run test:3isk",
     "poc:3isk": "node server/test-poc-3isk.mjs",
     "test:poc:3isk": "node scripts/poc_3isk_test.mjs",
-    "test:3isk": "node scripts/3isk_provider_test.mjs && node scripts/3isk_runtime_test.mjs && node scripts/3isk_http_test.mjs"
+    "test:3isk": "node scripts/3isk_provider_test.mjs && node scripts/3isk_runtime_test.mjs && node scripts/3isk_http_test.mjs && node scripts/3isk_metadata_worker_test.mjs"
   },
   "engines": {
     "node": ">=22"

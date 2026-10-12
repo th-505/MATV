@@ -76,7 +76,7 @@ void main() {
       final stream = clientResolve ? 'https://s43.grzcdn.com/hls/master.m3u8' : 'https://s1.ukrcdn.xyz/hls/demo/master.m3u8?token=fixture&expires=${expiry.millisecondsSinceEpoch ~/ 1000}';
       final api = RecordingApi(client: MockClient((request) async {
         if (request.url.host == 'miravd.com') {
-          expect(request.headers['Referer'], 'https://3iskk.xyz/');
+          expect(request.headers['Referer'], 'https://3iskk.xyz/embed/1/12345/1/');
           expect(request.headers['User-Agent'], 'fixture-UA');
           return http.Response("eval(function(p,a,c,k,e,d){}('0://1.2.3/4/5.6',36,7,'https|s43|grzcdn|com|hls|master|m3u8'.split('|')))", 200);
         }
@@ -84,13 +84,13 @@ void main() {
         if (clientResolve) { return http.Response(jsonEncode({
           'status': 'success', 'playback_mode': 'client_resolve',
           'resolver_url': 'https://miravd.com/embed-fixture.html',
-          'resolver_headers': {'Referer': 'https://3iskk.xyz/', 'User-Agent': 'fixture-UA'},
+          'resolver_headers': {'Referer': 'https://3iskk.xyz/embed/1/12345/1/', 'User-Agent': 'fixture-UA'},
         }), 200); }
         if (resolutions > 1) expect(request.url.queryParameters['refresh'], '1');
         return http.Response(jsonEncode({
-          'status': 'success', 'playback_mode': 'direct', 'media_url': stream,
+          'status': 'success', 'playback_mode': 'direct', 'stream_url': stream,
           'media_type': 'm3u8', 'expires_at': expiry.toIso8601String(),
-          'playback_headers': {'Referer': 'https://3iskk.xyz/', 'User-Agent': 'fixture-UA'},
+          'headers': {'Referer': 'https://s1.ukrcdn.xyz/', 'User-Agent': 'fixture-UA'},
         }), 200);
       }));
       if (clientResolve) api.prepared = await tester.runAsync(() => api.resolvePlayback('3isk:fixture'));
@@ -104,7 +104,7 @@ void main() {
       expect(api.errors, isEmpty);
       expect(native.sources.length, fail ? 2 : 1);
       expect(native.sources.first.uri, stream);
-      expect(native.sources.first.httpHeaders, {'Referer': clientResolve ? 'https://miravd.com/' : 'https://3iskk.xyz/', 'User-Agent': 'fixture-UA'});
+      expect(native.sources.first.httpHeaders, {'Referer': clientResolve ? 'https://miravd.com/' : 'https://s1.ukrcdn.xyz/', 'User-Agent': 'fixture-UA'});
       expect(resolutions, fail ? 2 : 1);
       expect(find.byType(WebViewWidget), findsNothing);
       await tester.pumpWidget(const SizedBox());

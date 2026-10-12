@@ -688,7 +688,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), runtimeService 
         if (url.pathname === '/api/v1/3isk/status') return sendJson(req, res, 200, iskRuntime.status());
         if (url.pathname === '/api/v1/3isk/search') return sendJson(req, res, 200, await iskRuntime.search(url.searchParams.get('q') || ''));
         if (url.pathname === '/api/v1/3isk/category') return sendJson(req, res, 200, await iskRuntime.category(ref, Number(url.searchParams.get('p') || 1)));
-        if (['/api/v1/3isk/details', '/api/v1/3isk/resolve'].includes(url.pathname)) return sendJson(req, res, 200, await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }));
+        if (url.pathname === '/api/v1/3isk/resolve') return sendJson(req, res, 200, await iskRuntime.resolve(ref, { refresh: url.searchParams.get('refresh') === '1' }));
+        if (url.pathname === '/api/v1/3isk/details') return sendJson(req, res, 200, await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }));
         return sendJson(req, res, 404, { status: 'error', message: 'NOT_FOUND' });
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
