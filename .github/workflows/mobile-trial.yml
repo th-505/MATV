@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       api_base:
-        description: Verified public Koyeb API URL
+        description: Verified public API URL (Render)
         required: true
         type: string
 

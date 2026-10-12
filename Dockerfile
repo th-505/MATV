@@ -4,7 +4,7 @@ ENV NODE_ENV=production PORT=8000
 WORKDIR /app
 COPY --chown=node:node package.json package-lock.json ./
 # Optional CA mount supports local builds behind the managed environment proxy.
-# Koyeb builds use the normal certificate roots and do not require this mount.
+# Hosted builds use the normal certificate roots and do not require this mount.
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
     npm ci --omit=dev --no-audit --no-fund

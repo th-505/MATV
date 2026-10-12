@@ -8,7 +8,7 @@ Run `npm install` and `npm run check` from the repository root. Run `npm run poc
 
 Phase 2 integrates 3isk Turkish/dubbed catalogs, shared search, direct HLS playback in Flutter/web, and an expiry-aware backend Supabase cache. See [integration and setup](docs/PHASE2_3ISK_INTEGRATION.md). The Supabase schema and live persistent caching are verified, including cache retrieval after a Node restart. Server secrets remain local and are excluded from Git.
 
-[Koyeb deployment and Android trial](docs/KOYEB_DEPLOYMENT.md): the production Docker image and manual APK workflow are ready; deployment requires Koyeb account access, and the build requires its verified public API URL.
+[Render deployment and Android trial](docs/RENDER_DEPLOYMENT.md): the production Docker image and manual APK workflow use the verified public API URL. Koyeb deployment is no longer the selected path.
 
 ## Original project
 

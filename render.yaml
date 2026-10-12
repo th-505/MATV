@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: matv-api
+    runtime: docker
+    repo: https://github.com/th-505/MATV
+    branch: main
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        value: https://roqccichwszxamdpvhli.supabase.co
+      - key: SUPABASE_SECRET_KEY
+        sync: false
