@@ -1,0 +1,35 @@
+name: Verify MATV device artifacts
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Successful MATV device trials run ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN: ${{ inputs.build_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify build outputs
+        run: |
+          set -euo pipefail
+          gh run view "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion | grep -qx success
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --dir device-artifacts
+          python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com > device-verification.json
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          for APK in device-artifacts/*/*.apk; do
+            "$AAPT" dump badging "$APK" | grep -q "versionCode='35' versionName='1.0.35'"
+          done
+          cat device-verification.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MATV-device-verification
+          path: device-verification.json
+          retention-days: 14

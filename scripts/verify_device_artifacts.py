@@ -1,0 +1,44 @@
+"""Verify downloaded MATV trial artifacts without unpacking apps or signing keys."""
+import hashlib
+import json
+import plistlib
+import struct
+import sys
+import zipfile
+from pathlib import Path
+
+root = Path(sys.argv[1])
+api = sys.argv[2].encode()
+results = []
+for name, abi, machine in [
+    ('MATV-Android-Mobile-ARM64.apk', 'arm64-v8a', 183),
+    ('MATV-Android-TV-ARM32.apk', 'armeabi-v7a', 40),
+    ('MATV-iPhone-Unsigned.ipa', None, None),
+]:
+    matches = list(root.rglob(name))
+    assert len(matches) == 1, f'Missing or duplicate artifact: {name}'
+    path = matches[0]
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    assert digest == Path(str(path) + '.sha256').read_text().split()[0], name
+    with zipfile.ZipFile(path) as archive:
+        names = archive.namelist()
+        if abi:
+            abis = {entry.split('/')[1] for entry in names if entry.startswith('lib/') and entry.endswith('.so')}
+            assert abis == {abi}, f'{name}: unexpected architectures {abis}'
+            binary = archive.read(f'lib/{abi}/libapp.so')
+            assert binary[:4] == b'\x7fELF'
+            assert struct.unpack('<H', binary[18:20])[0] == machine
+        else:
+            app = 'Payload/Runner.app/'
+            assert app + 'embedded.mobileprovision' not in names
+            assert not any(entry.startswith(app + '_CodeSignature/') for entry in names)
+            info = plistlib.loads(archive.read(app + 'Info.plist'))
+            assert info['CFBundleShortVersionString'] == '1.0.35'
+            assert info['CFBundleVersion'] == '35'
+            runner = archive.read(app + 'Runner')
+            assert struct.unpack('<I', runner[4:8])[0] == 0x100000C
+            binary = archive.read(app + 'Frameworks/App.framework/App')
+        assert api in binary, f'{name}: deployed API is absent'
+    results.append({'file': name, 'architecture': abi or 'arm64', 'sha256': digest,
+                    'bytes': path.stat().st_size, 'api': api.decode(), 'verified': True})
+print(json.dumps(results, indent=2))
