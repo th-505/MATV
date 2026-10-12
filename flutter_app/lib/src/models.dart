@@ -66,6 +66,9 @@ class TitleDetails {
     required this.mediaType,
     required this.playbackUnavailable,
     required this.playbackReason,
+    this.playbackMode = 'proxy',
+    this.expiresAt,
+    this.downloadAvailable = true,
   });
 
   final String title;
@@ -75,6 +78,9 @@ class TitleDetails {
   final String mediaType;
   final bool playbackUnavailable;
   final String playbackReason;
+  final String playbackMode;
+  final DateTime? expiresAt;
+  final bool downloadAvailable;
 
   bool get hasEpisodes => episodes.isNotEmpty;
   bool get hasDirectMedia => mediaPath.isNotEmpty;
@@ -91,10 +97,13 @@ class TitleDetails {
       title: '${json['movie_title'] ?? json['title'] ?? 'التفاصيل'}',
       poster: '${json['poster'] ?? ''}',
       episodes: episodes,
-      mediaPath: '${json['media_path'] ?? ''}',
+      mediaPath: '${json['playback_mode'] == 'direct' ? (json['media_url'] ?? json['media_path'] ?? '') : (json['media_path'] ?? '')}',
       mediaType: '${json['media_type'] ?? ''}',
       playbackUnavailable: json['playback_unavailable'] == true,
       playbackReason: '${json['playback_reason'] ?? ''}',
+      playbackMode: '${json['playback_mode'] ?? 'proxy'}',
+      expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
+      downloadAvailable: json['download_available'] != false,
     );
   }
 }

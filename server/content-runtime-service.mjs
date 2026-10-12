@@ -15,6 +15,8 @@ const DEFAULT_FETCH_ATTEMPTS = 2;
 const HOME_SECTION_LIMIT = 8;
 const HOME_CONCURRENCY = 2;
 const HOME_SECTIONS = Object.freeze([
+  Object.freeze({ id: "3isk-turkish", title: "قصة عشق — مسلسلات تركية", type: "series" }),
+  Object.freeze({ id: "3isk-dubbed", title: "قصة عشق — مسلسلات مدبلجة", type: "series" }),
   Object.freeze({ id: "series-foreign", title: "مسلسلات أجنبية", type: "series" }),
   Object.freeze({ id: "series-arabic", title: "مسلسلات عربية", type: "series" }),
   Object.freeze({ id: "movie-foreign", title: "أفلام أجنبية", type: "movie" }),

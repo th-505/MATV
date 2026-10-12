@@ -93,6 +93,8 @@ class _DetailsPageState extends State<DetailsPage> {
           title: details.title,
           mediaPath: details.mediaPath,
           mediaType: details.mediaType,
+          playbackMode: details.playbackMode,
+          sourceRef: widget.item.ref.startsWith('3isk:') ? widget.item.ref : '',
         ),
       ),
     );
@@ -233,6 +235,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     final key = 'episode:${episode.id}:${episode.number}';
                     final focusNode = _episodeFocus(episode);
                     return _EpisodeTile(
+                      downloadAvailable: !widget.item.ref.startsWith('3isk:'),
                       episode: episode,
                       focusNode: focusNode,
                       downloadFocusNode: isTvTarget ? _episodeDownloadFocus(episode) : null,
@@ -256,7 +259,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     trailing: const Icon(Icons.play_arrow),
                     onTap: () => _openDirect(details),
                   )),
-                  Card(child: ListTile(
+                  if (details.downloadAvailable) Card(child: ListTile(
                     leading: _activeDownloads.contains('direct')
                         ? const Icon(Icons.cancel_outlined)
                         : const Icon(Icons.download_outlined),
@@ -281,6 +284,7 @@ class _DetailsPageState extends State<DetailsPage> {
 
 class _EpisodeTile extends StatelessWidget {
   const _EpisodeTile({
+    this.downloadAvailable = true,
     required this.episode,
     required this.focusNode,
     required this.onTap,
@@ -296,6 +300,7 @@ class _EpisodeTile extends StatelessWidget {
   final FocusNode? downloadFocusNode;
   final VoidCallback onTap;
   final VoidCallback onDownload;
+  final bool downloadAvailable;
   final VoidCallback onCancelDownload;
   final bool downloading;
   final String downloadLabel;
@@ -320,13 +325,13 @@ class _EpisodeTile extends StatelessWidget {
                     enabled: enabled,
                     leading: CircleAvatar(child: Text('${episode.number}')),
                     title: Text(label),
-                    subtitle: Text(downloading ? downloadLabel : 'اضغط موافق للتشغيل، وانتقل إلى زر التنزيل عند الحاجة'),
+                    subtitle: Text(downloading ? downloadLabel : (downloadAvailable ? 'اضغط موافق للتشغيل، وانتقل إلى زر التنزيل عند الحاجة' : 'اضغط موافق لتشغيل الحلقة')),
                     trailing: enabled ? const Icon(Icons.play_arrow) : const Icon(Icons.block),
                     onTap: enabled ? onTap : null,
                   ),
                 ),
               ),
-              if (enabled)
+              if (enabled && downloadAvailable)
                 FocusTraversalOrder(
                   order: const NumericFocusOrder(2),
                   child: IconButton(
@@ -349,11 +354,12 @@ class _EpisodeTile extends StatelessWidget {
       enabled: enabled,
       leading: CircleAvatar(child: Text('${episode.number}')),
       title: Text(label),
-      subtitle: Text(downloading ? '$downloadLabel • اضغط زر الإلغاء لإيقافه' : (enabled ? 'مشاهدة أو تنزيل الحلقة' : 'المشاهدة غير متاحة حاليًا')),
+      subtitle: Text(downloading ? '$downloadLabel • اضغط زر الإلغاء لإيقافه' : (enabled ? (downloadAvailable ? 'مشاهدة أو تنزيل الحلقة' : 'مشاهدة الحلقة') : 'المشاهدة غير متاحة حاليًا')),
       trailing: enabled
           ? Wrap(
               spacing: 4,
               children: [
+                if (downloadAvailable)
                 IconButton(
                   key: ValueKey('episode-download-${episode.id}'),
                   tooltip: downloading ? 'إلغاء التنزيل' : 'تنزيل الحلقة',

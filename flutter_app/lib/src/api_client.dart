@@ -5,7 +5,7 @@ import 'models.dart';
 class AlQahtaniApi {
   AlQahtaniApi({http.Client? client, Uri? baseUri})
       : _client = client ?? http.Client(),
-        _baseUri = baseUri ?? Uri.parse('https://al-qahtani-api.onrender.com');
+        _baseUri = baseUri ?? Uri.parse(const String.fromEnvironment('MATV_API_BASE', defaultValue: 'https://al-qahtani-api.onrender.com'));
 
   final http.Client _client;
   final Uri _baseUri;
@@ -127,14 +127,16 @@ class AlQahtaniApi {
     return out;
   }
 
-  Future<TitleDetails> details(String ref) async {
+  Future<TitleDetails> details(String ref) => _details(ref);
+
+  Future<TitleDetails> _details(String ref, {bool refresh = false}) async {
     if (ref.trim().isEmpty) throw const ApiException('MISSING_TITLE_REFERENCE');
-    final json = await _getJson('/api/cinema/details', {'ref': ref});
+    final json = await _getJson('/api/cinema/details', {'ref': ref, if (refresh) 'refresh': '1'}, const Duration(seconds: 60));
     return TitleDetails.fromJson(json);
   }
 
-  Future<TitleDetails> resolvePlayback(String ref) async {
-    final resolved = await details(ref);
+  Future<TitleDetails> resolvePlayback(String ref, {bool refresh = false}) async {
+    final resolved = refresh ? await _details(ref, refresh: true) : await details(ref);
     if (resolved.hasDirectMedia) return resolved;
     if (resolved.playbackUnavailable) {
       throw ApiException(resolved.playbackReason.isEmpty ? 'PLAYBACK_UNAVAILABLE' : resolved.playbackReason);
@@ -142,7 +144,20 @@ class AlQahtaniApi {
     throw const ApiException('NO_PLAYABLE_MEDIA');
   }
 
-  Uri mediaUri(String mediaPath, {bool download = false}) {
+  Uri mediaUri(String mediaPath, {bool download = false, String playbackMode = 'proxy'}) {
+    if (playbackMode == 'direct') {
+      final uri = Uri.tryParse(mediaPath);
+      final expires = int.tryParse(uri?.queryParameters['expires'] ?? '');
+      if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasPort ||
+          !RegExp(r'^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$', caseSensitive: false).hasMatch(uri.host) ||
+          !uri.path.startsWith('/hls/') || !uri.path.endsWith('.m3u8') ||
+          (uri.queryParameters['token'] ?? '').isEmpty || expires == null) {
+        throw const ApiException('INVALID_DIRECT_MEDIA');
+      }
+      if (download) throw const ApiException('DIRECT_HLS_DOWNLOAD_UNAVAILABLE');
+      if (expires * 1000 <= DateTime.now().millisecondsSinceEpoch) throw const ApiException('DIRECT_MEDIA_EXPIRED');
+      return uri;
+    }
     final cinema = mediaPath.startsWith('/api/cinema/media?');
     final matches = mediaPath.startsWith('/api/matches/media?');
     if (!cinema && !matches) throw const ApiException('INVALID_MEDIA_REFERENCE');
@@ -152,9 +167,9 @@ class AlQahtaniApi {
     return uri.replace(queryParameters: params);
   }
 
-  Future<Map<String, dynamic>> _getJson(String path, [Map<String, String>? query]) async {
+  Future<Map<String, dynamic>> _getJson(String path, [Map<String, String>? query, Duration timeout = const Duration(seconds: 30)]) async {
     final uri = _baseUri.replace(path: path, queryParameters: query);
-    final response = await _client.get(uri, headers: const {'accept': 'application/json'}).timeout(const Duration(seconds: 30));
+    final response = await _client.get(uri, headers: const {'accept': 'application/json'}).timeout(timeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException('HTTP ${response.statusCode}');
     }

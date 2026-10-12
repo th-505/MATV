@@ -12,6 +12,10 @@ import {
 } from "./providers/akoam.mjs";
 import { buildDownloadContentDisposition, sanitizeDownloadFilename } from "./download-filename.mjs";
 import { createContentRuntimeService } from "./content-runtime-service.mjs";
+import { create3iskRuntime } from "./3isk-runtime.mjs";
+import { ISK_CATEGORIES } from "./providers/3isk.mjs";
+import { CatalogCategories } from "./catalog-categories.mjs";
+import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress, startMediaRefSweeper } from "./hardening.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -21,6 +25,7 @@ const BASRI_REFERER = `${BASRI_ORIGIN}/2026/09/movies-series.html`;
 const DEFAULT_MEDIA_REF_TTL_MS = 15 * 60_000;
 
 const ALLOWED_ORIGINS = new Set([
+  "https://th-505.github.io",
   "https://theeb1230-dot.github.io",
   "http://localhost:8000",
   "http://127.0.0.1:8000",
@@ -279,11 +284,21 @@ async function cinemaCategory(sourceUrl, page = 1) {
   return { status: "success", source: result.source, data: normalizeCatalog(items) };
 }
 
-const contentRuntime = createContentRuntimeService({
-  fetchMatches: getMatches,
-  searchCatalog: cinemaSearch,
-  fetchCategory: cinemaCategory,
-});
+export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches } = {}) {
+  return createContentRuntimeService({
+    fetchMatches,
+    async searchCatalog(query) {
+      const results = await Promise.allSettled([searchCatalog(query), iskRuntime.search(query)]);
+      const success = results.filter(result => result.status === 'fulfilled');
+      if (!success.length) throw new Error('CATALOG_SEARCH_UNAVAILABLE');
+      return { status: 'success', source: 'catalog', data: success.flatMap(result => result.value.data || []) };
+    },
+    fetchCategory(sourceUrl, page) {
+      const id = Object.keys(ISK_CATEGORIES).find(key => ISK_CATEGORIES[key] === sourceUrl);
+      return id ? iskRuntime.category(id, page) : fetchCategory(sourceUrl, page);
+    },
+  });
+}
 
 function requestMedia(target, headers, { allowBrokenChain = false, redirects = 0 } = {}) {
   return new Promise((resolve, reject) => {
@@ -647,7 +662,7 @@ async function proxyMedia(req, res, id) {
   }
 }
 
-export function createServer({ runtimeService = contentRuntime } = {}) {
+export function createServer({ iskRuntime = create3iskRuntime(), runtimeService = createIntegratedContentRuntime(iskRuntime) } = {}) {
   return http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
@@ -665,17 +680,40 @@ export function createServer({ runtimeService = contentRuntime } = {}) {
     try {
       if (url.pathname === "/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
+      if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
+      if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status()] });
+      if (url.pathname.startsWith('/api/v1/3isk/')) {
+        if (req.method !== 'GET') return sendJson(req, res, 405, { status: 'error', message: 'METHOD_NOT_ALLOWED' });
+        const ref = url.searchParams.get('ref') || '';
+        if (url.pathname === '/api/v1/3isk/status') return sendJson(req, res, 200, iskRuntime.status());
+        if (url.pathname === '/api/v1/3isk/search') return sendJson(req, res, 200, await iskRuntime.search(url.searchParams.get('q') || ''));
+        if (url.pathname === '/api/v1/3isk/category') return sendJson(req, res, 200, await iskRuntime.category(ref, Number(url.searchParams.get('p') || 1)));
+        if (['/api/v1/3isk/details', '/api/v1/3isk/resolve'].includes(url.pathname)) return sendJson(req, res, 200, await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }));
+        return sendJson(req, res, 404, { status: 'error', message: 'NOT_FOUND' });
+      }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
-      if (url.pathname === "/api/v1/category") return sendJson(req, res, 200, await runtimeService.category(url.searchParams.get("ref") || "", Number(url.searchParams.get("p") || 1)));
+      if (url.pathname === "/api/v1/category") {
+        const ref = url.searchParams.get('ref') || '';
+        if (Object.hasOwn(ISK_CATEGORIES, ref)) {
+          const result = await iskRuntime.category(ref, Number(url.searchParams.get('p') || 1));
+          return sendJson(req, res, 200, buildRuntimeEnvelope({ kind: 'category', data: result.data.map(normalizeCatalogItem), source: '3isk', cached: result.cached }));
+        }
+        return sendJson(req, res, 200, await runtimeService.category(ref, Number(url.searchParams.get("p") || 1)));
+      }
       if (url.pathname === "/api/matches") return sendJson(req, res, 200, await getMatches());
       if (url.pathname === "/api/matches/servers") return sendJson(req, res, 200, await getMatchServers(url.searchParams.get("url") || ""));
       if (url.pathname === "/api/cinema/search") return sendJson(req, res, 200, await cinemaSearch((url.searchParams.get("q") || "").trim()));
       if (url.pathname === "/api/cinema/category") return sendJson(req, res, 200, await cinemaCategory(url.searchParams.get("url") || "", Number(url.searchParams.get("p") || 1)));
-      if (url.pathname === "/api/cinema/details") return sendJson(req, res, 200, await cinemaDetails(url.searchParams.get("ref") || ""));
+      if (url.pathname === "/api/cinema/details") {
+        const ref = url.searchParams.get('ref') || '';
+        return sendJson(req, res, 200, ref.startsWith('3isk:')
+          ? await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }) : await cinemaDetails(ref));
+      }
       if (url.pathname === "/api/cinema/media") return proxyMedia(req, res, url.searchParams.get("id") || "");
       return sendJson(req, res, 404, { error: "NOT_FOUND" });
     } catch (error) {
+      if (String(error?.message).startsWith('3ISK_BAD_') || String(error?.message).startsWith('3ISK_EXPECTED_')) return sendJson(req, res, 400, { status: 'error', message: error.message });
       log("request_failed", { path: url.pathname, ms: Date.now() - started, error: String(error?.message || error) });
       return sendJson(req, res, 502, { status: "error", message: String(error?.message || "UPSTREAM_FAILED") });
     }

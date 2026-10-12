@@ -1,5 +1,7 @@
 export const CinemaCategories = Object.freeze({
   series: Object.freeze([
+    { title: "قصة عشق — تركية", url: "3isk-turkish" },
+    { title: "قصة عشق — مدبلجة", url: "3isk-dubbed" },
     { title: "أجنبية", url: "series-foreign" },
     { title: "عربية", url: "series-arabic" },
     { title: "تركية", url: "series-turkish" },

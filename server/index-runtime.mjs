@@ -5,6 +5,7 @@ import { createTmdbRuntime } from "./tmdb-runtime.mjs";
 import { createFallbackPlaybackRuntime } from "./fallback-runtime.mjs";
 
 const ALLOWED_ORIGINS = new Set([
+  "https://th-505.github.io",
   "https://theeb1230-dot.github.io",
   "http://localhost:8000",
   "http://127.0.0.1:8000",

@@ -108,6 +108,8 @@ assert.equal(home.data.stale, false);
 assert.equal(home.data.matches.status, "ready");
 assert.ok(home.data.matches.data.length <= 12);
 assert.deepEqual(home.data.sections.map((section) => section.id), [
+  "3isk-turkish",
+  "3isk-dubbed",
   "series-foreign",
   "series-arabic",
   "movie-foreign",
@@ -115,7 +117,7 @@ assert.deepEqual(home.data.sections.map((section) => section.id), [
 ]);
 assert.ok(home.data.sections.every((section) => section.status === "ready"));
 assert.ok(home.data.sections.every((section) => section.data.length <= 8));
-assert.equal(categoryCalls, homeBeforeCalls + 3, "home must reuse the already-cached movie-arabic page while fetching only the three missing sections");
+assert.equal(categoryCalls, homeBeforeCalls + 5, "home reuses cached movie-arabic while fetching five missing sections, including 3isk");
 assert.ok(home.data.sections.some((section) => section.cached === true), "home must preserve per-section cache evidence");
 
 let activeSections = 0;

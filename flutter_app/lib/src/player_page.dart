@@ -22,6 +22,7 @@ class PlayerPage extends StatefulWidget {
     this.sourceRef = '',
     this.mediaPath = '',
     this.mediaType = '',
+    this.playbackMode = 'proxy',
     this.episodeId = '',
     this.episodeNumber,
   });
@@ -33,6 +34,7 @@ class PlayerPage extends StatefulWidget {
   final String sourceRef;
   final String mediaPath;
   final String mediaType;
+  final String playbackMode;
   final String episodeId;
   final int? episodeNumber;
 
@@ -49,6 +51,8 @@ class _PlayerPageState extends State<PlayerPage> {
   String _status = 'جاري تجهيز المشاهدة…';
   String _resolvedMediaPath = '';
   String _resolvedMediaType = '';
+  String _resolvedPlaybackMode = 'proxy';
+  int _directRefreshAttempts = 0;
   bool _failed = false;
   bool _usingWebFallback = false;
   bool _nativeFailureInFlight = false;
@@ -61,7 +65,7 @@ class _PlayerPageState extends State<PlayerPage> {
     _initialize();
   }
 
-  Future<void> _initialize() async {
+  Future<void> _initialize({bool forceRefresh = false}) async {
     _nativeStartupTimer?.cancel();
     _webStartupTimer?.cancel();
     _nativeFailureInFlight = false;
@@ -69,16 +73,19 @@ class _PlayerPageState extends State<PlayerPage> {
     try {
       var mediaPath = widget.mediaPath;
       var mediaType = widget.mediaType;
-      if (mediaPath.isEmpty) {
-        final TitleDetails resolved = await widget.api.resolvePlayback(widget.sourceRef);
+      var playbackMode = widget.playbackMode;
+      if (mediaPath.isEmpty || widget.sourceRef.startsWith('3isk:')) {
+        final TitleDetails resolved = await widget.api.resolvePlayback(widget.sourceRef, refresh: forceRefresh);
         mediaPath = resolved.mediaPath;
         mediaType = resolved.mediaType;
+        playbackMode = resolved.playbackMode;
       }
       _resolvedMediaPath = mediaPath;
       _resolvedMediaType = mediaType;
+      _resolvedPlaybackMode = playbackMode;
       if (!mounted) return;
       final controller = VideoPlayerController.networkUrl(
-        widget.api.mediaUri(mediaPath),
+        widget.api.mediaUri(mediaPath, playbackMode: playbackMode),
         formatHint: videoFormatHintForRuntimeMedia(mediaType),
       );
       _controller = controller;
@@ -136,9 +143,19 @@ class _PlayerPageState extends State<PlayerPage> {
     _controller = null;
     _progressTimer?.cancel();
     if (!mounted) return;
-    if (!isTvTarget && _resolvedMediaPath.isNotEmpty) {
-      await _startInternalWebFallback();
+    if (widget.sourceRef.startsWith('3isk:') && _directRefreshAttempts < 1) {
+      _directRefreshAttempts += 1;
+      _nativeFailureInFlight = false;
+      await _initialize(forceRefresh: true);
       return;
+    }
+    if (!isTvTarget && _resolvedMediaPath.isNotEmpty) {
+      try {
+        await _startInternalWebFallback();
+        return;
+      } catch (_) {
+        // Expired direct URLs must fail safely after the bounded refresh.
+      }
     }
     setState(() {
       _failed = true;
@@ -149,7 +166,7 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _startInternalWebFallback() async {
-    final opaqueMedia = widget.api.mediaUri(_resolvedMediaPath);
+    final opaqueMedia = widget.api.mediaUri(_resolvedMediaPath, playbackMode: _resolvedPlaybackMode);
     final resume = widget.store.resumePosition(widget.item.ref, episodeId: widget.episodeId);
     final playerUri = Uri.parse('https://theeb1230-dot.github.io/Al-Qahtani/Player.html').replace(
       queryParameters: {

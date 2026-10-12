@@ -330,6 +330,14 @@ class CatalogPage extends StatefulWidget {
 }
 
 class _CatalogPageState extends State<CatalogPage> {
+  late String selectedCategory = widget.categoryId;
+  static const seriesCategories = <String, String>{
+    'series-foreign': 'أكوام — أجنبية',
+    'series-arabic': 'أكوام — عربية',
+    'series-turkish': 'أكوام — تركية',
+    '3isk-turkish': 'قصة عشق — تركية',
+    '3isk-dubbed': 'قصة عشق — مدبلجة',
+  };
   final controller = ScrollController(); final items = <CatalogItem>[]; final seen = <String>{};
   int page = 0; bool loading = false; bool done = false; String? error; int requestGeneration = 0;
   @override void initState() { super.initState(); controller.addListener(_onScroll); _loadMore(); }
@@ -339,10 +347,10 @@ class _CatalogPageState extends State<CatalogPage> {
     if (loading || done) return; final generation = requestGeneration;
     setState(() { loading = true; error = null; });
     try {
-      final next = await widget.api.category(widget.categoryId, page: page + 1);
+      final next = await widget.api.category(selectedCategory, page: page + 1);
       if (!mounted || generation != requestGeneration) return;
       final fresh = next.where((e) => e.ref.isNotEmpty && seen.add(e.ref)).toList(growable: false);
-      setState(() { page += 1; items.addAll(fresh); done = next.length < 30 || fresh.isEmpty; loading = false; });
+      setState(() { page += 1; items.addAll(fresh); done = (selectedCategory.startsWith('3isk-') ? next.isEmpty : next.length < 30) || fresh.isEmpty; loading = false; });
     } catch (_) {
       if (mounted && generation == requestGeneration) setState(() { loading = false; error = 'تعذر تحميل المزيد. اسحب للأسفل للمحاولة مجددًا.'; });
     }
@@ -353,7 +361,23 @@ class _CatalogPageState extends State<CatalogPage> {
     await _loadMore();
   }
   @override
-  Widget build(BuildContext context) => RefreshIndicator(
+  Widget build(BuildContext context) => Column(children: [
+    if (widget.categoryId.startsWith('series-'))
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: selectedCategory,
+          items: seriesCategories.entries.map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value))).toList(),
+          onChanged: (value) {
+            if (value == null || value == selectedCategory) return;
+            setState(() { selectedCategory = value; });
+            if (controller.hasClients) controller.jumpTo(0);
+            unawaited(_refresh());
+          },
+        ),
+      ),
+    Expanded(child: RefreshIndicator(
     onRefresh: _refresh,
     child: GridView.builder(
       controller: controller, padding: EdgeInsets.all(isTvTarget ? 24 : 12),
@@ -365,7 +389,8 @@ class _CatalogPageState extends State<CatalogPage> {
         return _CatalogCard(item: item, onTap: () => openDetails(context, widget.api, widget.store, item));
       },
     ),
-  );
+  )),
+  ]);
 }
 
 class _CatalogCard extends StatelessWidget {

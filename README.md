@@ -4,7 +4,9 @@ Destination repository: https://github.com/th-505/MATV
 
 Imported from `theeb505/Al-Qahtani`, preserving its Git history, Flutter app, Node.js server, and existing match/news/library behavior. Phase 1 isolates Akoam in `server/providers/akoam.mjs` and adds a standalone 3isk HLS resolver.
 
-Run `npm install` and `npm run check` from the repository root. Run `npm run poc:3isk` to resolve the agreed episode. See [Phase 1 validation](docs/PHASE1_3ISK_VALIDATION.md) for live playback evidence and the remaining physical-device and second-network checks.
+Run `npm install` and `npm run check` from the repository root. Run `npm run poc:3isk` to resolve the agreed episode. See [Phase 1 validation](docs/PHASE1_3ISK_VALIDATION.md) for live playback evidence and the user's successful Safari/4G test.
+
+Phase 2 integrates 3isk Turkish/dubbed catalogs, shared search, direct HLS playback in Flutter/web, and an expiry-aware backend Supabase cache. See [integration and setup](docs/PHASE2_3ISK_INTEGRATION.md). The Supabase schema is applied; Node requires server secrets to use persistent caching.
 
 ## Original project
 

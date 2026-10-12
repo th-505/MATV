@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.dart_tool/
+build/
+flutter_app/.flutter-plugins-dependencies
+supabase/.temp/
