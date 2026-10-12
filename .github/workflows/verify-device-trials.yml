@@ -12,6 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ inputs.build_run }}
@@ -20,6 +21,7 @@ jobs:
       - name: Download and verify build outputs
         run: |
           set -euo pipefail
+          gh run watch "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --interval 30 --exit-status
           gh run view "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion | grep -qx success
           gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --dir device-artifacts
           python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com > device-verification.json
@@ -29,6 +31,11 @@ jobs:
             grep -q "versionCode='35' versionName='1.0.35'" /tmp/device-badging.txt
           done
           cat device-verification.json
+          python3 - <<'PY_REPORT'
+          import pathlib
+          report = pathlib.Path('device-verification.json').read_text().replace('%', '%25').replace('\n', '%0A')
+          print('::notice title=Device artifact verification::' + report)
+          PY_REPORT
       - uses: actions/upload-artifact@v4
         with:
           name: MATV-device-verification
