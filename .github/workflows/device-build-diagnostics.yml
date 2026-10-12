@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Report verification failure
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$JOB_ID/logs" > build.log 2>&1 || true
+          gh api --allow-escape-sequences "repos/$GITHUB_REPOSITORY/actions/jobs/$JOB_ID/logs" > build.log 2>&1 || true
           python3 - <<'PY'
           import pathlib
           lines = pathlib.Path('build.log').read_text().splitlines()
