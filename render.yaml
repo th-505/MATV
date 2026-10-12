@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: matv-api
+    name: MATV
     runtime: docker
     repo: https://github.com/th-505/MATV
     branch: main
