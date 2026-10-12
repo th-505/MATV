@@ -1,0 +1,108 @@
+{
+  "version": "1.0.36",
+  "base_build": 36,
+  "product_commit": "c96b5b303bfbcb15cce11a9f690b6abaca0bb542",
+  "verified_at": "2026-10-12T23:09:28.277837+00:00",
+  "render_deploy": "dep-db6md6rm8hqs739kda20",
+  "node_checks": "passed",
+  "flutter_analyze": "passed",
+  "flutter_tests": {
+    "mobile": 90,
+    "tv": 90
+  },
+  "native_plugin_contract": "mock platform verified URL and headers",
+  "live_api_and_cdn": {
+    "passed": true,
+    "api": "https://matv.onrender.com",
+    "results": [
+      {
+        "category": "3isk-latest",
+        "count": 47,
+        "title": "مسلسل الزواج جميل الحلقة 6",
+        "host": "s4.ukrcdn.xyz",
+        "referer": "https://3iskk.xyz/",
+        "manifest_status": 200,
+        "segment_status": 206,
+        "direct": true,
+        "resolution_mode": "direct"
+      },
+      {
+        "category": "3isk-turkish",
+        "count": 28,
+        "title": "مسلسل غريب في المرآة مدبلج",
+        "host": "s30.grzcdn.com",
+        "referer": "https://miravd.com/",
+        "manifest_status": 200,
+        "segment_status": 206,
+        "direct": true,
+        "resolution_mode": "client_resolve"
+      },
+      {
+        "category": "3isk-dubbed",
+        "count": 28,
+        "title": "مسلسل غريب في المرآة مدبلج",
+        "host": "s30.grzcdn.com",
+        "referer": "https://miravd.com/",
+        "manifest_status": 200,
+        "segment_status": 206,
+        "direct": true,
+        "resolution_mode": "client_resolve"
+      },
+      {
+        "category": "3isk-movies",
+        "count": 28,
+        "title": "فيلم الرسائل الصفراء 2026 Sarı Zarflar مترجم",
+        "host": "s43.grzcdn.com",
+        "referer": "https://miravd.com/",
+        "manifest_status": 200,
+        "segment_status": 206,
+        "direct": true,
+        "resolution_mode": "client_resolve"
+      }
+    ]
+  },
+  "live_dart_client": [
+    {
+      "category": "3isk-latest",
+      "host": "s4.ukrcdn.xyz",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://3iskk.xyz/",
+      "dart_client_verified": true
+    },
+    {
+      "category": "3isk-turkish",
+      "host": "s30.grzcdn.com",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://miravd.com/",
+      "dart_client_verified": true
+    },
+    {
+      "category": "3isk-dubbed",
+      "host": "s30.grzcdn.com",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://miravd.com/",
+      "dart_client_verified": true
+    },
+    {
+      "category": "3isk-movies",
+      "host": "s43.grzcdn.com",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://miravd.com/",
+      "dart_client_verified": true
+    }
+  ],
+  "physical_device_installation_verified": false,
+  "persistent_cache": {
+    "state": "credentials_required",
+    "observed_error": "Legacy API keys are disabled",
+    "memory_cache": "operational"
+  }
+}

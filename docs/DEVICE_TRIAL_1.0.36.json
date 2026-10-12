@@ -1,0 +1,33 @@
+{
+  "version": "1.0.36",
+  "base_build": 36,
+  "product_commit": "c96b5b303bfbcb15cce11a9f690b6abaca0bb542",
+  "build_run": "https://github.com/th-505/MATV/actions/runs/38319864227",
+  "verification_run": "https://github.com/th-505/MATV/actions/runs/38319917061",
+  "artifacts": [
+    {
+      "file": "MATV-Android-Mobile-ARM64.apk",
+      "architecture": "arm64-v8a",
+      "sha256": "cfdaca15f65fbaa920f538c9579505565baa278f594f73b66db17480421044b7",
+      "bytes": 20095010,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MATV-Android-TV-ARM32.apk",
+      "architecture": "armeabi-v7a",
+      "sha256": "25b723d8927af95b9c59f1d61dbc148c6554230700f968dd6826547d0c386b45",
+      "bytes": 17553018,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MATV-iPhone-Unsigned.ipa",
+      "architecture": "arm64",
+      "sha256": "8861055ffb0ebb7e0b54ace345f685077a7e58505df167987c6f1522c7aa8963",
+      "bytes": 7935024,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    }
+  ]
+}
