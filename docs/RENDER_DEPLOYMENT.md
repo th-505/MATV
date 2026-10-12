@@ -37,7 +37,7 @@
 - الخدمة: **MATV** (`srv-db6l1pd9fdbs73b02j40`).
 - API: **https://matv.onrender.com**؛ [فحص الصحة](https://matv.onrender.com/health).
 - [لوحة الخدمة](https://dashboard.render.com/web/srv-db6l1pd9fdbs73b02j40).
-- الإصدار المشترك للخادم والتطبيقات: **1.0.35، build 35**، commit `3c651a538a8ca4c6704b250054a3c2ac9154b78a`.
+- الإصدار المشترك للخادم والتطبيقات: **1.0.35، build 35**. نشر الخادم من `3c651a538a8ca4c6704b250054a3c2ac9154b78a`، وبناء الأجهزة الثلاث من `1f6bbe372382c71d618158682cebca00892ea161`؛ التعديلات بينهما تخص توثيق النشر وفحوص/إعدادات CI فقط، دون تغيير كود المنتج.
 - deploy `dep-db6l96u7bikc73c75m1g` بحالة `live`.
 - أُضيفت أسرار Supabase إلى الخدمة؛ لا تدخل التطبيق أو صورة Docker أو Git.
 
@@ -62,4 +62,4 @@ Android: التحليل والاختبارات، بناء release، فحص تو�
 
 iPhone: بناء macOS بـ `--no-codesign`، تغليف `Payload/Runner.app` داخل IPA، إزالة توقيع التطبيق وملف provisioning إن وُجدا، والتحقق من ARM64. **يلزم توقيع IPA خارجيًا قبل تثبيتها** كما طلب المستخدم؛ لا يلزم تسليم بيانات Apple لهذا البناء غير الموقّع.
 
-كل artifact يتضمن الملف وSHA-256 ويُحفظ في Actions مدة 14 يومًا. [تشغيل بناء الإصدار 35](https://github.com/th-505/MATV/actions/runs/38312458286).
+كل artifact يتضمن الملف وSHA-256 ويُحفظ في Actions مدة 14 يومًا. [تشغيل بناء الإصدار 35](https://github.com/th-505/MATV/actions/runs/38313378978).

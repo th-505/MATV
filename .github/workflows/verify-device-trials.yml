@@ -25,7 +25,8 @@ jobs:
           python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com > device-verification.json
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           for APK in device-artifacts/*/*.apk; do
-            "$AAPT" dump badging "$APK" | grep -q "versionCode='35' versionName='1.0.35'"
+            "$AAPT" dump badging "$APK" > /tmp/device-badging.txt
+            grep -q "versionCode='35' versionName='1.0.35'" /tmp/device-badging.txt
           done
           cat device-verification.json
       - uses: actions/upload-artifact@v4
