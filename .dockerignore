@@ -1,0 +1,17 @@
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+flutter_app
+docs
+scripts
+web
+supabase
+*.html
+*.zip
+*.patch
+*.apk
+*.apk.sha256

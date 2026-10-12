@@ -1,0 +1,68 @@
+name: MATV Android trial
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: Verified public Koyeb API URL
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MATV_API_BASE: ${{ inputs.api_base }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deployment URL and health
+        run: |
+          python3 - <<'PY'
+          import os, urllib.parse, urllib.request
+          url = urllib.parse.urlsplit(os.environ['MATV_API_BASE'])
+          assert url.scheme == 'https' and url.hostname and not url.username and not url.password
+          assert not url.query and not url.fragment and url.path in ('', '/')
+          with urllib.request.urlopen(os.environ['MATV_API_BASE'].rstrip('/') + '/health', timeout=60) as response:
+              assert response.status == 200
+          PY
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Create Android scaffolding
+        working-directory: flutter_app
+        run: flutter create --platforms=android --org com.alqahtani --project-name al_qahtani .
+      - name: Apply native branding
+        run: python3 scripts/apply_native_branding.py flutter_app
+      - name: Resolve dependencies
+        working-directory: flutter_app
+        run: flutter pub get --enforce-lockfile
+      - name: Analyze and test
+        working-directory: flutter_app
+        run: |
+          flutter analyze
+          flutter test
+      - name: Build trial APK with deployed API
+        working-directory: flutter_app
+        run: flutter build apk --release --dart-define=AL_QAHTANI_TARGET=mobile --dart-define="MATV_API_BASE=$MATV_API_BASE"
+      - name: Verify and stage APK
+        run: |
+          set -euo pipefail
+          APK=flutter_app/build/app/outputs/flutter-apk/app-release.apk
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          "$APKSIGNER" verify "$APK"
+          "$AAPT" dump permissions "$APK" | grep -q "android.permission.INTERNET"
+          mkdir -p trial
+          cp "$APK" trial/MATV-Android-Trial.apk
+          sha256sum trial/MATV-Android-Trial.apk > trial/MATV-Android-Trial.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MATV-Android-Trial
+          path: trial/
+          retention-days: 14

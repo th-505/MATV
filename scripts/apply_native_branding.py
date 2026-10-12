@@ -129,6 +129,11 @@ def apply_android(root: Path):
     manifest = android / "app/src/main/AndroidManifest.xml"
     if manifest.exists():
         text = manifest.read_text(encoding="utf-8")
+        # Flutter's debug/profile manifests grant Internet, but the generated
+        # release manifest needs it explicitly for the API and direct HLS.
+        permission = r'<uses-permission\b[^>]*android:name=["\']android\.permission\.INTERNET["\']'
+        if not re.search(permission, text):
+            text = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    <uses-permission android:name="android.permission.INTERNET"/>', text, count=1)
         text = re.sub(r'android:label="[^"]*"', 'android:label="القحطاني TV"', text, count=1)
         manifest.write_text(text, encoding="utf-8")
 
