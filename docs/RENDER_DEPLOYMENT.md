@@ -58,7 +58,7 @@ gh workflow run mobile-trial.yml --repo th-505/MATV \
 | أندرويد TV / Google TV | ARM32 / armeabi-v7a | MATV-Android-TV-ARM32.apk |
 | آيفون | ARM64، غير موقّع | MATV-iPhone-Unsigned.ipa |
 
-Android: التحليل والاختبارات، بناء release، فحص توقيع APK وصلاحية الإنترنت والمعمارية؛ نسخة TV تضيف Leanback وتزيل اشتراط شاشة اللمس. APK موقّع بشهادة البناء التجريبية؛ إصدار المتجر يحتاج مفتاح توقيع إصدار ثابت.
+Android: build الأساسي 35؛ يضيف Flutter رقم المعمارية عند فصل APK، فيكون Android versionCode للموبايل 2035 ولـTV 1035، وversionName لكليهما 1.0.35. التحليل والاختبارات، بناء release، فحص توقيع APK وصلاحية الإنترنت والمعمارية؛ نسخة TV تضيف Leanback وتزيل اشتراط شاشة اللمس. APK موقّع بشهادة البناء التجريبية؛ إصدار المتجر يحتاج مفتاح توقيع إصدار ثابت.
 
 iPhone: بناء macOS بـ `--no-codesign`، تغليف `Payload/Runner.app` داخل IPA، إزالة توقيع التطبيق وملف provisioning إن وُجدا، والتحقق من ARM64. **يلزم توقيع IPA خارجيًا قبل تثبيتها** كما طلب المستخدم؛ لا يلزم تسليم بيانات Apple لهذا البناء غير الموقّع.
 

@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Download and verify build outputs
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           gh run watch "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --interval 30 --exit-status
           gh run view "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion | grep -qx success
           gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --dir device-artifacts
@@ -28,8 +28,12 @@ jobs:
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           for APK in device-artifacts/*/*.apk; do
             "$AAPT" dump badging "$APK" > /tmp/device-badging.txt
-            cat /tmp/device-badging.txt
-            grep -q "versionCode='35' versionName='1.0.35'" /tmp/device-badging.txt
+            case "$APK" in
+              *Mobile-ARM64.apk) EXPECTED_CODE=2035 ;;
+              *TV-ARM32.apk) EXPECTED_CODE=1035 ;;
+              *) exit 1 ;;
+            esac
+            grep -q "versionCode='$EXPECTED_CODE' versionName='1.0.35'" /tmp/device-badging.txt
           done
           cat device-verification.json
           python3 - <<'PY_REPORT'
