@@ -5,7 +5,7 @@ import 'models.dart';
 class AlQahtaniApi {
   AlQahtaniApi({http.Client? client, Uri? baseUri})
       : _client = client ?? http.Client(),
-        _baseUri = baseUri ?? Uri.parse(const String.fromEnvironment('MATV_API_BASE', defaultValue: 'https://al-qahtani-api.onrender.com'));
+        _baseUri = baseUri ?? Uri.parse(const String.fromEnvironment('MATV_API_BASE', defaultValue: 'https://matv.onrender.com'));
 
   final http.Client _client;
   final Uri _baseUri;
@@ -144,18 +144,19 @@ class AlQahtaniApi {
     throw const ApiException('NO_PLAYABLE_MEDIA');
   }
 
-  Uri mediaUri(String mediaPath, {bool download = false, String playbackMode = 'proxy'}) {
+  Uri mediaUri(String mediaPath, {bool download = false, String playbackMode = 'proxy', DateTime? expiresAt}) {
     if (playbackMode == 'direct') {
       final uri = Uri.tryParse(mediaPath);
-      final expires = int.tryParse(uri?.queryParameters['expires'] ?? '');
+      final miravd = RegExp(r'^s\d+\.grzcdn\.com$').hasMatch(uri?.host ?? '');
+      final expires = miravd ? expiresAt?.millisecondsSinceEpoch : int.tryParse(uri?.queryParameters['expires'] ?? '');
       if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasPort ||
-          !RegExp(r'^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$', caseSensitive: false).hasMatch(uri.host) ||
-          !uri.path.startsWith('/hls/') || !uri.path.endsWith('.m3u8') ||
-          (uri.queryParameters['token'] ?? '').isEmpty || expires == null) {
+          !(miravd || RegExp(r'^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$', caseSensitive: false).hasMatch(uri.host)) ||
+          !uri.path.startsWith('/hls/') || !RegExp(r'\.(m3u8|mp4)$').hasMatch(uri.path) ||
+          (!miravd && (uri.queryParameters['token'] ?? '').isEmpty) || expires == null) {
         throw const ApiException('INVALID_DIRECT_MEDIA');
       }
       if (download) throw const ApiException('DIRECT_HLS_DOWNLOAD_UNAVAILABLE');
-      if (expires * 1000 <= DateTime.now().millisecondsSinceEpoch) throw const ApiException('DIRECT_MEDIA_EXPIRED');
+      if ((miravd ? expires : expires * 1000) <= DateTime.now().millisecondsSinceEpoch) throw const ApiException('DIRECT_MEDIA_EXPIRED');
       return uri;
     }
     final cinema = mediaPath.startsWith('/api/cinema/media?');

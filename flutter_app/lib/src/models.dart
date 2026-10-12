@@ -67,6 +67,7 @@ class TitleDetails {
     required this.playbackUnavailable,
     required this.playbackReason,
     this.playbackMode = 'proxy',
+    this.playbackHeaders = const {},
     this.expiresAt,
     this.downloadAvailable = true,
   });
@@ -79,6 +80,7 @@ class TitleDetails {
   final bool playbackUnavailable;
   final String playbackReason;
   final String playbackMode;
+  final Map<String, String> playbackHeaders;
   final DateTime? expiresAt;
   final bool downloadAvailable;
 
@@ -102,6 +104,12 @@ class TitleDetails {
       playbackUnavailable: json['playback_unavailable'] == true,
       playbackReason: '${json['playback_reason'] ?? ''}',
       playbackMode: '${json['playback_mode'] ?? 'proxy'}',
+      playbackHeaders: Map.unmodifiable({
+        for (final key in const ['Referer', 'User-Agent'])
+          if (json['playback_headers'] is Map && json['playback_headers'][key] is String &&
+              !(json['playback_headers'][key] as String).contains(RegExp(r'[\r\n]')))
+            key: json['playback_headers'][key] as String,
+      }),
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       downloadAvailable: json['download_available'] != false,
     );

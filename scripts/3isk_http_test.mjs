@@ -13,7 +13,7 @@ const provider = {
   category: async () => ({ status: 'success', source: '3isk', data: [{ title: 'عمل', ref: seriesRef, is_series: true, source: '3isk' }] }),
   search: async () => ({ status: 'success', source: '3isk', data: [{ title: 'عمل', ref: seriesRef, is_series: true, source: '3isk' }] }),
   details: async () => ({ status: 'success', source: '3isk', episodes: [{ ref: episodeRef, num: 1 }] }),
-  resolve: async () => { resolutions++; return { status: 'success', source: '3isk', playback_mode: 'direct', media_url: stream, media_path: stream, media_type: 'm3u8', expires_at: new Date(Math.floor(expiry / 1000) * 1000).toISOString(), download_available: false }; },
+  resolve: async () => { resolutions++; return { status: 'success', source: '3isk', playback_mode: 'direct', playback_headers: { Referer: 'https://3iskk.xyz/', 'User-Agent': 'fixture-UA' }, media_url: stream, media_path: stream, media_type: 'm3u8', expires_at: new Date(Math.floor(expiry / 1000) * 1000).toISOString(), download_available: false }; },
 };
 const iskRuntime = create3iskRuntime({ provider, store: null });
 const integrated = createIntegratedContentRuntime(iskRuntime, {

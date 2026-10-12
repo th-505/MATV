@@ -1,6 +1,8 @@
 const CATEGORY_ROWS = [
-  ["3isk-turkish", "series", "قصة عشق — تركية", "https://3iskk.xyz/w-srs/"],
-  ["3isk-dubbed", "series", "قصة عشق — مدبلجة", "https://3iskk.xyz/genre/series-mudablij-121/"],
+  ["3isk-latest", "series", "قصة عشق (أحدث الحلقات)", "https://3iskk.xyz/"],
+  ["3isk-movies", "movie", "جميع الأفلام", "https://3iskk.xyz/w-mvs/"],
+  ["3isk-turkish", "series", "جميع المسلسلات (مترجم ومدبلج)", "https://3iskk.xyz/w-srs/"],
+  ["3isk-dubbed", "series", "مسلسلات مدبلجة (مدبلج فقط)", "https://3iskk.xyz/genre/series-mudablij-121/"],
   ["series-foreign", "series", "أجنبية", "https://akwam.ss/series?section=30"],
   ["series-arabic", "series", "عربية", "https://akwam.ss/series?section=29"],
   ["series-turkish", "series", "تركية", "https://akwam.ss/series?section=32"],

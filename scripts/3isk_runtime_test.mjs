@@ -16,7 +16,7 @@ const store = {
 const provider = { resolve: async () => {
   calls++; if (fail) throw new Error('3ISK_HTTP_403');
   const expiry = clock + 3600_000;
-  return { status: 'success', playback_mode: 'direct', media_url: `https://s1.ukrcdn.xyz/hls/demo/master.m3u8?token=${calls}&expires=${expiry / 1000}`, expires_at: new Date(expiry).toISOString() };
+  return { status: 'success', playback_mode: 'direct', playback_headers: { Referer: 'https://3iskk.xyz/', 'User-Agent': 'fixture-UA' }, media_url: `https://s1.ukrcdn.xyz/hls/demo/master.m3u8?token=${calls}&expires=${expiry / 1000}`, expires_at: new Date(expiry).toISOString() };
 } };
 const runtime = create3iskRuntime({ provider, store, now: () => clock });
 const [first, coalesced] = await Promise.all([runtime.details(ref), runtime.details(ref)]);
@@ -30,7 +30,7 @@ assert.equal(calls, 2); assert.notEqual(first.media_url, renewed.media_url);
 assert.equal((await restarted.details(ref, { refresh: true })).cached, false); assert.equal(calls, 3);
 fail = true;
 await assert.rejects(restarted.details(ref, { refresh: true }), /403/);
-assert.equal(rows.has(`playback:${ref}`), false, 'failed forced refresh must not retain revoked stream in durable cache');
+assert.equal(rows.has(`playback:v2:${ref}`), false, 'failed forced refresh must not retain revoked stream in durable cache');
 assert.equal(events.at(-1)[1], 'failed');
 fail = false;
 const outage = create3iskRuntime({ provider, now: () => clock, store: { get() { throw new Error('offline'); }, put() { throw new Error('offline'); }, event() { throw new Error('offline'); }, prune() { throw new Error('offline'); } } });
@@ -43,7 +43,7 @@ const requests = [];
 const adapter = createSupabaseProviderStore({ url: 'https://test.supabase.co', key: 'sb_secret_fixture', fetchImpl: async (url, init) => {
   requests.push({ url: new URL(url), init }); return init.method === 'GET' ? Response.json([]) : new Response(null, { status: 204 });
 } });
-await adapter.get(`playback:${ref}`, clock);
+await adapter.get(`playback:v2:${ref}`, clock);
 await adapter.put('key', { test: true }, clock + 1000, clock);
 assert.equal(requests[0].url.searchParams.get('expires_at'), `gt.${new Date(clock).toISOString()}`);
 assert.equal(requests[0].init.headers.apikey, 'sb_secret_fixture');

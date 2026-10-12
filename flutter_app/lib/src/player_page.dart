@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -23,6 +24,7 @@ class PlayerPage extends StatefulWidget {
     this.mediaPath = '',
     this.mediaType = '',
     this.playbackMode = 'proxy',
+    this.playbackHeaders = const {},
     this.episodeId = '',
     this.episodeNumber,
   });
@@ -35,6 +37,7 @@ class PlayerPage extends StatefulWidget {
   final String mediaPath;
   final String mediaType;
   final String playbackMode;
+  final Map<String, String> playbackHeaders;
   final String episodeId;
   final int? episodeNumber;
 
@@ -50,7 +53,6 @@ class _PlayerPageState extends State<PlayerPage> {
   Timer? _webStartupTimer;
   String _status = 'جاري تجهيز المشاهدة…';
   String _resolvedMediaPath = '';
-  String _resolvedMediaType = '';
   String _resolvedPlaybackMode = 'proxy';
   int _directRefreshAttempts = 0;
   bool _failed = false;
@@ -74,19 +76,23 @@ class _PlayerPageState extends State<PlayerPage> {
       var mediaPath = widget.mediaPath;
       var mediaType = widget.mediaType;
       var playbackMode = widget.playbackMode;
+      var playbackHeaders = widget.playbackHeaders;
+      DateTime? expiresAt;
       if (mediaPath.isEmpty || widget.sourceRef.startsWith('3isk:')) {
         final TitleDetails resolved = await widget.api.resolvePlayback(widget.sourceRef, refresh: forceRefresh);
         mediaPath = resolved.mediaPath;
         mediaType = resolved.mediaType;
         playbackMode = resolved.playbackMode;
+        playbackHeaders = resolved.playbackHeaders;
+        expiresAt = resolved.expiresAt;
       }
       _resolvedMediaPath = mediaPath;
-      _resolvedMediaType = mediaType;
       _resolvedPlaybackMode = playbackMode;
       if (!mounted) return;
       final controller = VideoPlayerController.networkUrl(
-        widget.api.mediaUri(mediaPath, playbackMode: playbackMode),
+        widget.api.mediaUri(mediaPath, playbackMode: playbackMode, expiresAt: expiresAt),
         formatHint: videoFormatHintForRuntimeMedia(mediaType),
+        httpHeaders: playbackHeaders,
       );
       _controller = controller;
       controller.addListener(_nativeValueChanged);
@@ -134,10 +140,10 @@ class _PlayerPageState extends State<PlayerPage> {
     if (controller != null) {
       controller.removeListener(_nativeValueChanged);
       try {
-        await controller.pause();
+        await controller.pause().timeout(const Duration(seconds: 2));
       } catch (_) {}
       try {
-        await controller.dispose();
+        await controller.dispose().timeout(const Duration(seconds: 2));
       } catch (_) {}
     }
     _controller = null;
@@ -149,7 +155,7 @@ class _PlayerPageState extends State<PlayerPage> {
       await _initialize(forceRefresh: true);
       return;
     }
-    if (!isTvTarget && _resolvedMediaPath.isNotEmpty) {
+    if (!widget.sourceRef.startsWith('3isk:') && !isTvTarget && _resolvedMediaPath.isNotEmpty) {
       try {
         await _startInternalWebFallback();
         return;
@@ -168,13 +174,13 @@ class _PlayerPageState extends State<PlayerPage> {
   Future<void> _startInternalWebFallback() async {
     final opaqueMedia = widget.api.mediaUri(_resolvedMediaPath, playbackMode: _resolvedPlaybackMode);
     final resume = widget.store.resumePosition(widget.item.ref, episodeId: widget.episodeId);
-    final playerUri = Uri.parse('https://theeb1230-dot.github.io/Al-Qahtani/Player.html').replace(
-      queryParameters: {
-        'url': opaqueMedia.toString(),
-        'type': _resolvedMediaType.trim().isEmpty ? 'stream' : _resolvedMediaType,
-        'name': widget.title,
-      },
-    );
+    final mediaJson = jsonEncode(opaqueMedia.toString()).replaceAll('<', r'\u003c');
+    final playerHtml = """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;background:#101827"><video id="video" controls autoplay playsinline style="width:100%;height:100vh"></video>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+    <script>const v=document.getElementById('video'), u=$mediaJson;
+    if(v.canPlayType('application/vnd.apple.mpegurl') || !u.includes('.m3u8')){v.src=u;}
+    else if(window.Hls && Hls.isSupported()){const h=new Hls();h.loadSource(u);h.attachMedia(v);}</script></body></html>""";
     late final WebViewController controller;
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -184,7 +190,7 @@ class _PlayerPageState extends State<PlayerPage> {
         onNavigationRequest: (request) {
           final uri = Uri.tryParse(request.url);
           if (uri == null) return NavigationDecision.prevent;
-          final allowed = uri.host == 'theeb1230-dot.github.io' || uri.host == 'al-qahtani-api.onrender.com';
+          final allowed = uri.toString() == 'about:blank';
           return allowed ? NavigationDecision.navigate : NavigationDecision.prevent;
         },
         onPageFinished: (_) => unawaited(_installWebPlaybackBridge(controller, resume)),
@@ -199,7 +205,7 @@ class _PlayerPageState extends State<PlayerPage> {
           });
         },
       ))
-      ..loadRequest(playerUri);
+      ..loadHtmlString(playerHtml);
     if (!mounted) return;
     setState(() {
       _webController = controller;
@@ -375,10 +381,10 @@ class _PlayerPageState extends State<PlayerPage> {
                   if (_usingWebFallback && _webController != null)
                     Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(18), child: WebViewWidget(controller: _webController!)))
                   else if (activeController != null)
-                    AspectRatio(
+                    Flexible(child: AspectRatio(
                       aspectRatio: activeController.value.aspectRatio > 0 ? activeController.value.aspectRatio : 16 / 9,
                       child: VideoPlayer(activeController),
-                    )
+                    ))
                   else if (_failed)
                     const Icon(Icons.error_outline, size: 72)
                   else

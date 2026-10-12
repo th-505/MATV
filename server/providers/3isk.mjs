@@ -3,6 +3,8 @@ import { load } from 'cheerio';
 export const ISK_ORIGIN = 'https://3iskk.xyz';
 export const ISK_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 export const ISK_CATEGORIES = Object.freeze({
+  '3isk-latest': `${ISK_ORIGIN}/`,
+  '3isk-movies': `${ISK_ORIGIN}/w-mvs/`,
   '3isk-turkish': `${ISK_ORIGIN}/w-srs/`,
   '3isk-dubbed': `${ISK_ORIGIN}/genre/series-mudablij-121/`,
 });
@@ -15,13 +17,29 @@ function assertSource(value) {
 
 export function assert3iskStream(value) {
   const url = new URL(value);
-  if (url.protocol !== 'https:' || !/^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$/i.test(url.hostname) || url.port || url.username || url.password || !url.pathname.startsWith('/hls/') || !url.pathname.endsWith('.m3u8')) throw new Error('3ISK_BAD_STREAM');
+  if (url.protocol !== 'https:' || !(/^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$/i.test(url.hostname) || /^s\d+\.grzcdn\.com$/i.test(url.hostname)) || url.port || url.username || url.password || !url.pathname.startsWith('/hls/') || !/\.(m3u8|mp4)$/.test(url.pathname)) throw new Error('3ISK_BAD_STREAM');
   return url;
+}
+
+// Decode only the literal substitution table; never execute source JavaScript.
+export function unpack3iskPlayer(html) {
+  const match = html.match(/\}\('((?:\\.|[^'\\])*)',(\d+),(\d+),'((?:\\.|[^'\\])*)'\.split\('\|'\)/);
+  if (!match) return html;
+  const radix = Number(match[2]), count = Number(match[3]);
+  if (radix < 2 || radix > 62 || count > 4096) throw new Error('3ISK_BAD_PACKER');
+  const literal = value => value.replace(/\\(['\\])/g, '$1');
+  let payload = literal(match[1]);
+  if (payload.length > 100_000 || match[4].length > 100_000) throw new Error('3ISK_BAD_PACKER');
+  const words = literal(match[4]).split('|');
+  const digits = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const encode = value => value < radix ? digits[value] : encode(Math.floor(value / radix)) + digits[value % radix];
+  for (let i = count - 1; i >= 0; i--) if (words[i]) payload = payload.replace(new RegExp('\\b' + encode(i) + '\\b', 'g'), () => words[i]);
+  return payload;
 }
 
 export function encode3iskRef(value) {
   const url = assertSource(value);
-  if (!/^\/watch\/(?:tvshows|episodes)\/[^/]+\/$/.test(url.pathname) || url.search || url.hash) throw new Error('3ISK_BAD_REFERENCE');
+  if (!/^\/watch\/(?:tvshows|episodes|movies)\/[^/]+\/$/.test(url.pathname) || url.search || url.hash) throw new Error('3ISK_BAD_REFERENCE');
   return `3isk:${Buffer.from(url.pathname).toString('base64url')}`;
 }
 
@@ -38,21 +56,23 @@ function imageUrl(value) {
   try { const url = new URL(value, ISK_ORIGIN); return url.protocol === 'https:' ? url.href : ''; } catch { return ''; }
 }
 
-export function parse3iskCatalog(html) {
+export function parse3iskCatalog(html, kind = null) {
   const $ = load(html);
   const items = new Map();
   $('a.type_item').each((_, node) => {
     const anchor = $(node);
     try {
       const ref = encode3iskRef(anchor.attr('href'));
-      if (!decode3iskRef(ref).pathname.startsWith('/watch/tvshows/')) return;
+      const path = decode3iskRef(ref).pathname;
+      const type = path.startsWith('/watch/movies/') ? 'movie' : path.startsWith('/watch/episodes/') ? 'episode' : 'series';
+      if (kind && type !== kind) return;
       const img = anchor.find('img').first();
       items.set(ref, {
         id: ref, ref, href: ref, title: anchor.find('.item_title').text().trim() || anchor.attr('title') || img.attr('alt') || 'بدون عنوان',
         poster: imageUrl(img.attr('data-image') || img.attr('data-src') || img.attr('src') || ''),
-        type: 'series', is_series: true, source: '3isk',
+        type, is_series: type !== 'movie', source: '3isk',
       });
-    } catch { /* Skip unrelated, movie, or malformed source links. */ }
+    } catch { /* Skip unrelated or malformed source links. */ }
   });
   return [...items.values()];
 }
@@ -83,7 +103,7 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
   async function page(value, { referer = ISK_ORIGIN + '/', cookies = new Map(), redirects = 0, json = false } = {}) {
     const url = new URL(value);
     const source = url.origin === ISK_ORIGIN;
-    const player = url.protocol === 'https:' && url.hostname === 'ukrcdn.club' && !url.port;
+    const player = url.protocol === 'https:' && ['ukrcdn.club', 'miravd.com'].includes(url.hostname) && !url.port;
     if ((!source && !player) || url.username || url.password) throw new Error('3ISK_BAD_SOURCE');
     const response = await fetchImpl(url.href, { redirect: 'manual', signal: AbortSignal.timeout(20_000), headers: {
       'User-Agent': ISK_UA, Referer: referer, Accept: json ? 'application/json' : 'text/html',
@@ -122,7 +142,7 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       const p = Number(number);
       if (!Number.isInteger(p) || p < 1 || p > 500) throw new Error('3ISK_BAD_PAGE');
       const html = await page(p === 1 ? base : `${base}page/${p}/`);
-      return { status: 'success', source: '3isk', data: parse3iskCatalog(html) };
+      return { status: 'success', source: '3isk', data: parse3iskCatalog(html, id === '3isk-latest' ? 'episode' : id === '3isk-movies' ? 'movie' : 'series') };
     },
     async search(query) {
       const q = String(query || '').trim().slice(0, 120);
@@ -137,7 +157,7 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
     },
     async resolve(ref) {
       const episode = decode3iskRef(ref);
-      if (!episode.pathname.startsWith('/watch/episodes/')) throw new Error('3ISK_EXPECTED_EPISODE');
+      if (!/^\/watch\/(episodes|movies)\//.test(episode.pathname)) throw new Error('3ISK_EXPECTED_PLAYABLE');
       const cookies = new Map();
       const episodeHtml = await page(episode.href, { cookies });
       const details = parse3iskDetails(episodeHtml);
@@ -152,17 +172,17 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
         const episodeDocument = load(episodeHtml);
         const bodyClass = episodeDocument('body').attr('class') || '';
         const post = bodyClass.match(/\bpostid-(\d+)\b/)?.[1];
-        if (post && /\bsingle-episodes\b/.test(bodyClass)) {
-          embedValue = `${ISK_ORIGIN}/embed/1/${post}/2/`;
+        if (post && /\bsingle-(episodes|movies)\b/.test(bodyClass)) {
+          embedValue = `${ISK_ORIGIN}/embed/1/${post}/${bodyClass.includes("single-movies") ? 1 : 2}/`;
         }
       }
       if (!embedValue) throw new Error('3ISK_EMBED_NOT_FOUND');
       const embed = assertSource(embedValue);
       if (!/^\/embed\/\d+\/\d+\/\d+\/$/.test(embed.pathname)) throw new Error('3ISK_BAD_EMBED');
       const embedHtml = await page(embed.href, { cookies, referer: ISK_ORIGIN });
-      const playerValue = embedHtml.match(/https:\/\/ukrcdn\.club\/e\/[a-zA-Z0-9-]+/)?.[0];
+      const playerValue = embedHtml.match(/https:\/\/ukrcdn\.club\/e\/[a-zA-Z0-9-]+/)?.[0] || embedHtml.match(/https:\/\/miravd\.com\/embed-[a-zA-Z0-9]+\.html/)?.[0];
       if (!playerValue) throw new Error('3ISK_PLAYER_NOT_FOUND');
-      const playerHtml = await page(playerValue, { referer: embed.href });
+      const playerHtml = unpack3iskPlayer(await page(playerValue, { referer: embed.href }));
       const literal = playerHtml.match(/\bfetch\(\s*("(?:\\.|[^"\\])*")/);
       let stream;
       if (literal) {
@@ -171,15 +191,17 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
         const payload = JSON.parse(await page(api.href, { referer: playerValue, json: true }));
         stream = payload.url;
       } else {
-        const candidates = playerHtml.match(/https?:\/\/[^\s"'<>]+\.m3u8(?:\?[^\s"'<>]*)?/g) || [];
+        const candidates = playerHtml.match(/https?:\/\/[^\s"'<>]+\.(?:m3u8|mp4)(?:\?[^\s"'<>]*)?/g) || [];
         stream = candidates.find(value => new URL(value).pathname.endsWith('/master.m3u8')) || candidates[0];
       }
       if (!stream) throw new Error('3ISK_STREAM_NOT_FOUND');
       const url = assert3iskStream(stream);
-      const expires = Number(url.searchParams.get('expires')) * 1000;
-      if (!url.searchParams.get('token') || !Number.isSafeInteger(expires) || expires <= now() + 60_000) throw new Error('3ISK_STREAM_EXPIRED');
+      const miravd = new URL(playerValue).hostname === 'miravd.com';
+      if (miravd !== /^s\d+\.grzcdn\.com$/.test(url.hostname)) throw new Error('3ISK_BAD_STREAM');
+      const expires = miravd ? now() + 5 * 60_000 : Number(url.searchParams.get('expires')) * 1000;
+      if ((!miravd && !url.searchParams.get('token')) || !Number.isSafeInteger(expires) || expires <= now() + 60_000) throw new Error('3ISK_STREAM_EXPIRED');
       return { ...details, episodes: [], playback_mode: 'direct', media_url: url.href, media_path: url.href,
-        media_type: 'm3u8', playback_headers: {}, expires_at: new Date(expires).toISOString(), download_available: false };
+        media_type: url.pathname.endsWith('.mp4') ? 'mp4' : 'm3u8', playback_headers: { Referer: miravd ? 'https://miravd.com/' : `${ISK_ORIGIN}/`, 'User-Agent': ISK_UA }, expires_at: new Date(expires).toISOString(), download_available: false };
     },
   };
 }

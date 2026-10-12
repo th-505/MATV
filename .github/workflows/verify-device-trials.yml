@@ -24,16 +24,26 @@ jobs:
           gh run watch "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --interval 30 --exit-status
           gh run view "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion | grep -qx success
           gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --dir device-artifacts
-          python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com > device-verification.json
+          BUILD_SHA="$(gh run view "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --json headSha --jq .headSha)"
+          [[ "$BUILD_SHA" =~ ^[a-f0-9]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/contents/flutter_app/pubspec.yaml?ref=$BUILD_SHA" --jq .content | base64 -d > /tmp/build-pubspec.yml
+          read VERSION BUILD < <(python3 - <<'PY_VERSION'
+          import pathlib, re
+          match = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('/tmp/build-pubspec.yml').read_text(), re.M)
+          assert match
+          print(*match.groups())
+          PY_VERSION
+          )
+          python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com "$VERSION" "$BUILD" > device-verification.json
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           for APK in device-artifacts/*/*.apk; do
             "$AAPT" dump badging "$APK" > /tmp/device-badging.txt
             case "$APK" in
-              *Mobile-ARM64.apk) EXPECTED_CODE=2035 ;;
-              *TV-ARM32.apk) EXPECTED_CODE=1035 ;;
+              *Mobile-ARM64.apk) EXPECTED_CODE=$((2000 + BUILD)) ;;
+              *TV-ARM32.apk) EXPECTED_CODE=$((1000 + BUILD)) ;;
               *) exit 1 ;;
             esac
-            grep -q "versionCode='$EXPECTED_CODE' versionName='1.0.35'" /tmp/device-badging.txt
+            grep -q "versionCode='$EXPECTED_CODE' versionName='$VERSION'" /tmp/device-badging.txt
           done
           cat device-verification.json
           python3 - <<'PY_REPORT'

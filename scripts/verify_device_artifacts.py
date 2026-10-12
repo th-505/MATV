@@ -9,6 +9,8 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 api = sys.argv[2].encode()
+version = sys.argv[3] if len(sys.argv) > 3 else '1.0.36'
+build = int(sys.argv[4]) if len(sys.argv) > 4 else 36
 results = []
 for name, abi, machine in [
     ('MATV-Android-Mobile-ARM64.apk', 'arm64-v8a', 183),
@@ -33,8 +35,8 @@ for name, abi, machine in [
             assert app + 'embedded.mobileprovision' not in names
             assert not any(entry.startswith(app + '_CodeSignature/') for entry in names)
             info = plistlib.loads(archive.read(app + 'Info.plist'))
-            assert info['CFBundleShortVersionString'] == '1.0.35'
-            assert info['CFBundleVersion'] == '35'
+            assert info['CFBundleShortVersionString'] == version
+            assert info['CFBundleVersion'] == str(build)
             runner = archive.read(app + 'Runner')
             assert struct.unpack('<I', runner[4:8])[0] == 0x100000C
             binary = archive.read(app + 'Frameworks/App.framework/App')

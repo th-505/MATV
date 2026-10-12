@@ -160,6 +160,7 @@ class _ShellState extends State<Shell> {
       NewsPage(api: api),
       CatalogPage(api: api, store: widget.store, title: 'الأفلام', categoryId: 'movie-foreign'),
       CatalogPage(api: api, store: widget.store, title: 'المسلسلات', categoryId: 'series-foreign'),
+      CatalogPage(api: api, store: widget.store, title: 'قصة عشق', categoryId: '3isk-latest'),
       SearchPage(api: api, store: widget.store),
       LibraryPage(api: api, store: widget.store),
     ];
@@ -180,6 +181,7 @@ class _ShellState extends State<Shell> {
           NavigationDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: 'الأخبار'),
           NavigationDestination(icon: Icon(Icons.movie_outlined), label: 'الأفلام'),
           NavigationDestination(icon: Icon(Icons.live_tv_outlined), label: 'المسلسلات'),
+          NavigationDestination(icon: Icon(Icons.video_library_outlined), label: 'قصة عشق'),
           NavigationDestination(icon: Icon(Icons.search), label: 'البحث'),
           NavigationDestination(icon: Icon(Icons.bookmark_outline), selectedIcon: Icon(Icons.bookmark), label: 'مكتبتي'),
         ],
@@ -203,6 +205,7 @@ class _TvNavigation extends StatelessWidget {
       NavigationRailDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: Text('الأخبار')),
       NavigationRailDestination(icon: Icon(Icons.movie_outlined), label: Text('الأفلام')),
       NavigationRailDestination(icon: Icon(Icons.live_tv_outlined), label: Text('المسلسلات')),
+      NavigationRailDestination(icon: Icon(Icons.video_library_outlined), label: Text('قصة عشق')),
       NavigationRailDestination(icon: Icon(Icons.search), label: Text('البحث')),
       NavigationRailDestination(icon: Icon(Icons.bookmark_outline), selectedIcon: Icon(Icons.bookmark), label: Text('مكتبتي')),
     ],
@@ -335,8 +338,13 @@ class _CatalogPageState extends State<CatalogPage> {
     'series-foreign': 'أكوام — أجنبية',
     'series-arabic': 'أكوام — عربية',
     'series-turkish': 'أكوام — تركية',
-    '3isk-turkish': 'قصة عشق — تركية',
-    '3isk-dubbed': 'قصة عشق — مدبلجة',
+
+  };
+  static const iskCategories = <String, String>{
+    '3isk-latest': 'قصة عشق (أحدث الحلقات)',
+    '3isk-turkish': 'جميع المسلسلات (مترجم ومدبلج)',
+    '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
+    '3isk-movies': 'جميع الأفلام',
   };
   final controller = ScrollController(); final items = <CatalogItem>[]; final seen = <String>{};
   int page = 0; bool loading = false; bool done = false; String? error; int requestGeneration = 0;
@@ -362,13 +370,13 @@ class _CatalogPageState extends State<CatalogPage> {
   }
   @override
   Widget build(BuildContext context) => Column(children: [
-    if (widget.categoryId.startsWith('series-'))
+    if (widget.categoryId.startsWith('series-') || widget.categoryId.startsWith('3isk-'))
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: DropdownButton<String>(
           isExpanded: true,
           value: selectedCategory,
-          items: seriesCategories.entries.map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value))).toList(),
+          items: (widget.categoryId.startsWith('3isk-') ? iskCategories : seriesCategories).entries.map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value))).toList(),
           onChanged: (value) {
             if (value == null || value == selectedCategory) return;
             setState(() { selectedCategory = value; });

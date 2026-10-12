@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { create3iskProvider, encode3iskRef, decode3iskRef, parse3iskCatalog, parse3iskDetails, assert3iskStream, ISK_ORIGIN } from '../server/providers/3isk.mjs';
+import { create3iskProvider, encode3iskRef, decode3iskRef, parse3iskCatalog, parse3iskDetails, assert3iskStream, ISK_ORIGIN, ISK_UA, ISK_CATEGORIES, unpack3iskPlayer } from '../server/providers/3isk.mjs';
 
 const episode = `${ISK_ORIGIN}/watch/episodes/serie-demo-season-1-episode-187/`;
 const ref = encode3iskRef(episode);
@@ -35,7 +35,7 @@ const provider = create3iskProvider({ now: () => now, fetchImpl: async (url, opt
 } });
 const playback = await provider.resolve(ref);
 assert.equal(playback.playback_mode, 'direct'); assert.equal(playback.media_path, master);
-assert.equal(playback.download_available, false); assert.deepEqual(playback.playback_headers, {});
+assert.equal(playback.download_available, false); assert.equal(playback.playback_headers.Referer, `${ISK_ORIGIN}/`); assert.equal(playback.playback_headers['User-Agent'], ISK_UA);
 assert.equal(Date.parse(playback.expires_at), now + 3600_000); assert.equal(requests.length, 5);
 await assert.rejects(provider.category('unknown'), /3ISK_BAD_CATEGORY/);
 await assert.rejects(provider.category('3isk-turkish', Infinity), /3ISK_BAD_PAGE/);
@@ -57,3 +57,25 @@ const fallbackProvider = create3iskProvider({ now: () => now, fetchImpl: async (
 assert.equal((await fallbackProvider.resolve(ref)).media_url, master);
 assert(fallbackRequests.includes(`${ISK_ORIGIN}/embed/1/987654/2/`));
 console.log('3isk provider: references, parsers, session, redirects and direct resolver passed');
+
+assert.equal(Object.keys(ISK_CATEGORIES).length, 4);
+assert(!Object.values(ISK_CATEGORIES).some(url => url.includes('w-hlqat')));
+const movie = `${ISK_ORIGIN}/watch/movies/movie-demo/`;
+assert.equal(decode3iskRef(encode3iskRef(movie)).href, movie);
+const mixed = catalogHtml + `<a class="type_item" href="${movie}"><div class="item_title">فيلم</div></a><a class="type_item" href="${episode}"><div class="item_title">حلقة</div></a>`;
+assert.deepEqual(parse3iskCatalog(mixed).map(item => item.type), ['series', 'movie', 'episode']);
+for (const kind of ['series', 'movie', 'episode']) assert.equal(parse3iskCatalog(mixed, kind)[0].type, kind);
+const packed = "eval(function(p,a,c,k,e,d){}('0://1.2.3/4/5.6',36,7,'https|s43|grzcdn|com|hls|master|m3u8'.split('|')))";
+assert.equal(unpack3iskPlayer(packed), 'https://s43.grzcdn.com/hls/master.m3u8');
+assert.throws(() => assert3iskStream('https://s43.grzcdn.com.evil.example/hls/master.m3u8'));
+const movieProvider = create3iskProvider({ now: () => now, fetchImpl: async url => {
+  if (url === movie || url === `${movie}see/`) return new Response('<body class="single-movies postid-12345"></body>');
+  if (url === `${ISK_ORIGIN}/embed/1/12345/1/`) return new Response('<iframe src="https://miravd.com/embed-fixture.html"></iframe>');
+  if (url === 'https://miravd.com/embed-fixture.html') return new Response(packed);
+  throw new Error('unexpected movie request');
+} });
+const film = await movieProvider.resolve(encode3iskRef(movie));
+assert.equal(film.media_url, 'https://s43.grzcdn.com/hls/master.m3u8');
+assert.equal(film.playback_headers.Referer, 'https://miravd.com/');
+assert.equal(Date.parse(film.expires_at), now + 5 * 60_000);
+console.log('3isk four-section classification and packed movie resolver passed');

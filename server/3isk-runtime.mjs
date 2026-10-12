@@ -16,8 +16,10 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
     if (!key.startsWith('playback:')) return true;
     try {
       const url = assert3iskStream(payload.media_url);
-      const tokenExpiry = Number(url.searchParams.get('expires')) * 1000;
-      return payload.playback_mode === 'direct' && url.searchParams.get('token') && tokenExpiry > now() + 60_000 &&
+      const miravd = /^s\d+\.grzcdn\.com$/.test(url.hostname);
+      if (payload.playback_headers?.Referer !== (miravd ? 'https://miravd.com/' : 'https://3iskk.xyz/') || !payload.playback_headers?.['User-Agent']) return false;
+      const tokenExpiry = miravd ? Date.parse(payload.expires_at) : Number(url.searchParams.get('expires')) * 1000;
+      return payload.playback_mode === 'direct' && (miravd || url.searchParams.get('token')) && tokenExpiry > now() + 60_000 &&
         Date.parse(payload.expires_at) === tokenExpiry && expiry <= tokenExpiry - 60_000;
     } catch { return false; }
   }
@@ -61,8 +63,8 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
     search: query => { const q = String(query).trim().slice(0, 120); return execute(`search:${q}`, () => provider.search(q), 60_000); },
     details(ref, options = {}) {
       const url = decode3iskRef(ref);
-      return url.pathname.startsWith('/watch/episodes/')
-        ? execute(`playback:${ref}`, () => provider.resolve(ref), 5 * 3600_000, options)
+      return !url.pathname.startsWith('/watch/tvshows/')
+        ? execute(`playback:v2:${ref}`, () => provider.resolve(ref), 5 * 3600_000, options)
         : execute(`details:${ref}`, () => provider.details(ref), 10 * 60_000);
     },
     status: () => ({ provider: '3isk', playback_mode: 'direct', storage: store ? 'supabase' : 'memory', storage_error: storageError, cache_entries: cache.size }),
