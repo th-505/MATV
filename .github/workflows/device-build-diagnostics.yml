@@ -1,0 +1,28 @@
+name: Diagnose MATV device build
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        required: true
+        type: string
+permissions:
+  actions: read
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      JOB_ID: ${{ inputs.job_id }}
+    steps:
+      - name: Report verification failure
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$JOB_ID/logs" > build.log
+          python3 - <<'PY'
+          import pathlib
+          lines = pathlib.Path('build.log').read_text().splitlines()
+          index = next(i for i, line in enumerate(lines) if '##[group]Run set -euo pipefail' in line)
+          excerpt = '\n'.join(lines[index:index+70])
+          excerpt = excerpt.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::notice title=Build verification log::' + excerpt)
+          PY
