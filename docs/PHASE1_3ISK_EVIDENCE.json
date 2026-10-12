@@ -1,0 +1,207 @@
+{
+  "3isk-validation": {
+    "time": "2026-10-12T16:54:39.978Z",
+    "results": [
+      {
+        "name": "required-referer",
+        "requests": [
+          {
+            "kind": "master",
+            "status": 200,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "application/vnd.apple.mpegurl",
+            "allowOrigin": "*",
+            "allowHeaders": null,
+            "allowCredentials": null,
+            "hls": true
+          },
+          {
+            "kind": "variant",
+            "status": 200,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "application/vnd.apple.mpegurl",
+            "allowOrigin": "*",
+            "allowHeaders": null,
+            "allowCredentials": null,
+            "hls": true
+          },
+          {
+            "kind": "segment",
+            "status": 206,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "video/mp2t",
+            "allowOrigin": null,
+            "allowHeaders": null,
+            "contentRange": "bytes 0-1023/649352"
+          }
+        ]
+      },
+      {
+        "name": "no-referer",
+        "requests": [
+          {
+            "kind": "master",
+            "status": 200,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "application/vnd.apple.mpegurl",
+            "allowOrigin": "*",
+            "allowHeaders": null,
+            "allowCredentials": null,
+            "hls": true
+          },
+          {
+            "kind": "variant",
+            "status": 200,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "application/vnd.apple.mpegurl",
+            "allowOrigin": "*",
+            "allowHeaders": null,
+            "allowCredentials": null,
+            "hls": true
+          },
+          {
+            "kind": "segment",
+            "status": 206,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "video/mp2t",
+            "allowOrigin": null,
+            "allowHeaders": null,
+            "contentRange": "bytes 0-1023/649352"
+          }
+        ]
+      },
+      {
+        "name": "web-origin",
+        "requests": [
+          {
+            "kind": "master",
+            "status": 200,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "application/vnd.apple.mpegurl",
+            "allowOrigin": "*",
+            "allowHeaders": null,
+            "allowCredentials": null,
+            "hls": true
+          },
+          {
+            "kind": "variant",
+            "status": 200,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "application/vnd.apple.mpegurl",
+            "allowOrigin": "*",
+            "allowHeaders": null,
+            "allowCredentials": null,
+            "hls": true
+          },
+          {
+            "kind": "segment",
+            "status": 206,
+            "host": "s4.ukrcdn.xyz",
+            "contentType": "video/mp2t",
+            "allowOrigin": "https://theeb1230-dot.github.io",
+            "allowHeaders": null,
+            "contentRange": "bytes 0-1023/649352"
+          }
+        ]
+      }
+    ]
+  },
+  "3isk-browser-validation": {
+    "time": "2026-10-12T16:55:31.110Z",
+    "browser": "154.0.8037.57",
+    "origin": "http://127.0.0.1:8000",
+    "playing": true,
+    "currentTime": 3.011387,
+    "readyState": 4,
+    "mediaError": null,
+    "errors": [],
+    "requests": [
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/master.m3u8",
+        "status": 200,
+        "allowOrigin": "*"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p.m3u8",
+        "status": 200,
+        "allowOrigin": "*"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_000.ts",
+        "status": 200,
+        "allowOrigin": "http://127.0.0.1:8000"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_001.ts",
+        "status": 200,
+        "allowOrigin": "http://127.0.0.1:8000"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_002.ts",
+        "status": 200,
+        "allowOrigin": "http://127.0.0.1:8000"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_003.ts",
+        "status": 200,
+        "allowOrigin": "http://127.0.0.1:8000"
+      }
+    ],
+    "failures": []
+  },
+  "3isk-browser-production-origin": {
+    "time": "2026-10-12T16:55:55.709Z",
+    "browser": "154.0.8037.57",
+    "origin": "https://theeb1230-dot.github.io",
+    "playing": true,
+    "currentTime": 3.00553,
+    "readyState": 4,
+    "mediaError": null,
+    "errors": [],
+    "requests": [
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/master.m3u8",
+        "status": 200,
+        "allowOrigin": "*"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p.m3u8",
+        "status": 200,
+        "allowOrigin": "*"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_000.ts",
+        "status": 200,
+        "allowOrigin": "https://theeb1230-dot.github.io"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_001.ts",
+        "status": 200,
+        "allowOrigin": "https://theeb1230-dot.github.io"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_002.ts",
+        "status": 200,
+        "allowOrigin": "https://theeb1230-dot.github.io"
+      },
+      {
+        "host": "s4.ukrcdn.xyz",
+        "path": "/hls/39ce6836-fc1a-4250-9269-55c982a6553b/720p/720p_003.ts",
+        "status": 200,
+        "allowOrigin": "https://theeb1230-dot.github.io"
+      }
+    ],
+    "failures": []
+  }
+}
