@@ -22,7 +22,7 @@ jobs:
           import pathlib
           lines = pathlib.Path('build.log').read_text().splitlines()
           end = next((i for i, line in enumerate(lines) if 'Post job cleanup.' in line), len(lines))
-          excerpt = '\n'.join(lines[max(0, end-70):end])
+          excerpt = '\n'.join(lines[max(0, end-15):end])
           excerpt = excerpt.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
           print('::notice title=Build verification log::' + excerpt)
           PY
