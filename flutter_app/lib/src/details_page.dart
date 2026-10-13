@@ -293,7 +293,8 @@ class _DetailsPageState extends State<DetailsPage> {
                     final key = 'episode:${episode.id}:${episode.number}';
                     final focusNode = _episodeFocus(episode);
                     return _EpisodeTile(
-                      downloadAvailable: !widget.item.ref.startsWith('3isk:'),
+                      downloadAvailable: details.downloadAvailable &&
+                          !widget.item.ref.startsWith('3isk:'),
                       episode: episode,
                       focusNode: focusNode,
                       downloadFocusNode:

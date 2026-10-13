@@ -1,0 +1,62 @@
+name: MATV Flutter Web
+on:
+  push:
+    branches: [main]
+    paths: ['flutter_app/**', '.github/workflows/flutter-web.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Build and verify Flutter Web
+        working-directory: flutter_app
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze
+          flutter test
+          dart run tool/alooy_bridge_smoke.dart
+          flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MATV_API_BASE=https://matv.onrender.com
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Verify Chromium MP4 and HLS playback
+        env:
+          CHROMIUM_BIN: /usr/bin/google-chrome
+        run: |
+          npm ci
+          if ! command -v ffmpeg; then sudo apt-get update -qq && sudo apt-get install -y ffmpeg; fi
+          mkdir -p /tmp/matv-codec-fixtures
+          ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=160x90:rate=10 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 3 -c:v libx264 -c:a aac -movflags +faststart -y /tmp/matv-codec-fixtures/sample.mp4
+          ffmpeg -hide_banner -loglevel error -i /tmp/matv-codec-fixtures/sample.mp4 -c copy -hls_time 1 -hls_segment_filename /tmp/matv-codec-fixtures/master%d.ts -y /tmp/matv-codec-fixtures/master.m3u8
+          node scripts/flutter_web_smoke.mjs
+          node scripts/flutter_web_smoke.mjs hls
+      - name: Stage both web surfaces
+        run: |
+          mkdir -p site/app
+          cp ./*.html site/
+          cp -R web site/web
+          cp -R flutter_app/build/web/. site/app/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,6 +1,8 @@
+import 'stream_bridge.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -28,6 +30,7 @@ class PlayerPage extends StatefulWidget {
     this.playbackMode = 'proxy',
     this.playbackHeaders = const {},
     this.playerFactory,
+    this.streamBridgeFactory,
     this.episodeId = '',
     this.episodeNumber,
   });
@@ -45,6 +48,8 @@ class PlayerPage extends StatefulWidget {
   final int? episodeNumber;
   final UniversalPlayer Function(Uri, String, Map<String, String>, bool)?
       playerFactory;
+
+  final StreamBridge Function()? streamBridgeFactory;
 
   @override
   State<PlayerPage> createState() => _PlayerPageState();
@@ -64,11 +69,14 @@ class _PlayerPageState extends State<PlayerPage> {
   double _volume = 1.0;
   double _brightness = 1.0;
   bool _nativeBrightness = false;
-  bool _fullscreen = isTvTarget;
+  bool _fullscreen = true;
+  Timer? _seekFeedbackTimer;
+  String _seekFeedback = "";
   bool _controlsVisible = true;
   Timer? _controlsTimer;
   DateTime _lastBrightnessUpdate = DateTime.fromMillisecondsSinceEpoch(0);
   bool _gestureRight = false;
+  StreamBridge? _streamBridge;
   final _sources = <PlaybackSource>[];
   int _sourceIndex = 0;
   int _generation = 0;
@@ -82,8 +90,27 @@ class _PlayerPageState extends State<PlayerPage> {
   void initState() {
     super.initState();
     _initialize();
+    unawaited(_enterDisplay());
     unawaited(_readBrightness());
     unawaited(_keepScreenOn(true));
+  }
+
+  Future<void> _enterDisplay() async {
+    if (kIsWeb) return;
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (!isTvTarget) {
+      await SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    }
+  }
+
+  void _doubleTapSeek() {
+    unawaited(_seekBy(Duration(seconds: _gestureRight ? 10 : -10)));
+    _seekFeedbackTimer?.cancel();
+    setState(() => _seekFeedback = _gestureRight ? '+10 ثوانٍ' : '−10 ثوانٍ');
+    _seekFeedbackTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _seekFeedback = '');
+    });
   }
 
   Future<void> _keepScreenOn(bool value) async {
@@ -166,6 +193,7 @@ class _PlayerPageState extends State<PlayerPage> {
       if (!keepSources && (mediaPath.isEmpty || widget.sourceRef.isNotEmpty)) {
         final TitleDetails resolved = await widget.api
             .resolvePlayback(widget.sourceRef, refresh: forceRefresh);
+        if (!mounted || generation != _generation) return;
         mediaPath = resolved.mediaPath;
         mediaType = resolved.mediaType;
         playbackMode = resolved.playbackMode;
@@ -175,9 +203,10 @@ class _PlayerPageState extends State<PlayerPage> {
         _sources.clear();
         _sourceIndex = 0;
         _decoderRetries.clear();
-        _sources.addAll(resolved.mediaSources.isEmpty
-            ? [PlaybackSource(mediaPath: mediaPath, mediaType: mediaType)]
-            : resolved.mediaSources);
+        _sources.addAll(widget.api.sourceRouter.rank(
+            resolved.mediaSources.isEmpty
+                ? [PlaybackSource(mediaPath: mediaPath, mediaType: mediaType)]
+                : resolved.mediaSources));
       }
       if (keepSources && _sources.isNotEmpty) {
         mediaPath = _sources[_sourceIndex].mediaPath;
@@ -193,19 +222,37 @@ class _PlayerPageState extends State<PlayerPage> {
       _resolvedPlaybackMode = playbackMode;
       _resolvedHeaders = playbackHeaders;
       if (!mounted) return;
-      final uri = widget.api.mediaUri(mediaPath,
-          playbackMode: playbackMode, expiresAt: expiresAt);
+      final previousBridge = _streamBridge;
+      _streamBridge = null;
+      await previousBridge?.close();
+      if (!mounted || generation != _generation) return;
+      Uri uri;
+      if (playbackMode == 'local_proxy') {
+        final bridge =
+            widget.streamBridgeFactory?.call() ?? LocalStreamBridge();
+        _streamBridge = bridge;
+        uri = await bridge.open(Uri.parse(mediaPath), playbackHeaders);
+        if (!mounted || generation != _generation) {
+          await bridge.close();
+          return;
+        }
+        // Upstream headers belong to the bridge, never to its loopback request.
+        playbackHeaders = const {};
+      } else {
+        uri = widget.api.mediaUri(mediaPath,
+            playbackMode: playbackMode, expiresAt: expiresAt);
+      }
       final controller = widget.playerFactory
               ?.call(uri, mediaType, playbackHeaders, software) ??
           UniversalPlayer(
-            widget.api.mediaUri(mediaPath,
-                playbackMode: playbackMode, expiresAt: expiresAt),
+            uri,
             mediaType: mediaType,
             headers: playbackHeaders,
             software: software,
           );
       _controller = controller;
       controller.addListener(_nativeValueChanged);
+      final startup = Stopwatch()..start();
       await controller.initialize().timeout(const Duration(seconds: 25));
       await controller.setPlaybackSpeed(_playbackSpeed);
       await controller.setVolume(_volume);
@@ -243,6 +290,8 @@ class _PlayerPageState extends State<PlayerPage> {
         }
         unawaited(_saveProgress());
       });
+      widget.api.sourceRouter.record(mediaPath,
+          success: true, latencyMs: startup.elapsedMilliseconds);
       await controller.play();
       _revealControls();
       _nativeStartupTimer = Timer(const Duration(seconds: 12), () {
@@ -311,6 +360,8 @@ class _PlayerPageState extends State<PlayerPage> {
         await _initialize(keepSources: true, software: true);
         return;
       }
+      widget.api.sourceRouter
+          .record(_sources[_sourceIndex].mediaPath, success: false);
       if (_sourceIndex + 1 < _sources.length) {
         _sourceIndex += 1;
         _nativeFailureInFlight = false;
@@ -328,7 +379,9 @@ class _PlayerPageState extends State<PlayerPage> {
     }
     setState(() {
       _failed = true;
-      _status = failureMessage;
+      _status = kIsWeb
+          ? 'تعذر التشغيل في المتصفح. جرّب تطبيق الهاتف أو التلفزيون.'
+          : failureMessage;
     });
     _nativeFailureInFlight = false;
   }
@@ -383,6 +436,7 @@ class _PlayerPageState extends State<PlayerPage> {
   void dispose() {
     _generation++;
     _controlsTimer?.cancel();
+    _seekFeedbackTimer?.cancel();
     unawaited(_restoreDisplay());
     unawaited(_keepScreenOn(false));
     _nativeStartupTimer?.cancel();
@@ -390,6 +444,7 @@ class _PlayerPageState extends State<PlayerPage> {
     _saveProgress();
     _controller?.removeListener(_nativeValueChanged);
     _controller?.dispose();
+    unawaited(_streamBridge?.close() ?? Future.value());
     super.dispose();
   }
 
@@ -427,7 +482,8 @@ class _PlayerPageState extends State<PlayerPage> {
                           ? (v) => activeController
                               .seekTo(Duration(milliseconds: v.round()))
                           : null),
-                  Text('${_time(value.position)} / ${_time(value.duration)}',
+                  Text(
+                      '${_time(value.position)} • المتبقي ${_time(value.duration - value.position)}',
                       style: const TextStyle(fontSize: 12)),
                   _trackControls(activeController),
                 ]);
@@ -437,6 +493,43 @@ class _PlayerPageState extends State<PlayerPage> {
 
   String _time(Duration v) =>
       '${v.inMinutes}:${(v.inSeconds % 60).toString().padLeft(2, '0')}';
+  Future<void> _externalSubtitle(mk.Player player) async {
+    final input = TextEditingController();
+    final raw = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: const Text('إضافة ترجمة'),
+                content: TextField(
+                    controller: input,
+                    keyboardType: TextInputType.url,
+                    decoration: const InputDecoration(
+                        hintText: 'رابط HTTPS لملف SRT أو VTT')),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('إلغاء')),
+                  FilledButton(
+                      onPressed: () =>
+                          Navigator.pop(context, input.text.trim()),
+                      child: const Text('إضافة'))
+                ]));
+    input.dispose();
+    if (!mounted || raw == null) return;
+    final uri = Uri.tryParse(raw);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        !RegExp(r'\.(srt|vtt)$', caseSensitive: false).hasMatch(uri.path)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('أدخل رابط ترجمة صالحًا')));
+      return;
+    }
+    await player.setSubtitleTrack(
+        mk.SubtitleTrack.uri(uri.toString(), title: 'ترجمة خارجية'));
+    _revealControls();
+  }
+
   Widget _trackControls(UniversalPlayer controller) {
     final player = controller.extendedPlayer;
     return Wrap(alignment: WrapAlignment.center, spacing: 12, children: [
@@ -500,6 +593,11 @@ class _PlayerPageState extends State<PlayerPage> {
                             : t.title ?? t.language ?? t.id)))
                 .toList(),
             onSelected: player.setAudioTrack),
+      if (player != null)
+        IconButton(
+            tooltip: 'إضافة ترجمة خارجية',
+            icon: const Icon(Icons.add_comment_outlined),
+            onPressed: () => _externalSubtitle(player)),
       if (player != null && player.state.tracks.subtitle.length > 2)
         PopupMenuButton<mk.SubtitleTrack>(
             tooltip: 'الترجمة',
@@ -549,8 +647,7 @@ class _PlayerPageState extends State<PlayerPage> {
                                 onDoubleTapDown: (d) => _gestureRight =
                                     d.localPosition.dx >
                                         constraints.maxWidth / 2,
-                                onDoubleTap: () => _seekBy(Duration(
-                                    seconds: _gestureRight ? 10 : -10)),
+                                onDoubleTap: _doubleTapSeek,
                                 onVerticalDragStart: isTvTarget
                                     ? null
                                     : (d) => _gestureRight =
@@ -580,6 +677,34 @@ class _PlayerPageState extends State<PlayerPage> {
                                       },
                                 child: Stack(fit: StackFit.expand, children: [
                                   activeController.video(),
+                                  if (_seekFeedback.isNotEmpty)
+                                    IgnorePointer(
+                                        child: Align(
+                                      alignment: _gestureRight
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
+                                      child: Container(
+                                          margin: const EdgeInsets.all(28),
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                              color: Colors.black54,
+                                              borderRadius:
+                                                  BorderRadius.circular(20)),
+                                          child: Text(_seekFeedback,
+                                              style: const TextStyle(
+                                                  fontSize: 22,
+                                                  color: Colors.white))),
+                                    )),
+                                  if (_controlsVisible && _fullscreen)
+                                    Positioned(
+                                        top: 4,
+                                        left: 4,
+                                        child: IconButton(
+                                            tooltip: 'رجوع',
+                                            icon: const Icon(Icons.arrow_back),
+                                            onPressed: () =>
+                                                Navigator.of(context)
+                                                    .maybePop())),
                                   if (_controlsVisible)
                                     Positioned(
                                         left: 0,
@@ -613,7 +738,8 @@ class _PlayerPageState extends State<PlayerPage> {
                   else
                     const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  if (!_fullscreen) Text(_status, textAlign: TextAlign.center),
+                  if (!_fullscreen || _failed)
+                    Text(_status, textAlign: TextAlign.center),
                   if (_failed) ...[
                     const SizedBox(height: 12),
                     FilledButton.icon(

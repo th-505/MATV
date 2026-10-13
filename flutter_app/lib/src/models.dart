@@ -1,5 +1,7 @@
-class CatalogItem {
-  const CatalogItem({
+typedef CatalogItem = MediaItem;
+
+class MediaItem {
+  const MediaItem({
     required this.id,
     required this.title,
     required this.poster,
@@ -18,7 +20,7 @@ class CatalogItem {
   final double rating;
   final String source;
 
-  factory CatalogItem.fromJson(Map<String, dynamic> json) => CatalogItem(
+  factory MediaItem.fromJson(Map<String, dynamic> json) => CatalogItem(
         id: '${json['id'] ?? ''}',
         title: '${json['title'] ?? 'بدون عنوان'}',
         poster: '${json['poster'] ?? json['img'] ?? json['image'] ?? ''}',
@@ -58,25 +60,36 @@ class EpisodeItem {
   }
 }
 
-class PlaybackSource {
-  const PlaybackSource(
+typedef PlaybackSource = StreamSource;
+
+class StreamSource {
+  const StreamSource(
       {required this.mediaPath,
       required this.mediaType,
       this.playbackMode = '',
       this.headers = const {},
-      this.label = 'تلقائي'});
+      this.label = 'تلقائي',
+      this.priority = 0,
+      this.latencyMs,
+      this.resolution});
   final String mediaPath;
   final String mediaType;
   final String label;
   final String playbackMode;
   final Map<String, String> headers;
-  factory PlaybackSource.fromJson(Map<String, dynamic> json) => PlaybackSource(
+  final int priority;
+  final int? latencyMs;
+  final ResolutionOption? resolution;
+  factory StreamSource.fromJson(Map<String, dynamic> json) => PlaybackSource(
+      priority: int.tryParse('${json['priority'] ?? 0}') ?? 0,
+      latencyMs: int.tryParse('${json['latency_ms'] ?? ''}'),
+      resolution: ResolutionOption.fromLabel('${json['label'] ?? ''}'),
       mediaPath: '${json['media_path'] ?? ''}',
       mediaType: '${json['media_type'] ?? ''}',
       label: '${json['label'] ?? 'تلقائي'}',
       playbackMode: '${json['playback_mode'] ?? ''}',
       headers: Map.unmodifiable({
-        for (final key in ['Referer', 'User-Agent'])
+        for (final key in ['Referer', 'User-Agent', 'Origin'])
           if (json['headers'] is Map &&
               json['headers'][key] is String &&
               !(json['headers'][key] as String).contains(RegExp(r'[\r\n]')))
@@ -151,7 +164,7 @@ class TitleDetails {
       playbackMode: '${json['playback_mode'] ?? 'proxy'}',
       resolverUrl: '${json['iframe_url'] ?? json['resolver_url'] ?? ''}',
       resolverHeaders: Map.unmodifiable({
-        for (final key in const ['Referer', 'User-Agent'])
+        for (final key in const ['Referer', 'User-Agent', 'Origin'])
           if (json['resolver_headers'] is Map &&
               json['resolver_headers'][key] is String &&
               !(json['resolver_headers'][key] as String)
@@ -159,7 +172,7 @@ class TitleDetails {
             key: json['resolver_headers'][key] as String,
       }),
       playbackHeaders: Map.unmodifiable({
-        for (final key in const ['Referer', 'User-Agent'])
+        for (final key in const ['Referer', 'User-Agent', 'Origin'])
           if ((json['headers'] ?? json['playback_headers']) is Map &&
               (json['headers'] ?? json['playback_headers'])[key] is String &&
               !((json['headers'] ?? json['playback_headers'])[key] as String)
@@ -348,4 +361,17 @@ class RuntimeEnvelope<T> {
   final String version;
   final String kind;
   final T data;
+}
+
+class ResolutionOption {
+  const ResolutionOption({required this.label, this.height});
+  final String label;
+  final int? height;
+  static ResolutionOption? fromLabel(String label) {
+    final height =
+        int.tryParse(RegExp(r'(\d{3,4})p').firstMatch(label)?.group(1) ?? '');
+    return label.isEmpty
+        ? null
+        : ResolutionOption(label: label, height: height);
+  }
 }

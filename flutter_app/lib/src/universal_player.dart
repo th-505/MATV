@@ -25,7 +25,7 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
   mv.VideoController? _video;
   bool _closed = false;
   bool get usesExtendedEngine =>
-      software || usesExtendedMediaEngine(mediaType, uri.path);
+      kIsWeb || software || usesExtendedMediaEngine(mediaType, uri.path);
   mk.Player? get extendedPlayer => _player;
   @override
   VideoPlayerValue get value => _state.value;
@@ -56,7 +56,9 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
     mk.MediaKit.ensureInitialized();
     final player = mk.Player();
     _player = player;
-    _video = mv.VideoController(player);
+    _video = mv.VideoController(player,
+        configuration: const mv.VideoControllerConfiguration(
+            enableHardwareAcceleration: true));
     _subscriptions.addAll([
       player.stream.position
           .listen((v) => _update(value.copyWith(position: v))),
@@ -83,7 +85,14 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
         }
       }),
     ]);
-    await player.open(mk.Media(uri.toString(), httpHeaders: headers),
+    final playbackUri =
+        kIsWeb && ['hls', 'm3u8'].contains(mediaType.toLowerCase())
+            ? uri.replace(
+                queryParameters: {...uri.queryParameters, 'format': 'm3u8'})
+            : uri;
+    await player.open(
+        mk.Media(playbackUri.toString(),
+            httpHeaders: kIsWeb ? const {} : headers),
         play: false);
     if (value.hasError) throw StateError('DECODER_OPEN_FAILED');
     _update(value.copyWith(

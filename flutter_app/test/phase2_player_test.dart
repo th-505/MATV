@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:al_qahtani/src/api_client.dart';
+import 'package:al_qahtani/src/stream_bridge.dart';
 import 'package:al_qahtani/src/library_store.dart';
 import 'package:al_qahtani/src/models.dart';
 import 'package:al_qahtani/src/player_page.dart';
@@ -64,6 +65,21 @@ class FakeEngine extends UniversalPlayer {
   @override
   Future<void> dispose() async {
     state.dispose();
+  }
+}
+
+class FakeBridge implements StreamBridge {
+  bool closed = false;
+  Map<String, String>? headers;
+  @override
+  Future<Uri> open(Uri target, Map<String, String> values) async {
+    headers = values;
+    return Uri.parse('http://127.0.0.1:1234/session/stream');
+  }
+
+  @override
+  Future<void> close() async {
+    closed = true;
   }
 }
 
@@ -135,8 +151,74 @@ void main() {
       await tester.dragFrom(origin, const Offset(0, 60));
       await tester.pump(const Duration(milliseconds: 400));
       expect(engines.last.volume, lessThan(1));
+      final point = tester.getCenter(area) + const Offset(90, -50);
+      await tester.tapAt(point);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tapAt(point);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(engines.last.seeks.last, const Duration(seconds: 50));
+      expect(find.text('+10 ثوانٍ'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('+10 ثوانٍ'), findsNothing);
     }
     await tester.pumpWidget(const SizedBox());
+    api.close();
+  });
+  testWidgets(
+      'Alooy loopback player never forwards upstream Origin to local bridge',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = await LocalLibraryStore.create();
+    const item = CatalogItem(
+        id: 'alooy',
+        ref: 'alooy:fixture',
+        title: 'Alooy',
+        poster: '',
+        type: 'series');
+    final api = AlQahtaniApi(
+        client: MockClient((request) async => http.Response(
+            jsonEncode({
+              'status': 'success',
+              'media_path': 'https://vid8.ujeklsj.site/test.mp4',
+              'media_type': 'mp4',
+              'playback_mode': 'local_proxy',
+              'headers': {
+                'Referer':
+                    'https://fa.alooytv16.xyz/watch/test.html?key=abc123',
+                'Origin': 'https://fa.alooytv16.xyz',
+                'User-Agent': 'Mozilla/5.0'
+              }
+            }),
+            200)));
+    final engines = <FakeEngine>[];
+    final bridge = FakeBridge();
+    await tester.pumpWidget(MaterialApp(
+        home: PlayerPage(
+            api: api,
+            store: store,
+            item: item,
+            title: 'Alooy',
+            sourceRef: item.ref,
+            streamBridgeFactory: () => bridge,
+            playerFactory: (uri, type, headers, software) {
+              final p = FakeEngine(uri,
+                  mediaType: type,
+                  headers: headers,
+                  software: software,
+                  fail: false);
+              engines.add(p);
+              return p;
+            })));
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(engines, hasLength(1));
+    expect(engines.single.uri.host, '127.0.0.1');
+    expect(engines.single.uri.scheme, 'http');
+    expect(engines.single.headers, isEmpty);
+    expect(bridge.headers?['Origin'], 'https://fa.alooytv16.xyz');
+    await tester.pumpWidget(const SizedBox());
+    expect(bridge.closed, true);
     api.close();
   });
 }

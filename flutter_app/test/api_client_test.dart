@@ -5,14 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-http.Response jsonResponse(Object value, [int statusCode = 200]) => http.Response.bytes(
+http.Response jsonResponse(Object value, [int statusCode = 200]) =>
+    http.Response.bytes(
       utf8.encode(jsonEncode(value)),
       statusCode,
       headers: const {'content-type': 'application/json; charset=utf-8'},
     );
 
 void main() {
-  test('resolvePlayback accepts only backend-issued opaque media path', () async {
+  test('resolvePlayback accepts only backend-issued opaque media path',
+      () async {
     final client = MockClient((request) async {
       expect(request.url.path, '/api/cinema/details');
       expect(request.url.queryParameters['ref'], 'legacy:episode-1');
@@ -24,10 +26,37 @@ void main() {
         'media_type': 'm3u8',
       });
     });
-    final api = AlQahtaniApi(client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api = AlQahtaniApi(
+        client: client, baseUri: Uri.parse('https://runtime.example'));
     final resolved = await api.resolvePlayback('legacy:episode-1');
     expect(resolved.mediaPath, '/api/cinema/media?id=opaque-short-lived');
     expect(api.mediaUri(resolved.mediaPath).host, 'runtime.example');
+  });
+
+  test('playback extraction bypasses prefetched episode metadata', () async {
+    var extracted = 0;
+    final api = AlQahtaniApi(client: MockClient((req) async {
+      if (req.url.path.endsWith('/metadata')) {
+        return jsonResponse({
+          'status': 'success',
+          'episodes': [
+            {'ref': 'alooy:episode', 'episode_number': 1}
+          ]
+        });
+      }
+      extracted++;
+      return jsonResponse({
+        'status': 'success',
+        'media_path': '/api/alooy/media?id=fresh',
+        'media_type': 'mp4'
+      });
+    }));
+    await api.prefetchMetadata('alooy:episode');
+    expect(api.cachedMetadata('alooy:episode')?.hasEpisodes, true);
+    expect((await api.resolvePlayback('alooy:episode')).mediaPath,
+        '/api/alooy/media?id=fresh');
+    expect(extracted, 1);
+    api.close();
   });
 
   test('match logos are routed through the Al-Qahtani runtime proxy', () async {
@@ -38,8 +67,14 @@ void main() {
         'kind': 'matches',
         'data': [
           {
-            'team1': {'name': 'الأول', 'logo': 'https://kooorracity.com/wp-content/uploads/team-a.png'},
-            'team2': {'name': 'الثاني', 'logo': 'https://kooorracity.com/wp-content/uploads/team-b.png'},
+            'team1': {
+              'name': 'الأول',
+              'logo': 'https://kooorracity.com/wp-content/uploads/team-a.png'
+            },
+            'team2': {
+              'name': 'الثاني',
+              'logo': 'https://kooorracity.com/wp-content/uploads/team-b.png'
+            },
             'time': '3:00 PM',
             'status': 'scheduled',
             'ref': 'opaque-match',
@@ -47,18 +82,22 @@ void main() {
         ],
       });
     });
-    final api = AlQahtaniApi(client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api = AlQahtaniApi(
+        client: client, baseUri: Uri.parse('https://runtime.example'));
     final item = (await api.matches()).single;
     final home = Uri.parse(item.homeLogo);
     final away = Uri.parse(item.awayLogo);
     expect(home.host, 'runtime.example');
     expect(home.path, '/api/matches/logo');
-    expect(home.queryParameters['url'], 'https://kooorracity.com/wp-content/uploads/team-a.png');
+    expect(home.queryParameters['url'],
+        'https://kooorracity.com/wp-content/uploads/team-a.png');
     expect(away.path, '/api/matches/logo');
-    expect(away.queryParameters['url'], 'https://kooorracity.com/wp-content/uploads/team-b.png');
+    expect(away.queryParameters['url'],
+        'https://kooorracity.com/wp-content/uploads/team-b.png');
   });
 
-  test('catalog poster runtime paths are resolved against Al-Qahtani API', () async {
+  test('catalog poster runtime paths are resolved against Al-Qahtani API',
+      () async {
     final client = MockClient((request) async => jsonResponse({
           'status': 'success',
           'kind': 'search',
@@ -73,9 +112,11 @@ void main() {
             }
           ],
         }));
-    final api = AlQahtaniApi(client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api = AlQahtaniApi(
+        client: client, baseUri: Uri.parse('https://runtime.example'));
     final result = await api.search('عمل');
-    expect(result.single.poster, 'https://runtime.example/api/cinema/media?id=opaque-poster');
+    expect(result.single.poster,
+        'https://runtime.example/api/cinema/media?id=opaque-poster');
     expect(result.single.year, 2026);
   });
 
@@ -88,7 +129,13 @@ void main() {
           'version': '1.0.5',
           'kind': 'news',
           'data': [
-            {'id': 'opaque-news-1', 'ref': 'opaque-news-1', 'title': 'خبر تجريبي', 'date': 'اليوم', 'description': 'وصف'},
+            {
+              'id': 'opaque-news-1',
+              'ref': 'opaque-news-1',
+              'title': 'خبر تجريبي',
+              'date': 'اليوم',
+              'description': 'وصف'
+            },
           ],
         });
       }
@@ -98,10 +145,16 @@ void main() {
         'status': 'success',
         'version': '1.0.5',
         'kind': 'news-article',
-        'data': {'ref': 'opaque-news-1', 'title': 'خبر تجريبي', 'date': 'اليوم', 'paragraphs': ['الفقرة الأولى']},
+        'data': {
+          'ref': 'opaque-news-1',
+          'title': 'خبر تجريبي',
+          'date': 'اليوم',
+          'paragraphs': ['الفقرة الأولى']
+        },
       });
     });
-    final api = AlQahtaniApi(client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api = AlQahtaniApi(
+        client: client, baseUri: Uri.parse('https://runtime.example'));
     final items = await api.news();
     expect(items.single.ref, 'opaque-news-1');
     final article = await api.newsArticle(items.single.ref);
@@ -118,7 +171,8 @@ void main() {
     api.close();
   });
 
-  test('resolvePlayback fails closed when details contain no playable media', () async {
+  test('resolvePlayback fails closed when details contain no playable media',
+      () async {
     final client = MockClient((request) async => jsonResponse({
           'status': 'success',
           'movie_title': 'غير متاح',
@@ -126,10 +180,12 @@ void main() {
           'playback_unavailable': true,
           'playback_reason': 'NO_PLAYABLE_MEDIA',
         }));
-    final api = AlQahtaniApi(client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api = AlQahtaniApi(
+        client: client, baseUri: Uri.parse('https://runtime.example'));
     await expectLater(
       api.resolvePlayback('legacy:unavailable'),
-      throwsA(predicate((error) => error is ApiException && error.code == 'NO_PLAYABLE_MEDIA')),
+      throwsA(predicate((error) =>
+          error is ApiException && error.code == 'NO_PLAYABLE_MEDIA')),
     );
   });
 }

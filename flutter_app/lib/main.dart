@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'src/api_client.dart';
 import 'src/app_target.dart';
@@ -168,6 +169,30 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int index = 0;
   final api = AlQahtaniApi();
+  @override
+  void initState() {
+    super.initState();
+    final ref = kIsWeb ? Uri.base.queryParameters['ref'] ?? '' : '';
+    if (ref.startsWith('alooy:') ||
+        ref.startsWith('3isk:') ||
+        ref.startsWith('legacy:')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          openDetails(
+              context,
+              api,
+              widget.store,
+              CatalogItem(
+                  id: ref,
+                  title: 'التفاصيل',
+                  poster: '',
+                  type: 'series',
+                  ref: ref));
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
     api.close();
@@ -442,6 +467,7 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   late String selectedCategory = widget.categoryId;
   static const seriesCategories = <String, String>{
+    'alooy-series': 'Alooy TV',
     'series-foreign': 'أكوام — أجنبية',
     'series-arabic': 'أكوام — عربية',
     'series-turkish': 'أكوام — تركية',

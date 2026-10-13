@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'models.dart';
+import 'media_repository.dart';
 import 'miravd_resolver.dart';
 
-class AlQahtaniApi {
+class AlQahtaniApi implements MediaRepository {
+  final sourceRouter = SourceRouter();
   AlQahtaniApi({http.Client? client, Uri? baseUri})
       : _client = client ?? http.Client(),
         _baseUri = baseUri ??
@@ -20,6 +22,7 @@ class AlQahtaniApi {
     return row.details;
   }
 
+  @override
   Future<void> prefetchMetadata(String ref) {
     if (cachedMetadata(ref) != null || _metadataPending.length >= 2) {
       return Future.value();
@@ -128,12 +131,14 @@ class AlQahtaniApi {
     return NewsArticle.fromJson(data.cast<String, dynamic>());
   }
 
+  @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
     final json =
         await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
     return _list(json['data']).map(_catalogItem).toList(growable: false);
   }
 
+  @override
   Future<List<CatalogItem>> search(String query) async {
     final json = await _getJson('/api/v1/search', {'q': query.trim()});
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
@@ -169,6 +174,7 @@ class AlQahtaniApi {
     return out;
   }
 
+  @override
   Future<TitleDetails> details(String ref) {
     final cached = cachedMetadata(ref);
     return cached?.hasEpisodes == true ? Future.value(cached!) : _details(ref);
@@ -176,15 +182,23 @@ class AlQahtaniApi {
 
   Future<TitleDetails> _details(String ref, {bool refresh = false}) async {
     if (ref.trim().isEmpty) throw const ApiException('MISSING_TITLE_REFERENCE');
-    final json = await _getJson('/api/cinema/details',
-        {'ref': ref, if (refresh) 'refresh': '1'}, const Duration(seconds: 60));
+    final json = await _getJson(
+        '/api/cinema/details',
+        {
+          'ref': ref,
+          if (refresh) 'refresh': '1',
+          if (const bool.fromEnvironment('dart.library.js_interop'))
+            'platform': 'web'
+        },
+        const Duration(seconds: 60));
     return TitleDetails.fromJson(json);
   }
 
+  @override
   Future<TitleDetails> resolvePlayback(String ref,
       {bool refresh = false}) async {
-    final resolved =
-        refresh ? await _details(ref, refresh: true) : await details(ref);
+    // Metadata prefetch never substitutes for a playable, token-aware response.
+    final resolved = await _details(ref, refresh: refresh);
     if (resolved.needsClientResolution) return _resolveClientPlayer(resolved);
     if (resolved.hasDirectMedia) return resolved;
     if (resolved.playbackUnavailable) {
@@ -292,7 +306,8 @@ class AlQahtaniApi {
       }
       return uri;
     }
-    final cinema = mediaPath.startsWith('/api/cinema/media?');
+    final cinema = mediaPath.startsWith('/api/cinema/media?') ||
+        mediaPath.startsWith('/api/alooy/media?');
     final matches = mediaPath.startsWith('/api/matches/media?');
     if (!cinema && !matches) {
       throw const ApiException('INVALID_MEDIA_REFERENCE');

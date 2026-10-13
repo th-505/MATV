@@ -1,4 +1,5 @@
 const CATEGORY_ROWS = [
+  ["alooy-series", "series", "Alooy TV", "https://fa.alooytv16.xyz/tv-series.html"],
   ["3isk-latest", "series", "قصة عشق (أحدث الحلقات)", "https://3iskk.xyz/"],
   ["3isk-movies", "movie", "جميع الأفلام", "https://3iskk.xyz/w-mvs/"],
   ["3isk-turkish", "series", "جميع المسلسلات (مترجم ومدبلج)", "https://3iskk.xyz/w-srs/"],

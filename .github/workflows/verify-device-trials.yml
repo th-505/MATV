@@ -6,8 +6,13 @@ on:
         description: Successful MATV device trials run ID
         required: true
         type: string
+      publish:
+        description: Publish the verified triplet as a GitHub Release
+        required: false
+        default: false
+        type: boolean
 permissions:
-  contents: read
+  contents: write
   actions: read
 jobs:
   verify:
@@ -56,3 +61,20 @@ jobs:
           name: MATV-device-verification
           path: device-verification.json
           retention-days: 14
+
+      - name: Publish verified device triplet
+        if: inputs.publish == true
+        run: |
+          set -euo pipefail
+          BUILD_SHA="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" --jq .head_sha)"
+          VERSION="$(python3 - <<'PY_VERSION'
+          import pathlib, re
+          print(re.search(r'^version: (\d+\.\d+\.\d+)\+', pathlib.Path('/tmp/build-pubspec.yml').read_text(), re.M).group(1))
+          PY_VERSION
+          )"
+          TAG="v$VERSION"
+          python3 - <<'PY_NOTES'
+          from pathlib import Path
+          Path('/tmp/release-notes.md').write_text("Alooy TV with a local ranged stream bridge, unified source fallback, and cinematic player controls.\n\nAndroid Mobile: ARM64. Android TV: ARMv7. iOS: unsigned ARM64 IPA, external signing required.\n\nAll three binaries passed checksum, architecture, decoder and deployed API verification. Physical-device thermal and battery testing remains pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
+          PY_NOTES
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "MATV $VERSION" --notes-file /tmp/release-notes.md device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.sha256 device-verification.json

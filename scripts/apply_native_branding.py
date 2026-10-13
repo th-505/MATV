@@ -134,6 +134,14 @@ def apply_android(root: Path):
         permission = r'<uses-permission\b[^>]*android:name=["\']android\.permission\.INTERNET["\']'
         if not re.search(permission, text):
             text = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    <uses-permission android:name="android.permission.INTERNET"/>', text, count=1)
+        # Cleartext is limited to the device-local byte bridge; external media remains HTTPS.
+        network = res / "xml/network_security_config.xml"
+        network.parent.mkdir(parents=True, exist_ok=True)
+        network.write_text('''<?xml version="1.0" encoding="utf-8"?>
+<network-security-config><base-config cleartextTrafficPermitted="false"/>
+<domain-config cleartextTrafficPermitted="true"><domain>127.0.0.1</domain><domain>localhost</domain></domain-config>
+</network-security-config>''', encoding="utf-8")
+        text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
         text = re.sub(r'android:label="[^"]*"', 'android:label="القحطاني TV"', text, count=1)
         manifest.write_text(text, encoding="utf-8")
 
@@ -179,6 +187,7 @@ def apply_ios(root: Path):
     if plist.exists():
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
+        data.setdefault("NSAppTransportSecurity", {})["NSAllowsLocalNetworking"] = True
         data["CFBundleDisplayName"] = "القحطاني TV"
         data["CFBundleName"] = "القحطاني TV"
         with plist.open("wb") as fh:

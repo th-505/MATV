@@ -15,6 +15,8 @@ import {
 import { buildDownloadContentDisposition, sanitizeDownloadFilename } from "./download-filename.mjs";
 import { createContentRuntimeService } from "./content-runtime-service.mjs";
 import { create3iskRuntime } from "./3isk-runtime.mjs";
+import { createAlooyWebBridge } from './alooy-stream-bridge.mjs';
+import { createAlooyProvider, ALOOY_ORIGIN } from './providers/alooy.mjs';
 import { ISK_CATEGORIES } from "./providers/3isk.mjs";
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
@@ -279,18 +281,18 @@ async function cinemaCategory(sourceUrl, page = 1) {
   return { status: "success", source: result.source, data: normalizeCatalog(items) };
 }
 
-export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches } = {}) {
+export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches, alooyRuntime = createAlooyProvider() } = {}) {
   return createContentRuntimeService({
     fetchMatches,
     async searchCatalog(query) {
-      const results = await Promise.allSettled([searchCatalog(query), iskRuntime.search(query)]);
+      const results = await Promise.allSettled([searchCatalog(query), iskRuntime.search(query), alooyRuntime.search(query)]);
       const success = results.filter(result => result.status === 'fulfilled');
       if (!success.length) throw new Error('CATALOG_SEARCH_UNAVAILABLE');
       return { status: 'success', source: 'catalog', data: success.flatMap(result => result.value.data || []) };
     },
     fetchCategory(sourceUrl, page) {
       const id = Object.keys(ISK_CATEGORIES).find(key => ISK_CATEGORIES[key] === sourceUrl);
-      return id ? iskRuntime.category(id, page) : fetchCategory(sourceUrl, page);
+      return sourceUrl === ALOOY_ORIGIN + "/tv-series.html" ? alooyRuntime.category("alooy-series", page) : id ? iskRuntime.category(id, page) : fetchCategory(sourceUrl, page);
     },
   });
 }
@@ -686,14 +688,15 @@ async function proxyMedia(req, res, id) {
   }
 }
 
-export function createServer({ iskRuntime = create3iskRuntime(), runtimeService = createIntegratedContentRuntime(iskRuntime) } = {}) {
+export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime }) } = {}) {
+  const alooyBridge = createAlooyWebBridge();
   return http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
     const url = new URL(req.url, "http://localhost");
     const started = Date.now();
     const client = getClientAddress(req);
-    const limiter = url.pathname === "/api/cinema/media" ? mediaRateLimit : apiRateLimit;
+    const limiter = ["/api/cinema/media", "/api/alooy/media"].includes(url.pathname) ? mediaRateLimit : apiRateLimit;
     const rate = limiter(`${client}:${url.pathname}`);
     if (!rate.ok) {
       res.setHeader("Retry-After", String(rate.retryAfterSec));
@@ -705,7 +708,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), runtimeService 
       if (url.pathname === "/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
-      if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status()] });
+      if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status(), alooyRuntime.status()] });
       if (url.pathname.startsWith('/api/v1/3isk/')) {
         if (req.method !== 'GET') return sendJson(req, res, 405, { status: 'error', message: 'METHOD_NOT_ALLOWED' });
         const ref = url.searchParams.get('ref') || '';
@@ -732,6 +735,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), runtimeService 
       if (url.pathname === "/api/cinema/category") return sendJson(req, res, 200, await cinemaCategory(url.searchParams.get("url") || "", Number(url.searchParams.get("p") || 1)));
       if (url.pathname === '/api/cinema/metadata') {
         const ref = url.searchParams.get('ref') || '';
+        if (ref.startsWith('alooy:')) return sendJson(req,res,200,await alooyRuntime.metadata(ref));
         if (ref.startsWith('3isk:')) return sendJson(req,res,200,await iskRuntime.metadata(ref));
         if (!ref.startsWith('legacy:')) return sendJson(req,res,400,{status:'error',message:'BAD_CINEMA_REFERENCE'});
         const target = assertSourceUrl(decodeURIComponent(ref.slice(7))).href;
@@ -740,13 +744,23 @@ export function createServer({ iskRuntime = create3iskRuntime(), runtimeService 
       }
       if (url.pathname === "/api/cinema/details") {
         const ref = url.searchParams.get('ref') || '';
+        if (ref.startsWith('alooy:')) {
+          const data = await alooyRuntime.details(ref, {refresh:url.searchParams.get('refresh')==='1'});
+          if (url.searchParams.get('platform') === 'web' && data.media_path) {
+            const sources=data.media_sources.map(alooyBridge.register);
+            return sendJson(req,res,200,{...data,...sources[0],media_sources:sources});
+          }
+          return sendJson(req,res,200,data);
+        }
         return sendJson(req, res, 200, ref.startsWith('3isk:')
           ? await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }) : await cinemaDetails(ref));
       }
+      if (url.pathname === "/api/alooy/media") return await alooyBridge.proxy(req,res,url.searchParams.get("id") || "");
       if (url.pathname === "/api/cinema/media") return proxyMedia(req, res, url.searchParams.get("id") || "");
       return sendJson(req, res, 404, { error: "NOT_FOUND" });
     } catch (error) {
-      if (String(error?.message).startsWith('3ISK_BAD_') || String(error?.message).startsWith('3ISK_EXPECTED_')) return sendJson(req, res, 400, { status: 'error', message: error.message });
+      if (String(error?.message).startsWith('ALOOY_BAD_') || String(error?.message).startsWith('3ISK_BAD_') || String(error?.message).startsWith('3ISK_EXPECTED_')) return sendJson(req, res, 400, { status: 'error', message: error.message });
+      if (res.headersSent) { res.destroy(error); return; }
       log("request_failed", { path: url.pathname, ms: Date.now() - started, error: String(error?.message || error) });
       return sendJson(req, res, 502, { status: "error", message: String(error?.message || "UPSTREAM_FAILED") });
     }

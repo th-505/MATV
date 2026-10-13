@@ -12,6 +12,16 @@ permissions:
   contents: read
 
 jobs:
+  providers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
   verify-api:
     runs-on: ubuntu-latest
     env:
@@ -29,7 +39,7 @@ jobs:
           PY
 
   android:
-    needs: verify-api
+    needs: [verify-api, providers]
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -72,6 +82,7 @@ jobs:
         run: |
           flutter analyze
           flutter test --dart-define="AL_QAHTANI_TARGET=$APP_TARGET"
+          dart run tool/alooy_bridge_smoke.dart
       - name: Build APK with deployed API and requested architecture
         working-directory: flutter_app
         run: flutter build apk --release --split-per-abi --target-platform="$TARGET_PLATFORM" --dart-define="AL_QAHTANI_TARGET=$APP_TARGET" --dart-define="MATV_API_BASE=$MATV_API_BASE"
@@ -97,7 +108,7 @@ jobs:
           retention-days: 14
 
   ios-unsigned:
-    needs: verify-api
+    needs: [verify-api, providers]
     runs-on: macos-latest
     timeout-minutes: 40
     env:
