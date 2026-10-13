@@ -110,7 +110,7 @@ class TitleDetails {
       playbackUnavailable: json['playback_unavailable'] == true,
       playbackReason: '${json['playback_reason'] ?? ''}',
       playbackMode: '${json['playback_mode'] ?? 'proxy'}',
-      resolverUrl: '${json['resolver_url'] ?? ''}',
+      resolverUrl: '${json['iframe_url'] ?? json['resolver_url'] ?? ''}',
       resolverHeaders: Map.unmodifiable({
         for (final key in const ['Referer', 'User-Agent'])
           if (json['resolver_headers'] is Map && json['resolver_headers'][key] is String &&

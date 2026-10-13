@@ -162,14 +162,15 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       if (!/^\/embed\/\d+\/\d+\/\d+\/$/.test(embed.pathname)) throw new Error('3ISK_BAD_EMBED');
       const embedHtml = await page(embed.href, { cookies, referer: ISK_ORIGIN });
       const route = selectPlayerIframe(embedHtml, embed.href);
-      try {
-        const playback = await resolvePlayer(route, { page, now });
-        return { ...details, episodes: [], ...playback };
-      } catch (error) {
-        if (!allowClientResolution || route.extractor !== 'miravd' || error.message !== '3ISK_HTTP_403') throw error;
-        return { ...details, episodes: [], extractor: 'miravd', playback_mode: 'client_resolve', resolver_url: route.playerUrl.href,
-          resolver_headers: { Referer: route.wrapperUrl.href, 'User-Agent': ISK_UA }, download_available: false };
+      if (allowClientResolution && route.extractor === 'miravd') {
+        return { ...details, episodes: [], extractor: 'miravd', player_type: 'miravd',
+          playback_mode: 'client_resolve', iframe_url: route.playerUrl.href,
+          wrapper_url: route.wrapperUrl.href, resolver_url: route.playerUrl.href,
+          resolver_headers: { Referer: route.wrapperUrl.href, 'User-Agent': ISK_UA },
+          download_available: false };
       }
+      const playback = await resolvePlayer(route, { page, now });
+      return { ...details, episodes: [], ...playback };
     },
   };
 }

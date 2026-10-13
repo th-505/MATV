@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from '../server/app.mjs';
 import { create3iskRuntime } from '../server/3isk-runtime.mjs';
-import { encode3iskRef, assert3iskStream } from '../server/providers/3isk.mjs';
+import { encode3iskRef, assert3iskStream, unpack3iskPlayer } from '../server/providers/3isk.mjs';
 
 let server;
 let base = process.argv[2];
@@ -24,9 +24,26 @@ try {
       continue;
     }
     assert.equal(body.extractor, extractor);
+    const resolutionMode = body.playback_mode;
+    if (extractor === 'miravd') {
+      assert.equal(resolutionMode, 'client_resolve');
+      assert.equal(body.player_type, 'miravd');
+      assert.equal(body.iframe_url, body.resolver_url);
+      assert.equal(body.resolver_headers.Referer, body.wrapper_url);
+      const player = new URL(body.iframe_url);
+      assert.equal(player.origin, 'https://miravd.com');
+      assert(/^\/embed-[a-zA-Z0-9]+\.html$/.test(player.pathname));
+      const response = await fetch(player, {headers:body.resolver_headers, redirect:'error', signal:AbortSignal.timeout(30_000)});
+      assert.equal(response.status, 200);
+      const unpacked = unpack3iskPlayer(await response.text());
+      body.stream_url = unpacked.match(/https:\/\/[^\s"'<>]+\.(?:m3u8|mp4)(?:\?[^\s"'<>]*)?/)?.[0];
+      assert3iskStream(body.stream_url);
+      body.media_url = body.stream_url;
+      body.headers = body.playback_headers = {Referer:'https://miravd.com/', 'User-Agent':body.resolver_headers['User-Agent']};
+    }
     assert.equal(body.stream_url, body.media_url);
     assert.deepEqual(body.headers, body.playback_headers);
-    assert.equal(body.resolver_url, undefined);
+    if (extractor === 'ukrcdn') assert.equal(body.resolver_url, undefined);
     let url = assert3iskStream(body.stream_url);
     assert.equal(body.headers.Referer, extractor === 'miravd' ? 'https://miravd.com/' : url.origin + '/');
     let segmentStatus;
@@ -49,7 +66,7 @@ try {
       assert(data.value?.length); break;
     }
     assert(segmentStatus);
-    results.push({ extractor, api_status: 200, stream_host: new URL(body.stream_url).hostname,
+    results.push({ extractor, resolution_mode: resolutionMode, api_status: 200, stream_host: new URL(body.stream_url).hostname,
       referer: body.headers.Referer, manifest_status: 200, segment_status: segmentStatus, passed: true });
   }
   console.log(JSON.stringify({ location: server ? 'workspace-server' : new URL(base).origin, results,

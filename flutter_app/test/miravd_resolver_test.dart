@@ -16,11 +16,11 @@ void main() {
     final api = AlQahtaniApi(client: MockClient((request) async {
       if (request.url.path == '/api/cinema/details') { return http.Response(jsonEncode({
         'status': 'success', 'playback_mode': 'client_resolve',
-        'resolver_url': 'https://miravd.com/embed-fixture.html',
-        'resolver_headers': {'Referer': 'https://3iskk.xyz/', 'User-Agent': 'fixture-UA'},
+        'player_type': 'miravd', 'iframe_url': 'https://miravd.com/embed-fixture.html',
+        'resolver_headers': {'Referer': 'https://3iskk.xyz/embed/1/12345/1/', 'User-Agent': 'fixture-UA'},
       }), 200); }
       expect(request.url.host, 'miravd.com');
-      expect(request.headers['Referer'], 'https://3iskk.xyz/');
+      expect(request.headers['Referer'], 'https://3iskk.xyz/embed/1/12345/1/');
       expect(request.headers['User-Agent'], 'fixture-UA');
       return http.Response("eval(function(p,a,c,k,e,d){}('0://1.2.3/4/5.6',36,7,'https|s43|grzcdn|com|hls|master|m3u8'.split('|')))", 200);
     }));

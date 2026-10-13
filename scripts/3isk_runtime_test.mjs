@@ -30,7 +30,7 @@ assert.equal(calls, 2); assert.notEqual(first.media_url, renewed.media_url);
 assert.equal((await restarted.details(ref, { refresh: true })).cached, false); assert.equal(calls, 3);
 fail = true;
 await assert.rejects(restarted.details(ref, { refresh: true }), /403/);
-assert.equal(rows.has(`playback:v3:client:${ref}`), false, 'failed forced refresh must not retain revoked stream in durable cache');
+assert.equal(rows.has(`playback:v4:client:${ref}`), false, 'failed forced refresh must not retain revoked stream in durable cache');
 assert.equal(events.at(-1)[1], 'failed');
 fail = false;
 const outage = create3iskRuntime({ provider, now: () => clock, store: { get() { throw new Error('offline'); }, put() { throw new Error('offline'); }, event() { throw new Error('offline'); }, prune() { throw new Error('offline'); } } });
@@ -43,7 +43,7 @@ const requests = [];
 const adapter = createSupabaseProviderStore({ url: 'https://test.supabase.co', key: 'sb_secret_fixture', fetchImpl: async (url, init) => {
   requests.push({ url: new URL(url), init }); return init.method === 'GET' ? Response.json([]) : new Response(null, { status: 204 });
 } });
-await adapter.get(`playback:v3:client:${ref}`, clock);
+await adapter.get(`playback:v4:client:${ref}`, clock);
 await adapter.put('key', { test: true }, clock + 1000, clock);
 assert.equal(requests[0].url.searchParams.get('expires_at'), `gt.${new Date(clock).toISOString()}`);
 assert.equal(requests[0].init.headers.apikey, 'sb_secret_fixture');
@@ -57,4 +57,4 @@ assert.equal((await handoffRuntime.details(ref)).playback_mode, 'client_resolve'
 assert.equal(handoffRuntime.status().cache_entries, 0, 'unresolved client metadata must never be cached as a stream');
 
 const strictRuntime = create3iskRuntime({ store:null, provider:{resolve: async () => ({status:'success',playback_mode:'client_resolve',resolver_url:'https://miravd.com/embed-demo.html'})} });
-await assert.rejects(strictRuntime.resolve(ref), /3ISK_SERVER_RESOLUTION_REQUIRED/);
+assert.equal((await strictRuntime.resolve(ref)).playback_mode, 'client_resolve');

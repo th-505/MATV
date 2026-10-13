@@ -16,9 +16,6 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
     if (!key.startsWith('playback:')) return true;
     try {
       const url = assert3iskStream(payload.media_url);
-      if (key.startsWith('playback:v3:server:') && (payload.stream_url !== payload.media_url ||
-          payload.headers?.Referer !== payload.playback_headers?.Referer ||
-          payload.headers?.['User-Agent'] !== payload.playback_headers?.['User-Agent'])) return false;
       const miravd = /^s\d+\.grzcdn\.com$/.test(url.hostname);
       if (payload.playback_headers?.Referer !== (miravd ? 'https://miravd.com/' : url.origin + '/') || !payload.playback_headers?.['User-Agent']) return false;
       const tokenExpiry = miravd ? Date.parse(payload.expires_at) : Number(url.searchParams.get('expires')) * 1000;
@@ -26,7 +23,7 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
         Date.parse(payload.expires_at) === tokenExpiry && expiry <= tokenExpiry - 60_000;
     } catch { return false; }
   }
-  async function execute(key, fetcher, ttl, { refresh = false, requireDirect = false } = {}) {
+  async function execute(key, fetcher, ttl, { refresh = false } = {}) {
     if (pending.has(key)) return pending.get(key);
     const work = (async () => {
       if (!refresh) {
@@ -45,7 +42,6 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
       try {
         const payload = await fetcher();
         if (payload.playback_mode === 'client_resolve') {
-          if (requireDirect) throw new Error('3ISK_SERVER_RESOLUTION_REQUIRED');
           await persisted(() => store.event(`${key}:client-metadata`, 'resolved', now() - started, now()));
           return { ...payload, cached: false };
         }
@@ -72,12 +68,12 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
     details(ref, options = {}) {
       const url = decode3iskRef(ref);
       return !url.pathname.startsWith('/watch/tvshows/')
-        ? execute(`playback:v3:client:${ref}`, () => provider.resolve(ref), 5 * 3600_000, options)
+        ? execute(`playback:v4:client:${ref}`, () => provider.resolve(ref), 5 * 3600_000, options)
         : execute(`details:${ref}`, () => provider.details(ref), 10 * 60_000);
     },
     resolve(ref, options = {}) {
       if (!/^\/watch\/(episodes|movies)\//.test(decode3iskRef(ref).pathname)) throw new Error('3ISK_EXPECTED_PLAYABLE');
-      return execute(`playback:v3:server:${ref}`, () => provider.resolve(ref, { allowClientResolution: false }), 5 * 3600_000, { ...options, requireDirect: true });
+      return execute(`playback:v4:client:${ref}`, () => provider.resolve(ref), 5 * 3600_000, options);
     },
     status: () => ({ provider: '3isk', playback_mode: 'direct', storage: store ? 'supabase' : 'memory', storage_error: storageError, cache_entries: cache.size }),
   };

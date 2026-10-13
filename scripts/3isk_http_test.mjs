@@ -8,12 +8,13 @@ const episodeRef = encode3iskRef('https://3iskk.xyz/watch/episodes/demo/');
 const seriesRef = encode3iskRef('https://3iskk.xyz/watch/tvshows/demo/');
 const expiry = Date.now() + 3600_000;
 const stream = `https://s1.ukrcdn.xyz/hls/demo/master.m3u8?token=fixture&expires=${Math.floor(expiry / 1000)}`;
+const movieRef = encode3iskRef('https://3iskk.xyz/watch/movies/demo/');
 let resolutions = 0;
 const provider = {
   category: async () => ({ status: 'success', source: '3isk', data: [{ title: 'عمل', ref: seriesRef, is_series: true, source: '3isk' }] }),
   search: async () => ({ status: 'success', source: '3isk', data: [{ title: 'عمل', ref: seriesRef, is_series: true, source: '3isk' }] }),
   details: async () => ({ status: 'success', source: '3isk', episodes: [{ ref: episodeRef, num: 1 }] }),
-  resolve: async () => { resolutions++; return { status: 'success', source: '3isk', playback_mode: 'direct', stream_url: stream, headers: { Referer: 'https://s1.ukrcdn.xyz/', 'User-Agent': 'fixture-UA' }, playback_headers: { Referer: 'https://s1.ukrcdn.xyz/', 'User-Agent': 'fixture-UA' }, media_url: stream, media_path: stream, media_type: 'm3u8', expires_at: new Date(Math.floor(expiry / 1000) * 1000).toISOString(), download_available: false }; },
+  resolve: async ref => { if (ref === movieRef) return {status:'success', playback_mode:'client_resolve', player_type:'miravd', iframe_url:'https://miravd.com/embed-fixture.html', resolver_url:'https://miravd.com/embed-fixture.html', wrapper_url:'https://3iskk.xyz/embed/1/12345/1/', resolver_headers:{Referer:'https://3iskk.xyz/embed/1/12345/1/', 'User-Agent':'fixture-UA'}}; resolutions++; return { status: 'success', source: '3isk', playback_mode: 'direct', stream_url: stream, headers: { Referer: 'https://s1.ukrcdn.xyz/', 'User-Agent': 'fixture-UA' }, playback_headers: { Referer: 'https://s1.ukrcdn.xyz/', 'User-Agent': 'fixture-UA' }, media_url: stream, media_path: stream, media_type: 'm3u8', expires_at: new Date(Math.floor(expiry / 1000) * 1000).toISOString(), download_available: false }; },
 };
 const iskRuntime = create3iskRuntime({ provider, store: null });
 const integrated = createIntegratedContentRuntime(iskRuntime, {
@@ -43,6 +44,13 @@ try {
   const strict = await (await fetch(`${base}/api/v1/3isk/resolve?ref=${encodeURIComponent(episodeRef)}`)).json();
   assert.equal(strict.stream_url, stream); assert.deepEqual(strict.headers, strict.playback_headers);
   assert.equal(strict.resolver_url, undefined);
+  const handoffResponse = await fetch(`${base}/api/v1/3isk/resolve?ref=${encodeURIComponent(movieRef)}`);
+  assert.equal(handoffResponse.status, 200);
+  const handoff = await handoffResponse.json();
+  assert.equal(handoff.playback_mode, 'client_resolve');
+  assert.equal(handoff.player_type, 'miravd');
+  assert.equal(handoff.stream_url, undefined);
+  assert.equal(handoff.resolver_headers.Referer, handoff.wrapper_url);
   assert.equal((await fetch(`${base}/api/v1/3isk/resolve?ref=${encodeURIComponent(seriesRef)}`)).status, 400);
   assert.equal((await fetch(`${base}/api/cinema/details?ref=3isk:!!!`)).status, 400);
   assert.equal((await fetch(`${base}/hls/demo/master.m3u8`)).status, 404, 'no video relay endpoint is installed');
