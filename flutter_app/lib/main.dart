@@ -12,28 +12,28 @@ import 'src/match_player_page.dart';
 import 'src/models.dart';
 import 'src/news_page.dart';
 
-const _brandBg = Color(0xFF101827);
-const _brandPanel = Color(0xFF172235);
-const _brandGold = Color(0xFFC6974C);
-const _brandGoldMuted = Color(0xFF9A7440);
-const _brandGoldLight = Color(0xFFE2BE79);
+const _brandBg = Color(0xFF090B12);
+const _brandPanel = Color(0xFF151822);
+const _brandAccent = Color(0xFFE50914);
+const _brandAccentMuted = Color(0xFFB5212A);
+const _brandAccentLight = Color(0xFFFFDDE0);
 
-void main() => runApp(const AlQahtaniApp());
+void main() => runApp(const MitvApp());
 
-class AlQahtaniApp extends StatefulWidget {
-  const AlQahtaniApp({super.key});
+class MitvApp extends StatefulWidget {
+  const MitvApp({super.key});
   @override
-  State<AlQahtaniApp> createState() => _AlQahtaniAppState();
+  State<MitvApp> createState() => _MitvAppState();
 }
 
-class _AlQahtaniAppState extends State<AlQahtaniApp> {
+class _MitvAppState extends State<MitvApp> {
   late final Future<LocalLibraryStore> storeFuture = LocalLibraryStore.create();
   @override
   Widget build(BuildContext context) {
     final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'القحطاني TV',
+      title: 'MITV',
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -41,7 +41,7 @@ class _AlQahtaniAppState extends State<AlQahtaniApp> {
         scaffoldBackgroundColor: _brandBg,
         appBarTheme: const AppBarTheme(
           backgroundColor: _brandBg,
-          foregroundColor: Color(0xFFF6E8C7),
+          foregroundColor: Color(0xFFF6F7FB),
           centerTitle: true,
           elevation: 0,
         ),
@@ -53,9 +53,9 @@ class _AlQahtaniAppState extends State<AlQahtaniApp> {
           ),
         ),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: _brandGold,
-          primary: _brandGold,
-          secondary: _brandGoldLight,
+          seedColor: _brandAccent,
+          primary: _brandAccent,
+          secondary: _brandAccentLight,
           surface: _brandPanel,
           brightness: Brightness.dark,
         ),
@@ -64,12 +64,12 @@ class _AlQahtaniAppState extends State<AlQahtaniApp> {
           indicatorColor: const Color(0x554B3A20),
           iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
                 color: states.contains(WidgetState.selected)
-                    ? _brandGoldLight
+                    ? _brandAccentLight
                     : const Color(0xFFC7CED8),
               )),
           labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
                 color: states.contains(WidgetState.selected)
-                    ? _brandGoldLight
+                    ? _brandAccentLight
                     : const Color(0xFFD0D5DD),
                 fontWeight: states.contains(WidgetState.selected)
                     ? FontWeight.w700
@@ -96,46 +96,45 @@ class _AlQahtaniAppState extends State<AlQahtaniApp> {
   }
 }
 
-void openDetails(BuildContext context, AlQahtaniApi api,
-    LocalLibraryStore store, CatalogItem item) {
+void openDetails(BuildContext context, MitvApi api, LocalLibraryStore store,
+    CatalogItem item) {
   Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => DetailsPage(api: api, store: store, item: item)));
 }
 
-class _QPlayMark extends StatelessWidget {
-  const _QPlayMark({this.size = 38});
+class _MPlayMark extends StatelessWidget {
+  const _MPlayMark({this.size = 38});
   final double size;
   @override
   Widget build(BuildContext context) => SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(painter: _QPlayPainter()),
+        child: CustomPaint(painter: _MPlayPainter()),
       );
 }
 
-class _QPlayPainter extends CustomPainter {
+class _MPlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final ring = Paint()
+    final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * .09
+      ..strokeWidth = size.width * .10
+      ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round
-      ..color = _brandGold;
-    final center = Offset(size.width * .47, size.height * .45);
-    canvas.drawCircle(center, size.width * .29, ring);
-    final tail = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * .09
-      ..strokeCap = StrokeCap.round
-      ..color = _brandGold;
-    canvas.drawLine(Offset(size.width * .61, size.height * .60),
-        Offset(size.width * .79, size.height * .78), tail);
+      ..color = _brandAccent;
+    final m = Path()
+      ..moveTo(size.width * .2, size.height * .78)
+      ..lineTo(size.width * .2, size.height * .22)
+      ..lineTo(size.width * .5, size.height * .50)
+      ..lineTo(size.width * .8, size.height * .22)
+      ..lineTo(size.width * .8, size.height * .78);
+    canvas.drawPath(m, stroke);
     final play = Path()
-      ..moveTo(size.width * .40, size.height * .32)
-      ..lineTo(size.width * .40, size.height * .58)
-      ..lineTo(size.width * .61, size.height * .45)
+      ..moveTo(size.width * .43, size.height * .55)
+      ..lineTo(size.width * .43, size.height * .76)
+      ..lineTo(size.width * .63, size.height * .655)
       ..close();
-    canvas.drawPath(play, Paint()..color = _brandGoldLight);
+    canvas.drawPath(play, Paint()..color = Colors.white);
   }
 
   @override
@@ -148,11 +147,11 @@ class _BrandTitle extends StatelessWidget {
   Widget build(BuildContext context) => const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _QPlayMark(size: 38),
+          _MPlayMark(size: 38),
           SizedBox(width: 10),
-          Text('القحطاني TV',
+          Text('MITV',
               style: TextStyle(
-                  color: _brandGoldLight,
+                  color: _brandAccentLight,
                   fontWeight: FontWeight.w800,
                   letterSpacing: .2)),
         ],
@@ -168,7 +167,7 @@ class Shell extends StatefulWidget {
 
 class _ShellState extends State<Shell> {
   int index = 0;
-  final api = AlQahtaniApi();
+  final api = MitvApi();
   @override
   void initState() {
     super.initState();
@@ -202,7 +201,7 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      MatchesPage(api: api),
+      MatchesPage(api: api, store: widget.store),
       NewsPage(api: api),
       CatalogPage(
           api: api,
@@ -333,13 +332,13 @@ class _TeamBadge extends StatelessWidget {
               border: Border.all(color: const Color(0x44C6974C)),
             ),
             child: logo.isEmpty
-                ? const Icon(Icons.shield_outlined, color: _brandGoldMuted)
+                ? const Icon(Icons.shield_outlined, color: _brandAccentMuted)
                 : Image.network(
                     logo,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const Icon(
                         Icons.shield_outlined,
-                        color: _brandGoldMuted),
+                        color: _brandAccentMuted),
                   ),
           ),
           const SizedBox(height: 7),
@@ -352,8 +351,9 @@ class _TeamBadge extends StatelessWidget {
 }
 
 class MatchesPage extends StatelessWidget {
-  const MatchesPage({super.key, required this.api});
-  final AlQahtaniApi api;
+  final LocalLibraryStore store;
+  const MatchesPage({super.key, required this.api, required this.store});
+  final MitvApi api;
 
   void _open(BuildContext context, MatchItem match) {
     if (match.status == 'ended') {
@@ -367,7 +367,7 @@ class MatchesPage extends StatelessWidget {
       return;
     }
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => MatchPlayerPage(api: api, match: match)));
+        builder: (_) => MatchPlayerPage(api: api, match: match, store: store)));
   }
 
   @override
@@ -456,7 +456,7 @@ class CatalogPage extends StatefulWidget {
       required this.store,
       required this.title,
       required this.categoryId});
-  final AlQahtaniApi api;
+  final MitvApi api;
   final LocalLibraryStore store;
   final String title;
   final String categoryId;
@@ -659,7 +659,7 @@ class _CatalogCard extends StatelessWidget {
                       color: Color(0xFF162235),
                       child: Center(
                           child: Icon(Icons.movie_outlined,
-                              color: _brandGoldMuted, size: 42)))
+                              color: _brandAccentMuted, size: 42)))
                   : Image.network(
                       item.poster,
                       cacheWidth: 320,
@@ -668,7 +668,7 @@ class _CatalogCard extends StatelessWidget {
                           color: Color(0xFF162235),
                           child: Center(
                               child: Icon(Icons.broken_image_outlined,
-                                  color: _brandGoldMuted, size: 38))),
+                                  color: _brandAccentMuted, size: 38))),
                     ),
             ),
             Padding(
@@ -697,7 +697,7 @@ class _CatalogCard extends StatelessWidget {
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, required this.api, required this.store});
-  final AlQahtaniApi api;
+  final MitvApi api;
   final LocalLibraryStore store;
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -819,7 +819,7 @@ class _SearchPageState extends State<SearchPage> {
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key, required this.api, required this.store});
-  final AlQahtaniApi api;
+  final MitvApi api;
   final LocalLibraryStore store;
   @override
   Widget build(BuildContext context) => AnimatedBuilder(

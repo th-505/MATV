@@ -1,12 +1,12 @@
-import 'package:al_qahtani/main.dart';
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
+import 'package:mitv/main.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class CategoryApi extends AlQahtaniApi {
+class CategoryApi extends MitvApi {
   final requested = <String>[];
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {

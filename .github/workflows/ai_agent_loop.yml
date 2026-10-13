@@ -39,7 +39,7 @@ jobs:
         with: { channel: stable, cache: true }
       - name: Create platform scaffolding without touching existing root web
         working-directory: flutter_app
-        run: flutter create --platforms=android,ios,web --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=android,ios,web --org com.mitv --project-name mitv .
       - run: python3 scripts/apply_native_branding.py flutter_app
       - working-directory: flutter_app
         run: flutter pub get
@@ -48,9 +48,9 @@ jobs:
       - working-directory: flutter_app
         run: flutter test
       - working-directory: flutter_app
-        run: flutter build apk --debug --dart-define=AL_QAHTANI_TARGET=mobile
+        run: flutter build apk --debug --dart-define=MITV_TARGET=mobile
       - working-directory: flutter_app
-        run: flutter test --dart-define=AL_QAHTANI_TARGET=tv test/app_target_test.dart test/details_page_focus_test.dart test/route_focus_restorer_test.dart
+        run: flutter test --dart-define=MITV_TARGET=tv test/app_target_test.dart test/details_page_focus_test.dart test/route_focus_restorer_test.dart
       - working-directory: flutter_app
         run: flutter build web --release
 
@@ -66,12 +66,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
       - working-directory: flutter_app
-        run: flutter create --platforms=ios --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=ios --org com.mitv --project-name mitv .
       - run: python3 scripts/apply_native_branding.py flutter_app
       - working-directory: flutter_app
         run: flutter pub get
       - working-directory: flutter_app
-        run: flutter build ios --release --no-codesign --dart-define=AL_QAHTANI_TARGET=ios
+        run: flutter build ios --release --no-codesign --dart-define=MITV_TARGET=ios
 
   samsung-target-truth:
     name: Samsung/Tizen target truth gate

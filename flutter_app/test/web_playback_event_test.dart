@@ -1,4 +1,4 @@
-import 'package:al_qahtani/src/web_playback_event.dart';
+import 'package:mitv/src/web_playback_event.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

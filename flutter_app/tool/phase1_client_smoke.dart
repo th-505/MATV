@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:al_qahtani/src/api_client.dart';
+import 'package:mitv/src/api_client.dart';
 
 // Proxy/CA support is for the managed development environment only.
 class EnvironmentProxy extends HttpOverrides {
@@ -18,7 +18,7 @@ Future<void> main() async {
   if (ca != null) SecurityContext.defaultContext.setTrustedCertificates(ca);
   if (Platform.environment['https_proxy'] != null) HttpOverrides.global = EnvironmentProxy();
   final client = http.Client();
-  final api = AlQahtaniApi(client: client, baseUri: Uri.parse('https://matv.onrender.com'));
+  final api = MitvApi(client: client, baseUri: Uri.parse('https://matv.onrender.com'));
   try {
     for (final category in ['3isk-latest', '3isk-turkish', '3isk-dubbed', '3isk-movies']) {
       final items = await api.category(category);

@@ -1,14 +1,15 @@
 import 'dart:convert';
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/alooy_policy.dart';
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
-import 'package:al_qahtani/src/player_page.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/alooy_policy.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
+import 'package:mitv/src/player_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 import 'phase2_player_test.dart' show FakeEngine, FakeBridge;
 
 Map<String, dynamic> payload() => {
@@ -40,7 +41,7 @@ Map<String, dynamic> payload() => {
           }
       ]
     };
-AlQahtaniApi apiFixture() => AlQahtaniApi(
+MitvApi apiFixture() => MitvApi(
     edgeUri: Uri.parse('https://edge.example'),
     client: MockClient((r) async {
       expect(r.url.host, 'edge.example');
@@ -66,7 +67,7 @@ void main() {
   test('unavailable edge never requests source HTML or device unpacking',
       () async {
     var calls = 0;
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         edgeUri: Uri.parse('https://edge.example'),
         client: MockClient((r) async {
           calls++;
@@ -82,7 +83,8 @@ void main() {
     (false, 2),
     (true, 2),
     (false, 0),
-    (true, 0)
+    (true, 0),
+    (true, 23)
   ]) {
     testWidgets(
         '${automatic ? '403 failover' : 'manual switch'} preserves $seconds-second playhead across providers',
@@ -125,8 +127,9 @@ void main() {
       }
       await engines.first.seekTo(Duration(seconds: seconds));
       if (automatic) {
-        engines.first.state.value =
-            engines.first.value.copyWith(errorDescription: 'HTTP 403');
+        engines.first.state.value = seconds == 23
+            ? VideoPlayerValue.erroneous('HTTP 503')
+            : engines.first.value.copyWith(errorDescription: 'HTTP 403');
       } else {
         final button = tester
             .widget<PopupMenuButton<int>>(find.byType(PopupMenuButton<int>));

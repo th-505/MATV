@@ -1,4 +1,4 @@
-import 'package:al_qahtani/src/playback_policy.dart';
+import 'package:mitv/src/playback_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

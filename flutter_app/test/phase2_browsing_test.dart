@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:al_qahtani/main.dart';
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
-import 'package:al_qahtani/src/media_format_policy.dart';
+import 'package:mitv/main.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
+import 'package:mitv/src/media_format_policy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PagedApi extends AlQahtaniApi {
+class PagedApi extends MitvApi {
   final pages = <int>[];
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
@@ -35,7 +35,7 @@ void main() {
   test('direct Akoam media retains source headers and rejects unrelated hosts',
       () {
     final expiry = DateTime.now().add(const Duration(minutes: 5));
-    final api = AlQahtaniApi();
+    final api = MitvApi();
     expect(
         api
             .mediaUri('https://s201d1.downet.net/media/file.mkv',
@@ -104,7 +104,7 @@ void main() {
   test('prefetch coalesces requests, caps concurrency and never resolves video',
       () async {
     final pending = <Completer<http.Response>>[];
-    final api = AlQahtaniApi(client: MockClient((request) {
+    final api = MitvApi(client: MockClient((request) {
       expect(request.url.path, '/api/cinema/metadata');
       final complete = Completer<http.Response>();
       pending.add(complete);

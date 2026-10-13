@@ -1,183 +1,61 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'universal_player.dart';
+import 'api_client.dart';
+import 'library_store.dart';
+import 'models.dart';
+import 'player_page.dart';
 
+/// Downloads share the cinema/live surface and renderer without network resolution.
 class LocalDownloadPlayerPage extends StatefulWidget {
-  const LocalDownloadPlayerPage({
-    super.key,
-    required this.file,
-    required this.title,
-  });
-
+  const LocalDownloadPlayerPage(
+      {super.key, required this.file, required this.title});
   final File file;
   final String title;
-
   @override
   State<LocalDownloadPlayerPage> createState() =>
       _LocalDownloadPlayerPageState();
 }
 
 class _LocalDownloadPlayerPageState extends State<LocalDownloadPlayerPage> {
-  UniversalPlayer? _controller;
-  String? _error;
-  bool _ready = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize({bool software = false}) async {
-    try {
-      if (!await widget.file.exists() || await widget.file.length() <= 0) {
-        throw const FileSystemException('LOCAL_DOWNLOAD_MISSING');
-      }
-      final controller = UniversalPlayer(widget.file.uri,
-          mediaType: widget.file.path.split('.').last, software: software);
-      _controller = controller;
-      await controller.initialize().timeout(const Duration(seconds: 20));
-      if (!mounted || controller != _controller) return;
-      setState(() => _ready = true);
-      await controller.play();
-    } catch (_) {
-      if (!software && _controller?.usesExtendedEngine == false && mounted) {
-        await _controller?.dispose();
-        _controller = null;
-        await _initialize(software: true);
-        return;
-      }
-      if (!mounted) return;
-      setState(() => _error =
-          'تعذر تشغيل الملف المحمّل. قد يكون الملف مفقودًا أو غير صالح.');
+  final api = MitvApi();
+  late final Future<LocalLibraryStore> library = _prepare();
+  Future<LocalLibraryStore> _prepare() async {
+    if (!await widget.file.exists() || await widget.file.length() == 0) {
+      throw StateError('LOCAL_DOWNLOAD_MISSING');
     }
+    return LocalLibraryStore.create();
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    api.close();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final controller = _controller;
-    return Scaffold(
-      appBar: AppBar(
-          title:
-              Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
-      body: SafeArea(
-        child: Center(
-          child: _error != null
-              ? Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48),
-                      const SizedBox(height: 12),
-                      Text(_error!, textAlign: TextAlign.center),
-                    ],
-                  ),
-                )
-              : !_ready || controller == null
-                  ? const CircularProgressIndicator()
-                  : Column(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: AspectRatio(
-                              aspectRatio: controller.value.aspectRatio > 0
-                                  ? controller.value.aspectRatio
-                                  : 16 / 9,
-                              child: controller.video(),
-                            ),
-                          ),
-                        ),
-                        _LocalControls(controller: controller),
-                      ],
-                    ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LocalControls extends StatefulWidget {
-  const _LocalControls({required this.controller});
-  final UniversalPlayer controller;
-
-  @override
-  State<_LocalControls> createState() => _LocalControlsState();
-}
-
-class _LocalControlsState extends State<_LocalControls> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_changed);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_changed);
-    super.dispose();
-  }
-
-  void _changed() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final value = widget.controller.value;
-    final durationMs = value.duration.inMilliseconds;
-    final positionMs =
-        value.position.inMilliseconds.clamp(0, durationMs > 0 ? durationMs : 0);
-    return Material(
-      color: Colors.black87,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: value.isPlaying ? 'إيقاف مؤقت' : 'تشغيل',
-              onPressed: () async {
-                if (value.isPlaying) {
-                  await widget.controller.pause();
-                } else {
-                  await widget.controller.play();
-                }
-              },
-              icon: Icon(value.isPlaying ? Icons.pause : Icons.play_arrow),
-            ),
-            Expanded(
-              child: Slider(
-                min: 0,
-                max: durationMs > 0 ? durationMs.toDouble() : 1,
-                value: durationMs > 0 ? positionMs.toDouble() : 0,
-                onChanged: durationMs <= 0
-                    ? null
-                    : (next) => widget.controller
-                        .seekTo(Duration(milliseconds: next.round())),
-              ),
-            ),
-            Text('${_clock(value.position)} / ${_clock(value.duration)}'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String _clock(Duration value) {
-    final total = value.inSeconds;
-    final hours = total ~/ 3600;
-    final minutes = (total % 3600) ~/ 60;
-    final seconds = total % 60;
-    if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    }
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+  Widget build(BuildContext context) => FutureBuilder<LocalLibraryStore>(
+      future: library,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return PlayerPage(
+              api: api,
+              store: snapshot.data!,
+              item: MediaItem(
+                  id: widget.file.uri.pathSegments.last,
+                  title: widget.title,
+                  poster: '',
+                  type: 'download',
+                  ref: 'download:${widget.file.uri.pathSegments.last}'),
+              title: widget.title,
+              localFileUri: widget.file.uri,
+              mediaType: widget.file.path.split('.').last.toLowerCase(),
+              persistProgress: false);
+        }
+        return Scaffold(
+            appBar: AppBar(title: Text(widget.title)),
+            body: Center(
+                child: snapshot.hasError
+                    ? const Text('الملف المحمّل غير متاح أو فارغ.')
+                    : const CircularProgressIndicator()));
+      });
 }

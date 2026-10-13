@@ -77,7 +77,8 @@ class _PlayerControlsState extends State<PlayerControls> {
             builder: (context, controller, child) => FilledButton.tonalIcon(
               key: const Key('player-speed'),
               focusNode: _speedFocus,
-              onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+              onPressed: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
               icon: const Icon(Icons.speed),
               label: Text(playbackSpeedLabel(widget.playbackSpeed)),
             ),

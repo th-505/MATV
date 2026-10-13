@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:al_qahtani/src/file_export.dart';
+import 'package:mitv/src/file_export.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('export abstraction validates local file and delegates safe suggested name', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-export-test');
+    final root = await Directory.systemTemp.createTemp('mitv-export-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });

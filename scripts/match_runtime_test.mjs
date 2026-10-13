@@ -54,8 +54,9 @@ assert.equal(servers[0].name, 'Web Server 1');
 assert.equal(servers[0].type, 'm3u8');
 
 const playback = await runtime.resolveServer(servers[0].ref);
-assert.match(playback.media_path, /^\/api\/matches\/media\?id=/);
-assert.equal(playback.media_path.includes('cdn.example.org'), false);
+assert.equal(playback.media_path, 'https://cdn.example.org/live/master.m3u8');
+assert.equal(playback.playback_mode,'direct');
+assert.equal(playback.media_path.includes('cdn.example.org'), true);
 assert.equal(playback.media_type, 'm3u8');
 assert.equal(playback.server_name, 'Web Server 1');
 

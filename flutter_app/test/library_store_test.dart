@@ -1,5 +1,5 @@
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

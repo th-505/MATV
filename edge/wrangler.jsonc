@@ -28,6 +28,10 @@
     {
       "binding": "ALOOY",
       "service": "matv-extract-alooy"
+    },
+    {
+      "binding": "MATCHES",
+      "service": "mitv-extract-matches"
     }
   ]
 }

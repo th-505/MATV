@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:al_qahtani/src/background_download_contract.dart';
+import 'package:mitv/src/background_download_contract.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

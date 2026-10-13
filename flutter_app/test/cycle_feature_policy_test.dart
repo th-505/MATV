@@ -1,5 +1,5 @@
-import 'package:al_qahtani/src/cycle_feature_policy.dart';
-import 'package:al_qahtani/src/models.dart';
+import 'package:mitv/src/cycle_feature_policy.dart';
+import 'package:mitv/src/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

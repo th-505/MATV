@@ -1,4 +1,4 @@
-"""Verify downloaded MATV trial artifacts without unpacking apps or signing keys."""
+"""Verify downloaded MITV trial artifacts without unpacking apps or signing keys."""
 import hashlib
 import json
 import plistlib
@@ -13,9 +13,9 @@ version = sys.argv[3] if len(sys.argv) > 3 else '1.0.36'
 build = int(sys.argv[4]) if len(sys.argv) > 4 else 36
 results = []
 for name, abi, machine in [
-    ('MATV-Android-Mobile-ARM64.apk', 'arm64-v8a', 183),
-    ('MATV-Android-TV-ARM32.apk', 'armeabi-v7a', 40),
-    ('MATV-iPhone-Unsigned.ipa', None, None),
+    ('MITV-Android-Mobile-ARM64.apk', 'arm64-v8a', 183),
+    ('MITV-Android-TV-ARM32.apk', 'armeabi-v7a', 40),
+    ('MITV-iPhone-Unsigned.ipa', None, None),
 ]:
     matches = list(root.rglob(name))
     assert len(matches) == 1, f'Missing or duplicate artifact: {name}'
@@ -43,6 +43,10 @@ for name, abi, machine in [
             info = plistlib.loads(archive.read(app + 'Info.plist'))
             assert info['CFBundleShortVersionString'] == version
             assert info['CFBundleVersion'] == str(build)
+            if build>=43:
+                assert info['CFBundleDisplayName']=='MITV'
+                assert info['CFBundleIdentifier']=='com.mitv.mitv'
+                assert info.get('UIFileSharingEnabled') is True
             if build >= 40:
                 assert info.get('NSAppTransportSecurity', {}).get('NSAllowsLocalNetworking') is True, 'iOS local stream bridge disabled'
             runner = archive.read(app + 'Runner')
@@ -59,4 +63,27 @@ for name, abi, machine in [
         assert api in binary, f'{name}: deployed API is absent'
     results.append({'file': name, 'architecture': abi or 'arm64', 'sha256': digest,
                     'bytes': path.stat().st_size, 'api': api.decode(), 'verified': True})
+if build >= 43:
+    bundles = list(root.rglob('MITV-Windows-x64.zip'))
+    assert len(bundles) == 1, 'Missing Windows bundle'
+    bundle=bundles[0]
+    def pe_machine(data):
+        assert data[:2]==b'MZ'
+        offset=struct.unpack('<I',data[0x3c:0x40])[0]
+        assert data[offset:offset+4]==b'PE\0\0'
+        return struct.unpack('<H',data[offset+4:offset+6])[0]
+    with zipfile.ZipFile(bundle) as archive:
+        names=archive.namelist()
+        exe=next(n for n in names if n.endswith('mitv.exe'))
+        assert pe_machine(archive.read(exe))==0x8664, 'MITV must be x64'
+        dlls=[n for n in names if n.lower().endswith('.dll')]
+        assert any('mpv' in n.lower() for n in dlls), 'Windows decoder missing'
+        assert all(pe_machine(archive.read(n))==0x8664 for n in dlls)
+        snapshot=next(n for n in names if n.endswith('app.so'))
+        assert api in archive.read(snapshot), 'Windows deployed API missing'
+    for name in ['MITV-Windows-x64.zip','MITV-Windows-x64-Setup.exe']:
+        path=next(root.rglob(name));digest=hashlib.sha256(path.read_bytes()).hexdigest()
+        assert digest==Path(str(path)+'.sha256').read_text().split()[0]
+        if name.endswith('.exe'):assert pe_machine(path.read_bytes()) in (0x14c,0x8664)
+        results.append({'file':name,'architecture':'x64','sha256':digest,'bytes':path.stat().st_size,'api':api.decode(),'verified':True})
 print(json.dumps(results, indent=2))

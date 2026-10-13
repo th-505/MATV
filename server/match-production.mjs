@@ -1,92 +1,81 @@
-import { createMatchPlaybackRuntime } from './match-playback.mjs';
-import { normalizeMatch, PRODUCT_VERSION } from './content-runtime.mjs';
+import { limitedText } from "../edge/src/provider.mjs";
+import { PRODUCT_VERSION } from "./content-runtime.mjs";
 
-const MATCHES = 'https://api.albasritv1.workers.dev/';
-const BASRI_ORIGIN = 'https://www.albasritv.abrdns.com';
-
-async function fetchJson(url, init = {}, timeoutMs = 30_000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, { ...init, signal: controller.signal, cache: 'no-store', redirect: 'follow' });
-    const text = await response.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch {}
-    return { response, data };
-  } finally {
-    clearTimeout(timer);
+// Compatibility JSON facade. Match HTML extraction runs on Cloudflare;
+// neither this service nor its retired media route forwards video bytes.
+export function createProductionMatchRuntime({
+  edgeBase = process.env.MITV_EDGE_BASE ||
+    "https://matv-edge-resolver.dada1000100.workers.dev",
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  const base = new URL(edgeBase);
+  if (
+    base.protocol !== "https:" ||
+    base.username ||
+    base.password ||
+    base.port ||
+    base.search ||
+    base.hash
+  )
+    throw Error("INVALID_EDGE_ENDPOINT");
+  async function request(path, ref) {
+    const url = new URL("/v1/matches" + path, base);
+    if (ref) url.searchParams.set("ref", ref);
+    const response = await fetchImpl(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(35000),
+    });
+    const data = JSON.parse(await limitedText(response, 128 * 1024));
+    if (!response.ok || data.status !== "success")
+      throw Error(data.error || "MATCH_EDGE_UNAVAILABLE");
+    return data;
   }
-}
-
-function headers(extra = {}) {
-  return {
-    Accept: 'application/json',
-    Origin: BASRI_ORIGIN,
-    Referer: `${BASRI_ORIGIN}/2026/09/matches.html`,
-    'X-BSR-Page': '/2026/09/matches.html',
-    ...extra,
-  };
-}
-
-async function token() {
-  const result = await fetchJson(`${MATCHES}session`, { headers: headers() });
-  if (!result.response.ok || !result.data?.token) throw new Error(`MATCH_SESSION_${result.response.status}`);
-  return String(result.data.token);
-}
-
-async function fetchMatches() {
-  const session = await token();
-  const result = await fetchJson(MATCHES, { headers: headers({ 'X-BSR-Token': session }) });
-  if (!result.response.ok) throw new Error(`MATCH_LIST_${result.response.status}`);
-  if (!result.data || !Array.isArray(result.data.data)) throw new Error('MATCH_LIST_INVALID');
-  return result.data;
-}
-
-async function fetchServers(target) {
-  const url = new URL(target);
-  if (url.origin !== new URL(MATCHES).origin) throw new Error('BAD_MATCH_TARGET');
-  const session = await token();
-  const result = await fetchJson(url.href, { headers: headers({ 'X-BSR-Token': session }) });
-  if (!result.response.ok) throw new Error(`MATCH_SERVERS_${result.response.status}`);
-  if (!result.data || !Array.isArray(result.data.servers)) throw new Error('MATCH_SERVERS_INVALID');
-  return result.data;
-}
-
-export function createProductionMatchRuntime() {
-  const runtime = createMatchPlaybackRuntime({ fetchServers, matchOrigin: MATCHES });
   return {
     async matches() {
-      const raw = await fetchMatches();
-      const masked = runtime.maskMatchesPayload(raw);
-      const normalized = masked.data.map(normalizeMatch);
+      const d = await request("");
       return {
-        status: 'success',
+        ...d,
         version: PRODUCT_VERSION,
-        kind: 'matches',
-        source: 'basri-matches',
+        kind: "matches",
+        source: "basri-matches-edge",
         cached: false,
         stale: false,
         generated_at: new Date().toISOString(),
         health: null,
-        data: normalized,
       };
     },
     async servers(ref) {
-      return {
-        status: 'success',
-        version: PRODUCT_VERSION,
-        kind: 'match-servers',
-        data: await runtime.listServers(ref),
-      };
+      const d = await request("/servers", ref);
+      return { ...d, version: PRODUCT_VERSION, kind: "match-servers" };
     },
     async playback(ref) {
+      const d = await request("/playback", ref);
+      const s = d.sources[0];
       return {
-        status: 'success',
+        status: "success",
         version: PRODUCT_VERSION,
-        kind: 'match-playback',
-        data: await runtime.resolveServer(ref),
+        kind: "match-playback",
+        data: {
+          media_path: s.url,
+          stream_url: s.url,
+          media_type: s.format === "hls" ? "m3u8" : s.format,
+          playback_mode: "direct",
+          headers: s.headers,
+          expires_at: s.expires_at,
+          server_name: s.provider,
+          media_sources: d.sources,
+        },
       };
     },
-    proxyMedia: runtime.proxyMedia,
+    async proxyMedia(_req, res) {
+      res.statusCode = 410;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          status: "error",
+          message: "MATCH_PROXY_RETIRED_USE_DIRECT_PLAYBACK",
+        }),
+      );
+    },
   };
 }

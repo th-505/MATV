@@ -1,7 +1,7 @@
-name: MATV Flutter Web
+name: MITV Flutter Web
 on:
   push:
-    branches: [main, 'web/matv-*']
+    branches: [main, 'web/mitv-*']
     paths: ['flutter_app/**', '.github/workflows/flutter-web.yml', '.github/workflows/mobile-trial.yml']
   workflow_dispatch:
   workflow_call:
@@ -28,7 +28,7 @@ jobs:
           flutter analyze
           flutter test
           dart run tool/alooy_bridge_smoke.dart
-          flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MATV_API_BASE=https://matv.onrender.com
+          flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MITV_API_BASE=https://matv.onrender.com
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
@@ -52,7 +52,7 @@ jobs:
           cp -R flutter_app/build/web/. site/app/
       - uses: actions/upload-artifact@v4
         with:
-          name: MATV-Flutter-Web
+          name: MITV-Flutter-Web
           path: site/
           retention-days: 14
 
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: MATV-Flutter-Web
+          name: MITV-Flutter-Web
           path: site
       - name: Publish through the configured Pages source branch
         env:

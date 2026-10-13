@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate deterministic Al-Qahtani native branding after `flutter create`.
+"""Generate deterministic MITV native, desktop and web branding after `flutter create`.
 
-The canonical identity is the user-approved deep-navy / metallic-gold Q-play mark.
+The MITV identity is a charcoal surface with a crimson M/play mark.
 No bundled font or third-party image dependency is required.
 """
 from __future__ import annotations
@@ -14,9 +14,9 @@ import sys
 import zlib
 from pathlib import Path
 
-NAVY = (16, 24, 39, 255)
-GOLD = (198, 151, 76, 255)
-GOLD_LIGHT = (226, 190, 121, 255)
+BACKGROUND = (9, 11, 18, 255)
+ACCENT = (229, 9, 20, 255)
+FOREGROUND = (255, 255, 255, 255)
 TRANSPARENT = (0, 0, 0, 0)
 
 
@@ -31,12 +31,12 @@ def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
     w = h = max(16, int(size))
     px = bytearray(background * (w * h))
 
-    def put(x: int, y: int, color=GOLD):
+    def put(x: int, y: int, color=ACCENT):
         if 0 <= x < w and 0 <= y < h:
             i = (y * w + x) * 4
             px[i:i + 4] = bytes(color)
 
-    def disk(cx: float, cy: float, radius: float, color=GOLD):
+    def disk(cx: float, cy: float, radius: float, color=ACCENT):
         x0, x1 = max(0, int(cx - radius)), min(w - 1, int(cx + radius))
         y0, y1 = max(0, int(cy - radius)), min(h - 1, int(cy + radius))
         r2 = radius * radius
@@ -57,7 +57,7 @@ def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
                 dx = x - cx
                 d2 = dx * dx + dy * dy
                 if i2 <= d2 <= o2:
-                    put(x, y, GOLD_LIGHT if x + y < (cx + cy) * .91 else GOLD)
+                    put(x, y, FOREGROUND if x + y < (cx + cy) * .91 else ACCENT)
 
     def thick_line(x0: float, y0: float, x1: float, y1: float, radius: float):
         steps = max(2, int(max(abs(x1 - x0), abs(y1 - y0))))
@@ -65,7 +65,7 @@ def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
             t = n / steps
             disk(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, radius)
 
-    def triangle(a, b, c, color=GOLD_LIGHT):
+    def triangle(a, b, c, color=FOREGROUND):
         min_x = max(0, int(min(a[0], b[0], c[0])))
         max_x = min(w - 1, int(max(a[0], b[0], c[0])))
         min_y = max(0, int(min(a[1], b[1], c[1])))
@@ -79,16 +79,16 @@ def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
                 if not ((d1 < 0 or d2 < 0 or d3 < 0) and (d1 > 0 or d2 > 0 or d3 > 0)):
                     put(x, y, color)
 
-    cx, cy = w * .49, h * .46
-    ring(cx, cy, w * .285, w * .205)
-    thick_line(w * .61, h * .61, w * .76, h * .76, w * .038)
-    triangle((w * .42, h * .34), (w * .42, h * .58), (w * .59, h * .46))
+    points=[(.20,.78),(.20,.22),(.50,.50),(.80,.22),(.80,.78)]
+    for a,b in zip(points,points[1:]):
+        thick_line(w*a[0],h*a[1],w*b[0],h*b[1],w*.048)
+    triangle((w*.43,h*.55),(w*.43,h*.76),(w*.63,h*.655))
     return png_bytes(w, h, px)
 
 
 def write_icon(path: Path, size: int, transparent: bool = False):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(mark(size, TRANSPARENT if transparent else NAVY))
+    path.write_bytes(mark(size, TRANSPARENT if transparent else BACKGROUND))
 
 
 def apply_android(root: Path):
@@ -105,7 +105,7 @@ def apply_android(root: Path):
     res = android / "app/src/main/res"
     for folder, size in sizes.items():
         write_icon(res / folder / "ic_launcher.png", size)
-    write_icon(res / "drawable" / "launch_qaf.png", 256, transparent=True)
+    write_icon(res / "drawable" / "launch_mitv.png", 256, transparent=True)
 
     # Android's layer-list item `android:drawable` requires a drawable resource
     # reference. Keep the splash background in a named color resource rather than
@@ -113,13 +113,13 @@ def apply_android(root: Path):
     values = res / "values"
     values.mkdir(parents=True, exist_ok=True)
     (values / "colors.xml").write_text(
-        """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"alqahtani_splash_bg\">#101827</color>\n</resources>\n""",
+        """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"mitv_splash_bg\">#090B12</color>\n</resources>\n""",
         encoding="utf-8",
     )
     launch_xml = """<?xml version=\"1.0\" encoding=\"utf-8\"?>
 <layer-list xmlns:android=\"http://schemas.android.com/apk/res/android\">
-    <item android:drawable=\"@color/alqahtani_splash_bg\" />
-    <item><bitmap android:gravity=\"center\" android:src=\"@drawable/launch_qaf\" /></item>
+    <item android:drawable=\"@color/mitv_splash_bg\" />
+    <item><bitmap android:gravity=\"center\" android:src=\"@drawable/launch_mitv\" /></item>
 </layer-list>
 """
     for folder in ("drawable", "drawable-v21"):
@@ -142,7 +142,7 @@ def apply_android(root: Path):
 <domain-config cleartextTrafficPermitted="true"><domain includeSubdomains="false">127.0.0.1</domain><domain includeSubdomains="false">localhost</domain></domain-config>
 </network-security-config>''', encoding="utf-8")
         text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
-        text = re.sub(r'android:label="[^"]*"', 'android:label="القحطاني TV"', text, count=1)
+        text = re.sub(r'android:label="[^"]*"', 'android:label="MITV"', text, count=1)
         manifest.write_text(text, encoding="utf-8")
 
 
@@ -180,24 +180,58 @@ def apply_ios(root: Path):
     storyboard = ios / "Runner/Base.lproj/LaunchScreen.storyboard"
     if storyboard.exists():
         text = storyboard.read_text(encoding="utf-8")
-        text = text.replace('red="1" green="1" blue="1" alpha="1"', 'red="0.063" green="0.094" blue="0.153" alpha="1"')
-        text = text.replace('red="0.035" green="0.035" blue="0.043" alpha="1"', 'red="0.063" green="0.094" blue="0.153" alpha="1"')
+        text = text.replace('red="1" green="1" blue="1" alpha="1"', 'red="0.035" green="0.043" blue="0.071" alpha="1"')
+        text = text.replace('red="0.035" green="0.035" blue="0.043" alpha="1"', 'red="0.035" green="0.043" blue="0.071" alpha="1"')
         storyboard.write_text(text, encoding="utf-8")
     plist = ios / "Runner/Info.plist"
     if plist.exists():
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
         data.setdefault("NSAppTransportSecurity", {})["NSAllowsLocalNetworking"] = True
-        data["CFBundleDisplayName"] = "القحطاني TV"
-        data["CFBundleName"] = "القحطاني TV"
+        data["CFBundleDisplayName"] = "MITV"
+        data["CFBundleName"] = "MITV"
+        data["UIFileSharingEnabled"] = True
+        data["LSSupportsOpeningDocumentsInPlace"] = True
         with plist.open("wb") as fh:
             plistlib.dump(data, fh, sort_keys=False)
+
+
+def apply_web(root: Path):
+    web=root / "web"
+    if not web.exists(): return
+    for size in (192,512):
+        for name in (f"Icon-{size}.png",f"Icon-maskable-{size}.png"):
+            write_icon(web/"icons"/name,size)
+    write_icon(web/"favicon.png",64)
+
+
+def apply_windows(root: Path):
+    windows=root/"windows"
+    if not windows.exists(): return
+    images=[(size,mark(size,BACKGROUND)) for size in (16,32,48,256)]
+    header=struct.pack('<HHH',0,1,len(images)); offset=6+16*len(images)
+    entries=[]
+    for size,data in images:
+        entries.append(struct.pack('<BBBBHHII',0 if size==256 else size,0 if size==256 else size,0,0,1,32,len(data),offset));offset+=len(data)
+    icon=windows/'runner/resources/app_icon.ico';icon.parent.mkdir(parents=True,exist_ok=True)
+    icon.write_bytes(header+b''.join(entries)+b''.join(data for _,data in images))
+    main=windows/'runner/main.cpp'
+    if main.exists():
+        text=main.read_text();text=re.sub(r'window.Create\(L"[^"\n]+"','window.Create(L"MITV"',text);main.write_text(text)
+    rc=windows/'runner/Runner.rc'
+    if rc.exists():
+        text=rc.read_text()
+        for key in ('CompanyName','FileDescription','ProductName'):
+            text=re.sub(r'(VALUE "'+key+r'", )"[^"\n]*"',r'\1"MITV" "\\0"',text)
+        rc.write_text(text)
 
 
 def main():
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "flutter_app").resolve()
     apply_android(root)
     apply_ios(root)
+    apply_windows(root)
+    apply_web(root)
     print(f"native branding applied to {root}")
 
 

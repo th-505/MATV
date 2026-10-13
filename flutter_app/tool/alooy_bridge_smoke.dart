@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:al_qahtani/src/stream_bridge_native.dart';
+import 'package:mitv/src/stream_bridge_native.dart';
 
 Future<void> main() async {
   final temp = await Directory.systemTemp.createTemp('matv-bridge-');

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
-import 'package:al_qahtani/src/player_page.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
+import 'package:mitv/src/player_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,7 +48,7 @@ class RecordingPlayer extends VideoPlayerPlatform {
   Widget buildViewWithOptions(VideoViewOptions options) => const SizedBox();
 }
 
-class RecordingApi extends AlQahtaniApi {
+class RecordingApi extends MitvApi {
   RecordingApi({required super.client});
   final errors = <Object>[];
   TitleDetails? prepared;

@@ -1,5 +1,5 @@
 {
-  "name": "al-qahtani-runtime",
+  "name": "mitv-runtime",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "test:3isk": "node scripts/3isk_provider_test.mjs && node scripts/3isk_runtime_test.mjs && node scripts/3isk_http_test.mjs && node scripts/3isk_metadata_worker_test.mjs",
     "test:phase2": "node scripts/phase2_provider_test.mjs",
     "test:alooy": "node scripts/alooy_provider_test.mjs",
-    "test:edge": "node scripts/edge_resolver_test.mjs && node scripts/edge_registry.mjs"
+    "test:edge": "node scripts/edge_resolver_test.mjs && node scripts/edge_registry.mjs && node scripts/match_edge_test.mjs && node scripts/match_edge_facade_test.mjs"
   },
   "engines": {
     "node": ">=22"

@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:al_qahtani/src/download_service.dart';
+import 'package:mitv/src/download_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
   test('rejects explicit HTML responses before marking download complete', () async {
-    final root = await Directory.systemTemp.createTemp('qahtani-html-response-test');
+    final root = await Directory.systemTemp.createTemp('mitv-html-response-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -31,7 +31,7 @@ void main() {
   });
 
   test('rejects HTML payload disguised as octet-stream and deletes final file', () async {
-    final root = await Directory.systemTemp.createTemp('qahtani-disguised-html-test');
+    final root = await Directory.systemTemp.createTemp('mitv-disguised-html-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -58,7 +58,7 @@ void main() {
   });
 
   test('accepts MP4 signature and exposes only validated files in library', () async {
-    final root = await Directory.systemTemp.createTemp('qahtani-mp4-signature-test');
+    final root = await Directory.systemTemp.createTemp('mitv-mp4-signature-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -84,7 +84,7 @@ void main() {
   });
 
   test('re-resolves stale iOS absolute path by safe basename in current container', () async {
-    final root = await Directory.systemTemp.createTemp('qahtani-path-reresolve-test');
+    final root = await Directory.systemTemp.createTemp('mitv-path-reresolve-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -100,7 +100,7 @@ void main() {
   });
 
   test('library hides unreadable or non-media completed-looking files', () async {
-    final root = await Directory.systemTemp.createTemp('qahtani-invalid-library-test');
+    final root = await Directory.systemTemp.createTemp('mitv-invalid-library-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });

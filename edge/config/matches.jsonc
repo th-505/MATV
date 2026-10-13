@@ -1,0 +1,26 @@
+{
+  "name": "mitv-extract-matches",
+  "main": "../src/matches.mjs",
+  "compatibility_date": "2026-10-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "vars": {
+    "MATCH_CONFIG": {
+      "origin": "https://api.albasritv1.workers.dev",
+      "referer": "https://www.albasritv.abrdns.com/2026/09/matches.html",
+      "pageHosts": [
+        "news.yallowzeno.world",
+        "koooracity.news"
+      ],
+      "mediaHosts": [
+        "pull.gosh6.app"
+      ]
+    }
+  }
+}

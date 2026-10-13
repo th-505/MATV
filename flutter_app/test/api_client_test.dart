@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:al_qahtani/src/api_client.dart';
+import 'package:mitv/src/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -26,7 +26,7 @@ void main() {
         'media_type': 'm3u8',
       });
     });
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: client, baseUri: Uri.parse('https://runtime.example'));
     final resolved = await api.resolvePlayback('legacy:episode-1');
     expect(resolved.mediaPath, '/api/cinema/media?id=opaque-short-lived');
@@ -35,7 +35,7 @@ void main() {
 
   test('playback extraction bypasses prefetched episode metadata', () async {
     var extracted = 0;
-    final api = AlQahtaniApi(client: MockClient((req) async {
+    final api = MitvApi(client: MockClient((req) async {
       if (req.url.path.endsWith('/metadata')) {
         return jsonResponse({
           'status': 'success',
@@ -82,7 +82,7 @@ void main() {
         ],
       });
     });
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: client, baseUri: Uri.parse('https://runtime.example'));
     final item = (await api.matches()).single;
     final home = Uri.parse(item.homeLogo);
@@ -112,7 +112,7 @@ void main() {
             }
           ],
         }));
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: client, baseUri: Uri.parse('https://runtime.example'));
     final result = await api.search('عمل');
     expect(result.single.poster,
@@ -153,7 +153,7 @@ void main() {
         },
       });
     });
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: client, baseUri: Uri.parse('https://runtime.example'));
     final items = await api.news();
     expect(items.single.ref, 'opaque-news-1');
@@ -163,7 +163,7 @@ void main() {
   });
 
   test('mediaUri rejects arbitrary upstream urls', () {
-    final api = AlQahtaniApi(baseUri: Uri.parse('https://runtime.example'));
+    final api = MitvApi(baseUri: Uri.parse('https://runtime.example'));
     expect(
       () => api.mediaUri('https://evil.example/video.mp4'),
       throwsA(isA<ApiException>()),
@@ -180,7 +180,7 @@ void main() {
           'playback_unavailable': true,
           'playback_reason': 'NO_PLAYABLE_MEDIA',
         }));
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: client, baseUri: Uri.parse('https://runtime.example'));
     await expectLater(
       api.resolvePlayback('legacy:unavailable'),

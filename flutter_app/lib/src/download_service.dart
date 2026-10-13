@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'alooy_policy.dart';
+import 'download_directory_migration.dart';
 
 class DownloadResult {
   const DownloadResult({required this.path, required this.bytes});
@@ -72,21 +74,28 @@ class DownloadService {
 
   static Future<Directory> _defaultDirectory() async {
     final root = await getApplicationDocumentsDirectory();
-    return Directory(
-      '${root.path}${Platform.pathSeparator}AlQahtani${Platform.pathSeparator}Downloads',
-    );
+    return migrateDownloadDirectory(root);
   }
 
   Future<DownloadResult> download(
     Uri uri, {
-    String fallbackName = 'al-qahtani-media',
+    String fallbackName = 'mitv-media',
+    Map<String, String> headers = const {},
     String? resumeKey,
     DownloadProgressCallback? onProgress,
     DownloadCancellationToken? cancellationToken,
   }) async {
-    if (uri.path != '/api/cinema/media' ||
-        uri.queryParameters['download'] != '1') {
+    final direct =
+        isPublicMediaUri(uri) && uri.path.toLowerCase().endsWith('.mp4');
+    final legacy = uri.path == '/api/cinema/media' &&
+        uri.queryParameters['download'] == '1';
+    if (!direct && !legacy) {
       throw const DownloadException('INVALID_DOWNLOAD_REFERENCE');
+    }
+    if (headers.keys
+            .any((k) => !['Referer', 'Origin', 'User-Agent'].contains(k)) ||
+        headers.values.any((v) => v.contains(RegExp(r'[\r\n]')))) {
+      throw const DownloadException('INVALID_DOWNLOAD_HEADERS');
     }
     _throwIfCancelled(cancellationToken);
 
@@ -113,6 +122,8 @@ class DownloadService {
           response = await _send(
             uri,
             offset: bytes,
+            headers: headers,
+            direct: direct,
             cancellationToken: cancellationToken,
           );
         } catch (error) {
@@ -159,8 +170,11 @@ class DownloadService {
         final fileName =
             _trustedFileName(response.headers['content-disposition']) ??
                 _sanitizeFileName(fallbackName);
+        final safeName = direct && !fileName.toLowerCase().endsWith('.mp4')
+            ? '$fileName.mp4'
+            : fileName;
         finalFile ??= File(
-          '${directory.path}${Platform.pathSeparator}$fileName',
+          '${directory.path}${Platform.pathSeparator}$safeName',
         );
 
         IOSink? sink;
@@ -239,7 +253,8 @@ class DownloadService {
             await _isValidMediaFile(
               completedFile,
               trustedContentType: responseContentType,
-            );
+            ) &&
+            (!direct || await _isMp4File(completedFile));
 
         if (!lengthValid || !mediaValid) {
           try {
@@ -263,17 +278,51 @@ class DownloadService {
     }
   }
 
-  Future<http.StreamedResponse> _send(
-    Uri uri, {
-    required int offset,
-    DownloadCancellationToken? cancellationToken,
-  }) {
-    final request = http.Request('GET', uri)..headers['accept'] = '*/*';
-    if (offset > 0) request.headers['range'] = 'bytes=$offset-';
-    return _awaitOrCancel(
-      _client.send(request).timeout(const Duration(seconds: 30)),
-      cancellationToken,
-    );
+  Future<http.StreamedResponse> _send(Uri uri,
+      {required int offset,
+      required Map<String, String> headers,
+      required bool direct,
+      DownloadCancellationToken? cancellationToken}) async {
+    var current = uri;
+    for (var redirects = 0; redirects <= 3; redirects++) {
+      final request = http.Request('GET', current)..followRedirects = false;
+      request.headers.addAll(headers);
+      request.headers['accept'] = '*/*';
+      if (offset > 0) request.headers['range'] = 'bytes=$offset-';
+      final response = await _awaitOrCancel(
+          _client.send(request).timeout(const Duration(seconds: 30)),
+          cancellationToken);
+      if (![301, 302, 303, 307, 308].contains(response.statusCode)) {
+        return response;
+      }
+      await response.stream.listen((_) {}).cancel();
+      final location = response.headers['location'];
+      if (location == null || redirects == 3) {
+        throw const DownloadException('DOWNLOAD_REDIRECT_LIMIT');
+      }
+      final next = current.resolve(location);
+      if (!direct ||
+          !isPublicMediaUri(next) ||
+          !next.path.toLowerCase().endsWith('.mp4')) {
+        throw const DownloadException('INVALID_DOWNLOAD_REDIRECT');
+      }
+      current = next;
+    }
+    throw const DownloadException('DOWNLOAD_REDIRECT_LIMIT');
+  }
+
+  static Future<bool> _isMp4File(File file) async {
+    final handle = await file.open();
+    try {
+      final b = await handle.read(12);
+      return b.length >= 8 &&
+          b[4] == 0x66 &&
+          b[5] == 0x74 &&
+          b[6] == 0x79 &&
+          b[7] == 0x70;
+    } finally {
+      await handle.close();
+    }
   }
 
   static bool _canReconnect(Object error, int attempts, int bytes) {
@@ -528,8 +577,8 @@ class DownloadService {
 
   static bool _looksLikeTextError(List<int> prefix) {
     final ascii = String.fromCharCodes(
-      prefix.where((byte) => byte == 9 || byte == 10 || byte == 13 ||
-          (byte >= 32 && byte <= 126)),
+      prefix.where((byte) =>
+          byte == 9 || byte == 10 || byte == 13 || (byte >= 32 && byte <= 126)),
     ).trimLeft().toLowerCase();
     if (ascii.isEmpty) return false;
     return ascii.startsWith('<!doctype') ||
@@ -598,7 +647,7 @@ class DownloadService {
   static String _resumeFileName(String value) {
     var safe = _sanitizeFileName(value).replaceAll(' ', '_');
     if (safe.length > 96) safe = safe.substring(0, 96);
-    return '.qahtani-$safe.part';
+    return '.mitv-$safe.part';
   }
 
   static String _baseName(String path) {
@@ -629,11 +678,10 @@ class DownloadService {
   }
 
   static String _sanitizeFileName(String value) {
-    final normalized = value
-        .trim()
-        .replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1F]'), '_');
+    final normalized =
+        value.trim().replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1F]'), '_');
     final compact = normalized.replaceAll(RegExp(r'\s+'), ' ');
-    return compact.isEmpty ? 'al-qahtani-media' : compact;
+    return compact.isEmpty ? 'mitv-media' : compact;
   }
 
   void close() => _client.close();

@@ -115,6 +115,23 @@ export default {
         media_proxy: false,
         providers: PROVIDERS,
       });
+    if (url.pathname.startsWith("/v1/matches")) {
+      const route = {
+        "/v1/matches": "/list",
+        "/v1/matches/servers": "/servers",
+        "/v1/matches/playback": "/playback",
+        "/v1/matches/resolve": "/resolve",
+      }[url.pathname];
+      if (!route) return reply({ error: "NOT_FOUND" }, 404);
+      if ((url.searchParams.get("ref") || "").length > 3000)
+        return reply({ error: "BAD_REFERENCE" }, 400);
+      const result = await env.MATCHES.fetch(
+        new Request("https://matches.internal" + route + url.search, {
+          signal: AbortSignal.timeout(30000),
+        }),
+      );
+      return reply(await result.json(), result.status);
+    }
     if (url.pathname !== "/v1/resolve")
       return reply({ error: "NOT_FOUND" }, 404);
     try {

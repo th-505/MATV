@@ -1,0 +1,48 @@
+{
+  "version": "1.0.43",
+  "identity": "MITV",
+  "physical_device_tested": false,
+  "render_match_video_proxy": false,
+  "decoder_evidence": [
+    {
+      "mode": "file",
+      "engine": "media_kit/libmpv",
+      "decoded": true,
+      "width": 160,
+      "height": 90,
+      "position_ms": 1250,
+      "downloaded_bytes": 60406,
+      "range_resumed": true,
+      "origin": "device-local-file",
+      "physical_device_tested": false
+    },
+    {
+      "mode": "live",
+      "engine": "media_kit/libmpv",
+      "decoded": true,
+      "width": 960,
+      "height": 540,
+      "position_ms": 520,
+      "downloaded_bytes": null,
+      "range_resumed": false,
+      "origin": "https://pull.gosh6.app",
+      "physical_device_tested": false
+    }
+  ],
+  "viewport_tested_sizes": [
+    [
+      390,
+      844
+    ],
+    [
+      844,
+      390
+    ],
+    [
+      1920,
+      1080
+    ]
+  ],
+  "package_id": "com.mitv.mitv",
+  "release_ci": "pending"
+}

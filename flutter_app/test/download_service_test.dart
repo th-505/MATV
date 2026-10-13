@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:al_qahtani/src/download_service.dart';
+import 'package:mitv/src/download_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -15,7 +15,7 @@ void main() {
   test('download rejects any non Al-Qahtani opaque media path', () async {
     final service = DownloadService(
       client: MockClient((_) async => http.Response('ignored', 200)),
-      directoryProvider: () async => Directory.systemTemp.createTemp('al-qahtani-download-test'),
+      directoryProvider: () async => Directory.systemTemp.createTemp('mitv-download-test'),
     );
     addTearDown(service.close);
 
@@ -28,18 +28,18 @@ void main() {
   test('download requires explicit trusted download semantics', () async {
     final service = DownloadService(
       client: MockClient((_) async => http.Response('ignored', 200)),
-      directoryProvider: () async => Directory.systemTemp.createTemp('al-qahtani-download-test'),
+      directoryProvider: () async => Directory.systemTemp.createTemp('mitv-download-test'),
     );
     addTearDown(service.close);
 
     expect(
-      () => service.download(Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=opaque')),
+      () => service.download(Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque')),
       throwsA(isA<DownloadException>()),
     );
   });
 
   test('download writes atomically using a sanitized trusted filename', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -62,7 +62,7 @@ void main() {
     addTearDown(service.close);
 
     final result = await service.download(
-      Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=opaque&download=1'),
+      Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1'),
       fallbackName: 'ignored-name',
     );
 
@@ -73,7 +73,7 @@ void main() {
   });
 
   test('interrupted partial response resumes at the exact byte using Range', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-resume-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-resume-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -82,7 +82,7 @@ void main() {
     addTearDown(service.close);
 
     final result = await service.download(
-      Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=opaque&download=1'),
+      Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1'),
     );
 
     expect(client.requests, 2);
@@ -92,7 +92,7 @@ void main() {
   });
 
   test('206 Content-Range total wins over chunk Content-Length and rejects invalid resume ranges', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-range-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-range-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -112,14 +112,14 @@ void main() {
     addTearDown(service.close);
 
     await expectLater(
-      service.download(Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=opaque&download=1')),
+      service.download(Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1')),
       throwsA(isA<DownloadException>().having((e) => e.code, 'code', 'INVALID_RESUME_RANGE')),
     );
     expect(root.listSync().whereType<File>(), isEmpty);
   });
 
   test('cancellation interrupts a streaming download and removes the partial file', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-cancel-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-cancel-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -136,7 +136,7 @@ void main() {
     final firstChunkSeen = Completer<void>();
 
     final future = service.download(
-      Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=opaque&download=1'),
+      Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1'),
       cancellationToken: token,
       onProgress: (progress) {
         if (progress.receivedBytes > 0 && !firstChunkSeen.isCompleted) firstChunkSeen.complete();
@@ -154,7 +154,7 @@ void main() {
   });
 
   test('empty downloads fail closed and leave no partial file', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -165,14 +165,14 @@ void main() {
     addTearDown(service.close);
 
     await expectLater(
-      service.download(Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=opaque&download=1')),
+      service.download(Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1')),
       throwsA(isA<DownloadException>()),
     );
     expect(root.listSync().whereType<File>(), isEmpty);
   });
 
   test('local download list ignores partial and empty files and sorts newest first', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-list-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-list-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -193,7 +193,7 @@ void main() {
   });
 
   test('deleteDownload deletes safe local file and rejects unsafe stored names', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-download-delete-test');
+    final root = await Directory.systemTemp.createTemp('mitv-download-delete-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });

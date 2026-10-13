@@ -1,14 +1,14 @@
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/app_target.dart';
-import 'package:al_qahtani/src/details_page.dart';
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/app_target.dart';
+import 'package:mitv/src/details_page.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class _FakeApi extends AlQahtaniApi {
-  _FakeApi(this.response);
+class _FakeApi extends MitvApi {
+  _FakeApi(this.response) : super(useEdge: false);
 
   final TitleDetails response;
 
@@ -19,7 +19,8 @@ class _FakeApi extends AlQahtaniApi {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('episode actions keep a deterministic TV focus surface', (tester) async {
+  testWidgets('episode actions keep a deterministic TV focus surface',
+      (tester) async {
     SharedPreferences.setMockInitialValues(const {});
     final store = await LocalLibraryStore.create();
     final api = _FakeApi(const TitleDetails(
@@ -58,19 +59,24 @@ void main() {
     expect(find.byKey(const ValueKey('episode-play-ep-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('episode-download-ep-1')), findsOneWidget);
 
-    final playTile = tester.widget<ListTile>(find.byKey(const ValueKey('episode-play-ep-1')));
+    final playTile = tester
+        .widget<ListTile>(find.byKey(const ValueKey('episode-play-ep-1')));
     expect(playTile.focusNode, isNotNull);
     playTile.focusNode!.requestFocus();
     await tester.pump();
     expect(playTile.focusNode!.hasFocus, isTrue);
 
     if (isTvTarget) {
-      expect(find.byKey(const ValueKey('episode-play-button-ep-1')), findsNothing);
-      final downloadButton = tester.widget<IconButton>(find.byKey(const ValueKey('episode-download-ep-1')));
+      expect(
+          find.byKey(const ValueKey('episode-play-button-ep-1')), findsNothing);
+      final downloadButton = tester.widget<IconButton>(
+          find.byKey(const ValueKey('episode-download-ep-1')));
       expect(downloadButton.focusNode, isNotNull);
-      expect(downloadButton.focusNode!.debugLabel, contains('details-episode-download'));
+      expect(downloadButton.focusNode!.debugLabel,
+          contains('details-episode-download'));
     } else {
-      expect(find.byKey(const ValueKey('episode-play-button-ep-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('episode-play-button-ep-1')),
+          findsOneWidget);
     }
   });
 }

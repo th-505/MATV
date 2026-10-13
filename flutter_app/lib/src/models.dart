@@ -9,7 +9,7 @@ class MediaItem {
     required this.ref,
     this.year,
     this.rating = 0,
-    this.source = 'qahtani',
+    this.source = 'mitv',
   });
   final String id;
   final String title;
@@ -28,7 +28,7 @@ class MediaItem {
         ref: '${json['ref'] ?? ''}',
         year: int.tryParse('${json['year'] ?? ''}'),
         rating: (json['rating'] as num?)?.toDouble() ?? 0,
-        source: '${json['source'] ?? 'qahtani'}',
+        source: '${json['source'] ?? 'mitv'}',
       );
 }
 
@@ -302,15 +302,24 @@ class MatchPlayback {
   const MatchPlayback(
       {required this.mediaPath,
       required this.mediaType,
-      required this.serverName});
+      required this.serverName,
+      this.playbackMode = 'proxy',
+      this.headers = const {},
+      this.expiresAt});
   final String mediaPath;
   final String mediaType;
   final String serverName;
+  final String playbackMode;
+  final Map<String, String> headers;
+  final DateTime? expiresAt;
 
   factory MatchPlayback.fromJson(Map<String, dynamic> json) => MatchPlayback(
         mediaPath: '${json['media_path'] ?? ''}',
         mediaType: '${json['media_type'] ?? 'stream'}',
         serverName: '${json['server_name'] ?? 'سيرفر'}',
+        playbackMode: '${json['playback_mode'] ?? 'proxy'}',
+        headers: StreamSource.fromJson(json).headers,
+        expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       );
 }
 

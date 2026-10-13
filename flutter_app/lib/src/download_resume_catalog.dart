@@ -1,7 +1,11 @@
 import 'dart:io';
 
 class ResumeCandidate {
-  const ResumeCandidate({required this.path, required this.resumeKey, required this.bytes, required this.modifiedAt});
+  const ResumeCandidate(
+      {required this.path,
+      required this.resumeKey,
+      required this.bytes,
+      required this.modifiedAt});
 
   final String path;
   final String resumeKey;
@@ -21,10 +25,11 @@ class DownloadResumeCatalog {
     await for (final entity in directory.list(followLinks: false)) {
       if (entity is! File) continue;
       final name = _baseName(entity.path);
-      if (!name.startsWith('.qahtani-') || !name.endsWith('.part')) continue;
+      if (!name.startsWith('.mitv-') || !name.endsWith('.part')) continue;
       final stat = await entity.stat();
       if (stat.type != FileSystemEntityType.file || stat.size <= 0) continue;
-      final encodedKey = name.substring('.qahtani-'.length, name.length - '.part'.length);
+      final encodedKey =
+          name.substring('.mitv-'.length, name.length - '.part'.length);
       result.add(ResumeCandidate(
         path: entity.path,
         resumeKey: encodedKey.replaceAll('_', ' '),
@@ -45,7 +50,7 @@ class DownloadResumeCatalog {
       throw const ResumeCatalogException('OUTSIDE_DOWNLOAD_DIRECTORY');
     }
     final name = _baseName(absolute);
-    if (!name.startsWith('.qahtani-') || !name.endsWith('.part')) {
+    if (!name.startsWith('.mitv-') || !name.endsWith('.part')) {
       throw const ResumeCatalogException('INVALID_PARTIAL_FILE');
     }
     if (!await file.exists()) return false;

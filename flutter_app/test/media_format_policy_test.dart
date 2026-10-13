@@ -1,4 +1,4 @@
-import 'package:al_qahtani/src/media_format_policy.dart';
+import 'package:mitv/src/media_format_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:video_player/video_player.dart';
 

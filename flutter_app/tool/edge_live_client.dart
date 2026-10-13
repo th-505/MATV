@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:media_kit/media_kit.dart';
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/stream_bridge_native.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/stream_bridge_native.dart';
 import 'phase2_live_client.dart' show DevelopmentProxy;
 
 Future<void> main(List<String> args) async {
@@ -10,7 +10,7 @@ Future<void> main(List<String> args) async {
   if (ca != null) SecurityContext.defaultContext.setTrustedCertificates(ca);
   HttpOverrides.global = DevelopmentProxy();
   MediaKit.ensureInitialized(libmpv: args[0]);
-  final api = AlQahtaniApi();
+  final api = MitvApi();
   final bridge = LocalStreamBridge(trustedEdge: true);
   final player = Player(
       configuration:

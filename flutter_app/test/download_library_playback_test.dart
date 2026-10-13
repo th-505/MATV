@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:al_qahtani/src/download_library_section.dart';
-import 'package:al_qahtani/src/download_service.dart';
+import 'package:mitv/src/download_library_section.dart';
+import 'package:mitv/src/download_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,7 +10,7 @@ void main() {
   late DownloadService service;
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('qahtani-download-library-');
+    temp = await Directory.systemTemp.createTemp('mitv-download-library-');
     service = DownloadService(directoryProvider: () async => temp);
   });
 

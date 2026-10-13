@@ -24,7 +24,7 @@ class DetailsPage extends StatefulWidget {
     this.downloads,
   });
 
-  final AlQahtaniApi api;
+  final MitvApi api;
   final LocalLibraryStore store;
   final CatalogItem item;
   final DownloadService? downloads;
@@ -127,6 +127,7 @@ class _DetailsPageState extends State<DetailsPage> {
         ),
       ),
     );
+    if (mounted) setState(() {});
   }
 
   String _downloadLabel(String key) {
@@ -177,17 +178,35 @@ class _DetailsPageState extends State<DetailsPage> {
     });
     try {
       var resolvedPath = mediaPath;
-      if (resolvedPath.isEmpty) {
-        final resolved = await widget.api.resolvePlayback(sourceRef);
-        resolvedPath = resolved.mediaPath;
+      Map<String, String> downloadHeaders = const {};
+      Uri uri;
+      if (widget.api.usesEdge) {
+        final ref = sourceRef.isEmpty ? widget.item.ref : sourceRef;
+        var source = widget.api.downloadableSource(ref);
+        if (source == null) {
+          await widget.api.resolvePlayback(ref, refresh: true);
+          source = widget.api.downloadableSource(ref);
+        }
+        if (source == null) {
+          throw const DownloadException('HLS_DOWNLOAD_UNSUPPORTED');
+        }
+        downloadHeaders = source.headers;
+        uri = widget.api.mediaUri(source.mediaPath,
+            download: true, playbackMode: 'edge_direct');
+      } else {
+        if (resolvedPath.isEmpty) {
+          resolvedPath =
+              (await widget.api.resolvePlayback(sourceRef)).mediaPath;
+        }
+        uri = widget.api.mediaUri(resolvedPath, download: true);
       }
       if (token.isCancelled) {
         throw const DownloadException('DOWNLOAD_CANCELLED');
       }
-      final uri = widget.api.mediaUri(resolvedPath, download: true);
       final result = await _downloads.download(
         uri,
         fallbackName: title,
+        headers: downloadHeaders,
         resumeKey: buildDownloadResumeKey(widget.item, key),
         cancellationToken: token,
         onProgress: (progress) => _onDownloadProgress(key, progress),
@@ -293,8 +312,9 @@ class _DetailsPageState extends State<DetailsPage> {
                     final key = 'episode:${episode.id}:${episode.number}';
                     final focusNode = _episodeFocus(episode);
                     return _EpisodeTile(
-                      downloadAvailable: details.downloadAvailable &&
-                          !widget.item.ref.startsWith('3isk:'),
+                      downloadAvailable: widget.api.usesEdge
+                          ? widget.api.downloadableSource(episode.ref) != null
+                          : details.downloadAvailable,
                       episode: episode,
                       focusNode: focusNode,
                       downloadFocusNode:
@@ -321,7 +341,9 @@ class _DetailsPageState extends State<DetailsPage> {
                     trailing: const Icon(Icons.play_arrow),
                     onTap: () => _openDirect(details),
                   )),
-                  if (details.downloadAvailable)
+                  if (widget.api.usesEdge
+                      ? widget.api.downloadableSource(widget.item.ref) != null
+                      : details.downloadAvailable && details.mediaType == 'mp4')
                     Card(
                         child: ListTile(
                       leading: _activeDownloads.contains('direct')

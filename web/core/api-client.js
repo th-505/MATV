@@ -3,7 +3,7 @@ import { isNewsPayload, isCinemaPayload } from "./contracts.js";
 
 const configuredBackend=typeof document!=='undefined'?document.querySelector('meta[name="matv-api-base"]')?.content:'';
 const localBackend=typeof location!=='undefined'&&['localhost','127.0.0.1'].includes(location.hostname)?'http://127.0.0.1:3000':'';
-const ENDPOINTS=Object.freeze({backend:configuredBackend||localBackend||"https://al-qahtani-api.onrender.com",news:"https://news.albesriali03.workers.dev/"});
+const ENDPOINTS=Object.freeze({backend:configuredBackend||localBackend||"https://matv.onrender.com",news:"https://news.albesriali03.workers.dev/"});
 const BACKEND_TIMEOUT_MS=90000;
 const MATCH_TIMEOUT_MS=25000;
 

@@ -48,14 +48,25 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
   }
 
   Future<void> _reload() async {
-    if (mounted) setState(() { _loading = true; _error = null; });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final items = await _service.listDownloads();
       if (!mounted) return;
-      setState(() { _items = items; _loading = false; });
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
     } catch (_) {
       if (!mounted) return;
-      setState(() { _loading = false; _error = 'تعذر قراءة التنزيلات المحلية'; });
+      setState(() {
+        _loading = false;
+        _error = 'تعذر قراءة التنزيلات المحلية';
+      });
     }
   }
 
@@ -64,7 +75,9 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
     if (file != null) return file;
     if (!mounted) return null;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('الملف المحمّل غير موجود أو غير صالح. حدّث القائمة أو أعد التنزيل.')),
+      const SnackBar(
+          content: Text(
+              'الملف المحمّل غير موجود أو غير صالح. حدّث القائمة أو أعد التنزيل.')),
     );
     await _reload();
     return null;
@@ -94,7 +107,7 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
     await Share.shareXFiles(
       [XFile(file.path)],
       subject: item.name,
-      text: 'ملف محمّل من القحطاني TV',
+      text: 'ملف محمّل من MITV',
     );
   }
 
@@ -103,10 +116,12 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
       await _service.deleteDownload(item.name);
       await _reload();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف التنزيل من الجهاز')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم حذف التنزيل من الجهاز')));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر حذف التنزيل')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('تعذر حذف التنزيل')));
     }
   }
 
@@ -116,7 +131,9 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(children: [
-          Expanded(child: Text('التنزيلات', style: Theme.of(context).textTheme.titleLarge)),
+          Expanded(
+              child: Text('التنزيلات',
+                  style: Theme.of(context).textTheme.titleLarge)),
           IconButton(
             tooltip: 'تحديث التنزيلات',
             onPressed: _loading ? null : _reload,
@@ -124,14 +141,18 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
           ),
         ]),
         if (_loading) const LinearProgressIndicator(),
-        if (_error != null) ListTile(leading: const Icon(Icons.error_outline), title: Text(_error!)),
+        if (_error != null)
+          ListTile(
+              leading: const Icon(Icons.error_outline), title: Text(_error!)),
         if (!_loading && _error == null && _items.isEmpty)
           const ListTile(title: Text('لا توجد ملفات محمّلة صالحة بعد')),
         ..._items.map((item) => Card(
               child: ListTile(
                 leading: const Icon(Icons.download_done),
-                title: Text(item.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                subtitle: Text('${_formatBytes(item.bytes)} • تم التحقق • اضغط للتشغيل بدون إنترنت'),
+                title: Text(item.name,
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(
+                    '${_formatBytes(item.bytes)} • تم التحقق • اضغط للتشغيل بدون إنترنت'),
                 onTap: () => _open(item),
                 trailing: Wrap(
                   spacing: isTvTarget ? 8 : 0,
@@ -151,7 +172,9 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
                     ),
                   ],
                 ),
-                contentPadding: EdgeInsets.symmetric(horizontal: isTvTarget ? 20 : 12, vertical: isTvTarget ? 8 : 2),
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: isTvTarget ? 20 : 12,
+                    vertical: isTvTarget ? 8 : 2),
               ),
             )),
       ],
@@ -159,8 +182,12 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
   }
 
   static String _formatBytes(int bytes) {
-    if (bytes >= 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-    if (bytes >= 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes >= 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    }
+    if (bytes >= 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     if (bytes >= 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '$bytes B';
   }

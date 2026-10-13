@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/stream_bridge.dart';
-import 'package:al_qahtani/src/library_store.dart';
-import 'package:al_qahtani/src/models.dart';
-import 'package:al_qahtani/src/player_page.dart';
-import 'package:al_qahtani/src/universal_player.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/stream_bridge.dart';
+import 'package:mitv/src/library_store.dart';
+import 'package:mitv/src/models.dart';
+import 'package:mitv/src/player_page.dart';
+import 'package:mitv/src/universal_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -99,7 +99,7 @@ void main() {
         item: item,
         position: const Duration(seconds: 40),
         duration: const Duration(minutes: 10));
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: MockClient((request) async => http.Response(
             jsonEncode({
               'status': 'success',
@@ -145,7 +145,7 @@ void main() {
     expect(engines.last.seeks.first, const Duration(seconds: 40));
     expect(find.byKey(const Key('test-video-surface')), findsOneWidget);
     expect(find.byIcon(Icons.high_quality), findsOneWidget);
-    if (const String.fromEnvironment('AL_QAHTANI_TARGET') != 'tv') {
+    if (const String.fromEnvironment('MITV_TARGET') != 'tv') {
       final area = find.byKey(const Key('test-video-surface'));
       final origin = tester.getTopRight(area) - const Offset(30, -40);
       await tester.dragFrom(origin, const Offset(0, 60));
@@ -175,7 +175,7 @@ void main() {
         title: 'Alooy',
         poster: '',
         type: 'series');
-    final api = AlQahtaniApi(
+    final api = MitvApi(
         client: MockClient((request) async => http.Response(
             jsonEncode({
               'status': 'success',

@@ -1,4 +1,6 @@
-enum AppTarget { mobile, tv, ios }
+import 'package:flutter/foundation.dart';
+
+enum AppTarget { mobile, tv, ios, desktop }
 
 AppTarget parseAppTarget(String value) {
   switch (value.trim().toLowerCase()) {
@@ -6,6 +8,8 @@ AppTarget parseAppTarget(String value) {
       return AppTarget.tv;
     case 'ios':
       return AppTarget.ios;
+    case 'desktop':
+      return AppTarget.desktop;
     case 'mobile':
     default:
       return AppTarget.mobile;
@@ -13,10 +17,15 @@ AppTarget parseAppTarget(String value) {
 }
 
 const String appTargetValue = String.fromEnvironment(
-  'AL_QAHTANI_TARGET',
+  'MITV_TARGET',
   defaultValue: 'mobile',
 );
 
 final AppTarget appTarget = parseAppTarget(appTargetValue);
 
 bool get isTvTarget => appTarget == AppTarget.tv;
+
+bool get isDesktopTarget =>
+    !kIsWeb &&
+    [TargetPlatform.windows, TargetPlatform.linux, TargetPlatform.macOS]
+        .contains(defaultTargetPlatform);

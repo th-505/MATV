@@ -1,8 +1,8 @@
-name: MATV device trials
+name: MITV device trials
 
 on:
   push:
-    branches: ['build/matv-*']
+    branches: ['build/mitv-*']
   workflow_dispatch:
     inputs:
       api_base:
@@ -28,16 +28,16 @@ jobs:
   verify-api:
     runs-on: ubuntu-latest
     env:
-      MATV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
     steps:
       - name: Validate deployment URL and health
         run: |
           python3 - <<'PY'
           import os, urllib.parse, urllib.request
-          url = urllib.parse.urlsplit(os.environ['MATV_API_BASE'])
+          url = urllib.parse.urlsplit(os.environ['MITV_API_BASE'])
           assert url.scheme == 'https' and url.hostname and not url.username and not url.password
           assert not url.query and not url.fragment and url.path in ('', '/')
-          with urllib.request.urlopen(os.environ['MATV_API_BASE'].rstrip('/') + '/health', timeout=90) as response:
+          with urllib.request.urlopen(os.environ['MITV_API_BASE'].rstrip('/') + '/health', timeout=90) as response:
               assert response.status == 200
           PY
 
@@ -52,13 +52,13 @@ jobs:
           - target: mobile
             platform: android-arm64
             abi: arm64-v8a
-            artifact: MATV-Android-Mobile-ARM64
+            artifact: MITV-Android-Mobile-ARM64
           - target: tv
             platform: android-arm
             abi: armeabi-v7a
-            artifact: MATV-Android-TV-ARM32
+            artifact: MITV-Android-TV-ARM32
     env:
-      MATV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
       APP_TARGET: ${{ matrix.target }}
       TARGET_PLATFORM: ${{ matrix.platform }}
       EXPECTED_ABI: ${{ matrix.abi }}
@@ -72,7 +72,7 @@ jobs:
           cache: true
       - name: Create Android scaffolding
         working-directory: flutter_app
-        run: flutter create --platforms=android --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=android --org com.mitv --project-name mitv .
       - name: Apply native branding and TV manifest
         run: |
           python3 scripts/apply_native_branding.py flutter_app
@@ -84,11 +84,11 @@ jobs:
         working-directory: flutter_app
         run: |
           flutter analyze
-          flutter test --dart-define="AL_QAHTANI_TARGET=$APP_TARGET"
+          flutter test --dart-define="MITV_TARGET=$APP_TARGET"
           dart run tool/alooy_bridge_smoke.dart
       - name: Build APK with deployed API and requested architecture
         working-directory: flutter_app
-        run: flutter build apk --release --split-per-abi --target-platform="$TARGET_PLATFORM" --dart-define="AL_QAHTANI_TARGET=$APP_TARGET" --dart-define="MATV_API_BASE=$MATV_API_BASE"
+        run: flutter build apk --release --split-per-abi --target-platform="$TARGET_PLATFORM" --dart-define="MITV_TARGET=$APP_TARGET" --dart-define="MITV_API_BASE=$MITV_API_BASE"
       - name: Verify and stage APK
         run: |
           set -euo pipefail
@@ -96,13 +96,15 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           "$APKSIGNER" verify "$APK"
-          "$AAPT" dump permissions "$APK" > /tmp/matv-permissions.txt
-          grep -q android.permission.INTERNET /tmp/matv-permissions.txt
-          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/matv-manifest.txt
-          grep -q networkSecurityConfig /tmp/matv-manifest.txt
-          "$AAPT" dump badging "$APK" > /tmp/matv-badging.txt
-          grep -qx "native-code: '$EXPECTED_ABI'" /tmp/matv-badging.txt || { cat /tmp/matv-badging.txt; exit 1; }
-          if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/matv-badging.txt; fi
+          "$AAPT" dump permissions "$APK" > /tmp/mitv-permissions.txt
+          grep -q android.permission.INTERNET /tmp/mitv-permissions.txt
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/mitv-manifest.txt
+          grep -q networkSecurityConfig /tmp/mitv-manifest.txt
+          "$AAPT" dump badging "$APK" > /tmp/mitv-badging.txt
+          grep -q "package: name='com.mitv.mitv'" /tmp/mitv-badging.txt
+          grep -q "application-label:'MITV'" /tmp/mitv-badging.txt
+          grep -qx "native-code: '$EXPECTED_ABI'" /tmp/mitv-badging.txt || { cat /tmp/mitv-badging.txt; exit 1; }
+          if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/mitv-badging.txt; fi
           mkdir -p trial
           cp "$APK" "trial/$ARTIFACT_NAME.apk"
           sha256sum "trial/$ARTIFACT_NAME.apk" > "trial/$ARTIFACT_NAME.apk.sha256"
@@ -117,7 +119,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 40
     env:
-      MATV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -127,7 +129,7 @@ jobs:
           cache: true
       - name: Create iOS scaffolding
         working-directory: flutter_app
-        run: flutter create --platforms=ios --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=ios --org com.mitv --project-name mitv .
       - name: Apply native branding
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Resolve dependencies
@@ -135,7 +137,7 @@ jobs:
         run: flutter pub get --enforce-lockfile
       - name: Build unsigned iPhone app with deployed API
         working-directory: flutter_app
-        run: flutter build ios --release --no-codesign --dart-define=AL_QAHTANI_TARGET=ios --dart-define="MATV_API_BASE=$MATV_API_BASE"
+        run: flutter build ios --release --no-codesign --dart-define=MITV_TARGET=ios --dart-define="MITV_API_BASE=$MITV_API_BASE"
       - name: Package unsigned IPA for external signing
         run: |
           set -euo pipefail
@@ -148,18 +150,83 @@ jobs:
           if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
           lipo -info trial/Payload/Runner.app/Runner | grep -q arm64
           cd trial
-          ditto -c -k --keepParent Payload MATV-iPhone-Unsigned.ipa
-          shasum -a 256 MATV-iPhone-Unsigned.ipa > MATV-iPhone-Unsigned.ipa.sha256
+          ditto -c -k --keepParent Payload MITV-iPhone-Unsigned.ipa
+          shasum -a 256 MITV-iPhone-Unsigned.ipa > MITV-iPhone-Unsigned.ipa.sha256
           rm -rf Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: MATV-iPhone-Unsigned
+          name: MITV-iPhone-Unsigned
+          path: trial/
+          retention-days: 14
+
+  windows:
+    needs: [verify-api, providers]
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Create Windows scaffolding
+        working-directory: flutter_app
+        run: flutter create --platforms=windows --org com.mitv --project-name mitv .
+      - name: Apply MITV desktop identity
+        run: python scripts/apply_native_branding.py flutter_app
+      - name: Resolve dependencies and test
+        working-directory: flutter_app
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze
+          flutter test --dart-define=MITV_TARGET=desktop
+      - name: Build native Windows x64 app
+        working-directory: flutter_app
+        run: flutter build windows --release --dart-define=MITV_TARGET=desktop --dart-define="MITV_API_BASE=$env:MITV_API_BASE"
+      - name: Package complete native bundle and installer
+        shell: pwsh
+        run: |
+          $sourceRoot = (Resolve-Path flutter_app/build/windows/x64/runner/Release).Path
+          if (!(Test-Path "$sourceRoot/mitv.exe")) { throw 'Missing MITV executable' }
+          $decoder = Get-ChildItem $sourceRoot -Filter '*mpv*.dll'
+          if (!$decoder) { throw 'Missing bundled libmpv' }
+          New-Item -ItemType Directory trial -Force | Out-Null
+          Compress-Archive -Path "$sourceRoot/*" -DestinationPath trial/MITV-Windows-x64.zip
+          $compiler = Get-ChildItem 'C:/Program Files (x86)', 'C:/Program Files' -Directory -Filter 'Inno Setup*' | ForEach-Object { Join-Path $_.FullName 'ISCC.exe' } | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (!$compiler) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+            $compiler = Get-ChildItem 'C:/Program Files (x86)', 'C:/Program Files' -Directory -Filter 'Inno Setup*' | ForEach-Object { Join-Path $_.FullName 'ISCC.exe' } | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if (!$compiler) { throw 'Inno Setup compiler not found' }
+          }
+          $version = (Select-String -Path flutter_app/pubspec.yaml -Pattern '^version: (\d+\.\d+\.\d+)\+').Matches[0].Groups[1].Value
+          $outputRoot = (Resolve-Path trial).Path
+          & $compiler "/DAppVersion=$version" "/DSourceRoot=$sourceRoot" "/DOutputRoot=$outputRoot" scripts/windows-installer.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          $installRoot = Join-Path $env:RUNNER_TEMP 'mitv-install-check'
+          $setup = Start-Process -FilePath "$outputRoot/MITV-Windows-x64-Setup.exe" -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installRoot") -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw 'Installer smoke test failed' }
+          foreach ($file in Get-ChildItem $sourceRoot -Recurse -File) {
+            $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
+            $installed = Join-Path $installRoot $relative
+            if (!(Test-Path $installed) -or (Get-FileHash $file.FullName).Hash -ne (Get-FileHash $installed).Hash) { throw "Installed file mismatch: $relative" }
+          }
+          foreach ($file in Get-ChildItem trial -File) {
+            $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($file.Name)" | Set-Content -Encoding ascii "$($file.FullName).sha256"
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MITV-Windows-x64
           path: trial/
           retention-days: 14
 
   verify-release:
-    needs: [android, ios-unsigned]
-    if: startsWith(github.ref, 'refs/heads/build/matv-')
+    needs: [android, ios-unsigned, windows]
+    if: startsWith(github.ref, 'refs/heads/build/mitv-')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -185,11 +252,11 @@ jobs:
           from pathlib import Path
           report=Path('device-verification.json').read_text().replace('%','%25').replace('\n','%0A')
           print('::notice title=Device artifact verification::'+report)
-          Path('/tmp/release-notes.md').write_text("Cloudflare edge extraction for 3isk/Akoam/Alooy, provider selection and synchronized automatic failover (including zero timestamp). Local Range streaming keeps video bytes off cloud servers.\n\nAndroid Mobile ARM64, Android TV ARMv7 and unsigned iOS ARM64. External signing is required for IPA installation.\n\nChecksums, architecture, libmpv and public API verification passed. Physical-device battery and thermal tests remain pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
+          Path('/tmp/release-notes.md').write_text("MITV identity, Cloudflare direct live-match extraction, unified full-window cinema/live player, protected direct MP4 downloads, and native Windows x64 packaging. Match video bodies are never forwarded through Render. HLS download actions are hidden.\n\nAndroid Mobile ARM64, Android TV ARMv7, unsigned iOS ARM64, and Windows x64 installer/portable bundle. External signing is required for IPA installation.\n\nChecksums, architecture, libmpv and public API verification passed. Physical-device battery and thermal tests remain pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
           PY_NOTES
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "MATV $VERSION" --notes-file /tmp/release-notes.md device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.sha256 device-verification.json
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "MITV $VERSION" --notes-file /tmp/release-notes.md device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.sha256 device-verification.json
       - uses: actions/upload-artifact@v4
         with:
-          name: MATV-device-verification
+          name: MITV-device-verification
           path: device-verification.json
           retention-days: 14

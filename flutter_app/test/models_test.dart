@@ -1,4 +1,4 @@
-import 'package:al_qahtani/src/models.dart';
+import 'package:mitv/src/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

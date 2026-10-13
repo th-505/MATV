@@ -25,7 +25,7 @@ jobs:
           cache: true
       - name: Create platform scaffolding without touching existing web
         working-directory: flutter_app
-        run: flutter create --platforms=android,ios --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=android,ios --org com.mitv --project-name mitv .
       - name: Apply approved native branding
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Dependencies
@@ -39,7 +39,7 @@ jobs:
         run: flutter test
       - name: Test Android TV runtime define
         working-directory: flutter_app
-        run: flutter test --dart-define=AL_QAHTANI_TARGET=tv
+        run: flutter test --dart-define=MITV_TARGET=tv
 
   android-mobile:
     runs-on: ubuntu-latest
@@ -62,12 +62,12 @@ jobs:
           echo "build=$BUILD" >> "$GITHUB_OUTPUT"
       - name: Create Android scaffold
         working-directory: flutter_app
-        run: flutter create --platforms=android --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=android --org com.mitv --project-name mitv .
       - name: Apply approved native branding
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Build mobile APK
         working-directory: flutter_app
-        run: flutter build apk --release --dart-define=AL_QAHTANI_TARGET=mobile
+        run: flutter build apk --release --dart-define=MITV_TARGET=mobile
       - name: Verify mobile APK identity, brand and signature
         env:
           EXPECTED_VERSION: ${{ steps.version.outputs.version }}
@@ -122,7 +122,7 @@ jobs:
           echo "build=$BUILD" >> "$GITHUB_OUTPUT"
       - name: Create Android scaffold
         working-directory: flutter_app
-        run: flutter create --platforms=android --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=android --org com.mitv --project-name mitv .
       - name: Apply approved native branding
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Configure Android TV manifest
@@ -141,11 +141,11 @@ jobs:
           grep -q 'android.hardware.touchscreen.*false' flutter_app/android/app/src/main/AndroidManifest.xml
           grep -q 'android:label="القحطاني TV"' flutter_app/android/app/src/main/AndroidManifest.xml
           grep -q 'NavigationRail' flutter_app/lib/main.dart
-          grep -q 'AL_QAHTANI_TARGET' flutter_app/lib/src/app_target.dart
+          grep -q 'MITV_TARGET' flutter_app/lib/src/app_target.dart
           test -s flutter_app/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
       - name: Build TV APK
         working-directory: flutter_app
-        run: flutter build apk --release --dart-define=AL_QAHTANI_TARGET=tv
+        run: flutter build apk --release --dart-define=MITV_TARGET=tv
       - name: Verify TV APK identity, signature and packaged features
         env:
           EXPECTED_VERSION: ${{ steps.version.outputs.version }}
@@ -199,12 +199,12 @@ jobs:
           echo "build=$BUILD" >> "$GITHUB_OUTPUT"
       - name: Create iOS scaffold
         working-directory: flutter_app
-        run: flutter create --platforms=ios --org com.alqahtani --project-name al_qahtani .
+        run: flutter create --platforms=ios --org com.mitv --project-name mitv .
       - name: Apply approved native branding
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Build iOS without codesign
         working-directory: flutter_app
-        run: flutter build ios --release --no-codesign --dart-define=AL_QAHTANI_TARGET=ios
+        run: flutter build ios --release --no-codesign --dart-define=MITV_TARGET=ios
       - name: Verify iOS bundle is explicitly unsigned and branded
         env:
           EXPECTED_VERSION: ${{ steps.version.outputs.version }}

@@ -25,7 +25,12 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
   mv.VideoController? _video;
   bool _closed = false;
   bool get usesExtendedEngine =>
-      kIsWeb || software || usesExtendedMediaEngine(mediaType, uri.path);
+      kIsWeb ||
+      software ||
+      (!kIsWeb &&
+          [TargetPlatform.windows, TargetPlatform.linux, TargetPlatform.macOS]
+              .contains(defaultTargetPlatform)) ||
+      usesExtendedMediaEngine(mediaType, uri.path);
   mk.Player? get extendedPlayer => _player;
   @override
   VideoPlayerValue get value => _state.value;
@@ -81,15 +86,17 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
       player.stream.tracks.listen((_) => _update(value.copyWith())),
       player.stream.error.listen((v) {
         if (v.isNotEmpty) {
-          _update(VideoPlayerValue.erroneous('تعذر تشغيل المصدر'));
+          _update(value.copyWith(
+              isPlaying: false, errorDescription: 'تعذر تشغيل المصدر'));
         }
       }),
     ]);
-    final playbackUri =
-        kIsWeb && ['hls', 'm3u8'].contains(mediaType.toLowerCase())
-            ? uri.replace(
-                queryParameters: {...uri.queryParameters, 'format': 'm3u8'})
-            : uri;
+    final playbackUri = kIsWeb &&
+            ['hls', 'm3u8'].contains(mediaType.toLowerCase()) &&
+            !uri.toString().toLowerCase().contains('m3u8')
+        ? uri.replace(
+            queryParameters: {...uri.queryParameters, 'format': 'm3u8'})
+        : uri;
     await player.open(
         mk.Media(playbackUri.toString(),
             httpHeaders: kIsWeb ? const {} : headers),
@@ -112,7 +119,10 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
       _native?.setVolume(volume) ?? _player!.setVolume(volume * 100);
   Widget video() => _native != null
       ? VideoPlayer(_native!)
-      : mv.Video(controller: _video!, controls: mv.NoVideoControls);
+      : mv.Video(
+          controller: _video!,
+          fit: BoxFit.contain,
+          controls: mv.NoVideoControls);
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;

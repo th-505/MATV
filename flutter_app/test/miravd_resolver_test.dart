@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:al_qahtani/src/api_client.dart';
-import 'package:al_qahtani/src/miravd_resolver.dart';
+import 'package:mitv/src/api_client.dart';
+import 'package:mitv/src/miravd_resolver.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -13,7 +13,7 @@ void main() {
     expect(miravdMediaUrl(packed), words[36]);
   });
   test('client metadata becomes a direct stream with CDN referer', () async {
-    final api = AlQahtaniApi(client: MockClient((request) async {
+    final api = MitvApi(client: MockClient((request) async {
       if (request.url.path == '/api/cinema/details') { return http.Response(jsonEncode({
         'status': 'success', 'playback_mode': 'client_resolve',
         'player_type': 'miravd', 'iframe_url': 'https://miravd.com/embed-fixture.html',
@@ -39,7 +39,7 @@ void main() {
   for (final invalidRedirect in [false, true]) {
     test(invalidRedirect ? 'metadata redirect cannot leave the trusted player host' : 'untrusted metadata URL is rejected before fetching', () async {
       var playerRequests = 0;
-      final api = AlQahtaniApi(client: MockClient((request) async {
+      final api = MitvApi(client: MockClient((request) async {
         if (request.url.path == '/api/cinema/details') { return http.Response(jsonEncode({
           'status': 'success', 'playback_mode': 'client_resolve',
           'resolver_url': invalidRedirect ? 'https://miravd.com/embed-demo.html' : 'https://evil.example/embed-demo.html',

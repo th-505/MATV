@@ -1,4 +1,6 @@
 import 'stream_bridge.dart';
+import 'fullscreen_video_surface.dart';
+import 'download_service.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -33,9 +35,12 @@ class PlayerPage extends StatefulWidget {
     this.streamBridgeFactory,
     this.episodeId = '',
     this.episodeNumber,
+    this.isLive = false,
+    this.localFileUri,
+    this.persistProgress = true,
   });
 
-  final AlQahtaniApi api;
+  final MitvApi api;
   final LocalLibraryStore store;
   final CatalogItem item;
   final String title;
@@ -46,6 +51,9 @@ class PlayerPage extends StatefulWidget {
   final Map<String, String> playbackHeaders;
   final String episodeId;
   final int? episodeNumber;
+  final bool isLive;
+  final Uri? localFileUri;
+  final bool persistProgress;
   final UniversalPlayer Function(Uri, String, Map<String, String>, bool)?
       playerFactory;
 
@@ -82,9 +90,16 @@ class _PlayerPageState extends State<PlayerPage> {
   int _generation = 0;
   DateTime? _expiresAt;
   Duration? _handoffPosition;
+  Duration? _lastObservedPosition;
   final _decoderRetries = <int>{};
   int _bufferedTicks = 0;
   bool _requestedPlaying = true;
+  String _currentMediaPath = '';
+  String _currentMediaType = '';
+  Map<String, String> _currentHeaders = const {};
+  DownloadService? _downloadService;
+  DownloadCancellationToken? _downloadToken;
+  DownloadProgress? _downloadProgress;
 
   @override
   void initState() {
@@ -96,9 +111,9 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _enterDisplay() async {
-    if (kIsWeb) return;
+    if (kIsWeb || isDesktopTarget) return;
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    if (!isTvTarget) {
+    if (!isTvTarget && !isDesktopTarget) {
       await SystemChrome.setPreferredOrientations(
           [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     }
@@ -123,7 +138,12 @@ class _PlayerPageState extends State<PlayerPage> {
     if (isTvTarget) return;
     try {
       final value = await ScreenBrightness.instance.application;
-      if (mounted) setState(() => _brightness = value.clamp(.15, 1));
+      if (mounted) {
+        setState(() {
+          _brightness = value.clamp(.15, 1);
+          _nativeBrightness = true;
+        });
+      }
     } catch (_) {}
   }
 
@@ -158,7 +178,7 @@ class _PlayerPageState extends State<PlayerPage> {
     _revealControls();
     await SystemChrome.setEnabledSystemUIMode(
         _fullscreen ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
-    if (!isTvTarget) {
+    if (!isTvTarget && !isDesktopTarget) {
       await SystemChrome.setPreferredOrientations(_fullscreen
           ? [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]
           : DeviceOrientation.values);
@@ -171,7 +191,7 @@ class _PlayerPageState extends State<PlayerPage> {
         await ScreenBrightness.instance.resetApplicationScreenBrightness();
       }
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      if (!isTvTarget) {
+      if (!isTvTarget && !isDesktopTarget) {
         await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
       }
     } catch (_) {}
@@ -185,7 +205,7 @@ class _PlayerPageState extends State<PlayerPage> {
     _nativeStartupTimer?.cancel();
     _nativeFailureInFlight = false;
     try {
-      var mediaPath = widget.mediaPath;
+      var mediaPath = widget.localFileUri?.toString() ?? widget.mediaPath;
       var mediaType = widget.mediaType;
       var playbackMode = widget.playbackMode;
       var playbackHeaders = widget.playbackHeaders;
@@ -219,6 +239,9 @@ class _PlayerPageState extends State<PlayerPage> {
             : _resolvedHeaders;
         expiresAt = _sources[_sourceIndex].expiresAt ?? _expiresAt;
       }
+      _currentMediaPath = mediaPath;
+      _currentMediaType = mediaType;
+      _currentHeaders = playbackHeaders;
       _resolvedPlaybackMode = playbackMode;
       _resolvedHeaders = playbackHeaders;
       if (!mounted) return;
@@ -227,7 +250,13 @@ class _PlayerPageState extends State<PlayerPage> {
       await previousBridge?.close();
       if (!mounted || generation != _generation) return;
       Uri uri;
-      if (playbackMode == 'local_proxy' || playbackMode == 'edge_local_proxy') {
+      if (widget.localFileUri != null) {
+        uri = widget.localFileUri!;
+        if (uri.scheme != 'file' || uri.host.isNotEmpty) {
+          throw StateError('INVALID_LOCAL_FILE');
+        }
+      } else if (playbackMode == 'local_proxy' ||
+          playbackMode == 'edge_local_proxy') {
         final bridge = widget.streamBridgeFactory?.call() ??
             LocalStreamBridge(trustedEdge: playbackMode == 'edge_local_proxy');
         _streamBridge = bridge;
@@ -260,7 +289,8 @@ class _PlayerPageState extends State<PlayerPage> {
       final resume = _handoffPosition ??
           widget.store
               .resumePosition(widget.item.ref, episodeId: widget.episodeId);
-      if ((_handoffPosition != null || resume >= const Duration(seconds: 5)) &&
+      if (!widget.isLive &&
+          (_handoffPosition != null || resume >= const Duration(seconds: 5)) &&
           (controller.value.duration <= Duration.zero ||
               resume < controller.value.duration)) {
         await controller.seekTo(resume);
@@ -314,6 +344,9 @@ class _PlayerPageState extends State<PlayerPage> {
     if (controller == null || _nativeFailureInFlight) {
       return;
     }
+    if (!controller.value.hasError && controller.value.isInitialized) {
+      _lastObservedPosition = controller.value.position;
+    }
     if (controller.value.hasError) {
       unawaited(_fallbackFromNative('تعذر استمرار التشغيل بالمشغل الأصلي'));
     }
@@ -327,6 +360,8 @@ class _PlayerPageState extends State<PlayerPage> {
     if (controller != null) {
       if (controller.value.isInitialized) {
         _handoffPosition = controller.value.position;
+      } else if (_lastObservedPosition != null) {
+        _handoffPosition = _lastObservedPosition;
       }
       controller.removeListener(_nativeValueChanged);
       try {
@@ -345,6 +380,14 @@ class _PlayerPageState extends State<PlayerPage> {
     }
     _progressTimer?.cancel();
     if (!mounted) return;
+    if (widget.localFileUri != null &&
+        controller != null &&
+        !controller.usesExtendedEngine &&
+        _decoderRetries.add(-1)) {
+      _nativeFailureInFlight = false;
+      await _initialize(keepSources: true, software: true);
+      return;
+    }
     final edgeSources = _sources.any((s) => s.playbackMode.startsWith('edge_'));
     if (edgeSources && _sources.isNotEmpty) {
       widget.api.sourceRouter
@@ -408,6 +451,7 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _saveProgress() async {
+    if (widget.isLive || !widget.persistProgress) return;
     final controller = _controller;
     if (controller == null ||
         !controller.value.isInitialized ||
@@ -428,6 +472,7 @@ class _PlayerPageState extends State<PlayerPage> {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
     final duration = controller.value.duration;
+    if (widget.isLive && duration <= Duration.zero) return;
     var target = controller.value.position + delta;
     if (target < Duration.zero) target = Duration.zero;
     if (duration > Duration.zero && target > duration) target = duration;
@@ -465,6 +510,8 @@ class _PlayerPageState extends State<PlayerPage> {
     _saveProgress();
     _controller?.removeListener(_nativeValueChanged);
     _controller?.dispose();
+    _downloadToken?.cancel();
+    _downloadService?.close();
     unawaited(_streamBridge?.close() ?? Future.value());
     super.dispose();
   }
@@ -494,17 +541,20 @@ class _PlayerPageState extends State<PlayerPage> {
               builder: (context, value, _) {
                 final maximum = value.duration.inMilliseconds.toDouble();
                 return Column(children: [
-                  Slider(
-                      value: value.position.inMilliseconds
-                          .toDouble()
-                          .clamp(0, maximum > 0 ? maximum : 1),
-                      max: maximum > 0 ? maximum : 1,
-                      onChanged: maximum > 0
-                          ? (v) => activeController
-                              .seekTo(Duration(milliseconds: v.round()))
-                          : null),
+                  if (!widget.isLive || maximum > 0)
+                    Slider(
+                        value: value.position.inMilliseconds
+                            .toDouble()
+                            .clamp(0, maximum > 0 ? maximum : 1),
+                        max: maximum > 0 ? maximum : 1,
+                        onChanged: maximum > 0
+                            ? (v) => activeController
+                                .seekTo(Duration(milliseconds: v.round()))
+                            : null),
                   Text(
-                      '${_time(value.position)} • المتبقي ${_time(value.duration - value.position)}',
+                      widget.isLive
+                          ? 'بث مباشر • ${_time(value.position)}'
+                          : '${_time(value.position)} • المتبقي ${_time(value.duration - value.position)}',
                       style: const TextStyle(fontSize: 12)),
                   _trackControls(activeController),
                 ]);
@@ -551,9 +601,67 @@ class _PlayerPageState extends State<PlayerPage> {
     _revealControls();
   }
 
+  Future<void> _downloadCurrent() async {
+    if (_downloadToken != null) {
+      _downloadToken!.cancel();
+      return;
+    }
+    if (widget.isLive || _currentMediaType != 'mp4') return;
+    final token = DownloadCancellationToken();
+    _downloadService ??= DownloadService();
+    setState(() => _downloadToken = token);
+    try {
+      final uri = widget.api.mediaUri(_currentMediaPath,
+          download: true,
+          playbackMode: _resolvedPlaybackMode == 'edge_local_proxy'
+              ? 'edge_direct'
+              : _resolvedPlaybackMode,
+          expiresAt: _expiresAt);
+      await _downloadService!.download(uri,
+          headers: _currentHeaders,
+          fallbackName: '${widget.title}.mp4',
+          resumeKey: '${widget.item.ref}:${widget.episodeId}',
+          cancellationToken: token, onProgress: (p) {
+        if (mounted) setState(() => _downloadProgress = p);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('اكتمل تنزيل MP4. الملف متاح في مكتبتك.')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(token.isCancelled
+                ? 'تم إلغاء التنزيل'
+                : 'تعذر تنزيل هذا المصدر. أعد استخراج الرابط ثم حاول مجددًا.')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _downloadToken = null;
+          _downloadProgress = null;
+        });
+      }
+    }
+  }
+
   Widget _trackControls(UniversalPlayer controller) {
     final player = controller.extendedPlayer;
     return Wrap(alignment: WrapAlignment.center, spacing: 12, children: [
+      if (!kIsWeb &&
+          !widget.isLive &&
+          widget.localFileUri == null &&
+          _currentMediaType == 'mp4')
+        IconButton(
+            tooltip: _downloadToken == null ? 'تنزيل MP4' : 'إلغاء التنزيل',
+            onPressed: _downloadCurrent,
+            icon: Icon(_downloadToken == null ? Icons.download : Icons.cancel)),
+      if (_downloadProgress != null)
+        Text('${((_downloadProgress!.fraction ?? 0) * 100).round()}%'),
+      if (widget.isLive)
+        const Padding(
+            padding: EdgeInsets.all(12),
+            child: Text('● مباشر', style: TextStyle(color: Colors.redAccent))),
       if (player == null)
         IconButton(
             tooltip: 'خيارات الصوت والترجمة',
@@ -643,154 +751,117 @@ class _PlayerPageState extends State<PlayerPage> {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    final activeController =
-        controller?.value.isInitialized == true ? controller : null;
+    final active = controller?.value.isInitialized == true ? controller : null;
+    final insets = MediaQuery.paddingOf(context);
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: _fullscreen ? null : AppBar(title: Text(widget.title)),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints:
-                BoxConstraints(maxWidth: _fullscreen ? double.infinity : 1100),
-            child: Padding(
-              padding: EdgeInsets.all(_fullscreen ? 0 : 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (activeController != null)
-                    Flexible(
-                        child: AspectRatio(
-                      aspectRatio: activeController.value.aspectRatio > 0
-                          ? activeController.value.aspectRatio
-                          : 16 / 9,
-                      child: LayoutBuilder(
-                          builder: (context, constraints) => GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => _controlsVisible
-                                    ? setState(() => _controlsVisible = false)
-                                    : _revealControls(),
-                                onDoubleTapDown: (d) => _gestureRight =
-                                    d.localPosition.dx >
-                                        constraints.maxWidth / 2,
-                                onDoubleTap: _doubleTapSeek,
-                                onVerticalDragStart: isTvTarget
-                                    ? null
-                                    : (d) => _gestureRight =
-                                        d.localPosition.dx >
-                                            constraints.maxWidth / 2,
-                                onVerticalDragUpdate: isTvTarget
-                                    ? null
-                                    : (d) {
-                                        final change =
-                                            -(d.primaryDelta ?? 0) / 240;
-                                        setState(() {
-                                          if (_gestureRight) {
-                                            _volume =
-                                                (_volume + change).clamp(0, 1);
-                                          } else {
-                                            _brightness = (_brightness + change)
-                                                .clamp(.15, 1);
-                                          }
-                                        });
-                                        if (_gestureRight) {
-                                          unawaited(activeController
-                                              .setVolume(_volume));
-                                        } else {
-                                          unawaited(_setBrightness());
-                                        }
-                                        _revealControls();
-                                      },
-                                child: Stack(fit: StackFit.expand, children: [
-                                  activeController.video(),
-                                  if (_seekFeedback.isNotEmpty)
-                                    IgnorePointer(
-                                        child: Align(
-                                      alignment: _gestureRight
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      child: Container(
-                                          margin: const EdgeInsets.all(28),
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              borderRadius:
-                                                  BorderRadius.circular(20)),
-                                          child: Text(_seekFeedback,
-                                              style: const TextStyle(
-                                                  fontSize: 22,
-                                                  color: Colors.white))),
-                                    )),
-                                  if (_controlsVisible && _fullscreen)
-                                    Positioned(
-                                        top: 4,
-                                        left: 4,
-                                        child: IconButton(
-                                            tooltip: 'رجوع',
-                                            icon: const Icon(Icons.arrow_back),
-                                            onPressed: () =>
-                                                Navigator.of(context)
-                                                    .maybePop())),
-                                  if (_controlsVisible)
-                                    Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        child:
-                                            _modernControls(activeController)),
-                                  if (_controlsVisible)
-                                    Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: IconButton(
-                                            tooltip: _fullscreen
-                                                ? 'تصغير'
-                                                : 'ملء الشاشة',
-                                            icon: Icon(_fullscreen
-                                                ? Icons.fullscreen_exit
-                                                : Icons.fullscreen),
-                                            onPressed: _toggleFullscreen)),
-                                  IgnorePointer(
-                                      child: ColoredBox(
-                                          color: Colors.black.withValues(
-                                              alpha: _nativeBrightness
-                                                  ? 0
-                                                  : 1 - _brightness))),
-                                ]),
-                              )),
-                    ))
-                  else if (_failed)
-                    const Icon(Icons.error_outline, size: 72)
-                  else
-                    const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  if (!_fullscreen || _failed)
-                    Text(_status, textAlign: TextAlign.center),
-                  if (_failed) ...[
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      autofocus: isTvTarget,
-                      onPressed: () {
-                        _controller?.dispose();
-                        _controller = null;
-                        setState(() {
-                          _failed = false;
-                          _status = 'جاري إعادة المحاولة…';
-                        });
-                        _initialize();
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('إعادة المحاولة'),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('جرّب إعادة المحاولة أو اختيار عمل آخر.',
-                        textAlign: TextAlign.center),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      body: SizedBox.expand(
+          child: Stack(fit: StackFit.expand, children: [
+        if (active != null)
+          GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _controlsVisible
+                  ? setState(() => _controlsVisible = false)
+                  : _revealControls(),
+              onDoubleTapDown: (d) => _gestureRight =
+                  d.localPosition.dx > MediaQuery.sizeOf(context).width / 2,
+              onDoubleTap: _doubleTapSeek,
+              onVerticalDragStart: isTvTarget
+                  ? null
+                  : (d) => _gestureRight =
+                      d.localPosition.dx > MediaQuery.sizeOf(context).width / 2,
+              onVerticalDragUpdate: isTvTarget
+                  ? null
+                  : (d) {
+                      final change = -(d.primaryDelta ?? 0) /
+                          MediaQuery.sizeOf(context).height;
+                      setState(() {
+                        if (_gestureRight) {
+                          _volume = (_volume + change).clamp(0, 1);
+                        } else {
+                          _brightness = (_brightness + change).clamp(.15, 1);
+                        }
+                      });
+                      if (_gestureRight) {
+                        unawaited(active.setVolume(_volume));
+                      } else {
+                        unawaited(_setBrightness());
+                      }
+                      _revealControls();
+                    },
+              child: Stack(fit: StackFit.expand, children: [
+                ValueListenableBuilder<VideoPlayerValue>(
+                    valueListenable: active,
+                    child: active.video(),
+                    builder: (_, value, video) => FullscreenVideoSurface(
+                        videoSize: value.size, child: video!)),
+                if (!_nativeBrightness && _brightness < 1)
+                  IgnorePointer(
+                      child: ColoredBox(
+                          color:
+                              Colors.black.withValues(alpha: 1 - _brightness))),
+                if (_seekFeedback.isNotEmpty)
+                  IgnorePointer(
+                      child: Align(
+                          alignment: _gestureRight
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                              margin: const EdgeInsets.all(28),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(20)),
+                              child: Text(_seekFeedback,
+                                  style: const TextStyle(
+                                      fontSize: 22, color: Colors.white))))),
+              ])),
+        if (active == null)
+          Center(
+              child: SafeArea(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+            _failed
+                ? const Icon(Icons.error_outline, size: 64)
+                : const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(_status, textAlign: TextAlign.center)),
+            if (_failed)
+              FilledButton(
+                  onPressed: () {
+                    setState(() => _failed = false);
+                    _initialize(forceRefresh: true);
+                  },
+                  child: const Text('إعادة المحاولة')),
+            TextButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: const Text('رجوع')),
+          ]))),
+        if (active != null && _controlsVisible) ...[
+          Positioned(
+              top: insets.top + 4,
+              left: insets.left + 4,
+              child: IconButton(
+                  tooltip: 'رجوع',
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).maybePop())),
+          Positioned(
+              top: insets.top + 4,
+              right: insets.right + 4,
+              child: IconButton(
+                  tooltip: _fullscreen ? 'تصغير' : 'ملء الشاشة',
+                  icon: Icon(
+                      _fullscreen ? Icons.fullscreen_exit : Icons.fullscreen),
+                  onPressed: _toggleFullscreen)),
+          Positioned(
+              left: insets.left,
+              right: insets.right,
+              bottom: insets.bottom,
+              child: _modernControls(active)),
+        ],
+      ])),
     );
   }
 }

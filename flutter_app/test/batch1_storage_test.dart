@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:al_qahtani/src/download_resume_catalog.dart';
-import 'package:al_qahtani/src/m3u_cache_engine.dart';
-import 'package:al_qahtani/src/storage_quota_manager.dart';
+import 'package:mitv/src/download_resume_catalog.dart';
+import 'package:mitv/src/m3u_cache_engine.dart';
+import 'package:mitv/src/storage_quota_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('M3U cache persists, serves offline content, and purges expired entries', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-m3u-cache-test');
+    final root = await Directory.systemTemp.createTemp('mitv-m3u-cache-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -23,7 +23,7 @@ void main() {
   });
 
   test('storage quota deletes oldest files first while protecting active files', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-quota-test');
+    final root = await Directory.systemTemp.createTemp('mitv-quota-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
@@ -53,12 +53,12 @@ void main() {
   });
 
   test('resume catalog survives process boundaries by rediscovering partial files', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-resume-catalog-test');
+    final root = await Directory.systemTemp.createTemp('mitv-resume-catalog-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
 
-    final partial = File('${root.path}${Platform.pathSeparator}.qahtani-series_1_episode_7.part');
+    final partial = File('${root.path}${Platform.pathSeparator}.mitv-series_1_episode_7.part');
     await partial.writeAsBytes(<int>[1, 2, 3, 4, 5]);
 
     final catalogAfterRestart = DownloadResumeCatalog(() async => root);

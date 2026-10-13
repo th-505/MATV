@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:al_qahtani/src/download_service.dart';
+import 'package:mitv/src/download_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
@@ -15,13 +15,13 @@ const _validMp4Bytes = <int>[
 
 void main() {
   test('pre-existing partial resumes from the exact byte on a later attempt', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-persistent-resume-test');
+    final root = await Directory.systemTemp.createTemp('mitv-persistent-resume-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
 
     final splitAt = 12;
-    final partial = File('${root.path}${Platform.pathSeparator}.qahtani-series_ref_episode_5.part');
+    final partial = File('${root.path}${Platform.pathSeparator}.mitv-series_ref_episode_5.part');
     await partial.writeAsBytes(_validMp4Bytes.sublist(0, splitAt));
 
     final client = _LaterAttemptClient(splitAt: splitAt);
@@ -29,7 +29,7 @@ void main() {
     addTearDown(service.close);
 
     final result = await service.download(
-      Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=fresh-opaque&download=1'),
+      Uri.parse('https://matv.onrender.com/api/cinema/media?id=fresh-opaque&download=1'),
       fallbackName: 'Episode 5',
       resumeKey: 'series/ref:episode:5',
     );
@@ -42,12 +42,12 @@ void main() {
   });
 
   test('invalid resume range deletes the stale partial instead of corrupting output', () async {
-    final root = await Directory.systemTemp.createTemp('al-qahtani-invalid-resume-test');
+    final root = await Directory.systemTemp.createTemp('mitv-invalid-resume-test');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
     });
 
-    final partial = File('${root.path}${Platform.pathSeparator}.qahtani-series_ref_episode_5.part');
+    final partial = File('${root.path}${Platform.pathSeparator}.mitv-series_ref_episode_5.part');
     await partial.writeAsBytes(<int>[1, 2, 3, 4, 5]);
 
     final service = DownloadService(
@@ -58,7 +58,7 @@ void main() {
 
     await expectLater(
       service.download(
-        Uri.parse('https://al-qahtani-api.onrender.com/api/cinema/media?id=fresh-opaque&download=1'),
+        Uri.parse('https://matv.onrender.com/api/cinema/media?id=fresh-opaque&download=1'),
         fallbackName: 'Episode 5',
         resumeKey: 'series/ref:episode:5',
       ),

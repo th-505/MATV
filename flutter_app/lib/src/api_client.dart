@@ -5,24 +5,45 @@ import 'media_repository.dart';
 import 'miravd_resolver.dart';
 import 'alooy_policy.dart';
 
-class AlQahtaniApi implements MediaRepository {
+class MitvApi implements MediaRepository {
   final sourceRouter = SourceRouter();
-  AlQahtaniApi({http.Client? client, Uri? baseUri, Uri? edgeUri, bool? useEdge})
+  MitvApi({http.Client? client, Uri? baseUri, Uri? edgeUri, bool? useEdge})
       : _client = client ?? http.Client(),
         _useEdge = useEdge ?? (edgeUri != null || client == null),
         _edgeUri = edgeUri ??
-            Uri.parse(const String.fromEnvironment('MATV_EDGE_BASE',
+            Uri.parse(const String.fromEnvironment('MITV_EDGE_BASE',
                 defaultValue:
                     'https://matv-edge-resolver.dada1000100.workers.dev')),
         _baseUri = baseUri ??
-            Uri.parse(const String.fromEnvironment('MATV_API_BASE',
+            Uri.parse(const String.fromEnvironment('MITV_API_BASE',
                 defaultValue: 'https://matv.onrender.com'));
 
   final http.Client _client;
   final Uri _baseUri;
   final Uri _edgeUri;
   final bool _useEdge;
+  bool get usesEdge => _useEdge;
   final _edgeStreams = <String, DateTime>{};
+  final _playbackCache = <String, TitleDetails>{};
+  TitleDetails? cachedPlayback(String ref) {
+    final value = _playbackCache[ref];
+    return value?.expiresAt?.isAfter(DateTime.now()) == true ? value : null;
+  }
+
+  PlaybackSource? downloadableSource(String ref) {
+    if (const bool.fromEnvironment('dart.library.js_interop')) return null;
+    final sources =
+        cachedPlayback(ref)?.mediaSources ?? const <PlaybackSource>[];
+    for (final source in sources) {
+      if (source.mediaType == 'mp4' &&
+          source.expiresAt?.isAfter(DateTime.now()) == true &&
+          !ref.startsWith('match')) {
+        return source;
+      }
+    }
+    return null;
+  }
+
   final _metadata = <String, ({DateTime expires, TitleDetails details})>{};
   final _metadataPending = <String, Future<void>>{};
   TitleDetails? cachedMetadata(String ref) {
@@ -81,13 +102,17 @@ class AlQahtaniApi implements MediaRepository {
   }
 
   Future<List<MatchItem>> matches() async {
-    final json = await _getJson('/api/v1/matches');
+    final json = _useEdge
+        ? await _edgeJson('/v1/matches')
+        : await _getJson('/api/v1/matches');
     return _list(json['data']).map(_matchItem).toList(growable: false);
   }
 
   Future<List<MatchServer>> matchServers(String ref) async {
     if (ref.trim().isEmpty) throw const ApiException('MISSING_MATCH_REFERENCE');
-    final json = await _getJson('/api/v1/matches/servers', {'ref': ref});
+    final json = _useEdge
+        ? await _edgeJson('/v1/matches/servers', {'ref': ref})
+        : await _getJson('/api/v1/matches/servers', {'ref': ref});
     return _list(json['data'])
         .map(MatchServer.fromJson)
         .where((server) => server.ref.isNotEmpty)
@@ -97,6 +122,16 @@ class AlQahtaniApi implements MediaRepository {
   Future<MatchPlayback> resolveMatchPlayback(String serverRef) async {
     if (serverRef.trim().isEmpty) {
       throw const ApiException('MISSING_MATCH_SERVER_REFERENCE');
+    }
+    if (_useEdge) {
+      final resolved = await resolvePlayback(serverRef);
+      return MatchPlayback(
+          mediaPath: resolved.mediaPath,
+          mediaType: resolved.mediaType,
+          serverName: resolved.mediaSources.first.provider,
+          playbackMode: resolved.playbackMode,
+          headers: resolved.playbackHeaders,
+          expiresAt: resolved.expiresAt);
     }
     final json = await _getJson('/api/v1/matches/playback', {'ref': serverRef});
     final data = json['data'];
@@ -184,9 +219,30 @@ class AlQahtaniApi implements MediaRepository {
   }
 
   @override
-  Future<TitleDetails> details(String ref) {
+  Future<TitleDetails> details(String ref) async {
     final cached = cachedMetadata(ref);
-    return cached?.hasEpisodes == true ? Future.value(cached!) : _details(ref);
+    final metadata =
+        cached?.hasEpisodes == true ? cached! : await _details(ref);
+    if (_useEdge &&
+        !metadata.hasEpisodes &&
+        metadata.canPlay &&
+        ['3isk:', 'alooy:', 'legacy:'].any(ref.startsWith)) {
+      final playback = await resolvePlayback(ref);
+      return TitleDetails(
+          title: metadata.title,
+          poster: metadata.poster,
+          episodes: metadata.episodes,
+          mediaPath: playback.mediaPath,
+          mediaType: playback.mediaType,
+          playbackMode: playback.playbackMode,
+          playbackHeaders: playback.playbackHeaders,
+          mediaSources: playback.mediaSources,
+          expiresAt: playback.expiresAt,
+          downloadAvailable: playback.downloadAvailable,
+          playbackUnavailable: false,
+          playbackReason: '');
+    }
+    return metadata;
   }
 
   Future<TitleDetails> _details(String ref, {bool refresh = false}) async {
@@ -206,7 +262,9 @@ class AlQahtaniApi implements MediaRepository {
   @override
   Future<TitleDetails> resolvePlayback(String ref,
       {bool refresh = false}) async {
-    if (_useEdge && ['3isk:', 'alooy:', 'legacy:'].any(ref.startsWith)) {
+    if (_useEdge &&
+        ['3isk:', 'alooy:', 'legacy:', 'match:', 'matchserver:']
+            .any(ref.startsWith)) {
       return _resolveEdge(ref, refresh: refresh);
     }
     // Metadata prefetch never substitutes for a playable, token-aware response.
@@ -231,7 +289,11 @@ class AlQahtaniApi implements MediaRepository {
     }
     final response = await _client.get(
         _edgeUri.replace(
-            path: '/v1/resolve',
+            path: ref.startsWith('match:')
+                ? '/v1/matches/resolve'
+                : ref.startsWith('matchserver:')
+                    ? '/v1/matches/playback'
+                    : '/v1/resolve',
             queryParameters: {'ref': ref, if (refresh) 'refresh': '1'}),
         headers: const {
           'accept': 'application/json'
@@ -252,7 +314,7 @@ class AlQahtaniApi implements MediaRepository {
       if (raw is! Map ||
           (const bool.fromEnvironment('dart.library.js_interop') &&
               raw['web_playable'] != true) ||
-          !['3isk', 'akoam', 'alooy'].contains(raw['provider_id'])) {
+          !['3isk', 'akoam', 'alooy', 'matches'].contains(raw['provider_id'])) {
         continue;
       }
       final source = PlaybackSource.fromJson(raw.cast<String, dynamic>());
@@ -277,7 +339,7 @@ class AlQahtaniApi implements MediaRepository {
     }
     if (sources.isEmpty) throw const ApiException('EDGE_NO_HEALTHY_SOURCES');
     final first = sourceRouter.rank(sources).first;
-    return TitleDetails(
+    final details = TitleDetails(
         title: '',
         poster: '',
         episodes: const [],
@@ -287,9 +349,17 @@ class AlQahtaniApi implements MediaRepository {
         playbackHeaders: first.headers,
         mediaSources: sources,
         expiresAt: first.expiresAt,
-        downloadAvailable: false,
+        downloadAvailable:
+            !const bool.fromEnvironment('dart.library.js_interop') &&
+                sources.any((s) => s.mediaType == 'mp4') &&
+                !ref.startsWith('match'),
         playbackUnavailable: false,
         playbackReason: '');
+    _playbackCache[ref] = details;
+    if (_playbackCache.length > 64) {
+      _playbackCache.remove(_playbackCache.keys.first);
+    }
+    return details;
   }
 
   Future<TitleDetails> _resolveClientPlayer(TitleDetails details) async {
@@ -359,7 +429,7 @@ class AlQahtaniApi implements MediaRepository {
     if (playbackMode == 'edge_direct') {
       final expiry = _edgeStreams[mediaPath];
       final uri = Uri.tryParse(mediaPath);
-      if (download ||
+      if ((download && !(uri?.path.toLowerCase().endsWith('.mp4') ?? false)) ||
           uri == null ||
           !isPublicMediaUri(uri) ||
           expiry == null ||
@@ -412,6 +482,25 @@ class AlQahtaniApi implements MediaRepository {
     final params = Map<String, String>.from(uri.queryParameters)
       ..['download'] = '1';
     return uri.replace(queryParameters: params);
+  }
+
+  Future<Map<String, dynamic>> _edgeJson(String path,
+      [Map<String, String>? query]) async {
+    final response = await _client.get(
+        _edgeUri.replace(path: path, queryParameters: query),
+        headers: const {
+          'accept': 'application/json'
+        }).timeout(const Duration(seconds: 35));
+    if (response.bodyBytes.length > 128 * 1024) {
+      throw const ApiException('EDGE_RESPONSE_TOO_LARGE');
+    }
+    final data = jsonDecode(response.body);
+    if (!response.statusCode.toString().startsWith('2') ||
+        data is! Map<String, dynamic> ||
+        data['status'] != 'success') {
+      throw const ApiException('MATCH_EDGE_UNAVAILABLE');
+    }
+    return data;
   }
 
   Future<Map<String, dynamic>> _getJson(String path,

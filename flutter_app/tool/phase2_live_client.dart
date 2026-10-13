@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:media_kit/media_kit.dart';
-import 'package:al_qahtani/src/api_client.dart';
+import 'package:mitv/src/api_client.dart';
 
 class DevelopmentProxy extends HttpOverrides {
   @override
@@ -20,7 +20,7 @@ Future<void> main(List<String> args) async {
   HttpOverrides.global = DevelopmentProxy();
   MediaKit.ensureInitialized(libmpv: args[0]);
   final client = http.Client();
-  final api = AlQahtaniApi(
+  final api = MitvApi(
       client: client, baseUri: Uri.parse('https://matv.onrender.com'));
   final results = <Map<String, Object?>>[];
   try {
