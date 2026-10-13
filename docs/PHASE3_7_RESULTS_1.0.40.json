@@ -1,0 +1,99 @@
+{
+  "version": "1.0.40",
+  "build": 40,
+  "product_commit": "0ee3593e2fe4db0c4567dc47a0eceda5b1bcbb42",
+  "build_commit": "07b8c43f15c45568cbedb2bdd834d64b65830666",
+  "build_run": 38403882619,
+  "build_url": "https://github.com/th-505/MATV/actions/runs/38403882619",
+  "release_url": "https://github.com/th-505/MATV/releases/tag/v1.0.40",
+  "api": "https://matv.onrender.com",
+  "render_deploy": "dep-db72ojp42hec73f5ikc0",
+  "render_status": "live",
+  "packages": [
+    {
+      "file": "MATV-Android-Mobile-ARM64.apk",
+      "architecture": "arm64-v8a",
+      "sha256": "9e0e79b79d3112ba8eadd6ab9badf95d1457be15f0786613715ad43cde7e2b61",
+      "bytes": 33410165,
+      "api": "https://matv.onrender.com",
+      "verified": true,
+      "url": "https://github.com/th-505/MATV/releases/download/v1.0.40/MATV-Android-Mobile-ARM64.apk"
+    },
+    {
+      "file": "MATV-Android-TV-ARM32.apk",
+      "architecture": "armeabi-v7a",
+      "sha256": "635bcc33e668bb44bd424306b54afad4bfe940e4d3e27dfac5cffdd0060da313",
+      "bytes": 30182105,
+      "api": "https://matv.onrender.com",
+      "verified": true,
+      "url": "https://github.com/th-505/MATV/releases/download/v1.0.40/MATV-Android-TV-ARM32.apk"
+    },
+    {
+      "file": "MATV-iPhone-Unsigned.ipa",
+      "architecture": "arm64",
+      "sha256": "6746f26c78eee222dbf9e00e51625d900b179d10a7a3e54d3bd5bc1891aa354b",
+      "bytes": 14907473,
+      "api": "https://matv.onrender.com",
+      "verified": true,
+      "url": "https://github.com/th-505/MATV/releases/download/v1.0.40/MATV-iPhone-Unsigned.ipa"
+    }
+  ],
+  "tests": {
+    "flutter_mobile": 100,
+    "flutter_tv": 100,
+    "node_three_provider_checks": true,
+    "native_https_stream_bridge": true,
+    "android_network_config": true,
+    "akoam_live": {
+      "movie": "Pani",
+      "series": "Tyson",
+      "range_status": 206,
+      "bytes_received": 4096
+    },
+    "story_live": {
+      "ukrcdn": {
+        "manifest": 200,
+        "segment": 206
+      },
+      "miravd_client": {
+        "manifest": 200,
+        "segment": 206
+      }
+    },
+    "alooy_live": {
+      "decoded": true,
+      "width": 1280,
+      "height": 720,
+      "seek_progressed_past_seconds": 60.5,
+      "mode": "local_proxy"
+    },
+    "web_ci": {
+      "run": 38403067732,
+      "mp4_decoded": true,
+      "hls_decoded": true,
+      "javascript_exceptions": 0
+    },
+    "alooy_web_proxy": {
+      "status": 200,
+      "range_requested": true,
+      "content_range": null,
+      "cors": "https://th-505.github.io",
+      "sample_bytes": 3809
+    }
+  },
+  "pending": [
+    "Physical Android/iOS/TV battery, thermal and prolonged playback tests",
+    "GitHub Pages environment deployment approval"
+  ],
+  "web": {
+    "candidate": "https://th-505.github.io/MATV/app/",
+    "deployment_status": "waiting",
+    "pending_run": 38403555831,
+    "current_connection_can_approve": false
+  },
+  "limits": [
+    "Native miravd resolution cannot be applied directly in browsers that block its CORS/Referer requirements.",
+    "Browser MKV/DASH/TS playback is not guaranteed by HTML5 codecs.",
+    "Supabase durable cache needs a current server credential; memory cache works."
+  ]
+}

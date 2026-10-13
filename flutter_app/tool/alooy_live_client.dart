@@ -38,7 +38,7 @@ Future<void> main(List<String> args) async {
     final width = player.state.width, height = player.state.height;
     await player.seek(const Duration(seconds: 60));
     await player.stream.position
-        .firstWhere((p) => p >= const Duration(seconds: 60))
+        .firstWhere((p) => p > const Duration(milliseconds: 60500))
         .timeout(const Duration(seconds: 20));
     stdout.writeln(jsonEncode({
       'source': 'alooy',

@@ -35,3 +35,13 @@ Chromium decoded both MP4 and HLS fixtures through the built Flutter app without
 - CI builds Android Mobile ARM64, Android TV ARMv7 and unsigned iOS ARM64 from one commit/version. Verification checks SHA-256, actual native architecture, libmpv presence, embedded public API, version and unsigned IPA status before publishing a release.
 
 Physical phone/TV playback, battery use, temperature and sustained device memory still require testing on the target devices. An unsigned IPA requires external signing before installation. Supabase durable cache remains unavailable with the retired legacy credential; in-memory metadata caching continues to work.
+
+## Delivered packages
+
+[MATV 1.0.40 release](https://github.com/th-505/MATV/releases/tag/v1.0.40) contains the Mobile ARM64 APK, TV ARMv7 APK and unsigned iPhone IPA, their SHA-256 files, and the verification report. All three passed the [successful build and release run](https://github.com/th-505/MATV/actions/runs/38403882619), including 100 Flutter tests for mobile and TV. The Android release lint requirement for explicit `includeSubdomains="false"` was corrected before release and is now tested as part of CI.
+
+The public Render API passed live checks for Akoam movies/series (206, 4096-byte samples), both 3isk engines (manifest 200, segment 206), and native Alooy decoding plus continued progress after seeking beyond 60.5 seconds. Alooy's real web bridge returned 200 despite Range; this result is preserved rather than reported as 206. Native device seeking and a mock upstream returning actual 206 were tested separately.
+
+Flutter Web CI successfully decoded MP4 and HLS in Chromium. The compiled bundle is committed under `app/` for the existing Pages source branch, with future CI rebuilding and publishing that directory. GitHub currently holds deployment at the `github-pages` environment gate; the connected account reports `current_user_can_approve=false`. The candidate URL is not reported as live while it returns 404. Final publication requires release of that GitHub deployment gate.
+
+Detailed hashes, URLs and remaining device tests are in [PHASE3_7_RESULTS_1.0.40.json](PHASE3_7_RESULTS_1.0.40.json).
