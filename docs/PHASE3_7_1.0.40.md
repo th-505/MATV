@@ -42,6 +42,8 @@ Physical phone/TV playback, battery use, temperature and sustained device memory
 
 The public Render API passed live checks for Akoam movies/series (206, 4096-byte samples), both 3isk engines (manifest 200, segment 206), and native Alooy decoding plus continued progress after seeking beyond 60.5 seconds. Alooy's real web bridge returned 200 despite Range; this result is preserved rather than reported as 206. Native device seeking and a mock upstream returning actual 206 were tested separately.
 
-Flutter Web CI successfully decoded MP4 and HLS in Chromium. The compiled bundle is committed under `app/` for the existing Pages source branch, with future CI rebuilding and publishing that directory. GitHub currently holds deployment at the `github-pages` environment gate; the connected account reports `current_user_can_approve=false`. The candidate URL is not reported as live while it returns 404. Final publication requires release of that GitHub deployment gate.
+Flutter Web CI successfully decoded MP4 and HLS in Chromium. The compiled bundle is committed under `app/` for the existing Pages source branch, with future CI rebuilding and publishing that directory. The earlier Pages deployment wait cleared automatically. The [final deployment](https://github.com/th-505/MATV/actions/runs/38405494733) succeeded; https://th-505.github.io/MATV/app/ now returns 200 and reports version 1.0.40/build 40. No manual approval is required.
 
 Detailed hashes, URLs and remaining device tests are in [PHASE3_7_RESULTS_1.0.40.json](PHASE3_7_RESULTS_1.0.40.json).
+
+The published site was also opened in Chromium through its real public URL. App startup and series navigation passed, with live category/news/matches API responses at 200 and no JavaScript exceptions.

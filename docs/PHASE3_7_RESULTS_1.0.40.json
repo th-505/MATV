@@ -82,14 +82,21 @@
     }
   },
   "pending": [
-    "Physical Android/iOS/TV battery, thermal and prolonged playback tests",
-    "GitHub Pages environment deployment approval"
+    "Physical Android/iOS/TV battery, thermal and prolonged playback tests"
   ],
   "web": {
     "candidate": "https://th-505.github.io/MATV/app/",
-    "deployment_status": "waiting",
-    "pending_run": 38403555831,
-    "current_connection_can_approve": false
+    "deployment_status": "live",
+    "deployment_run": 38405494733,
+    "http_status": 200,
+    "reported_version": "1.0.40",
+    "reported_build": 40,
+    "public_chromium_booted": true,
+    "public_series_page_opened": true,
+    "public_api_category_status": 200,
+    "public_api_news_status": 200,
+    "public_api_matches_status": 200,
+    "javascript_exceptions": 0
   },
   "limits": [
     "Native miravd resolution cannot be applied directly in browsers that block its CORS/Referer requirements.",
