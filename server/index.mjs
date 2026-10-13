@@ -213,7 +213,7 @@ export function createProductionServer({
 export function startProductionServer({ port = Number(process.env.PORT || 3000) } = {}) {
   const server = createProductionServer();
   return server.listen(port, "0.0.0.0", () => {
-    console.log(`Al-Qahtani backend listening on ${port}`);
+    console.log(`MITV backend listening on ${port}`);
   });
 }
 
