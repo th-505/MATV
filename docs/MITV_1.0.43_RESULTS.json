@@ -44,5 +44,37 @@
     ]
   ],
   "package_id": "com.mitv.mitv",
-  "release_ci": "pending"
+  "release_ci": "in_progress",
+  "flutter_tests_passed": 116,
+  "native_smoke_default_skipped": true,
+  "native_smoke_executed_separately": true,
+  "analysis": "clean",
+  "device_build_commit": "b4b07ee",
+  "device_ci_run": 38442170555,
+  "browser_fixtures": [
+    {
+      "browser": "Chromium",
+      "format": "mp4",
+      "app_booted": true,
+      "video_decoded": true,
+      "width": 160,
+      "height": 90,
+      "time": 0.276923,
+      "exceptions": 0,
+      "fixture": true,
+      "physical_device_tested": false
+    },
+    {
+      "browser": "Chromium",
+      "format": "hls",
+      "app_booted": true,
+      "video_decoded": true,
+      "width": 160,
+      "height": 90,
+      "time": 0.325065,
+      "exceptions": 0,
+      "fixture": true,
+      "physical_device_tested": false
+    }
+  ]
 }

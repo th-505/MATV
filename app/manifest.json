@@ -1,12 +1,12 @@
 {
-  "name": "القحطاني TV",
-  "short_name": "MATV",
+  "name": "MITV",
+  "short_name": "MITV",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#101827",
-  "theme_color": "#101827",
+  "background_color": "#090B12",
+  "theme_color": "#090B12",
   "description": "المباريات والأخبار والأفلام والمسلسلات",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "prefer_related_applications": false,
   "icons": [
     {
