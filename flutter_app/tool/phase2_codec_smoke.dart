@@ -10,7 +10,7 @@ Future<void> main(List<String> args) async {
   final mapping = args.length > 2
       ? jsonDecode(File(args[2]).readAsStringSync()) as Map<String, dynamic>
       : null;
-  final rows = <Map<String, Object>>[];
+  final rows = <Map<String, Object?>>[];
   for (final file in [
     'sample.mp4',
     'sample.mkv',
@@ -26,6 +26,7 @@ Future<void> main(List<String> args) async {
       if (player.platform is NativePlayer) {
         await (player.platform as NativePlayer).setProperty('ao', 'null');
       }
+      await player.setVideoTrack(VideoTrack.auto());
       await player
           .open(Media(mapping?[file] as String? ?? '${args[1]}/$file'),
               play: true)
@@ -33,6 +34,11 @@ Future<void> main(List<String> args) async {
       await player.stream.position
           .firstWhere((v) => v > const Duration(milliseconds: 250))
           .timeout(const Duration(seconds: 12));
+      if (player.state.width == null) {
+        await player.stream.width
+            .firstWhere((w) => w != null && w > 0)
+            .timeout(const Duration(seconds: 12));
+      }
       if (player.state.tracks.video
               .where((v) => v.id != 'auto' && v.id != 'no')
               .isEmpty ||
@@ -47,6 +53,8 @@ Future<void> main(List<String> args) async {
         'duration_ms': player.state.duration.inMilliseconds,
         'video_tracks': player.state.tracks.video.length,
         'audio_tracks': player.state.tracks.audio.length,
+        'width': player.state.width,
+        'height': player.state.height,
         'decoded': true
       });
     } finally {

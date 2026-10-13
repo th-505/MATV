@@ -1,0 +1,43 @@
+{
+  "version": "1.0.39",
+  "base_build": 39,
+  "product_commit": "6497e8907ae10fc04247340d0f0fd093f92dc049",
+  "build_run": "https://github.com/th-505/MATV/actions/runs/38330888450",
+  "verification_run": "https://github.com/th-505/MATV/actions/runs/38331043689",
+  "build_conclusion": "success",
+  "verification_conclusion": "success",
+  "artifacts": [
+    {
+      "file": "MATV-Android-Mobile-ARM64.apk",
+      "architecture": "arm64-v8a",
+      "sha256": "dec8ffe2f95476821b8f2939970647cfacc3546b4e2c3fca0833a4899fc26845",
+      "bytes": 33213005,
+      "api": "https://matv.onrender.com",
+      "verified": true,
+      "download": "https://github.com/th-505/MATV/actions/runs/38330888450/artifacts/11783445793",
+      "extended_decoder_verified": true
+    },
+    {
+      "file": "MATV-Android-TV-ARM32.apk",
+      "architecture": "armeabi-v7a",
+      "sha256": "51098318d67cecac249f5755930c0fd9f7356c9c1a0707b03a41fd280cbdaf9f",
+      "bytes": 30017721,
+      "api": "https://matv.onrender.com",
+      "verified": true,
+      "download": "https://github.com/th-505/MATV/actions/runs/38330888450/artifacts/11782682823",
+      "extended_decoder_verified": true
+    },
+    {
+      "file": "MATV-iPhone-Unsigned.ipa",
+      "architecture": "arm64",
+      "sha256": "17c69c2687f7acf354b577ea113cc8ef3ffcc65913a082b0d3da22eb60207d0d",
+      "bytes": 14843245,
+      "api": "https://matv.onrender.com",
+      "verified": true,
+      "download": "https://github.com/th-505/MATV/actions/runs/38330888450/artifacts/11783185849",
+      "extended_decoder_verified": true
+    }
+  ],
+  "installation_note": "GitHub login required; extract APK/IPA from downloaded ZIP. Artifacts retained for 14 days. IPA requires external signing before installation.",
+  "physical_devices_tested": false
+}

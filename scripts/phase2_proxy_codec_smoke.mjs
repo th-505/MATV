@@ -28,7 +28,7 @@ try{
     mapping[file]=base+__createMediaReferenceForTest('https://s201d1.downet.net/fixtures/'+file,'https://akwam.ss/watch/fixture');
   }
   fs.writeFileSync('/tmp/matv-codec-network.json',JSON.stringify(mapping));
-  const {stdout}=await promisify(execFile)('/workspace/flutter-sdk/bin/dart',['run','tool/phase2_codec_smoke.dart',process.argv[2],'/tmp/matv-codec-fixtures','/tmp/matv-codec-network.json'],{cwd:new URL('../flutter_app',import.meta.url),env:{...process.env,LD_LIBRARY_PATH:path.dirname(process.argv[2])},timeout:120000,maxBuffer:1024*1024});
+  const {stdout}=await promisify(execFile)(process.env.MATV_DART_BIN || 'dart',['run','tool/phase2_codec_smoke.dart',process.argv[2],'/tmp/matv-codec-fixtures','/tmp/matv-codec-network.json'],{cwd:new URL('../flutter_app',import.meta.url),env:{...process.env,LD_LIBRARY_PATH:path.dirname(process.argv[2])},timeout:120000,maxBuffer:1024*1024});
   const result=JSON.parse(stdout.split('\n').find(line=>line.startsWith('{')));
   assert.equal(result.results.length,6);assert(result.results.every(row=>row.decoded));
   assert(requests.some(row=>row.path.endsWith('.m4s')));assert(requests.some(row=>row.path.endsWith('.ts')));
