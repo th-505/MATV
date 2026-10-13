@@ -1,0 +1,166 @@
+{
+  "edge": "https://matv-edge-resolver.dada1000100.workers.dev",
+  "version": "1.0.42",
+  "physical_device_tested": false,
+  "video_body_proxy": false,
+  "registry_original_episode_pairs": 26,
+  "probes": [
+    {
+      "kind": "matched-3isk-akoam",
+      "status": 200,
+      "bytes": 4750,
+      "elapsed_ms": 5409,
+      "availability": [
+        {
+          "provider_id": "3isk",
+          "status": "available"
+        },
+        {
+          "provider_id": "akoam",
+          "status": "available"
+        },
+        {
+          "provider_id": "alooy",
+          "status": "unmapped"
+        }
+      ],
+      "sources": [
+        {
+          "provider": "3isk",
+          "format": "hls",
+          "web_playable": false,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        }
+      ]
+    },
+    {
+      "kind": "alooy",
+      "status": 200,
+      "bytes": 924,
+      "elapsed_ms": 1419,
+      "availability": [
+        {
+          "provider_id": "3isk",
+          "status": "unmapped"
+        },
+        {
+          "provider_id": "akoam",
+          "status": "unmapped"
+        },
+        {
+          "provider_id": "alooy",
+          "status": "available"
+        }
+      ],
+      "sources": [
+        {
+          "provider": "alooy",
+          "format": "mp4",
+          "web_playable": false,
+          "mode": "edge_local_proxy"
+        }
+      ]
+    },
+    {
+      "kind": "ukrcdn",
+      "status": 200,
+      "bytes": 1023,
+      "elapsed_ms": 3488,
+      "availability": [
+        {
+          "provider_id": "3isk",
+          "status": "available"
+        },
+        {
+          "provider_id": "akoam",
+          "status": "unmapped"
+        },
+        {
+          "provider_id": "alooy",
+          "status": "unmapped"
+        }
+      ],
+      "sources": [
+        {
+          "provider": "3isk",
+          "format": "hls",
+          "web_playable": true,
+          "mode": "edge_direct"
+        }
+      ]
+    }
+  ],
+  "flutter_tests_passed": 106,
+  "analysis": "no issues",
+  "device_ci_run": 38417114089,
+  "device_build_commit": "f736695",
+  "browser_fixtures": [
+    {
+      "browser": "Chromium",
+      "format": "mp4",
+      "app_booted": true,
+      "video_decoded": true,
+      "width": 160,
+      "height": 90,
+      "time": 0.43439,
+      "exceptions": 0,
+      "fixture": true,
+      "physical_device_tested": false
+    },
+    {
+      "browser": "Chromium",
+      "format": "hls",
+      "app_booted": true,
+      "video_decoded": true,
+      "width": 160,
+      "height": 90,
+      "time": 0.247948,
+      "exceptions": 0,
+      "fixture": true,
+      "physical_device_tested": false
+    }
+  ],
+  "decoded_alooy": {
+    "width": 1280,
+    "height": 720,
+    "seek_seconds": 60,
+    "local_proxy": true
+  },
+  "decoded_akoam": {
+    "width": 1280,
+    "height": 720,
+    "seek_seconds": 60,
+    "direct": true
+  },
+  "miravd_manifest_and_segment": {
+    "master": 200,
+    "variant": 200,
+    "segment": 206,
+    "sample_bytes": 1024,
+    "environment_libmpv_proxy_debug_pending": true
+  }
+}

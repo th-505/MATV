@@ -7,3 +7,7 @@ All original 26 Marasli episode mappings are live in Cloudflare KV. Native playb
 The legacy HLS CI job now installs its dependencies before running the complete check suite. Provider/quality display, source switching, free-plan limits, mapping boundaries and independent edge deployment remain as described in the architecture report. Physical-device battery/thermal testing remains unperformed.
 
 Final CI, release assets and live web evidence are recorded below after completion.
+
+Validation: 106 Flutter tests passed, analyzer clean, and Chromium MP4/HLS fixtures decoded with no exceptions. Live Alooy and Akoam libmpv decoding/60-second seeks passed. Miravd master, variant and a ranged segment returned 200/200/206 from a network separate from the extracting Worker.
+
+Device build: https://github.com/th-505/MATV/actions/runs/38417114089 (source commit `f736695`). Final binary verification is pending completion of this run.
