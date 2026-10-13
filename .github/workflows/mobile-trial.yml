@@ -1,6 +1,8 @@
 name: MATV device trials
 
 on:
+  push:
+    branches: ['build/matv-*']
   workflow_dispatch:
     inputs:
       api_base:
@@ -9,7 +11,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   providers:
@@ -25,7 +27,7 @@ jobs:
   verify-api:
     runs-on: ubuntu-latest
     env:
-      MATV_API_BASE: ${{ inputs.api_base }}
+      MATV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
     steps:
       - name: Validate deployment URL and health
         run: |
@@ -55,7 +57,7 @@ jobs:
             abi: armeabi-v7a
             artifact: MATV-Android-TV-ARM32
     env:
-      MATV_API_BASE: ${{ inputs.api_base }}
+      MATV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
       APP_TARGET: ${{ matrix.target }}
       TARGET_PLATFORM: ${{ matrix.platform }}
       EXPECTED_ABI: ${{ matrix.abi }}
@@ -95,6 +97,8 @@ jobs:
           "$APKSIGNER" verify "$APK"
           "$AAPT" dump permissions "$APK" > /tmp/matv-permissions.txt
           grep -q android.permission.INTERNET /tmp/matv-permissions.txt
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/matv-manifest.txt
+          grep -q networkSecurityConfig /tmp/matv-manifest.txt
           "$AAPT" dump badging "$APK" > /tmp/matv-badging.txt
           grep -qx "native-code: '$EXPECTED_ABI'" /tmp/matv-badging.txt || { cat /tmp/matv-badging.txt; exit 1; }
           if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/matv-badging.txt; fi
@@ -112,7 +116,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 40
     env:
-      MATV_API_BASE: ${{ inputs.api_base }}
+      MATV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -150,4 +154,41 @@ jobs:
         with:
           name: MATV-iPhone-Unsigned
           path: trial/
+          retention-days: 14
+
+  verify-release:
+    needs: [android, ios-unsigned]
+    if: startsWith(github.ref, 'refs/heads/build/matv-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: device-artifacts
+      - name: Verify all packages and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          read VERSION BUILD < <(python3 - <<'PY_VERSION'
+          import pathlib, re
+          m=re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$',pathlib.Path('flutter_app/pubspec.yaml').read_text(),re.M)
+          assert m
+          print(*m.groups())
+          PY_VERSION
+          )
+          python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com "$VERSION" "$BUILD" > device-verification.json
+          cat device-verification.json
+          python3 - <<'PY_NOTES'
+          from pathlib import Path
+          report=Path('device-verification.json').read_text().replace('%','%25').replace('\n','%0A')
+          print('::notice title=Device artifact verification::'+report)
+          Path('/tmp/release-notes.md').write_text("Alooy TV, local Range stream bridge, unified fallback and cinematic controls.\n\nAndroid Mobile ARM64, Android TV ARMv7 and unsigned iOS ARM64. External signing is required for IPA installation.\n\nChecksums, architecture, libmpv and public API verification passed. Physical-device battery and thermal tests remain pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
+          PY_NOTES
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "MATV $VERSION" --notes-file /tmp/release-notes.md device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.sha256 device-verification.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MATV-device-verification
+          path: device-verification.json
           retention-days: 14

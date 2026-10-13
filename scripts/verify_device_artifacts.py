@@ -43,6 +43,8 @@ for name, abi, machine in [
             info = plistlib.loads(archive.read(app + 'Info.plist'))
             assert info['CFBundleShortVersionString'] == version
             assert info['CFBundleVersion'] == str(build)
+            if build >= 40:
+                assert info.get('NSAppTransportSecurity', {}).get('NSAllowsLocalNetworking') is True, 'iOS local stream bridge disabled'
             runner = archive.read(app + 'Runner')
             assert struct.unpack('<I', runner[4:8])[0] == 0x100000C
             if build >= 39:

@@ -1,8 +1,8 @@
 name: MATV Flutter Web
 on:
   push:
-    branches: [main]
-    paths: ['flutter_app/**', '.github/workflows/flutter-web.yml']
+    branches: [main, 'build/matv-*']
+    paths: ['flutter_app/**', '.github/workflows/flutter-web.yml', '.github/workflows/mobile-trial.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -57,6 +57,11 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MATV-Flutter-Web
+          path: site/
+          retention-days: 14
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
