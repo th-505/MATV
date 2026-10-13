@@ -1,45 +1,9 @@
 name: Deploy GitHub Pages
-
 on:
   workflow_dispatch:
-
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.47.7'
-          channel: stable
-          cache: true
-      - name: Build Flutter app
-        working-directory: flutter_app
-        run: |
-          flutter pub get --enforce-lockfile
-          flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MATV_API_BASE=https://matv.onrender.com
-      - name: Stage both web surfaces
-        run: |
-          mkdir -p site/app
-          cp ./*.html site/
-          cp -R web site/web
-          cp -R flutter_app/build/web/. site/app/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  web:
+    uses: ./.github/workflows/flutter-web.yml

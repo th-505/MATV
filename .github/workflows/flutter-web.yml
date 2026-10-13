@@ -1,22 +1,19 @@
 name: MATV Flutter Web
 on:
   push:
-    branches: [main, 'build/matv-*']
+    branches: [main, 'web/matv-*']
     paths: ['flutter_app/**', '.github/workflows/flutter-web.yml', '.github/workflows/mobile-trial.yml']
   workflow_dispatch:
+  workflow_call:
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
 concurrency:
   group: pages
   cancel-in-progress: true
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -53,15 +50,35 @@ jobs:
           cp ./*.html site/
           cp -R web site/web
           cp -R flutter_app/build/web/. site/app/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
       - uses: actions/upload-artifact@v4
         with:
           name: MATV-Flutter-Web
           path: site/
           retention-days: 14
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+
+  publish:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: MATV-Flutter-Web
+          path: site
+      - name: Publish through the configured Pages source branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p app
+          cp -R site/app/. app/
+          touch .nojekyll
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app .nojekyll
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish Flutter Web bundle [skip ci] [skip render]'
+            git push origin HEAD:main
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
