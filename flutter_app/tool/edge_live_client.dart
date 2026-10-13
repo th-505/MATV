@@ -31,7 +31,13 @@ Future<void> main(List<String> args) async {
     await native.setProperty('ao', 'null');
     final proxy = Platform.environment['https_proxy'] ??
         Platform.environment['HTTPS_PROXY'];
-    if (!local && proxy != null) await native.setProperty('http-proxy', proxy);
+    if (!local && proxy != null) {
+      await native.setProperty('http-proxy', proxy);
+      // Development-only transport permission for the managed HTTPS proxy.
+      const protocols = 'http,https,tls,tcp,crypto,httpproxy,data';
+      await native.setProperty('demuxer-lavf-o',
+          'protocol_whitelist=%${protocols.length}%$protocols');
+    }
     if (ca != null) await native.setProperty('tls-ca-file', ca);
     await player.setVideoTrack(VideoTrack.auto());
     await player

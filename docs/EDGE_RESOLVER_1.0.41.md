@@ -8,7 +8,7 @@ Production resolver: https://matv-edge-resolver.dada1000100.workers.dev
 
 The router invokes three independent provider service bindings using `Promise.allSettled`. Only registered identities query other providers; unregistered references resolve their own provider. Failed providers are excluded from `sources`; `availability` distinguishes failures from unmapped providers. JSON is capped at 12 KiB. Responses include provider name/id, format, quality, direct URL, playback headers, expiry and mode. Signed URLs are not logged. HTML downloads and parsing are bounded; media validation uses HEAD and cancels response bodies. Workers never fetch video bodies.
 
-Each provider has its own Worker to separate parsing CPU budgets. The 3isk engine follows the episode/movie wrapper and selects ukrcdn's playback API or miravd's bounded Base62 unpacker. The full wrapper Referer is retained for miravd requests. Akoam follows validated watch redirects and extracts alternative qualities. Alooy returns MP4/WebM with the complete watch Referer, Origin and User-Agent.
+Each provider has its own Worker to isolate source logic, failures and deployments. Splitting services does not increase the account's free allowance. The 3isk engine follows the episode/movie wrapper and selects ukrcdn's playback API or miravd's bounded Base62 unpacker. The full wrapper Referer is retained for miravd requests. Akoam follows validated watch redirects and extracts alternative qualities. Alooy returns MP4/WebM with the complete watch Referer, Origin and User-Agent.
 
 ## Episode identity matters
 
@@ -32,7 +32,7 @@ Four Workers and one KV namespace were deployed through the connected Cloudflare
 
 The edge-only GitHub workflow validates each build and can deploy with repository secret `CLOUDFLARE_API_TOKEN` scoped to this account's Workers/KV. That CI secret has not been provisioned through this session; connected deployment was used instead. Never commit tokens. Metadata changes do not require a native release.
 
-Free Workers limits currently include 100,000 requests/day, 10 ms CPU/request, 128 MiB memory and 50 external subrequests. Provider service invocations share plan allowances. KV also has free read/write/storage limits. Video bandwidth through the cloud resolver is zero; HTML/JSON traffic, local device streaming and decoder costs remain real. Free operation is conditional on staying within these allowances, not unlimited zero-cost hosting.
+Free Workers limits currently include 100,000 requests/day, 10 ms CPU/request, 128 MiB memory and 50 external subrequests. Service bindings do not add request fees on Standard pricing, while CPU usage is aggregated across the invoked Workers. KV also has free read/write/storage limits. Video bandwidth through the cloud resolver is zero; HTML/JSON traffic, local device streaming and decoder costs remain real. Free operation is conditional on staying within these allowances, not unlimited zero-cost hosting.
 
 ## Validation
 

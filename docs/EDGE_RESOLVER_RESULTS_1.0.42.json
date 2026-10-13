@@ -160,7 +160,45 @@
     "master": 200,
     "variant": 200,
     "segment": 206,
-    "sample_bytes": 1024,
-    "environment_libmpv_proxy_debug_pending": true
-  }
+    "sample_bytes": 1024
+  },
+  "decoded_miravd": {
+    "width": 1280,
+    "height": 720,
+    "seek_seconds": 60,
+    "direct": true,
+    "development_proxy_protocol_allowed": true
+  },
+  "device_ci_result": "success",
+  "device_verification": [
+    {
+      "file": "MATV-Android-Mobile-ARM64.apk",
+      "architecture": "arm64-v8a",
+      "sha256": "ae13346ef87c9090d31e37d9919599ce0a636f1c0863a0bda4c6c3ed9021c225",
+      "bytes": 33410165,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MATV-Android-TV-ARM32.apk",
+      "architecture": "armeabi-v7a",
+      "sha256": "04f4325ceabd8ee868a25039f75451f22cb55820fecd889c15bac456c3902225",
+      "bytes": 30198489,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MATV-iPhone-Unsigned.ipa",
+      "architecture": "arm64",
+      "sha256": "af53ba760c066c8ee8e47d213035d3d3353276ef8c53c0754a720d5ed6c55c47",
+      "bytes": 14911397,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    }
+  ],
+  "pages_ci_run": 38417739057,
+  "pages_ci_result": "success",
+  "live_web_version": "1.0.42",
+  "render_version": "1.0.42",
+  "release_url": "https://github.com/th-505/MATV/releases/tag/v1.0.42"
 }
