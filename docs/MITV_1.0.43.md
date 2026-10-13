@@ -37,3 +37,13 @@ The device workflow builds Android ARM64, Android TV ARMv7, unsigned iOS ARM64 a
 - Live edge extraction and Linux libmpv playback, downloaded-file decoding and browser fixture evidence are recorded after checks.
 - Mobile/iOS/TV physical-device testing is not performed in this managed Linux environment. GUI/codec support and heating/battery behavior need physical testing.
 - Cloudflare operations remain within free-plan allowances; splitting Workers does not expand account limits. The live resolver carries HTML/JSON traffic but no video bodies. Independent GitHub edge deployment requires the scoped repository secret; connected Cloudflare deployment is used here.
+
+## Published validation evidence
+
+Runtime Docker packaging initially omitted the shared bounded-response reader imported by the new JSON facade. The image now copies that dependency; the rebuilt container starts successfully with health 200 and the retired media route returns 410. Render deployed the corrected 1.0.43 runtime and its public list returns `basri-matches-edge`.
+
+The first Windows CI attempt failed a test-only assertion using Unix path separators. The platform-independent assertion passed on the corrected build: 116 tests passed, one optional native smoke skipped in CI. Native libmpv smoke was executed separately in Linux. Windows compiled successfully; the per-user installer installed silently and all installed payload hashes matched.
+
+The compiled Flutter Web 1.0.43 bundle is published at https://th-505.github.io/MATV/app/. Chromium decoded complete MP4 and HLS fixtures; this does not establish that every third-party live source permits browser CORS. Native packages use commit `ab25cc9`; later Docker/runtime-log fixes affect only Render. Full structured evidence: [MITV_1.0.43_RESULTS.json](MITV_1.0.43_RESULTS.json).
+
+All four platform jobs and the cross-package verification/release job passed in [CI run 38442970957](https://github.com/th-505/MATV/actions/runs/38442970957). The [MITV 1.0.43 release](https://github.com/th-505/MATV/releases/tag/v1.0.43) contains mobile ARM64 APK, TV ARMv7 APK, unsigned ARM64 IPA, Windows x64 installer and portable ZIP, checksums, and device-verification.json. Release asset sizes match the verification report.

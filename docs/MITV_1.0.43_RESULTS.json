@@ -44,13 +44,13 @@
     ]
   ],
   "package_id": "com.mitv.mitv",
-  "release_ci": "in_progress",
+  "release_ci": "success",
   "flutter_tests_passed": 116,
   "native_smoke_default_skipped": true,
   "native_smoke_executed_separately": true,
   "analysis": "clean",
-  "device_build_commit": "b4b07ee",
-  "device_ci_run": 38442170555,
+  "device_build_commit": "ab25cc9eb35af3047b2b7e95318a6679627bd7be",
+  "device_ci_run": 38442970957,
   "browser_fixtures": [
     {
       "browser": "Chromium",
@@ -75,6 +75,64 @@
       "exceptions": 0,
       "fixture": true,
       "physical_device_tested": false
+    }
+  ],
+  "render_version": "1.0.43",
+  "render_deployed_commit": "f51e33d4a8e5a51e38ccf230167050bc83aced00",
+  "render_deploy": "dep-db775rcs728c73cp6akg",
+  "render_retired_match_media_status": 410,
+  "render_match_list_status": "success",
+  "docker_build": "passed",
+  "docker_runtime_health_status": 200,
+  "docker_retired_match_media_status": 410,
+  "web_deploy_run": 38442659269,
+  "web_version": "1.0.43",
+  "windows_ci": "success",
+  "windows_installer_compile": "passed",
+  "windows_installer_silent_install": "passed",
+  "windows_installed_file_hashes": "matched",
+  "windows_flutter_tests_passed": 116,
+  "release_url": "https://github.com/th-505/MATV/releases/tag/v1.0.43",
+  "artifacts": [
+    {
+      "file": "MITV-Android-Mobile-ARM64.apk",
+      "architecture": "arm64-v8a",
+      "sha256": "f1261844bca651595100b6c9a09cb9ac525a80a8706b5c0c1e91d13a153222f7",
+      "bytes": 33279225,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MITV-Android-TV-ARM32.apk",
+      "architecture": "armeabi-v7a",
+      "sha256": "b0b68a94c64b78af8273dbd008aca6b9a617b02ad12829cee78cd9125b93e422",
+      "bytes": 30100317,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MITV-iPhone-Unsigned.ipa",
+      "architecture": "arm64",
+      "sha256": "38f37ed03b202a6979a5c5ca8d8af79b9a58c14e82a82903c015c5b5bd79e957",
+      "bytes": 14889200,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MITV-Windows-x64.zip",
+      "architecture": "x64",
+      "sha256": "4c4db72b38249f609bcbf7920d34f733b699fe67814427d19e5c817b0dff422f",
+      "bytes": 33589296,
+      "api": "https://matv.onrender.com",
+      "verified": true
+    },
+    {
+      "file": "MITV-Windows-x64-Setup.exe",
+      "architecture": "x64",
+      "sha256": "6df97a9d88e19d71a860b6ab4ed04d3e1dc833a38580f591811459940e6d55f3",
+      "bytes": 25173396,
+      "api": "https://matv.onrender.com",
+      "verified": true
     }
   ]
 }
