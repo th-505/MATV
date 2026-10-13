@@ -1,0 +1,53 @@
+{
+  "3isk": {
+    "provider": "3isk",
+    "label": "قصة عشق",
+    "origin": "https://3iskk.xyz",
+    "sourceOrigins": [
+      "https://3iskk.xyz"
+    ],
+    "pageHosts": [
+      "3iskk.xyz",
+      "ukrcdn.club",
+      "ukrcdn.com",
+      "miravd.com"
+    ],
+    "playerHosts": [
+      "ukrcdn.club",
+      "ukrcdn.com",
+      "miravd.com"
+    ],
+    "mediaHosts": [
+      "*.ukrcdn.xyz",
+      "*.grzcdn.com"
+    ]
+  },
+  "akoam": {
+    "provider": "akoam",
+    "label": "أكوام",
+    "origin": "https://akwam.ss",
+    "sourceOrigins": [
+      "https://akwam.ss"
+    ],
+    "pageHosts": [
+      "akwam.ss"
+    ],
+    "mediaHosts": [
+      "*.downet.net"
+    ]
+  },
+  "alooy": {
+    "provider": "alooy",
+    "label": "Alooy TV",
+    "origin": "https://fa.alooytv16.xyz",
+    "sourceOrigins": [
+      "https://fa.alooytv16.xyz"
+    ],
+    "pageHosts": [
+      "fa.alooytv16.xyz"
+    ],
+    "mediaHosts": [
+      "*.ujeklsj.site"
+    ]
+  }
+}

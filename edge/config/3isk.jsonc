@@ -1,0 +1,38 @@
+{
+  "name": "matv-extract-3isk",
+  "main": "../src/provider.mjs",
+  "compatibility_date": "2026-10-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "vars": {
+    "PROVIDER_CONFIG": {
+      "provider": "3isk",
+      "label": "قصة عشق",
+      "origin": "https://3iskk.xyz",
+      "sourceOrigins": [
+        "https://3iskk.xyz"
+      ],
+      "pageHosts": [
+        "3iskk.xyz",
+        "ukrcdn.club",
+        "ukrcdn.com",
+        "miravd.com"
+      ],
+      "playerHosts": [
+        "ukrcdn.club",
+        "ukrcdn.com",
+        "miravd.com"
+      ],
+      "mediaHosts": [
+        "*.ukrcdn.xyz",
+        "*.grzcdn.com"
+      ]
+    }
+  }
+}

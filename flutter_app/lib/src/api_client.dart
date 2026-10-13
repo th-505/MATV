@@ -3,17 +3,26 @@ import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
 import 'miravd_resolver.dart';
+import 'alooy_policy.dart';
 
 class AlQahtaniApi implements MediaRepository {
   final sourceRouter = SourceRouter();
-  AlQahtaniApi({http.Client? client, Uri? baseUri})
+  AlQahtaniApi({http.Client? client, Uri? baseUri, Uri? edgeUri, bool? useEdge})
       : _client = client ?? http.Client(),
+        _useEdge = useEdge ?? (edgeUri != null || client == null),
+        _edgeUri = edgeUri ??
+            Uri.parse(const String.fromEnvironment('MATV_EDGE_BASE',
+                defaultValue:
+                    'https://matv-edge-resolver.dada1000100.workers.dev')),
         _baseUri = baseUri ??
             Uri.parse(const String.fromEnvironment('MATV_API_BASE',
                 defaultValue: 'https://matv.onrender.com'));
 
   final http.Client _client;
   final Uri _baseUri;
+  final Uri _edgeUri;
+  final bool _useEdge;
+  final _edgeStreams = <String, DateTime>{};
   final _metadata = <String, ({DateTime expires, TitleDetails details})>{};
   final _metadataPending = <String, Future<void>>{};
   TitleDetails? cachedMetadata(String ref) {
@@ -197,6 +206,9 @@ class AlQahtaniApi implements MediaRepository {
   @override
   Future<TitleDetails> resolvePlayback(String ref,
       {bool refresh = false}) async {
+    if (_useEdge && ['3isk:', 'alooy:', 'legacy:'].any(ref.startsWith)) {
+      return _resolveEdge(ref, refresh: refresh);
+    }
     // Metadata prefetch never substitutes for a playable, token-aware response.
     final resolved = await _details(ref, refresh: refresh);
     if (resolved.needsClientResolution) return _resolveClientPlayer(resolved);
@@ -207,6 +219,77 @@ class AlQahtaniApi implements MediaRepository {
           : resolved.playbackReason);
     }
     throw const ApiException('NO_PLAYABLE_MEDIA');
+  }
+
+  Future<TitleDetails> _resolveEdge(String ref, {required bool refresh}) async {
+    if (_edgeUri.scheme != 'https' ||
+        _edgeUri.userInfo.isNotEmpty ||
+        _edgeUri.hasQuery ||
+        _edgeUri.hasFragment ||
+        _edgeUri.hasPort) {
+      throw const ApiException('INVALID_EDGE_ENDPOINT');
+    }
+    final response = await _client.get(
+        _edgeUri.replace(
+            path: '/v1/resolve',
+            queryParameters: {'ref': ref, if (refresh) 'refresh': '1'}),
+        headers: const {
+          'accept': 'application/json'
+        }).timeout(const Duration(seconds: 30));
+    if (response.bodyBytes.length > 12288) {
+      throw const ApiException('EDGE_RESPONSE_TOO_LARGE');
+    }
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 ||
+        data is! Map ||
+        data['schema_version'] != 1 ||
+        data['status'] != 'success' ||
+        data['sources'] is! List) {
+      throw const ApiException('EDGE_NO_HEALTHY_SOURCES');
+    }
+    final sources = <PlaybackSource>[];
+    for (final raw in (data['sources'] as List).take(8)) {
+      if (raw is! Map ||
+          (const bool.fromEnvironment('dart.library.js_interop') &&
+              raw['web_playable'] != true) ||
+          !['3isk', 'akoam', 'alooy'].contains(raw['provider_id'])) {
+        continue;
+      }
+      final source = PlaybackSource.fromJson(raw.cast<String, dynamic>());
+      final expiry = source.expiresAt;
+      final uri = Uri.tryParse(source.mediaPath);
+      if (expiry == null ||
+          !expiry.isAfter(DateTime.now().add(const Duration(seconds: 30))) ||
+          uri == null ||
+          !isPublicMediaUri(uri) ||
+          !['edge_direct', 'edge_local_proxy'].contains(source.playbackMode)) {
+        continue;
+      }
+      if (source.playbackMode == 'edge_local_proxy') {
+        validateEdgeStream(uri, source.headers);
+      }
+      _edgeStreams[source.mediaPath] = expiry;
+      sources.add(source);
+    }
+    _edgeStreams.removeWhere((_, expiry) => expiry.isBefore(DateTime.now()));
+    while (_edgeStreams.length > 64) {
+      _edgeStreams.remove(_edgeStreams.keys.first);
+    }
+    if (sources.isEmpty) throw const ApiException('EDGE_NO_HEALTHY_SOURCES');
+    final first = sourceRouter.rank(sources).first;
+    return TitleDetails(
+        title: '',
+        poster: '',
+        episodes: const [],
+        mediaPath: first.mediaPath,
+        mediaType: first.mediaType,
+        playbackMode: first.playbackMode,
+        playbackHeaders: first.headers,
+        mediaSources: sources,
+        expiresAt: first.expiresAt,
+        downloadAvailable: false,
+        playbackUnavailable: false,
+        playbackReason: '');
   }
 
   Future<TitleDetails> _resolveClientPlayer(TitleDetails details) async {
@@ -273,6 +356,18 @@ class AlQahtaniApi implements MediaRepository {
       {bool download = false,
       String playbackMode = 'proxy',
       DateTime? expiresAt}) {
+    if (playbackMode == 'edge_direct') {
+      final expiry = _edgeStreams[mediaPath];
+      final uri = Uri.tryParse(mediaPath);
+      if (download ||
+          uri == null ||
+          !isPublicMediaUri(uri) ||
+          expiry == null ||
+          !expiry.isAfter(DateTime.now())) {
+        throw const ApiException('INVALID_EDGE_MEDIA');
+      }
+      return uri;
+    }
     if (playbackMode == 'direct') {
       final uri = Uri.tryParse(mediaPath);
       final miravd = RegExp(r'^s\d+\.grzcdn\.com$').hasMatch(uri?.host ?? '');

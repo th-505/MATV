@@ -217,7 +217,7 @@ class _PlayerPageState extends State<PlayerPage> {
         playbackHeaders = _sources[_sourceIndex].headers.isNotEmpty
             ? _sources[_sourceIndex].headers
             : _resolvedHeaders;
-        expiresAt = _expiresAt;
+        expiresAt = _sources[_sourceIndex].expiresAt ?? _expiresAt;
       }
       _resolvedPlaybackMode = playbackMode;
       _resolvedHeaders = playbackHeaders;
@@ -227,9 +227,9 @@ class _PlayerPageState extends State<PlayerPage> {
       await previousBridge?.close();
       if (!mounted || generation != _generation) return;
       Uri uri;
-      if (playbackMode == 'local_proxy') {
-        final bridge =
-            widget.streamBridgeFactory?.call() ?? LocalStreamBridge();
+      if (playbackMode == 'local_proxy' || playbackMode == 'edge_local_proxy') {
+        final bridge = widget.streamBridgeFactory?.call() ??
+            LocalStreamBridge(trustedEdge: playbackMode == 'edge_local_proxy');
         _streamBridge = bridge;
         uri = await bridge.open(Uri.parse(mediaPath), playbackHeaders);
         if (!mounted || generation != _generation) {
@@ -261,7 +261,8 @@ class _PlayerPageState extends State<PlayerPage> {
           ? _handoffPosition
           : widget.store
               .resumePosition(widget.item.ref, episodeId: widget.episodeId);
-      if (resume >= const Duration(seconds: 5) &&
+      if ((_handoffPosition > Duration.zero ||
+              resume >= const Duration(seconds: 5)) &&
           (controller.value.duration <= Duration.zero ||
               resume < controller.value.duration)) {
         await controller.seekTo(resume);
@@ -346,13 +347,34 @@ class _PlayerPageState extends State<PlayerPage> {
     }
     _progressTimer?.cancel();
     if (!mounted) return;
-    if (widget.sourceRef.startsWith('3isk:') && _directRefreshAttempts < 1) {
+    final edgeSources = _sources.any((s) => s.playbackMode.startsWith('edge_'));
+    if (edgeSources && _sources.isNotEmpty) {
+      widget.api.sourceRouter
+          .record(_sources[_sourceIndex].mediaPath, success: false);
+      if (_sourceIndex + 1 < _sources.length) {
+        _sourceIndex += 1;
+        _nativeFailureInFlight = false;
+        await _initialize(keepSources: true);
+        return;
+      }
+      if (_directRefreshAttempts < 1) {
+        _directRefreshAttempts += 1;
+        _nativeFailureInFlight = false;
+        await _initialize(forceRefresh: true);
+        return;
+      }
+    }
+    if (!edgeSources &&
+        widget.sourceRef.startsWith('3isk:') &&
+        _directRefreshAttempts < 1) {
       _directRefreshAttempts += 1;
       _nativeFailureInFlight = false;
       await _initialize(forceRefresh: true);
       return;
     }
-    if (!widget.sourceRef.startsWith('3isk:') && _sources.isNotEmpty) {
+    if (!edgeSources &&
+        !widget.sourceRef.startsWith('3isk:') &&
+        _sources.isNotEmpty) {
       if (controller != null &&
           !controller.usesExtendedEngine &&
           _decoderRetries.add(_sourceIndex)) {
@@ -369,7 +391,8 @@ class _PlayerPageState extends State<PlayerPage> {
         return;
       }
     }
-    if (!widget.sourceRef.startsWith('3isk:') &&
+    if (!edgeSources &&
+        !widget.sourceRef.startsWith('3isk:') &&
         widget.sourceRef.isNotEmpty &&
         _directRefreshAttempts < 1) {
       _directRefreshAttempts += 1;
@@ -548,12 +571,16 @@ class _PlayerPageState extends State<PlayerPage> {
       if (_sources.length > 1)
         PopupMenuButton<int>(
             tooltip: 'الجودة / المصدر',
+            onOpened: () => _controlsTimer?.cancel(),
+            onCanceled: _revealControls,
             icon: const Icon(Icons.high_quality),
             itemBuilder: (_) => [
                   for (var i = 0; i < _sources.length; i++)
-                    PopupMenuItem(value: i, child: Text(_sources[i].label))
+                    PopupMenuItem(
+                        value: i, child: Text(_sources[i].displayLabel))
                 ],
             onSelected: (i) async {
+              _revealControls();
               if (i == _sourceIndex) return;
               if (controller.value.position > Duration.zero) {
                 _handoffPosition = controller.value.position;

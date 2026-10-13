@@ -5,16 +5,22 @@ import 'alooy_policy.dart';
 
 /// One registered upstream per player. Never buffers a complete media file.
 class LocalStreamBridge implements StreamBridge {
-  LocalStreamBridge({HttpClient? client}) : _client = client ?? HttpClient() {
+  LocalStreamBridge({HttpClient? client, this.trustedEdge = false})
+      : _client = client ?? HttpClient() {
     _client.autoUncompress = false;
   }
+  final bool trustedEdge;
   HttpServer? _server;
   final HttpClient _client;
   final _active = <HttpClientRequest>{};
   bool _closed = false;
   @override
   Future<Uri> open(Uri target, Map<String, String> headers) async {
-    validateAlooyStream(target, headers);
+    if (trustedEdge) {
+      validateEdgeStream(target, headers);
+    } else {
+      validateAlooyStream(target, headers);
+    }
     if (_closed || _server != null) throw StateError('BRIDGE_ALREADY_OPEN');
     final token = List.generate(24, (_) => Random.secure().nextInt(256))
         .map((n) => n.toRadixString(16).padLeft(2, '0'))
@@ -39,7 +45,14 @@ class LocalStreamBridge implements StreamBridge {
         }
         var uri = target;
         for (var redirect = 0; redirect <= 3; redirect++) {
-          validateAlooyStream(uri, headers);
+          if (trustedEdge) {
+            validateEdgeStream(uri, headers);
+            if (uri.host != target.host) {
+              throw StateError('BRIDGE_REDIRECT_HOST');
+            }
+          } else {
+            validateAlooyStream(uri, headers);
+          }
           final upstream = await _client
               .openUrl(request.method, uri)
               .timeout(const Duration(seconds: 15));

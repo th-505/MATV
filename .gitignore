@@ -6,3 +6,7 @@ node_modules/
 build/
 flutter_app/.flutter-plugins-dependencies
 supabase/.temp/
+
+.wrangler/
+.dev.vars
+.dev.vars.*

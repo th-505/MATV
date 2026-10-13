@@ -1,0 +1,43 @@
+name: MATV Edge Resolver
+on:
+  push:
+    branches: [main]
+    paths: ['edge/**', 'scripts/edge*', '.github/workflows/edge-resolver.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: matv-edge-production
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:edge
+      - run: |
+          for provider in 3isk akoam alooy; do
+            npx wrangler deploy --dry-run --config edge/config/$provider.jsonc
+          done
+          npx wrangler deploy --dry-run --config edge/wrangler.jsonc
+      - name: Deploy provider engines, identities and router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '62df2bb18b5b407586d0980fb6da89a7'
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo '::notice::Automatic deployment requires the CLOUDFLARE_API_TOKEN repository secret. Connected Cloudflare deployment remains available.'
+            exit 0
+          fi
+          for provider in 3isk akoam alooy; do
+            npx wrangler deploy --config edge/config/$provider.jsonc
+          done
+          node scripts/edge_registry.mjs --json > /tmp/matv-edge-identities.json
+          npx wrangler kv bulk put /tmp/matv-edge-identities.json --binding EPISODES --remote --config edge/wrangler.jsonc
+          npx wrangler deploy --config edge/wrangler.jsonc
+          curl --fail --retry 5 https://matv-edge-resolver.dada1000100.workers.dev/health

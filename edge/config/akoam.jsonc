@@ -1,0 +1,29 @@
+{
+  "name": "matv-extract-akoam",
+  "main": "../src/provider.mjs",
+  "compatibility_date": "2026-10-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "vars": {
+    "PROVIDER_CONFIG": {
+      "provider": "akoam",
+      "label": "أكوام",
+      "origin": "https://akwam.ss",
+      "sourceOrigins": [
+        "https://akwam.ss"
+      ],
+      "pageHosts": [
+        "akwam.ss"
+      ],
+      "mediaHosts": [
+        "*.downet.net"
+      ]
+    }
+  }
+}

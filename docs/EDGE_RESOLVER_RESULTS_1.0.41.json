@@ -1,0 +1,117 @@
+{
+  "edge": "https://matv-edge-resolver.dada1000100.workers.dev",
+  "version": "1.0.41",
+  "physical_device_tested": false,
+  "video_body_proxy": false,
+  "registry_original_episode_pairs": 26,
+  "probes": [
+    {
+      "kind": "matched-3isk-akoam",
+      "status": 200,
+      "bytes": 4750,
+      "elapsed_ms": 5409,
+      "availability": [
+        {
+          "provider_id": "3isk",
+          "status": "available"
+        },
+        {
+          "provider_id": "akoam",
+          "status": "available"
+        },
+        {
+          "provider_id": "alooy",
+          "status": "unmapped"
+        }
+      ],
+      "sources": [
+        {
+          "provider": "3isk",
+          "format": "hls",
+          "web_playable": false,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        },
+        {
+          "provider": "akoam",
+          "format": "mp4",
+          "web_playable": true,
+          "mode": "edge_direct"
+        }
+      ]
+    },
+    {
+      "kind": "alooy",
+      "status": 200,
+      "bytes": 924,
+      "elapsed_ms": 1419,
+      "availability": [
+        {
+          "provider_id": "3isk",
+          "status": "unmapped"
+        },
+        {
+          "provider_id": "akoam",
+          "status": "unmapped"
+        },
+        {
+          "provider_id": "alooy",
+          "status": "available"
+        }
+      ],
+      "sources": [
+        {
+          "provider": "alooy",
+          "format": "mp4",
+          "web_playable": false,
+          "mode": "edge_local_proxy"
+        }
+      ]
+    },
+    {
+      "kind": "ukrcdn",
+      "status": 200,
+      "bytes": 1023,
+      "elapsed_ms": 3488,
+      "availability": [
+        {
+          "provider_id": "3isk",
+          "status": "available"
+        },
+        {
+          "provider_id": "akoam",
+          "status": "unmapped"
+        },
+        {
+          "provider_id": "alooy",
+          "status": "unmapped"
+        }
+      ],
+      "sources": [
+        {
+          "provider": "3isk",
+          "format": "hls",
+          "web_playable": true,
+          "mode": "edge_direct"
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import 'alooy_policy.dart';
 
 /// Browsers cannot open a loopback listener or inject forbidden headers.
 class LocalStreamBridge implements StreamBridge {
+  LocalStreamBridge({bool trustedEdge = false});
   @override
   Future<Uri> open(Uri target, Map<String, String> headers) async =>
       throw UnsupportedError(

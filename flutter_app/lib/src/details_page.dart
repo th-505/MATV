@@ -101,7 +101,7 @@ class _DetailsPageState extends State<DetailsPage> {
           mediaType: details.mediaType,
           playbackMode: details.playbackMode,
           playbackHeaders: details.playbackHeaders,
-          sourceRef: widget.item.ref.startsWith('3isk:') ? widget.item.ref : '',
+          sourceRef: widget.item.ref,
         ),
       ),
     );

@@ -71,6 +71,8 @@ class StreamSource {
       this.label = 'تلقائي',
       this.priority = 0,
       this.latencyMs,
+      this.provider = '',
+      this.expiresAt,
       this.resolution});
   final String mediaPath;
   final String mediaType;
@@ -80,13 +82,19 @@ class StreamSource {
   final int priority;
   final int? latencyMs;
   final ResolutionOption? resolution;
+  final String provider;
+  final DateTime? expiresAt;
+  String get displayLabel => provider.isEmpty ? label : '$provider • $label';
   factory StreamSource.fromJson(Map<String, dynamic> json) => PlaybackSource(
+      provider: '${json['provider'] ?? ''}',
+      expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       priority: int.tryParse('${json['priority'] ?? 0}') ?? 0,
       latencyMs: int.tryParse('${json['latency_ms'] ?? ''}'),
       resolution: ResolutionOption.fromLabel('${json['label'] ?? ''}'),
-      mediaPath: '${json['media_path'] ?? ''}',
-      mediaType: '${json['media_type'] ?? ''}',
-      label: '${json['label'] ?? 'تلقائي'}',
+      mediaPath: '${json['url'] ?? json['media_path'] ?? ''}',
+      mediaType:
+          '${json['format'] == 'hls' ? 'm3u8' : json['format'] == 'dash' ? 'mpd' : json['format'] == 'matroska' ? 'mkv' : json['format'] ?? json['media_type'] ?? ''}',
+      label: '${json['quality'] ?? json['label'] ?? 'تلقائي'}',
       playbackMode: '${json['playback_mode'] ?? ''}',
       headers: Map.unmodifiable({
         for (final key in ['Referer', 'User-Agent', 'Origin'])

@@ -85,6 +85,13 @@ await page.route("https://matv.onrender.com/**", async (route) => {
     body: JSON.stringify(data),
   });
 });
+await page.route("https://matv-edge-resolver.dada1000100.workers.dev/**", async route => {
+  await route.fulfill({status:200,headers:{"access-control-allow-origin":"*","content-type":"application/json"},body:JSON.stringify({status:"success",schema_version:1,episode_id:"web-fixture",sources:[{provider_id:"alooy",provider:"Fixture",format,quality:"test",url:`https://media.fixture.example/${format==='hls'?'master.m3u8':'sample.mp4'}`,playback_mode:"edge_direct",web_playable:true,expires_at:new Date(Date.now()+120000).toISOString(),headers:{}}]})});
+});
+await page.route("https://media.fixture.example/**", async route => {
+  const u=new URL(route.request().url()); const name=path.basename(u.pathname);
+  await route.fulfill({status:200,headers:{"access-control-allow-origin":"*","content-type":mime[path.extname(name)]},body:fs.readFileSync("/tmp/matv-codec-fixtures/"+name)});
+});
 try {
   await page.goto(
     `http://127.0.0.1:${server.address().port}/MATV/app/index.html?ref=alooy:fixture`,

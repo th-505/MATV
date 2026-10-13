@@ -1,0 +1,33 @@
+{
+  "name": "matv-edge-resolver",
+  "main": "src/router.mjs",
+  "compatibility_date": "2026-10-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "kv_namespaces": [
+    {
+      "binding": "EPISODES",
+      "id": "ca7659f7566044409ebaae091ca1a55a"
+    }
+  ],
+  "services": [
+    {
+      "binding": "ISK",
+      "service": "matv-extract-3isk"
+    },
+    {
+      "binding": "AKOAM",
+      "service": "matv-extract-akoam"
+    },
+    {
+      "binding": "ALOOY",
+      "service": "matv-extract-alooy"
+    }
+  ]
+}
