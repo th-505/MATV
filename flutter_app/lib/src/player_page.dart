@@ -81,7 +81,7 @@ class _PlayerPageState extends State<PlayerPage> {
   int _sourceIndex = 0;
   int _generation = 0;
   DateTime? _expiresAt;
-  Duration _handoffPosition = Duration.zero;
+  Duration? _handoffPosition;
   final _decoderRetries = <int>{};
   int _bufferedTicks = 0;
   bool _requestedPlaying = true;
@@ -257,12 +257,10 @@ class _PlayerPageState extends State<PlayerPage> {
       await controller.setPlaybackSpeed(_playbackSpeed);
       await controller.setVolume(_volume);
       if (!mounted || controller != _controller) return;
-      final resume = _handoffPosition > Duration.zero
-          ? _handoffPosition
-          : widget.store
+      final resume = _handoffPosition ??
+          widget.store
               .resumePosition(widget.item.ref, episodeId: widget.episodeId);
-      if ((_handoffPosition > Duration.zero ||
-              resume >= const Duration(seconds: 5)) &&
+      if ((_handoffPosition != null || resume >= const Duration(seconds: 5)) &&
           (controller.value.duration <= Duration.zero ||
               resume < controller.value.duration)) {
         await controller.seekTo(resume);
@@ -327,7 +325,7 @@ class _PlayerPageState extends State<PlayerPage> {
     _nativeStartupTimer?.cancel();
     final controller = _controller;
     if (controller != null) {
-      if (controller.value.position > Duration.zero) {
+      if (controller.value.isInitialized) {
         _handoffPosition = controller.value.position;
       }
       controller.removeListener(_nativeValueChanged);
@@ -582,7 +580,7 @@ class _PlayerPageState extends State<PlayerPage> {
             onSelected: (i) async {
               _revealControls();
               if (i == _sourceIndex) return;
-              if (controller.value.position > Duration.zero) {
+              if (controller.value.isInitialized) {
                 _handoffPosition = controller.value.position;
               }
               controller.removeListener(_nativeValueChanged);

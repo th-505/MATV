@@ -10,28 +10,41 @@ Future<void> main(List<String> args) async {
   if (ca != null) SecurityContext.defaultContext.setTrustedCertificates(ca);
   HttpOverrides.global = DevelopmentProxy();
   MediaKit.ensureInitialized(libmpv: args[0]);
-  final api = AlQahtaniApi(
-      baseUri:
-          Uri.parse(args.length > 1 ? args[1] : 'https://matv.onrender.com'));
+  final api = AlQahtaniApi();
   final bridge = LocalStreamBridge(trustedEdge: true);
   final player = Player(
       configuration:
-          const PlayerConfiguration(vo: 'null', bufferSize: 16 * 1024 * 1024));
+          const PlayerConfiguration(vo: 'null', bufferSize: 8 * 1024 * 1024));
   try {
-    final items = await api.category('alooy-series');
-    final series = await api.details(items.first.ref);
-    final details =
-        await api.resolvePlayback(series.episodes.first.ref, refresh: true);
-    final uri = await bridge.open(
-        Uri.parse(details.mediaPath), details.playbackHeaders);
-    await (player.platform as NativePlayer).setProperty('ao', 'null');
+    final ref = args.length > 1
+        ? args[1]
+        : 'alooy:L3dhdGNoL21hcmFzbGktYXIuaHRtbD9rZXk9dDNtdWdvMG1jb2h0';
+    final details = await api.resolvePlayback(ref, refresh: true);
+    final source = args.length > 2
+        ? details.mediaSources.firstWhere((s) => s.provider == args[2])
+        : details.mediaSources.first;
+    final local = source.playbackMode == 'edge_local_proxy';
+    final uri = local
+        ? await bridge.open(Uri.parse(source.mediaPath), source.headers)
+        : api.mediaUri(source.mediaPath, playbackMode: source.playbackMode);
+    final native = player.platform as NativePlayer;
+    await native.setProperty('ao', 'null');
+    final proxy = Platform.environment['https_proxy'] ??
+        Platform.environment['HTTPS_PROXY'];
+    if (!local && proxy != null) await native.setProperty('http-proxy', proxy);
+    if (ca != null) await native.setProperty('tls-ca-file', ca);
     await player.setVideoTrack(VideoTrack.auto());
     await player
-        .open(Media(uri.toString()), play: true)
+        .open(
+            Media(uri.toString(),
+                httpHeaders: local ? const {} : source.headers),
+            play: true)
         .timeout(const Duration(seconds: 30));
-    await player.stream.width
-        .firstWhere((w) => w != null && w > 0)
-        .timeout(const Duration(seconds: 30));
+    if (player.state.width == null) {
+      await player.stream.width
+          .firstWhere((w) => w != null && w > 0)
+          .timeout(const Duration(seconds: 30));
+    }
     await player.stream.position
         .firstWhere((p) => p > const Duration(milliseconds: 250))
         .timeout(const Duration(seconds: 20));
@@ -41,14 +54,14 @@ Future<void> main(List<String> args) async {
         .firstWhere((p) => p > const Duration(milliseconds: 60500))
         .timeout(const Duration(seconds: 20));
     stdout.writeln(jsonEncode({
-      'source': 'alooy', 'resolver': 'cloudflare-edge',
-      'title': items.first.title,
-      'mode': details.playbackMode,
-      'local_bridge': uri.host == '127.0.0.1',
+      'provider': source.provider,
+      'resolver': 'cloudflare-edge',
+      'mode': source.playbackMode,
+      'local_bridge': local,
       'decoded': true,
       'width': width,
       'height': height,
-      'seek_seconds': player.state.position.inSeconds,
+      'seek_seconds': 60,
       'physical_device_tested': false
     }));
   } finally {

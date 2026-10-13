@@ -78,12 +78,26 @@ void main() {
     expect(calls, 1);
     api.close();
   });
-  for (final automatic in [false, true]) {
+  for (final (automatic, seconds) in [
+    (false, 2),
+    (true, 2),
+    (false, 0),
+    (true, 0)
+  ]) {
     testWidgets(
-        '${automatic ? '403 failover' : 'manual switch'} preserves two-second playhead across providers',
+        '${automatic ? '403 failover' : 'manual switch'} preserves $seconds-second playhead across providers',
         (tester) async {
       SharedPreferences.setMockInitialValues({});
       final store = await LocalLibraryStore.create();
+      await store.recordProgress(
+          item: const MediaItem(
+              id: 'one',
+              title: 'one',
+              poster: '',
+              type: 'episode',
+              ref: '3isk:episode'),
+          position: const Duration(seconds: 40),
+          duration: const Duration(minutes: 10));
       final api = apiFixture();
       final engines = <FakeEngine>[];
       final bridge = FakeBridge();
@@ -109,7 +123,7 @@ void main() {
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      await engines.first.seekTo(const Duration(seconds: 2));
+      await engines.first.seekTo(Duration(seconds: seconds));
       if (automatic) {
         engines.first.state.value =
             engines.first.value.copyWith(errorDescription: 'HTTP 403');
@@ -130,7 +144,7 @@ void main() {
       }
       expect(engines.length, 2);
       expect(engines.last.uri.path, '/akoam.mp4');
-      expect(engines.last.seeks.first, const Duration(seconds: 2));
+      expect(engines.last.seeks.first, Duration(seconds: seconds));
       final button = tester
           .widget<PopupMenuButton<int>>(find.byType(PopupMenuButton<int>));
       final entries =
@@ -147,7 +161,7 @@ void main() {
       expect(engines.last.uri.host, '127.0.0.1');
       expect(engines.last.headers, isEmpty);
       expect(bridge.headers!['Origin'], 'https://source.new-domain.example');
-      expect(engines.last.seeks.first, const Duration(seconds: 2));
+      expect(engines.last.seeks.first, Duration(seconds: seconds));
       await tester.pumpWidget(const SizedBox());
       expect(bridge.closed, true);
       api.close();

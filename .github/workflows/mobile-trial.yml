@@ -185,7 +185,7 @@ jobs:
           from pathlib import Path
           report=Path('device-verification.json').read_text().replace('%','%25').replace('\n','%0A')
           print('::notice title=Device artifact verification::'+report)
-          Path('/tmp/release-notes.md').write_text("Alooy TV, local Range stream bridge, unified fallback and cinematic controls.\n\nAndroid Mobile ARM64, Android TV ARMv7 and unsigned iOS ARM64. External signing is required for IPA installation.\n\nChecksums, architecture, libmpv and public API verification passed. Physical-device battery and thermal tests remain pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
+          Path('/tmp/release-notes.md').write_text("Cloudflare edge extraction for 3isk/Akoam/Alooy, provider selection and synchronized automatic failover (including zero timestamp). Local Range streaming keeps video bytes off cloud servers.\n\nAndroid Mobile ARM64, Android TV ARMv7 and unsigned iOS ARM64. External signing is required for IPA installation.\n\nChecksums, architecture, libmpv and public API verification passed. Physical-device battery and thermal tests remain pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
           PY_NOTES
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "MATV $VERSION" --notes-file /tmp/release-notes.md device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.sha256 device-verification.json
       - uses: actions/upload-artifact@v4
