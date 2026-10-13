@@ -86,5 +86,8 @@
     "Supabase persistent cache needs replacement sb_secret_ key; memory fallback active"
   ],
   "device_build_run": "https://github.com/th-505/MATV/actions/runs/38325519185",
-  "device_verification_run": "https://github.com/th-505/MATV/actions/runs/38325551908"
+  "device_verification_run": "https://github.com/th-505/MATV/actions/runs/38325551908",
+  "device_build_conclusion": "success",
+  "device_verification_conclusion": "success",
+  "device_report": "DEVICE_TRIAL_1.0.38.json"
 }
