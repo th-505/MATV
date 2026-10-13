@@ -139,7 +139,7 @@ def apply_android(root: Path):
         network.parent.mkdir(parents=True, exist_ok=True)
         network.write_text('''<?xml version="1.0" encoding="utf-8"?>
 <network-security-config><base-config cleartextTrafficPermitted="false"/>
-<domain-config cleartextTrafficPermitted="true"><domain>127.0.0.1</domain><domain>localhost</domain></domain-config>
+<domain-config cleartextTrafficPermitted="true"><domain includeSubdomains="false">127.0.0.1</domain><domain includeSubdomains="false">localhost</domain></domain-config>
 </network-security-config>''', encoding="utf-8")
         text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
         text = re.sub(r'android:label="[^"]*"', 'android:label="القحطاني TV"', text, count=1)

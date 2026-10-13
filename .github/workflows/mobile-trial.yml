@@ -24,6 +24,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: python3 scripts/native_network_config_test.py
   verify-api:
     runs-on: ubuntu-latest
     env:
