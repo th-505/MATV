@@ -122,7 +122,14 @@ void main() {
     await File('${old.path}/episode.mp4').writeAsBytes([1, 2, 3]);
     await File('${old.path}/.qahtani-one.part').writeAsBytes([4, 5]);
     final migrated = await migrateDownloadDirectory(documents);
-    expect(migrated.path.endsWith('MITV/Downloads'), true);
+    expect(
+        migrated.uri.pathSegments
+            .where((p) => p.isNotEmpty)
+            .toList()
+            .reversed
+            .take(2)
+            .toList(),
+        ['Downloads', 'MITV']);
     expect(await File('${migrated.path}/episode.mp4').readAsBytes(), [1, 2, 3]);
     expect(await File('${migrated.path}/.mitv-one.part').readAsBytes(), [4, 5]);
     await old.create(recursive: true);
