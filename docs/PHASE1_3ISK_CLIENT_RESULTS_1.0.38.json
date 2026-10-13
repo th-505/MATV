@@ -1,0 +1,90 @@
+{
+  "version": "1.0.38",
+  "build": 38,
+  "product_commit": "d8844b2992eabfcccc45d53f4a7e8657903c084b",
+  "tested_at_utc": "2026-10-13T00:07:25.034106+00:00",
+  "render_deploy": "dep-db6nbkks728c73f4pr2g",
+  "api": "https://matv.onrender.com",
+  "strategy": {
+    "ukrcdn": "server direct resolution",
+    "miravd": "client default resolution; no server request to miravd"
+  },
+  "dual_engine_production": {
+    "location": "https://matv.onrender.com",
+    "results": [
+      {
+        "extractor": "ukrcdn",
+        "resolution_mode": "direct",
+        "api_status": 200,
+        "stream_host": "s10.ukrcdn.xyz",
+        "referer": "https://s10.ukrcdn.xyz/",
+        "manifest_status": 200,
+        "segment_status": 206,
+        "passed": true
+      },
+      {
+        "extractor": "miravd",
+        "resolution_mode": "client_resolve",
+        "api_status": 200,
+        "stream_host": "s43.grzcdn.com",
+        "referer": "https://miravd.com/",
+        "manifest_status": 200,
+        "segment_status": 206,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "dart_live_all_four_categories": [
+    {
+      "category": "3isk-latest",
+      "host": "s4.ukrcdn.xyz",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://s4.ukrcdn.xyz/",
+      "dart_client_verified": true
+    },
+    {
+      "category": "3isk-turkish",
+      "host": "s30.grzcdn.com",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://miravd.com/",
+      "dart_client_verified": true
+    },
+    {
+      "category": "3isk-dubbed",
+      "host": "s30.grzcdn.com",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://miravd.com/",
+      "dart_client_verified": true
+    },
+    {
+      "category": "3isk-movies",
+      "host": "s43.grzcdn.com",
+      "playback": "direct",
+      "manifest": 200,
+      "segment": 206,
+      "referer": "https://miravd.com/",
+      "dart_client_verified": true
+    }
+  ],
+  "verification": {
+    "node_check": "passed",
+    "flutter_analyze": "passed",
+    "mobile_tests": 91,
+    "tv_tests": 91,
+    "zero_server_miravd_requests": "asserted in provider test"
+  },
+  "limits": [
+    "No new physical phone/TV installation tested in this environment",
+    "Browser CORS remains phase 5",
+    "Supabase persistent cache needs replacement sb_secret_ key; memory fallback active"
+  ],
+  "device_build_run": "https://github.com/th-505/MATV/actions/runs/38325519185",
+  "device_verification_run": "https://github.com/th-505/MATV/actions/runs/38325551908"
+}
