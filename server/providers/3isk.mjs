@@ -131,6 +131,9 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       const url = new URL(ISK_ORIGIN + '/'); url.searchParams.set('s', q);
       return { status: 'success', source: '3isk', data: parse3iskCatalog(await page(url.href)) };
     },
+    async metadata(ref) {
+      return parse3iskDetails(await page(decode3iskRef(ref).href));
+    },
     async details(ref) {
       const url = decode3iskRef(ref);
       if (!url.pathname.startsWith('/watch/tvshows/')) throw new Error('3ISK_EXPECTED_SERIES');

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'universal_player.dart';
 
 class LocalDownloadPlayerPage extends StatefulWidget {
   const LocalDownloadPlayerPage({
@@ -14,11 +14,12 @@ class LocalDownloadPlayerPage extends StatefulWidget {
   final String title;
 
   @override
-  State<LocalDownloadPlayerPage> createState() => _LocalDownloadPlayerPageState();
+  State<LocalDownloadPlayerPage> createState() =>
+      _LocalDownloadPlayerPageState();
 }
 
 class _LocalDownloadPlayerPageState extends State<LocalDownloadPlayerPage> {
-  VideoPlayerController? _controller;
+  UniversalPlayer? _controller;
   String? _error;
   bool _ready = false;
 
@@ -28,20 +29,28 @@ class _LocalDownloadPlayerPageState extends State<LocalDownloadPlayerPage> {
     _initialize();
   }
 
-  Future<void> _initialize() async {
+  Future<void> _initialize({bool software = false}) async {
     try {
       if (!await widget.file.exists() || await widget.file.length() <= 0) {
         throw const FileSystemException('LOCAL_DOWNLOAD_MISSING');
       }
-      final controller = VideoPlayerController.file(widget.file);
+      final controller = UniversalPlayer(widget.file.uri,
+          mediaType: widget.file.path.split('.').last, software: software);
       _controller = controller;
       await controller.initialize().timeout(const Duration(seconds: 20));
       if (!mounted || controller != _controller) return;
       setState(() => _ready = true);
       await controller.play();
     } catch (_) {
+      if (!software && _controller?.usesExtendedEngine == false && mounted) {
+        await _controller?.dispose();
+        _controller = null;
+        await _initialize(software: true);
+        return;
+      }
       if (!mounted) return;
-      setState(() => _error = 'تعذر تشغيل الملف المحمّل. قد يكون الملف مفقودًا أو غير صالح.');
+      setState(() => _error =
+          'تعذر تشغيل الملف المحمّل. قد يكون الملف مفقودًا أو غير صالح.');
     }
   }
 
@@ -55,7 +64,9 @@ class _LocalDownloadPlayerPageState extends State<LocalDownloadPlayerPage> {
   Widget build(BuildContext context) {
     final controller = _controller;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      appBar: AppBar(
+          title:
+              Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
       body: SafeArea(
         child: Center(
           child: _error != null
@@ -77,8 +88,10 @@ class _LocalDownloadPlayerPageState extends State<LocalDownloadPlayerPage> {
                         Expanded(
                           child: Center(
                             child: AspectRatio(
-                              aspectRatio: controller.value.aspectRatio > 0 ? controller.value.aspectRatio : 16 / 9,
-                              child: VideoPlayer(controller),
+                              aspectRatio: controller.value.aspectRatio > 0
+                                  ? controller.value.aspectRatio
+                                  : 16 / 9,
+                              child: controller.video(),
                             ),
                           ),
                         ),
@@ -93,7 +106,7 @@ class _LocalDownloadPlayerPageState extends State<LocalDownloadPlayerPage> {
 
 class _LocalControls extends StatefulWidget {
   const _LocalControls({required this.controller});
-  final VideoPlayerController controller;
+  final UniversalPlayer controller;
 
   @override
   State<_LocalControls> createState() => _LocalControlsState();
@@ -120,7 +133,8 @@ class _LocalControlsState extends State<_LocalControls> {
   Widget build(BuildContext context) {
     final value = widget.controller.value;
     final durationMs = value.duration.inMilliseconds;
-    final positionMs = value.position.inMilliseconds.clamp(0, durationMs > 0 ? durationMs : 0);
+    final positionMs =
+        value.position.inMilliseconds.clamp(0, durationMs > 0 ? durationMs : 0);
     return Material(
       color: Colors.black87,
       child: Padding(
@@ -143,7 +157,10 @@ class _LocalControlsState extends State<_LocalControls> {
                 min: 0,
                 max: durationMs > 0 ? durationMs.toDouble() : 1,
                 value: durationMs > 0 ? positionMs.toDouble() : 0,
-                onChanged: durationMs <= 0 ? null : (next) => widget.controller.seekTo(Duration(milliseconds: next.round())),
+                onChanged: durationMs <= 0
+                    ? null
+                    : (next) => widget.controller
+                        .seekTo(Duration(milliseconds: next.round())),
               ),
             ),
             Text('${_clock(value.position)} / ${_clock(value.duration)}'),
@@ -158,7 +175,9 @@ class _LocalControlsState extends State<_LocalControls> {
     final hours = total ~/ 3600;
     final minutes = (total % 3600) ~/ 60;
     final seconds = total % 60;
-    if (hours > 0) return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }

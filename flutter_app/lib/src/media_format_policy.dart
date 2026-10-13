@@ -4,13 +4,18 @@ enum RuntimeMediaKind { hls, mp4, mpegTs, unknown }
 
 RuntimeMediaKind classifyRuntimeMediaType(String value) {
   final normalized = value.trim().toLowerCase();
-  if (normalized == 'm3u8' || normalized == 'hls' || normalized.contains('mpegurl')) {
+  if (normalized == 'm3u8' ||
+      normalized == 'hls' ||
+      normalized.contains('mpegurl')) {
     return RuntimeMediaKind.hls;
   }
   if (normalized == 'mp4' || normalized.contains('video/mp4')) {
     return RuntimeMediaKind.mp4;
   }
-  if (normalized == 'mpeg-ts' || normalized == 'mpegts' || normalized == 'ts' || normalized.contains('video/mp2t')) {
+  if (normalized == 'mpeg-ts' ||
+      normalized == 'mpegts' ||
+      normalized == 'ts' ||
+      normalized.contains('video/mp2t')) {
     return RuntimeMediaKind.mpegTs;
   }
   return RuntimeMediaKind.unknown;
@@ -38,4 +43,21 @@ String runtimeMediaLabel(String value) {
     case RuntimeMediaKind.unknown:
       return value.trim().isEmpty ? 'تلقائي' : value.trim();
   }
+}
+
+// Container selection is separate from codec support on each device.
+bool usesExtendedMediaEngine(String mediaType, String path) {
+  final type = mediaType.toLowerCase();
+  return [
+        'matroska',
+        'matroska-webm',
+        'mkv',
+        'webm',
+        'dash',
+        'mpd',
+        'mpeg-ts',
+        'stream',
+        'ts'
+      ].contains(type) ||
+      RegExp(r'\.(mkv|webm|mpd|ts|m2ts)$', caseSensitive: false).hasMatch(path);
 }

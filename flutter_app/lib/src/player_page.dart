@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:video_player/video_player.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import 'api_client.dart';
 import 'app_target.dart';
@@ -11,7 +12,8 @@ import 'library_store.dart';
 import 'media_format_policy.dart';
 import 'models.dart';
 import 'player_controls.dart';
-import 'web_playback_event.dart';
+import 'universal_player.dart';
+import 'package:media_kit/media_kit.dart' as mk;
 
 class PlayerPage extends StatefulWidget {
   const PlayerPage({
@@ -25,6 +27,7 @@ class PlayerPage extends StatefulWidget {
     this.mediaType = '',
     this.playbackMode = 'proxy',
     this.playbackHeaders = const {},
+    this.playerFactory,
     this.episodeId = '',
     this.episodeNumber,
   });
@@ -40,93 +43,229 @@ class PlayerPage extends StatefulWidget {
   final Map<String, String> playbackHeaders;
   final String episodeId;
   final int? episodeNumber;
+  final UniversalPlayer Function(Uri, String, Map<String, String>, bool)?
+      playerFactory;
 
   @override
   State<PlayerPage> createState() => _PlayerPageState();
 }
 
 class _PlayerPageState extends State<PlayerPage> {
-  VideoPlayerController? _controller;
-  WebViewController? _webController;
+  UniversalPlayer? _controller;
   Timer? _progressTimer;
   Timer? _nativeStartupTimer;
-  Timer? _webStartupTimer;
   String _status = 'جاري تجهيز المشاهدة…';
-  String _resolvedMediaPath = '';
   String _resolvedPlaybackMode = 'proxy';
+  Map<String, String> _resolvedHeaders = const {};
   int _directRefreshAttempts = 0;
   bool _failed = false;
-  bool _usingWebFallback = false;
   bool _nativeFailureInFlight = false;
-  bool _webPlaybackStarted = false;
   double _playbackSpeed = 1.0;
+  double _volume = 1.0;
+  double _brightness = 1.0;
+  bool _nativeBrightness = false;
+  bool _fullscreen = isTvTarget;
+  bool _controlsVisible = true;
+  Timer? _controlsTimer;
+  DateTime _lastBrightnessUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _gestureRight = false;
+  final _sources = <PlaybackSource>[];
+  int _sourceIndex = 0;
+  int _generation = 0;
+  DateTime? _expiresAt;
+  Duration _handoffPosition = Duration.zero;
+  final _decoderRetries = <int>{};
+  int _bufferedTicks = 0;
+  bool _requestedPlaying = true;
 
   @override
   void initState() {
     super.initState();
     _initialize();
+    unawaited(_readBrightness());
+    unawaited(_keepScreenOn(true));
   }
 
-  Future<void> _initialize({bool forceRefresh = false}) async {
+  Future<void> _keepScreenOn(bool value) async {
+    try {
+      await WakelockPlus.toggle(enable: value);
+    } catch (_) {}
+  }
+
+  Future<void> _readBrightness() async {
+    if (isTvTarget) return;
+    try {
+      final value = await ScreenBrightness.instance.application;
+      if (mounted) setState(() => _brightness = value.clamp(.15, 1));
+    } catch (_) {}
+  }
+
+  Future<void> _setBrightness() async {
+    if (DateTime.now().difference(_lastBrightnessUpdate).inMilliseconds < 100) {
+      return;
+    }
+    _lastBrightnessUpdate = DateTime.now();
+    try {
+      await ScreenBrightness.instance
+          .setApplicationScreenBrightness(_brightness);
+      if (mounted && !_nativeBrightness) {
+        setState(() => _nativeBrightness = true);
+      }
+    } catch (_) {}
+  }
+
+  void _revealControls() {
+    _controlsTimer?.cancel();
+    if (mounted) setState(() => _controlsVisible = true);
+    if (!isTvTarget) {
+      _controlsTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted && _controller?.value.isPlaying == true) {
+          setState(() => _controlsVisible = false);
+        }
+      });
+    }
+  }
+
+  Future<void> _toggleFullscreen() async {
+    setState(() => _fullscreen = !_fullscreen);
+    _revealControls();
+    await SystemChrome.setEnabledSystemUIMode(
+        _fullscreen ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
+    if (!isTvTarget) {
+      await SystemChrome.setPreferredOrientations(_fullscreen
+          ? [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]
+          : DeviceOrientation.values);
+    }
+  }
+
+  Future<void> _restoreDisplay() async {
+    try {
+      if (_nativeBrightness) {
+        await ScreenBrightness.instance.resetApplicationScreenBrightness();
+      }
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      if (!isTvTarget) {
+        await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _initialize(
+      {bool forceRefresh = false,
+      bool keepSources = false,
+      bool software = false}) async {
+    final generation = ++_generation;
     _nativeStartupTimer?.cancel();
-    _webStartupTimer?.cancel();
     _nativeFailureInFlight = false;
-    _webPlaybackStarted = false;
     try {
       var mediaPath = widget.mediaPath;
       var mediaType = widget.mediaType;
       var playbackMode = widget.playbackMode;
       var playbackHeaders = widget.playbackHeaders;
       DateTime? expiresAt;
-      if (mediaPath.isEmpty || widget.sourceRef.startsWith('3isk:')) {
-        final TitleDetails resolved = await widget.api.resolvePlayback(widget.sourceRef, refresh: forceRefresh);
+      if (!keepSources && (mediaPath.isEmpty || widget.sourceRef.isNotEmpty)) {
+        final TitleDetails resolved = await widget.api
+            .resolvePlayback(widget.sourceRef, refresh: forceRefresh);
         mediaPath = resolved.mediaPath;
         mediaType = resolved.mediaType;
         playbackMode = resolved.playbackMode;
         playbackHeaders = resolved.playbackHeaders;
         expiresAt = resolved.expiresAt;
+        _expiresAt = expiresAt;
+        _sources.clear();
+        _sourceIndex = 0;
+        _decoderRetries.clear();
+        _sources.addAll(resolved.mediaSources.isEmpty
+            ? [PlaybackSource(mediaPath: mediaPath, mediaType: mediaType)]
+            : resolved.mediaSources);
       }
-      _resolvedMediaPath = mediaPath;
+      if (keepSources && _sources.isNotEmpty) {
+        mediaPath = _sources[_sourceIndex].mediaPath;
+        mediaType = _sources[_sourceIndex].mediaType;
+        playbackMode = _sources[_sourceIndex].playbackMode.isNotEmpty
+            ? _sources[_sourceIndex].playbackMode
+            : _resolvedPlaybackMode;
+        playbackHeaders = _sources[_sourceIndex].headers.isNotEmpty
+            ? _sources[_sourceIndex].headers
+            : _resolvedHeaders;
+        expiresAt = _expiresAt;
+      }
       _resolvedPlaybackMode = playbackMode;
+      _resolvedHeaders = playbackHeaders;
       if (!mounted) return;
-      final controller = VideoPlayerController.networkUrl(
-        widget.api.mediaUri(mediaPath, playbackMode: playbackMode, expiresAt: expiresAt),
-        formatHint: videoFormatHintForRuntimeMedia(mediaType),
-        httpHeaders: playbackHeaders,
-      );
+      final uri = widget.api.mediaUri(mediaPath,
+          playbackMode: playbackMode, expiresAt: expiresAt);
+      final controller = widget.playerFactory
+              ?.call(uri, mediaType, playbackHeaders, software) ??
+          UniversalPlayer(
+            widget.api.mediaUri(mediaPath,
+                playbackMode: playbackMode, expiresAt: expiresAt),
+            mediaType: mediaType,
+            headers: playbackHeaders,
+            software: software,
+          );
       _controller = controller;
       controller.addListener(_nativeValueChanged);
       await controller.initialize().timeout(const Duration(seconds: 25));
       await controller.setPlaybackSpeed(_playbackSpeed);
+      await controller.setVolume(_volume);
       if (!mounted || controller != _controller) return;
-      final resume = widget.store.resumePosition(widget.item.ref, episodeId: widget.episodeId);
-      if (resume >= const Duration(seconds: 5) && (controller.value.duration <= Duration.zero || resume < controller.value.duration)) {
+      final resume = _handoffPosition > Duration.zero
+          ? _handoffPosition
+          : widget.store
+              .resumePosition(widget.item.ref, episodeId: widget.episodeId);
+      if (resume >= const Duration(seconds: 5) &&
+          (controller.value.duration <= Duration.zero ||
+              resume < controller.value.duration)) {
         await controller.seekTo(resume);
       }
       setState(() {
         _failed = false;
-        _usingWebFallback = false;
         _status = 'جاهز للمشاهدة • ${runtimeMediaLabel(mediaType)}';
       });
       _progressTimer?.cancel();
-      _progressTimer = Timer.periodic(const Duration(seconds: 5), (_) => _saveProgress());
-      await controller.play();
-      _nativeStartupTimer = Timer(const Duration(seconds: 12), () {
-        if (!mounted || controller != _controller || _usingWebFallback) return;
+      final initialPosition = controller.value.position;
+      _bufferedTicks = 0;
+      _requestedPlaying = true;
+      _progressTimer = Timer.periodic(const Duration(seconds: 5), (_) {
         final value = controller.value;
-        final neverStarted = value.position < const Duration(milliseconds: 500) && !value.isPlaying;
+        if (value.position > initialPosition + const Duration(seconds: 5)) {
+          _directRefreshAttempts = 0;
+        }
+        if (_requestedPlaying && value.isBuffering) {
+          _bufferedTicks++;
+        } else {
+          _bufferedTicks = 0;
+        }
+        if (_bufferedTicks >= 6 && !_nativeFailureInFlight) {
+          unawaited(_fallbackFromNative('تعذر استمرار التشغيل'));
+          return;
+        }
+        unawaited(_saveProgress());
+      });
+      await controller.play();
+      _revealControls();
+      _nativeStartupTimer = Timer(const Duration(seconds: 12), () {
+        if (!mounted || controller != _controller) return;
+        final value = controller.value;
+        final neverStarted =
+            value.position < const Duration(milliseconds: 500) &&
+                !value.isPlaying;
         if (value.hasError || neverStarted) {
           unawaited(_fallbackFromNative('تعذر بدء التشغيل بالمشغل الأصلي'));
         }
       });
     } catch (_) {
+      if (!mounted || generation != _generation) return;
       await _fallbackFromNative('تعذر تشغيل هذا المصدر داخل المشغل الأصلي');
     }
   }
 
   void _nativeValueChanged() {
     final controller = _controller;
-    if (controller == null || _usingWebFallback || _nativeFailureInFlight) return;
+    if (controller == null || _nativeFailureInFlight) {
+      return;
+    }
     if (controller.value.hasError) {
       unawaited(_fallbackFromNative('تعذر استمرار التشغيل بالمشغل الأصلي'));
     }
@@ -138,6 +277,9 @@ class _PlayerPageState extends State<PlayerPage> {
     _nativeStartupTimer?.cancel();
     final controller = _controller;
     if (controller != null) {
+      if (controller.value.position > Duration.zero) {
+        _handoffPosition = controller.value.position;
+      }
       controller.removeListener(_nativeValueChanged);
       try {
         await controller.pause().timeout(const Duration(seconds: 2));
@@ -147,6 +289,12 @@ class _PlayerPageState extends State<PlayerPage> {
       } catch (_) {}
     }
     _controller = null;
+    if (mounted) {
+      setState(() {
+        _failed = false;
+        _status = 'جاري تجربة مصدر بديل…';
+      });
+    }
     _progressTimer?.cancel();
     if (!mounted) return;
     if (widget.sourceRef.startsWith('3isk:') && _directRefreshAttempts < 1) {
@@ -155,168 +303,43 @@ class _PlayerPageState extends State<PlayerPage> {
       await _initialize(forceRefresh: true);
       return;
     }
-    if (!widget.sourceRef.startsWith('3isk:') && !isTvTarget && _resolvedMediaPath.isNotEmpty) {
-      try {
-        await _startInternalWebFallback();
+    if (!widget.sourceRef.startsWith('3isk:') && _sources.isNotEmpty) {
+      if (controller != null &&
+          !controller.usesExtendedEngine &&
+          _decoderRetries.add(_sourceIndex)) {
+        _nativeFailureInFlight = false;
+        await _initialize(keepSources: true, software: true);
         return;
-      } catch (_) {
-        // Expired direct URLs must fail safely after the bounded refresh.
       }
+      if (_sourceIndex + 1 < _sources.length) {
+        _sourceIndex += 1;
+        _nativeFailureInFlight = false;
+        await _initialize(keepSources: true);
+        return;
+      }
+    }
+    if (!widget.sourceRef.startsWith('3isk:') &&
+        widget.sourceRef.isNotEmpty &&
+        _directRefreshAttempts < 1) {
+      _directRefreshAttempts += 1;
+      _nativeFailureInFlight = false;
+      await _initialize(forceRefresh: true);
+      return;
     }
     setState(() {
       _failed = true;
-      _usingWebFallback = false;
       _status = failureMessage;
     });
     _nativeFailureInFlight = false;
   }
 
-  Future<void> _startInternalWebFallback() async {
-    final opaqueMedia = widget.api.mediaUri(_resolvedMediaPath, playbackMode: _resolvedPlaybackMode);
-    final resume = widget.store.resumePosition(widget.item.ref, episodeId: widget.episodeId);
-    final mediaJson = jsonEncode(opaqueMedia.toString()).replaceAll('<', r'\u003c');
-    final playerHtml = """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-    <body style="margin:0;background:#101827"><video id="video" controls autoplay playsinline style="width:100%;height:100vh"></video>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
-    <script>const v=document.getElementById('video'), u=$mediaJson;
-    if(v.canPlayType('application/vnd.apple.mpegurl') || !u.includes('.m3u8')){v.src=u;}
-    else if(window.Hls && Hls.isSupported()){const h=new Hls();h.loadSource(u);h.attachMedia(v);}</script></body></html>""";
-    late final WebViewController controller;
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF101827))
-      ..addJavaScriptChannel('AlQahtaniPlayer', onMessageReceived: _handleWebPlaybackMessage)
-      ..setNavigationDelegate(NavigationDelegate(
-        onNavigationRequest: (request) {
-          final uri = Uri.tryParse(request.url);
-          if (uri == null) return NavigationDecision.prevent;
-          final allowed = uri.toString() == 'about:blank';
-          return allowed ? NavigationDecision.navigate : NavigationDecision.prevent;
-        },
-        onPageFinished: (_) => unawaited(_installWebPlaybackBridge(controller, resume)),
-        onWebResourceError: (error) {
-          final isMainFrame = error.isForMainFrame ?? true;
-          if (!mounted || !_usingWebFallback || !isMainFrame) return;
-          _webStartupTimer?.cancel();
-          setState(() {
-            _failed = true;
-            _usingWebFallback = false;
-            _status = 'تعذر تشغيل المصدر في المشغلين الأصلي والويب الداخلي';
-          });
-        },
-      ))
-      ..loadHtmlString(playerHtml);
-    if (!mounted) return;
-    setState(() {
-      _webController = controller;
-      _usingWebFallback = true;
-      _webPlaybackStarted = false;
-      _failed = false;
-      _status = 'جارٍ تجربة محرك الويب الداخلي…';
-    });
-    _webStartupTimer?.cancel();
-    _webStartupTimer = Timer(const Duration(seconds: 25), () {
-      if (!mounted || !_usingWebFallback || _webPlaybackStarted) return;
-      setState(() {
-        _failed = true;
-        _usingWebFallback = false;
-        _status = 'لم يبدأ تشغيل المصدر داخل المهلة المحددة';
-      });
-    });
-    _nativeFailureInFlight = false;
-  }
-
-  Future<void> _installWebPlaybackBridge(WebViewController controller, Duration resume) async {
-    final resumeSeconds = resume >= const Duration(seconds: 5) ? resume.inMilliseconds / 1000 : 0;
-    await controller.runJavaScript('''
-(() => {
-  if (window.__alQahtaniPlaybackBridgeInstalled) return;
-  window.__alQahtaniPlaybackBridgeInstalled = true;
-  const resumeSeconds = $resumeSeconds;
-  const send = (payload) => {
-    try { AlQahtaniPlayer.postMessage(JSON.stringify(payload)); } catch (_) {}
-  };
-  let attempts = 0;
-  const attach = () => {
-    const video = document.querySelector('video');
-    if (!video) {
-      attempts += 1;
-      if (attempts < 100) setTimeout(attach, 200);
-      return;
-    }
-    let resumeApplied = false;
-    let lastProgressSecond = -10;
-    const applyResume = () => {
-      if (resumeApplied || !(resumeSeconds >= 5) || !Number.isFinite(video.duration) || video.duration <= 0) return;
-      if (resumeSeconds < video.duration - 1) {
-        try { video.currentTime = resumeSeconds; } catch (_) {}
-      }
-      resumeApplied = true;
-    };
-    const payload = (type, extra = {}) => ({
-      type,
-      position: Number.isFinite(video.currentTime) ? Math.max(0, video.currentTime) : 0,
-      duration: Number.isFinite(video.duration) ? Math.max(0, video.duration) : 0,
-      ...extra,
-    });
-    video.addEventListener('loadedmetadata', applyResume);
-    video.addEventListener('durationchange', applyResume);
-    if (video.readyState >= 1) applyResume();
-    video.addEventListener('playing', () => send(payload('playing')));
-    video.addEventListener('timeupdate', () => {
-      const currentSecond = Math.floor(Number.isFinite(video.currentTime) ? video.currentTime : 0);
-      if (currentSecond - lastProgressSecond < 5) return;
-      lastProgressSecond = currentSecond;
-      send(payload('progress'));
-    });
-    video.addEventListener('ended', () => send(payload('ended')));
-    video.addEventListener('error', () => send(payload('error', {code: String(video.error?.code || 0)})));
-    if (!video.paused && video.currentTime > 0) send(payload('playing'));
-  };
-  attach();
-})();
-''');
-  }
-
-  void _handleWebPlaybackMessage(JavaScriptMessage message) {
-    final event = WebPlaybackEvent.tryParse(message.message);
-    if (event == null || !mounted || !_usingWebFallback) return;
-    switch (event.type) {
-      case 'playing':
-        _webStartupTimer?.cancel();
-        if (!_webPlaybackStarted) {
-          setState(() {
-            _webPlaybackStarted = true;
-            _failed = false;
-            _status = 'يعمل الآن عبر محرك الويب الداخلي';
-          });
-        }
-        break;
-      case 'progress':
-      case 'ended':
-        if (!_webPlaybackStarted || event.position < const Duration(milliseconds: 500)) return;
-        unawaited(widget.store.recordProgress(
-          item: widget.item,
-          position: event.position,
-          duration: event.duration,
-          episodeId: widget.episodeId,
-          episodeNumber: widget.episodeNumber,
-        ));
-        break;
-      case 'error':
-        _webStartupTimer?.cancel();
-        setState(() {
-          _failed = true;
-          _usingWebFallback = false;
-          _status = _webPlaybackStarted ? 'انقطع التشغيل داخل محرك الويب الداخلي' : 'تعذر بدء التشغيل داخل محرك الويب الداخلي';
-        });
-        break;
-    }
-  }
-
   Future<void> _saveProgress() async {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized || !controller.value.isPlaying) return;
+    if (controller == null ||
+        !controller.value.isInitialized ||
+        !controller.value.isPlaying) {
+      return;
+    }
     await widget.store.recordProgress(
       item: widget.item,
       position: controller.value.position,
@@ -327,6 +350,7 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _seekBy(Duration delta) async {
+    _revealControls();
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
     final duration = controller.value.duration;
@@ -336,7 +360,9 @@ class _PlayerPageState extends State<PlayerPage> {
     await controller.seekTo(target);
   }
 
-  Future<void> _togglePlay(VideoPlayerController controller) async {
+  Future<void> _togglePlay(UniversalPlayer controller) async {
+    _revealControls();
+    _requestedPlaying = !controller.value.isPlaying;
     if (controller.value.isPlaying) {
       await controller.pause();
     } else {
@@ -345,6 +371,7 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _setPlaybackSpeed(double speed) async {
+    _revealControls();
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
     await controller.setPlaybackSpeed(speed);
@@ -354,8 +381,11 @@ class _PlayerPageState extends State<PlayerPage> {
 
   @override
   void dispose() {
+    _generation++;
+    _controlsTimer?.cancel();
+    unawaited(_restoreDisplay());
+    unawaited(_keepScreenOn(false));
     _nativeStartupTimer?.cancel();
-    _webStartupTimer?.cancel();
     _progressTimer?.cancel();
     _saveProgress();
     _controller?.removeListener(_nativeValueChanged);
@@ -363,64 +393,227 @@ class _PlayerPageState extends State<PlayerPage> {
     super.dispose();
   }
 
+  Widget _modernControls(UniversalPlayer activeController) => Container(
+        decoration: const BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0xE6000000)])),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ValueListenableBuilder<VideoPlayerValue>(
+            valueListenable: activeController,
+            builder: (context, value, _) => PlayerControls(
+              isPlaying: value.isPlaying,
+              isTv: isTvTarget,
+              playbackSpeed: _playbackSpeed,
+              onRewind: () => _seekBy(const Duration(seconds: -10)),
+              onTogglePlay: () => _togglePlay(activeController),
+              onForward: () => _seekBy(const Duration(seconds: 10)),
+              onPlaybackSpeedChanged: _setPlaybackSpeed,
+            ),
+          ),
+          ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: activeController,
+              builder: (context, value, _) {
+                final maximum = value.duration.inMilliseconds.toDouble();
+                return Column(children: [
+                  Slider(
+                      value: value.position.inMilliseconds
+                          .toDouble()
+                          .clamp(0, maximum > 0 ? maximum : 1),
+                      max: maximum > 0 ? maximum : 1,
+                      onChanged: maximum > 0
+                          ? (v) => activeController
+                              .seekTo(Duration(milliseconds: v.round()))
+                          : null),
+                  Text('${_time(value.position)} / ${_time(value.duration)}',
+                      style: const TextStyle(fontSize: 12)),
+                  _trackControls(activeController),
+                ]);
+              })
+        ]),
+      );
+
+  String _time(Duration v) =>
+      '${v.inMinutes}:${(v.inSeconds % 60).toString().padLeft(2, '0')}';
+  Widget _trackControls(UniversalPlayer controller) {
+    final player = controller.extendedPlayer;
+    return Wrap(alignment: WrapAlignment.center, spacing: 12, children: [
+      if (player == null)
+        IconButton(
+            tooltip: 'خيارات الصوت والترجمة',
+            icon: const Icon(Icons.audiotrack),
+            onPressed: () async {
+              _handoffPosition = controller.value.position;
+              controller.removeListener(_nativeValueChanged);
+              await controller.dispose();
+              _controller = null;
+              _decoderRetries.add(_sourceIndex);
+              await _initialize(keepSources: true, software: true);
+            }),
+      if (_sources.length > 1)
+        PopupMenuButton<int>(
+            tooltip: 'الجودة / المصدر',
+            icon: const Icon(Icons.high_quality),
+            itemBuilder: (_) => [
+                  for (var i = 0; i < _sources.length; i++)
+                    PopupMenuItem(value: i, child: Text(_sources[i].label))
+                ],
+            onSelected: (i) async {
+              if (i == _sourceIndex) return;
+              if (controller.value.position > Duration.zero) {
+                _handoffPosition = controller.value.position;
+              }
+              controller.removeListener(_nativeValueChanged);
+              await controller.dispose();
+              _controller = null;
+              _sourceIndex = i;
+              await _initialize(keepSources: true);
+            }),
+      if (player != null &&
+          player.state.tracks.video
+                  .where((t) => t.id != 'auto' && t.id != 'no')
+                  .length >
+              1)
+        PopupMenuButton<mk.VideoTrack>(
+            tooltip: 'الجودة',
+            icon: const Icon(Icons.high_quality),
+            itemBuilder: (_) => player.state.tracks.video
+                .where((t) => t.id != 'no')
+                .map((t) => PopupMenuItem(
+                    value: t,
+                    child: Text(t.id == 'auto' ? 'تلقائي' : t.title ?? t.id)))
+                .toList(),
+            onSelected: player.setVideoTrack),
+      if (player != null && player.state.tracks.audio.length > 2)
+        PopupMenuButton<mk.AudioTrack>(
+            tooltip: 'الصوت',
+            icon: const Icon(Icons.audiotrack),
+            itemBuilder: (_) => player.state.tracks.audio
+                .map((t) => PopupMenuItem(
+                    value: t,
+                    child: Text(t.id == 'auto'
+                        ? 'تلقائي'
+                        : t.id == 'no'
+                            ? 'إيقاف'
+                            : t.title ?? t.language ?? t.id)))
+                .toList(),
+            onSelected: player.setAudioTrack),
+      if (player != null && player.state.tracks.subtitle.length > 2)
+        PopupMenuButton<mk.SubtitleTrack>(
+            tooltip: 'الترجمة',
+            icon: const Icon(Icons.subtitles),
+            itemBuilder: (_) => player.state.tracks.subtitle
+                .map((t) => PopupMenuItem(
+                    value: t,
+                    child: Text(t.id == 'auto'
+                        ? 'تلقائي'
+                        : t.id == 'no'
+                            ? 'إيقاف'
+                            : t.title ?? t.language ?? t.id)))
+                .toList(),
+            onSelected: player.setSubtitleTrack),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    final activeController = controller?.value.isInitialized == true ? controller : null;
+    final activeController =
+        controller?.value.isInitialized == true ? controller : null;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: _fullscreen ? null : AppBar(title: Text(widget.title)),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
+            constraints:
+                BoxConstraints(maxWidth: _fullscreen ? double.infinity : 1100),
             child: Padding(
-              padding: EdgeInsets.all(isTvTarget ? 28 : 16),
+              padding: EdgeInsets.all(_fullscreen ? 0 : 16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (_usingWebFallback && _webController != null)
-                    Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(18), child: WebViewWidget(controller: _webController!)))
-                  else if (activeController != null)
-                    Flexible(child: AspectRatio(
-                      aspectRatio: activeController.value.aspectRatio > 0 ? activeController.value.aspectRatio : 16 / 9,
-                      child: VideoPlayer(activeController),
+                  if (activeController != null)
+                    Flexible(
+                        child: AspectRatio(
+                      aspectRatio: activeController.value.aspectRatio > 0
+                          ? activeController.value.aspectRatio
+                          : 16 / 9,
+                      child: LayoutBuilder(
+                          builder: (context, constraints) => GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _controlsVisible
+                                    ? setState(() => _controlsVisible = false)
+                                    : _revealControls(),
+                                onDoubleTapDown: (d) => _gestureRight =
+                                    d.localPosition.dx >
+                                        constraints.maxWidth / 2,
+                                onDoubleTap: () => _seekBy(Duration(
+                                    seconds: _gestureRight ? 10 : -10)),
+                                onVerticalDragStart: isTvTarget
+                                    ? null
+                                    : (d) => _gestureRight =
+                                        d.localPosition.dx >
+                                            constraints.maxWidth / 2,
+                                onVerticalDragUpdate: isTvTarget
+                                    ? null
+                                    : (d) {
+                                        final change =
+                                            -(d.primaryDelta ?? 0) / 240;
+                                        setState(() {
+                                          if (_gestureRight) {
+                                            _volume =
+                                                (_volume + change).clamp(0, 1);
+                                          } else {
+                                            _brightness = (_brightness + change)
+                                                .clamp(.15, 1);
+                                          }
+                                        });
+                                        if (_gestureRight) {
+                                          unawaited(activeController
+                                              .setVolume(_volume));
+                                        } else {
+                                          unawaited(_setBrightness());
+                                        }
+                                        _revealControls();
+                                      },
+                                child: Stack(fit: StackFit.expand, children: [
+                                  activeController.video(),
+                                  if (_controlsVisible)
+                                    Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        child:
+                                            _modernControls(activeController)),
+                                  if (_controlsVisible)
+                                    Positioned(
+                                        top: 4,
+                                        right: 4,
+                                        child: IconButton(
+                                            tooltip: _fullscreen
+                                                ? 'تصغير'
+                                                : 'ملء الشاشة',
+                                            icon: Icon(_fullscreen
+                                                ? Icons.fullscreen_exit
+                                                : Icons.fullscreen),
+                                            onPressed: _toggleFullscreen)),
+                                  IgnorePointer(
+                                      child: ColoredBox(
+                                          color: Colors.black.withValues(
+                                              alpha: _nativeBrightness
+                                                  ? 0
+                                                  : 1 - _brightness))),
+                                ]),
+                              )),
                     ))
                   else if (_failed)
                     const Icon(Icons.error_outline, size: 72)
                   else
                     const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(_status, textAlign: TextAlign.center),
-                  if (_usingWebFallback)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text('المصدر يبقى خلف وسيط القحطاني ولا يتم فتح تطبيق خارجي.', textAlign: TextAlign.center),
-                    ),
-                  if (activeController != null) ...[
-                    const SizedBox(height: 12),
-                    VideoProgressIndicator(
-                      activeController,
-                      allowScrubbing: !isTvTarget,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    if (isTvTarget)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child: Text('استخدم أزرار الريموت للتنقل، والرجوع/التقديم يتم بخطوات 10 ثوانٍ.'),
-                      ),
-                    ValueListenableBuilder<VideoPlayerValue>(
-                      valueListenable: activeController,
-                      builder: (context, value, _) => PlayerControls(
-                        isPlaying: value.isPlaying,
-                        isTv: isTvTarget,
-                        playbackSpeed: _playbackSpeed,
-                        onRewind: () => _seekBy(const Duration(seconds: -10)),
-                        onTogglePlay: () => _togglePlay(activeController),
-                        onForward: () => _seekBy(const Duration(seconds: 10)),
-                        onPlaybackSpeedChanged: _setPlaybackSpeed,
-                      ),
-                    ),
-                  ],
+                  if (!_fullscreen) Text(_status, textAlign: TextAlign.center),
                   if (_failed) ...[
                     const SizedBox(height: 12),
                     FilledButton.icon(
@@ -428,12 +621,8 @@ class _PlayerPageState extends State<PlayerPage> {
                       onPressed: () {
                         _controller?.dispose();
                         _controller = null;
-                        _webController = null;
-                        _webStartupTimer?.cancel();
                         setState(() {
                           _failed = false;
-                          _usingWebFallback = false;
-                          _webPlaybackStarted = false;
                           _status = 'جاري إعادة المحاولة…';
                         });
                         _initialize();
@@ -442,7 +631,8 @@ class _PlayerPageState extends State<PlayerPage> {
                       label: const Text('إعادة المحاولة'),
                     ),
                     const SizedBox(height: 8),
-                    const Text('لا يتم فتح تطبيق خارجي أو كشف عنوان المصدر الحقيقي عند الفشل.', textAlign: TextAlign.center),
+                    const Text('جرّب إعادة المحاولة أو اختيار عمل آخر.',
+                        textAlign: TextAlign.center),
                   ],
                 ],
               ),

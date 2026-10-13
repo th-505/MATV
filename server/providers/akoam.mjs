@@ -1,3 +1,4 @@
+import {unpack3iskPlayer} from './3isk-playback/miravd.mjs';
 const SOURCE_ORIGIN = "https://akwam.ss";
 const SOURCE_HOST = "akwam.ss";
 const MEDIA_HOST_SUFFIXES = [".downet.net"];
@@ -27,6 +28,7 @@ function safeHeaderUrl(value = "") {
 export function assertSourceUrl(value, { allowMedia = false } = {}) {
   const url = new URL(value);
   const host = url.hostname.toLowerCase();
+  if (url.username || url.password || url.port) throw new Error("UNSAFE_CINEMA_SOURCE_URL");
   const sourceOk = url.protocol === "https:" && host === SOURCE_HOST;
   const mediaOk = allowMedia && url.protocol === "https:" && MEDIA_HOST_SUFFIXES.some(suffix => host.endsWith(suffix));
   if (!sourceOk && !mediaOk) throw new Error("UNSAFE_CINEMA_SOURCE_URL");
@@ -63,20 +65,32 @@ export async function fetchSourceHtml(value, { referer = SOURCE_ORIGIN + "/", ti
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      cache: "no-store",
-      signal: controller.signal,
-      headers: {
-        Accept: "text/html,application/xhtml+xml",
-        "Accept-Language": "ar-SA,ar;q=0.9,en-US;q=0.8,en;q=0.7",
-        "User-Agent": UA,
-        Referer: safeHeaderUrl(referer),
-      },
-    });
+    let current = url;
+    let response;
+    for (let redirects = 0; redirects <= 4; redirects++) {
+      response = await fetch(current, {
+        method: "GET", redirect: "manual", cache: "no-store", signal: controller.signal,
+        headers: { Accept: "text/html,application/xhtml+xml", "Accept-Language": "ar-SA,ar;q=0.9,en-US;q=0.8,en;q=0.7",
+          "User-Agent": UA, Referer: safeHeaderUrl(referer) },
+      });
+      if (![301,302,303,307,308].includes(response.status)) break;
+      const location = response.headers.get('location'); await response.body?.cancel();
+      if (!location || redirects === 4) throw new Error('CINEMA_REDIRECT_LIMIT');
+      current = assertSourceUrl(new URL(location, current).href, {allowMedia:true});
+    }
     if (!response.ok) throw new Error(`CINEMA_SOURCE_HTTP_${response.status}`);
-    return { html: await response.text(), url: response.url || url.href };
+    const type=response.headers.get('content-type') || '';
+    if (/^video\/|mpegurl|dash\+xml/i.test(type) || (current.hostname!==SOURCE_HOST && mediaKindFromUrl(current.href)!=='unknown')) {
+      await response.body?.cancel();
+      return {html:`<source src="${current.href.replaceAll('"','&quot;')}">`,url:current.href};
+    }
+    const chunks = []; let length = 0;
+    for await (const chunk of response.body) {
+      length += chunk.length;
+      if (length > 2 * 1024 * 1024) throw new Error('CINEMA_HTML_TOO_LARGE');
+      chunks.push(chunk);
+    }
+    return { html: Buffer.concat(chunks).toString('utf8'), url: current.href };
   } finally {
     clearTimeout(timer);
   }
@@ -253,6 +267,7 @@ export function parseEpisode(html = "", pageUrl = "") {
 export function mediaKindFromUrl(value = "") {
   let path = "";
   try { path = new URL(value).pathname.toLowerCase(); } catch { return "unknown"; }
+  if (/\.mpd$/.test(path)) return "dash";
   if (/\.m3u8$/.test(path)) return "hls";
   if (/\.(?:ts|m2ts)$/.test(path)) return "mpeg-ts";
   if (/\.mp4$/.test(path)) return "mp4";
@@ -274,16 +289,24 @@ function isMediaCandidate(value = "") {
 }
 
 export function rankMediaCandidates(candidates = []) {
-  const rank = kind => ({ mp4: 0, hls: 1, "mpeg-ts": 2, webm: 3, matroska: 4, unknown: 5 }[kind] ?? 9);
+  const rank = kind => ({ mp4: 0, hls: 1, dash: 2, "mpeg-ts": 2, webm: 3, matroska: 4, unknown: 5 }[kind] ?? 9);
   return [...candidates].sort((a, b) => rank(mediaKindFromUrl(a)) - rank(mediaKindFromUrl(b)));
+}
+
+function decodePlayerScript(html) {
+  html = unpack3iskPlayer(html);
+  html = html.replace(/atob\(\s*["']([a-zA-Z0-9+/=]{1,100000})["']\s*\)/g, (_,value)=>JSON.stringify(Buffer.from(value,'base64').toString('utf8')));
+  html = html.replace(/\\\//g,'/');
+  return html;
 }
 
 export function parseWatch(html = "", pageUrl = "") {
   const candidates = [];
+  html = decodePlayerScript(html);
   for (const re of [
     /<source[^>]+src=["']([^"']+)["']/gi,
     /<video[^>]+src=["']([^"']+)["']/gi,
-    /(?:file|src)\s*[:=]\s*["'](https?:\/\/[^"']+)["']/gi,
+    /["']?(?:file|src)["']?\s*[:=]\s*["'](https?:\/\/[^"']+)["']/gi,
   ]) {
     for (const m of html.matchAll(re)) {
       const url = absoluteUrl(m[1], pageUrl || SOURCE_ORIGIN);
@@ -332,8 +355,22 @@ export async function directDetails(target) {
 export async function directWatch(target, referer = SOURCE_ORIGIN + "/") {
   const url = assertSourceUrl(target);
   if (!url.pathname.startsWith("/watch/")) throw new Error("BAD_WATCH_REFERENCE");
-  const { html } = await fetchSourceHtml(url.href, { referer });
-  return parseWatch(html, url.href);
+  const visited = new Set();
+  let current = url.href;
+  for (let depth = 0; depth < 4; depth++) {
+    if (visited.has(current)) throw new Error('CINEMA_REDIRECT_LOOP');
+    visited.add(current);
+    const {html, url: finalUrl} = await fetchSourceHtml(current, {referer});
+    const parsed = parseWatch(html, finalUrl);
+    if (parsed.candidates.length) return parsed;
+    const script=decodePlayerScript(html);
+    const next = script.match(/<iframe[^>]+src=["']([^"']+)["']/i)?.[1]
+      || script.match(/<meta[^>]+content=["'][^"']*url=([^"']+)["']/i)?.[1]
+      || script.match(/(?:location(?:\.href|\.replace|\.assign)?)\s*(?:=|\()\s*["']([^"']+)["']/i)?.[1];
+    if (!next) return parsed;
+    referer = finalUrl; current = assertSourceUrl(new URL(next, finalUrl).href).href;
+  }
+  throw new Error('CINEMA_REDIRECT_LIMIT');
 }
 
 export const BasriSource = Object.freeze({ origin: SOURCE_ORIGIN, userAgent: UA });

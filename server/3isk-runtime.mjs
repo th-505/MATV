@@ -65,6 +65,7 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
   return {
     category: (id, page = 1) => execute(`category:${id}:${page}`, () => provider.category(id, page), 5 * 60_000),
     search: query => { const q = String(query).trim().slice(0, 120); return execute(`search:${q}`, () => provider.search(q), 60_000); },
+    metadata(ref) { decode3iskRef(ref); return execute(`metadata:${ref}`,()=>provider.metadata(ref),120_000); },
     details(ref, options = {}) {
       const url = decode3iskRef(ref);
       return !url.pathname.startsWith('/watch/tvshows/')

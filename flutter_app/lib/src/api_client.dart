@@ -6,10 +6,40 @@ import 'miravd_resolver.dart';
 class AlQahtaniApi {
   AlQahtaniApi({http.Client? client, Uri? baseUri})
       : _client = client ?? http.Client(),
-        _baseUri = baseUri ?? Uri.parse(const String.fromEnvironment('MATV_API_BASE', defaultValue: 'https://matv.onrender.com'));
+        _baseUri = baseUri ??
+            Uri.parse(const String.fromEnvironment('MATV_API_BASE',
+                defaultValue: 'https://matv.onrender.com'));
 
   final http.Client _client;
   final Uri _baseUri;
+  final _metadata = <String, ({DateTime expires, TitleDetails details})>{};
+  final _metadataPending = <String, Future<void>>{};
+  TitleDetails? cachedMetadata(String ref) {
+    final row = _metadata[ref];
+    if (row == null || row.expires.isBefore(DateTime.now())) return null;
+    return row.details;
+  }
+
+  Future<void> prefetchMetadata(String ref) {
+    if (cachedMetadata(ref) != null || _metadataPending.length >= 2) {
+      return Future.value();
+    }
+    return _metadataPending.putIfAbsent(ref, () async {
+      try {
+        final json = await _getJson(
+            '/api/cinema/metadata', {'ref': ref}, const Duration(seconds: 12));
+        _metadata[ref] = (
+          expires: DateTime.now().add(const Duration(minutes: 2)),
+          details: TitleDetails.fromJson(json)
+        );
+        if (_metadata.length > 64) _metadata.remove(_metadata.keys.first);
+      } catch (_) {
+        /* Optional browsing prefetch must not interrupt navigation. */
+      } finally {
+        _metadataPending.remove(ref);
+      }
+    });
+  }
 
   MatchItem _matchItem(Map<String, dynamic> json) {
     final item = MatchItem.fromJson(json);
@@ -19,7 +49,9 @@ class AlQahtaniApi {
       if (value.startsWith('/')) return _baseUri.resolve(value).toString();
       final parsed = Uri.tryParse(value);
       if (parsed == null || parsed.scheme != 'https') return '';
-      return _baseUri.replace(path: '/api/matches/logo', queryParameters: {'url': value}).toString();
+      return _baseUri.replace(
+          path: '/api/matches/logo',
+          queryParameters: {'url': value}).toString();
     }
 
     return MatchItem(
@@ -51,7 +83,9 @@ class AlQahtaniApi {
   }
 
   Future<MatchPlayback> resolveMatchPlayback(String serverRef) async {
-    if (serverRef.trim().isEmpty) throw const ApiException('MISSING_MATCH_SERVER_REFERENCE');
+    if (serverRef.trim().isEmpty) {
+      throw const ApiException('MISSING_MATCH_SERVER_REFERENCE');
+    }
     final json = await _getJson('/api/v1/matches/playback', {'ref': serverRef});
     final data = json['data'];
     if (data is! Map) throw const ApiException('INVALID_MATCH_PLAYBACK');
@@ -63,7 +97,9 @@ class AlQahtaniApi {
   CatalogItem _catalogItem(Map<String, dynamic> json) {
     final item = CatalogItem.fromJson(json);
     final rawPoster = item.poster.trim();
-    final poster = rawPoster.startsWith('/') ? _baseUri.resolve(rawPoster).toString() : rawPoster;
+    final poster = rawPoster.startsWith('/')
+        ? _baseUri.resolve(rawPoster).toString()
+        : rawPoster;
     return CatalogItem(
       id: item.id,
       title: item.title,
@@ -78,7 +114,10 @@ class AlQahtaniApi {
 
   Future<List<NewsItem>> news() async {
     final json = await _getJson('/api/v1/news');
-    return _list(json['data']).map(NewsItem.fromJson).where((item) => item.ref.isNotEmpty).toList(growable: false);
+    return _list(json['data'])
+        .map(NewsItem.fromJson)
+        .where((item) => item.ref.isNotEmpty)
+        .toList(growable: false);
   }
 
   Future<NewsArticle> newsArticle(String ref) async {
@@ -90,7 +129,8 @@ class AlQahtaniApi {
   }
 
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
-    final json = await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
+    final json =
+        await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
     return _list(json['data']).map(_catalogItem).toList(growable: false);
   }
 
@@ -117,7 +157,8 @@ class AlQahtaniApi {
     final out = <CatalogItem>[];
     for (final item in values) {
       final ref = item.ref.trim();
-      final fallback = '${item.source}|${item.type}|${item.title.trim().toLowerCase()}|${item.year ?? ''}';
+      final fallback =
+          '${item.source}|${item.type}|${item.title.trim().toLowerCase()}|${item.year ?? ''}';
       if (ref.isNotEmpty) {
         if (!seenRefs.add(ref)) continue;
       } else if (!seenFallback.add(fallback)) {
@@ -128,20 +169,28 @@ class AlQahtaniApi {
     return out;
   }
 
-  Future<TitleDetails> details(String ref) => _details(ref);
+  Future<TitleDetails> details(String ref) {
+    final cached = cachedMetadata(ref);
+    return cached?.hasEpisodes == true ? Future.value(cached!) : _details(ref);
+  }
 
   Future<TitleDetails> _details(String ref, {bool refresh = false}) async {
     if (ref.trim().isEmpty) throw const ApiException('MISSING_TITLE_REFERENCE');
-    final json = await _getJson('/api/cinema/details', {'ref': ref, if (refresh) 'refresh': '1'}, const Duration(seconds: 60));
+    final json = await _getJson('/api/cinema/details',
+        {'ref': ref, if (refresh) 'refresh': '1'}, const Duration(seconds: 60));
     return TitleDetails.fromJson(json);
   }
 
-  Future<TitleDetails> resolvePlayback(String ref, {bool refresh = false}) async {
-    final resolved = refresh ? await _details(ref, refresh: true) : await details(ref);
+  Future<TitleDetails> resolvePlayback(String ref,
+      {bool refresh = false}) async {
+    final resolved =
+        refresh ? await _details(ref, refresh: true) : await details(ref);
     if (resolved.needsClientResolution) return _resolveClientPlayer(resolved);
     if (resolved.hasDirectMedia) return resolved;
     if (resolved.playbackUnavailable) {
-      throw ApiException(resolved.playbackReason.isEmpty ? 'PLAYBACK_UNAVAILABLE' : resolved.playbackReason);
+      throw ApiException(resolved.playbackReason.isEmpty
+          ? 'PLAYBACK_UNAVAILABLE'
+          : resolved.playbackReason);
     }
     throw const ApiException('NO_PLAYABLE_MEDIA');
   }
@@ -149,17 +198,25 @@ class AlQahtaniApi {
   Future<TitleDetails> _resolveClientPlayer(TitleDetails details) async {
     var uri = Uri.parse(details.resolverUrl);
     for (var redirects = 0; redirects <= 3; redirects++) {
-      if (uri.scheme != 'https' || uri.host != 'miravd.com' || uri.userInfo.isNotEmpty || uri.hasPort ||
-          uri.hasQuery || uri.hasFragment || !RegExp(r'^/embed-[a-zA-Z0-9]+\.html$').hasMatch(uri.path)) {
+      if (uri.scheme != 'https' ||
+          uri.host != 'miravd.com' ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasPort ||
+          uri.hasQuery ||
+          uri.hasFragment ||
+          !RegExp(r'^/embed-[a-zA-Z0-9]+\.html$').hasMatch(uri.path)) {
         throw const ApiException('INVALID_PLAYER_METADATA');
       }
       final request = http.Request('GET', uri)..followRedirects = false;
       request.headers.addAll(details.resolverHeaders);
-      final response = await _client.send(request).timeout(const Duration(seconds: 20));
+      final response =
+          await _client.send(request).timeout(const Duration(seconds: 20));
       if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
         final location = response.headers['location'];
         await response.stream.listen((_) {}).cancel();
-        if (location == null) throw const ApiException('INVALID_PLAYER_REDIRECT');
+        if (location == null) {
+          throw const ApiException('INVALID_PLAYER_REDIRECT');
+        }
         uri = uri.resolve(location);
         continue;
       }
@@ -168,60 +225,109 @@ class AlQahtaniApi {
         throw ApiException('PLAYER_HTTP_${response.statusCode}');
       }
       final bytes = <int>[];
-      await for (final chunk in response.stream.timeout(const Duration(seconds: 20))) {
-        if (bytes.length + chunk.length > 2 * 1024 * 1024) throw const ApiException('PLAYER_METADATA_TOO_LARGE');
+      await for (final chunk
+          in response.stream.timeout(const Duration(seconds: 20))) {
+        if (bytes.length + chunk.length > 2 * 1024 * 1024) {
+          throw const ApiException('PLAYER_METADATA_TOO_LARGE');
+        }
         bytes.addAll(chunk);
       }
       final media = miravdMediaUrl(utf8.decode(bytes));
       final expiry = DateTime.now().toUtc().add(const Duration(minutes: 5));
       mediaUri(media, playbackMode: 'direct', expiresAt: expiry);
-      return TitleDetails(title: details.title, poster: details.poster, episodes: const [],
-        mediaPath: media, mediaType: Uri.parse(media).path.endsWith('.mp4') ? 'mp4' : 'm3u8',
-        playbackMode: 'direct', playbackHeaders: {'Referer': 'https://miravd.com/',
-          if (details.resolverHeaders['User-Agent'] != null) 'User-Agent': details.resolverHeaders['User-Agent']!},
-        expiresAt: expiry, downloadAvailable: false, playbackUnavailable: false, playbackReason: '');
+      return TitleDetails(
+          title: details.title,
+          poster: details.poster,
+          episodes: const [],
+          mediaPath: media,
+          mediaType: Uri.parse(media).path.endsWith('.mp4') ? 'mp4' : 'm3u8',
+          playbackMode: 'direct',
+          playbackHeaders: {
+            'Referer': 'https://miravd.com/',
+            if (details.resolverHeaders['User-Agent'] != null)
+              'User-Agent': details.resolverHeaders['User-Agent']!
+          },
+          expiresAt: expiry,
+          downloadAvailable: false,
+          playbackUnavailable: false,
+          playbackReason: '');
     }
     throw const ApiException('PLAYER_REDIRECT_LIMIT');
   }
 
-  Uri mediaUri(String mediaPath, {bool download = false, String playbackMode = 'proxy', DateTime? expiresAt}) {
+  Uri mediaUri(String mediaPath,
+      {bool download = false,
+      String playbackMode = 'proxy',
+      DateTime? expiresAt}) {
     if (playbackMode == 'direct') {
       final uri = Uri.tryParse(mediaPath);
       final miravd = RegExp(r'^s\d+\.grzcdn\.com$').hasMatch(uri?.host ?? '');
-      final expires = miravd ? expiresAt?.millisecondsSinceEpoch : int.tryParse(uri?.queryParameters['expires'] ?? '');
-      if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasPort ||
-          !(miravd || RegExp(r'^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$', caseSensitive: false).hasMatch(uri.host)) ||
-          !uri.path.startsWith('/hls/') || !RegExp(r'\.(m3u8|mp4)$').hasMatch(uri.path) ||
-          (!miravd && (uri.queryParameters['token'] ?? '').isEmpty) || expires == null) {
+      final akoam = RegExp(r'^[a-z0-9-]+\.downet\.net$', caseSensitive: false)
+          .hasMatch(uri?.host ?? '');
+      final expires = (miravd || akoam)
+          ? expiresAt?.millisecondsSinceEpoch
+          : int.tryParse(uri?.queryParameters['expires'] ?? '');
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasPort ||
+          !(akoam ||
+              miravd ||
+              RegExp(r'^(?:[a-z0-9-]+\.)?ukrcdn\.xyz$', caseSensitive: false)
+                  .hasMatch(uri.host)) ||
+          (!akoam && !uri.path.startsWith('/hls/')) ||
+          !(akoam
+                  ? RegExp(r'\.(m3u8|mp4|mkv|webm|mpd|ts|m2ts)$',
+                      caseSensitive: false)
+                  : RegExp(r'\.(m3u8|mp4)$'))
+              .hasMatch(uri.path) ||
+          (!miravd && !akoam && (uri.queryParameters['token'] ?? '').isEmpty) ||
+          expires == null) {
         throw const ApiException('INVALID_DIRECT_MEDIA');
       }
       if (download) throw const ApiException('DIRECT_HLS_DOWNLOAD_UNAVAILABLE');
-      if ((miravd ? expires : expires * 1000) <= DateTime.now().millisecondsSinceEpoch) throw const ApiException('DIRECT_MEDIA_EXPIRED');
+      if (((miravd || akoam) ? expires : expires * 1000) <=
+          DateTime.now().millisecondsSinceEpoch) {
+        throw const ApiException('DIRECT_MEDIA_EXPIRED');
+      }
       return uri;
     }
     final cinema = mediaPath.startsWith('/api/cinema/media?');
     final matches = mediaPath.startsWith('/api/matches/media?');
-    if (!cinema && !matches) throw const ApiException('INVALID_MEDIA_REFERENCE');
+    if (!cinema && !matches) {
+      throw const ApiException('INVALID_MEDIA_REFERENCE');
+    }
     final uri = _baseUri.resolve(mediaPath);
     if (!download) return uri;
-    final params = Map<String, String>.from(uri.queryParameters)..['download'] = '1';
+    final params = Map<String, String>.from(uri.queryParameters)
+      ..['download'] = '1';
     return uri.replace(queryParameters: params);
   }
 
-  Future<Map<String, dynamic>> _getJson(String path, [Map<String, String>? query, Duration timeout = const Duration(seconds: 30)]) async {
+  Future<Map<String, dynamic>> _getJson(String path,
+      [Map<String, String>? query,
+      Duration timeout = const Duration(seconds: 30)]) async {
     final uri = _baseUri.replace(path: path, queryParameters: query);
-    final response = await _client.get(uri, headers: const {'accept': 'application/json'}).timeout(timeout);
+    final response = await _client.get(uri,
+        headers: const {'accept': 'application/json'}).timeout(timeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException('HTTP ${response.statusCode}');
     }
     final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) throw const ApiException('INVALID_JSON');
-    if (decoded['status'] != 'success') throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
+    if (decoded is! Map<String, dynamic>) {
+      throw const ApiException('INVALID_JSON');
+    }
+    if (decoded['status'] != 'success') {
+      throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
+    }
     return decoded;
   }
 
   static List<Map<String, dynamic>> _list(dynamic value) => value is List
-      ? value.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList(growable: false)
+      ? value
+          .whereType<Map>()
+          .map((e) => e.cast<String, dynamic>())
+          .toList(growable: false)
       : const <Map<String, dynamic>>[];
 
   void close() => _client.close();

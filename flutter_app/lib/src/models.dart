@@ -46,7 +46,8 @@ class EpisodeItem {
   final bool watchAvailable;
 
   factory EpisodeItem.fromJson(Map<String, dynamic> json) {
-    final parsedNumber = int.tryParse('${json['episode_number'] ?? json['num'] ?? json['number'] ?? ''}');
+    final parsedNumber = int.tryParse(
+        '${json['episode_number'] ?? json['num'] ?? json['number'] ?? ''}');
     return EpisodeItem(
       id: '${json['episode_id'] ?? json['id'] ?? ''}',
       number: parsedNumber == null || parsedNumber < 1 ? 1 : parsedNumber,
@@ -55,6 +56,32 @@ class EpisodeItem {
       watchAvailable: json['watch_available'] != false,
     );
   }
+}
+
+class PlaybackSource {
+  const PlaybackSource(
+      {required this.mediaPath,
+      required this.mediaType,
+      this.playbackMode = '',
+      this.headers = const {},
+      this.label = 'تلقائي'});
+  final String mediaPath;
+  final String mediaType;
+  final String label;
+  final String playbackMode;
+  final Map<String, String> headers;
+  factory PlaybackSource.fromJson(Map<String, dynamic> json) => PlaybackSource(
+      mediaPath: '${json['media_path'] ?? ''}',
+      mediaType: '${json['media_type'] ?? ''}',
+      label: '${json['label'] ?? 'تلقائي'}',
+      playbackMode: '${json['playback_mode'] ?? ''}',
+      headers: Map.unmodifiable({
+        for (final key in ['Referer', 'User-Agent'])
+          if (json['headers'] is Map &&
+              json['headers'][key] is String &&
+              !(json['headers'][key] as String).contains(RegExp(r'[\r\n]')))
+            key: json['headers'][key] as String
+      }));
 }
 
 class TitleDetails {
@@ -66,6 +93,7 @@ class TitleDetails {
     required this.mediaType,
     required this.playbackUnavailable,
     required this.playbackReason,
+    this.mediaSources = const [],
     this.playbackMode = 'proxy',
     this.playbackHeaders = const {},
     this.resolverUrl = '',
@@ -83,6 +111,7 @@ class TitleDetails {
   final String playbackReason;
   final String playbackMode;
   final Map<String, String> playbackHeaders;
+  final List<PlaybackSource> mediaSources;
   final String resolverUrl;
   final Map<String, String> resolverHeaders;
   final DateTime? expiresAt;
@@ -90,7 +119,8 @@ class TitleDetails {
 
   bool get hasEpisodes => episodes.isNotEmpty;
   bool get hasDirectMedia => mediaPath.isNotEmpty;
-  bool get needsClientResolution => playbackMode == 'client_resolve' && resolverUrl.isNotEmpty;
+  bool get needsClientResolution =>
+      playbackMode == 'client_resolve' && resolverUrl.isNotEmpty;
   bool get canPlay => hasDirectMedia || needsClientResolution;
 
   factory TitleDetails.fromJson(Map<String, dynamic> json) {
@@ -105,22 +135,35 @@ class TitleDetails {
       title: '${json['movie_title'] ?? json['title'] ?? 'التفاصيل'}',
       poster: '${json['poster'] ?? ''}',
       episodes: episodes,
-      mediaPath: '${json['playback_mode'] == 'direct' ? (json['stream_url'] ?? json['media_url'] ?? json['media_path'] ?? '') : (json['media_path'] ?? '')}',
+      mediaPath:
+          '${json['playback_mode'] == 'direct' ? (json['stream_url'] ?? json['media_url'] ?? json['media_path'] ?? '') : (json['media_path'] ?? '')}',
       mediaType: '${json['media_type'] ?? ''}',
       playbackUnavailable: json['playback_unavailable'] == true,
       playbackReason: '${json['playback_reason'] ?? ''}',
+      mediaSources: (json['media_sources'] is List
+          ? (json['media_sources'] as List)
+              .whereType<Map>()
+              .map((e) => PlaybackSource.fromJson(e.cast<String, dynamic>()))
+              .where((e) => e.mediaPath.isNotEmpty)
+              .take(8)
+              .toList(growable: false)
+          : const []),
       playbackMode: '${json['playback_mode'] ?? 'proxy'}',
       resolverUrl: '${json['iframe_url'] ?? json['resolver_url'] ?? ''}',
       resolverHeaders: Map.unmodifiable({
         for (final key in const ['Referer', 'User-Agent'])
-          if (json['resolver_headers'] is Map && json['resolver_headers'][key] is String &&
-              !(json['resolver_headers'][key] as String).contains(RegExp(r'[\r\n]')))
+          if (json['resolver_headers'] is Map &&
+              json['resolver_headers'][key] is String &&
+              !(json['resolver_headers'][key] as String)
+                  .contains(RegExp(r'[\r\n]')))
             key: json['resolver_headers'][key] as String,
       }),
       playbackHeaders: Map.unmodifiable({
         for (final key in const ['Referer', 'User-Agent'])
-          if ((json['headers'] ?? json['playback_headers']) is Map && (json['headers'] ?? json['playback_headers'])[key] is String &&
-              !((json['headers'] ?? json['playback_headers'])[key] as String).contains(RegExp(r'[\r\n]')))
+          if ((json['headers'] ?? json['playback_headers']) is Map &&
+              (json['headers'] ?? json['playback_headers'])[key] is String &&
+              !((json['headers'] ?? json['playback_headers'])[key] as String)
+                  .contains(RegExp(r'[\r\n]')))
             key: (json['headers'] ?? json['playback_headers'])[key] as String,
       }),
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
@@ -171,8 +214,10 @@ class MatchItem {
   bool get hasScore => homeGoals != null && awayGoals != null;
 
   factory MatchItem.fromJson(Map<String, dynamic> json) {
-    final team1 = (json['team1'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-    final team2 = (json['team2'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final team1 = (json['team1'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final team2 = (json['team2'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
     final homeTopLevel = _firstScore([
       json['home_score'],
       json['homeScore'],
@@ -187,12 +232,19 @@ class MatchItem {
       json['team2Goals'],
       json['score2'],
     ]);
-    var homeGoals = homeTopLevel ?? _firstScore([team1['goals'], team1['score']]);
-    var awayGoals = awayTopLevel ?? _firstScore([team2['goals'], team2['score']]);
+    var homeGoals =
+        homeTopLevel ?? _firstScore([team1['goals'], team1['score']]);
+    var awayGoals =
+        awayTopLevel ?? _firstScore([team2['goals'], team2['score']]);
     final status = '${json['status'] ?? 'scheduled'}';
-    final ended = RegExp(r'ended|finished|انته', caseSensitive: false).hasMatch(status);
-    final hasAuthoritativeTopLevelScore = homeTopLevel != null || awayTopLevel != null;
-    if (ended && !hasAuthoritativeTopLevelScore && homeGoals == 0 && awayGoals == 0) {
+    final ended =
+        RegExp(r'ended|finished|انته', caseSensitive: false).hasMatch(status);
+    final hasAuthoritativeTopLevelScore =
+        homeTopLevel != null || awayTopLevel != null;
+    if (ended &&
+        !hasAuthoritativeTopLevelScore &&
+        homeGoals == 0 &&
+        awayGoals == 0) {
       homeGoals = null;
       awayGoals = null;
     }
@@ -212,7 +264,8 @@ class MatchItem {
 }
 
 class MatchServer {
-  const MatchServer({required this.ref, required this.name, required this.type});
+  const MatchServer(
+      {required this.ref, required this.name, required this.type});
   final String ref;
   final String name;
   final String type;
@@ -225,7 +278,10 @@ class MatchServer {
 }
 
 class MatchPlayback {
-  const MatchPlayback({required this.mediaPath, required this.mediaType, required this.serverName});
+  const MatchPlayback(
+      {required this.mediaPath,
+      required this.mediaType,
+      required this.serverName});
   final String mediaPath;
   final String mediaType;
   final String serverName;
@@ -238,7 +294,12 @@ class MatchPlayback {
 }
 
 class NewsItem {
-  const NewsItem({required this.id, required this.ref, required this.title, required this.date, required this.description});
+  const NewsItem(
+      {required this.id,
+      required this.ref,
+      required this.title,
+      required this.date,
+      required this.description});
   final String id;
   final String ref;
   final String title;
@@ -255,7 +316,11 @@ class NewsItem {
 }
 
 class NewsArticle {
-  const NewsArticle({required this.ref, required this.title, required this.date, required this.paragraphs});
+  const NewsArticle(
+      {required this.ref,
+      required this.title,
+      required this.date,
+      required this.paragraphs});
   final String ref;
   final String title;
   final String date;
@@ -267,13 +332,19 @@ class NewsArticle {
       ref: '${json['ref'] ?? ''}',
       title: '${json['title'] ?? ''}',
       date: '${json['date'] ?? ''}',
-      paragraphs: raw is List ? raw.map((e) => '$e').where((e) => e.trim().isNotEmpty).toList(growable: false) : const [],
+      paragraphs: raw is List
+          ? raw
+              .map((e) => '$e')
+              .where((e) => e.trim().isNotEmpty)
+              .toList(growable: false)
+          : const [],
     );
   }
 }
 
 class RuntimeEnvelope<T> {
-  const RuntimeEnvelope({required this.version, required this.kind, required this.data});
+  const RuntimeEnvelope(
+      {required this.version, required this.kind, required this.data});
   final String version;
   final String kind;
   final T data;
