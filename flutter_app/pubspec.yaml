@@ -1,7 +1,7 @@
 name: mitv
 publish_to: none
 description: MITV cross-platform media client with direct edge-resolved playback.
-version: 1.0.43+43
+version: 1.0.44+44
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

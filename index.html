@@ -18,7 +18,7 @@ header{position:sticky;top:0;z-index:5;background:#09090bee;backdrop-filter:blur
 </style>
 </head>
 <body>
-<header><div class="wrap brand"><div class="brandmark"><span class="qaf">M</span><strong>MITV</strong></div><nav class="nav"><a aria-current="page" href="./">المباريات</a><a href="albasri-cinema.html">الأفلام والمسلسلات</a><a href="news.html">الأخبار</a></nav></div></header>
+<header><div class="wrap brand"><div class="brandmark"><span class="qaf">M</span><strong>MITV</strong></div><nav class="nav"><a aria-current="page" href="./">المباريات</a><a href="albasri-cinema.html">الأفلام والمسلسلات</a></nav></div></header>
 <main class="wrap">
 <section class="hero"><h1>مباريات اليوم</h1><p>النتائج والبث بتوقيت السعودية، دون روابط خارجية مكشوفة.</p></section>
 <div id="list" class="grid"><div class="state">جارٍ تحميل المباريات…</div></div>
@@ -28,7 +28,7 @@ header{position:sticky;top:0;z-index:5;background:#09090bee;backdrop-filter:blur
 import { getMatches } from './web/core/api-client.js';
 import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js';
 const list=document.getElementById('list'),toastEl=document.getElementById('toast');
-const BACKEND='https://al-qahtani-api.onrender.com';
+const BACKEND='https://matv.onrender.com';
 const BASRI_ORIGIN='https://www.albasritv.abrdns.com/';
 const cleanImg=u=>{
  if(!u)return '';

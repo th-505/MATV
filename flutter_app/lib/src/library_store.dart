@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models.dart';
+import 'supabase_service.dart';
 
 class WatchEntry {
   const WatchEntry({required this.contentRef, required this.contentId, required this.title, required this.poster, required this.type, required this.positionMs, required this.durationMs, required this.updatedAtMs, this.episodeId = '', this.episodeNumber});
@@ -17,7 +19,7 @@ class WatchEntry {
 }
 
 class LocalLibraryStore extends ChangeNotifier {
-  LocalLibraryStore._(this._prefs);
+  LocalLibraryStore._(this._prefs, {SupabaseService? supabase}) : _supabase = supabase;
   static const _favoritesKey = 'library.favorites.v1';
   static const _historyKey = 'library.history.v1';
   static const _searchHistoryKey = 'search.history.v1';
@@ -27,13 +29,21 @@ class LocalLibraryStore extends ChangeNotifier {
   static const _searchHistoryLimit = 12;
 
   final SharedPreferences _prefs;
+  final SupabaseService? _supabase;
   final Map<String, CatalogItem> _favorites = {};
   final Map<String, WatchEntry> _history = {};
   final List<String> _searchHistory = [];
   String _searchSource = 'basri';
   String _librarySort = 'recent';
 
-  static Future<LocalLibraryStore> create() async { final store = LocalLibraryStore._(await SharedPreferences.getInstance()); store._load(); return store; }
+  static Future<LocalLibraryStore> create({SupabaseService? supabase}) async {
+    final store = LocalLibraryStore._(await SharedPreferences.getInstance(), supabase: supabase);
+    store._load();
+    if (supabase != null) {
+      unawaited(supabase.signInSilently());
+    }
+    return store;
+  }
   List<CatalogItem> get favorites => List.unmodifiable(_favorites.values);
   List<String> get searchHistory => List.unmodifiable(_searchHistory);
   String get searchSource => _searchSource;
@@ -79,14 +89,31 @@ class LocalLibraryStore extends ChangeNotifier {
     _librarySort = normalized; await _prefs.setString(_librarySortKey, normalized); notifyListeners();
   }
 
-  Future<void> toggleFavorite(CatalogItem item) async { if (item.ref.isEmpty) return; if (_favorites.containsKey(item.ref)) { _favorites.remove(item.ref); } else { _favorites[item.ref] = item; } await _persistFavorites(); notifyListeners(); }
+  Future<void> toggleFavorite(CatalogItem item) async {
+    if (item.ref.isEmpty) return;
+    final isFav = !_favorites.containsKey(item.ref);
+    if (!isFav) {
+      _favorites.remove(item.ref);
+    } else {
+      _favorites[item.ref] = item;
+    }
+    await _persistFavorites();
+    if (_supabase != null) {
+      unawaited(_supabase!.syncFavorite(item.toJson(), isFav));
+    }
+    notifyListeners();
+  }
 
   Future<void> recordProgress({required CatalogItem item, required Duration position, required Duration duration, String episodeId = '', int? episodeNumber}) async {
     if (item.ref.isEmpty) return;
     final entry = WatchEntry(contentRef: item.ref, contentId: item.id, title: item.title, poster: item.poster, type: item.type, positionMs: position.inMilliseconds, durationMs: duration.inMilliseconds, updatedAtMs: DateTime.now().millisecondsSinceEpoch, episodeId: episodeId, episodeNumber: episodeNumber);
     _history[entry.key] = entry;
     final ordered = history; if (ordered.length > _historyLimit) { for (final old in ordered.skip(_historyLimit)) { _history.remove(old.key); } }
-    await _persistHistory(); notifyListeners();
+    await _persistHistory();
+    if (_supabase != null) {
+      unawaited(_supabase!.syncWatchProgress(entry.toJson()));
+    }
+    notifyListeners();
   }
 
   Future<void> clearHistory() async { _history.clear(); await _prefs.remove(_historyKey); notifyListeners(); }

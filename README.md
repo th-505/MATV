@@ -1,26 +1,16 @@
-# MATV
+# MITV
 
-Destination repository: https://github.com/th-505/MATV
+**MITV** — Cross-Platform Direct Streaming Media Client (Android Mobile, Android TV, iOS Unsigned, Windows, macOS, Web).
 
-Imported from `theeb505/Al-Qahtani`, preserving its Git history, Flutter app, Node.js server, and existing match/news/library behavior. Phase 1 isolates Akoam in `server/providers/akoam.mjs` and adds a standalone 3isk HLS resolver.
+Repository: https://github.com/th-505/MATV  
+Flutter Web: https://th-505.github.io/MATV/app/
 
-Run `npm install` and `npm run check` from the repository root. Run `npm run poc:3isk` to resolve the agreed episode. See [Phase 1 validation](docs/PHASE1_3ISK_VALIDATION.md) for live playback evidence and the user's successful Safari/4G test.
-
-Phase 2 integrates 3isk Turkish/dubbed catalogs, shared search, direct HLS playback in Flutter/web, and an expiry-aware backend Supabase cache. See [integration and setup](docs/PHASE2_3ISK_INTEGRATION.md). The Supabase schema and live persistent caching are verified, including cache retrieval after a Node restart. Server secrets remain local and are excluded from Git.
-
-[Render deployment and Android trial](docs/RENDER_DEPLOYMENT.md): the production Docker image and manual APK workflow use the verified public API URL. Koyeb deployment is no longer the selected path.
-
-## Original project
-
-GitHub Pages: https://theeb1230-dot.github.io/Al-Qahtani/
-
-Clean-room continuation of the uploaded Albasri TV web project, preserving working behavior while removing advertising/legacy app coupling and preparing a provider-based Flutter migration.
-
-## Current web pages
-- `index.html` — match schedule/player
-- `basrimatches.html` — structured matches implementation
-- `albasri-cinema.html` — movies/series
-- `news.html` — readable decoded news page
-- `Player.html` / `bsr-Player.html` — legacy Android player bridge, retained temporarily for behavior migration
-
-See `docs/AUTONOMOUS_DEVELOPMENT_STATE.md` and `docs/PROVIDER_INVENTORY.md` for the current migration state.
+## Architectural Pillars
+1. **Zero-Cost & Zero-Ads:** Strictly free tiers (Cloudflare Workers, Supabase Free Tier, GitHub Actions/Pages). 100% ad-free.
+2. **Direct Edge Playback:** Video streams flow directly from origin to client devices. Server proxies (Render) are eliminated.
+3. **Unified Media Engine:** Single `media_kit` (`libmpv`) pipeline supporting MP4, MKV, HLS, hardware decoding, and custom headers across all native targets.
+4. **Adaptive Viewport & Modern Netflix UI:** `AdaptiveViewport` wrapping, flexible BoxFit toggle (`contain` / `cover`), touch gestures (volume, brightness, seek ±10s), and Dark Navy cinematic theme.
+5. **Smart Client-Side Taxonomy:** Works classified into Movies, Series, and Anime using `MediaTaxonomy` and deduplicated with `UnifiedMedia.mergeSources`.
+6. **Subtitles & Sync:** Stremio OpenSubtitles v3 API integration, UTF-8/CP1256 decoding, and native `sub-delay` synchronization.
+7. **Android TV & Focus Navigation:** High-contrast focus borders, D-Pad support, and virtual pointer controller with smooth acceleration.
+8. **Automated Multiplatform CI:** GitHub Actions matrix releasing 6 identical targets (Mobile ARM64, TV ARM32, iOS Unsigned IPA, Windows ZIP/Setup, macOS DMG, Web) with split ABI limits (~35 MiB).

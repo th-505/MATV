@@ -139,6 +139,15 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
           fit: BoxFit.contain,
           controls: mv.NoVideoControls);
 
+  Future<void> setSubtitleDelay(double seconds) async {
+    try {
+      final native = _player?.platform;
+      if (native != null) {
+        await (native as dynamic).setProperty('sub-delay', seconds.toString());
+      }
+    } catch (_) {}
+  }
+
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;

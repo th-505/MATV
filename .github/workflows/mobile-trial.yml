@@ -224,8 +224,48 @@ jobs:
           path: trial/
           retention-days: 14
 
+  macos:
+    needs: [verify-api, providers]
+    runs-on: macos-latest
+    timeout-minutes: 40
+    env:
+      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Create macOS scaffolding
+        working-directory: flutter_app
+        run: flutter create --platforms=macos --org com.mitv --project-name mitv .
+      - name: Apply native branding
+        run: python3 scripts/apply_native_branding.py flutter_app
+      - name: Resolve dependencies
+        working-directory: flutter_app
+        run: flutter pub get --enforce-lockfile
+      - name: Build macOS native app
+        working-directory: flutter_app
+        run: flutter build macos --release --dart-define=MITV_TARGET=desktop --dart-define="MITV_API_BASE=$MITV_API_BASE"
+      - name: Package macOS DMG and ZIP
+        run: |
+          set -euo pipefail
+          mkdir -p trial
+          APP_PATH="flutter_app/build/macos/Build/Products/Release/mitv.app"
+          test -d "$APP_PATH"
+          hdiutil create -volname "MITV" -srcfolder "$APP_PATH" -ov -format UDZO trial/MITV-macOS.dmg
+          ditto -c -k --keepParent "$APP_PATH" trial/MITV-macOS.zip
+          shasum -a 256 trial/MITV-macOS.dmg > trial/MITV-macOS.dmg.sha256
+          shasum -a 256 trial/MITV-macOS.zip > trial/MITV-macOS.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MITV-macOS
+          path: trial/
+          retention-days: 14
+
   verify-release:
-    needs: [android, ios-unsigned, windows]
+    needs: [android, ios-unsigned, windows, macos]
     if: startsWith(github.ref, 'refs/heads/build/mitv-')
     runs-on: ubuntu-latest
     steps:

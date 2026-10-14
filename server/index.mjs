@@ -105,19 +105,11 @@ async function handleNewsRuntime(req, res, url, newsRuntime) {
     res.writeHead(204);
     return res.end();
   }
-  if (req.method !== "GET") return sendRuntimeJson(req, res, 405, { status: "error", message: "METHOD_NOT_ALLOWED" });
-  try {
-    if (url.pathname === "/api/v1/news") return sendRuntimeJson(req, res, 200, await newsRuntime.list());
-    if (url.pathname === "/api/v1/news/article") {
-      const ref = String(url.searchParams.get("ref") || "").trim();
-      if (!ref) return sendRuntimeJson(req, res, 400, { status: "error", message: "MISSING_NEWS_REFERENCE" });
-      return sendRuntimeJson(req, res, 200, await newsRuntime.article(ref));
-    }
-  } catch (error) {
-    const message = String(error?.message || "NEWS_RUNTIME_FAILED");
-    const status = message === "NEWS_REFERENCE_EXPIRED" ? 410 : 502;
-    return sendRuntimeJson(req, res, status, { status: "error", message });
-  }
+  return sendRuntimeJson(req, res, 410, {
+    status: "error",
+    code: "NEWS_ENDPOINT_RETIRED",
+    message: "News section has been permanently removed from MITV.",
+  });
 }
 
 async function handleMatchRuntime(req, res, url, matchRuntime) {

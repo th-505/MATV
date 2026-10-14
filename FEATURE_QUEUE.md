@@ -6,7 +6,7 @@ target_count: 20
 status: ACTIVE
 ---
 
-# Al-Qahtani TV — Active Feature Queue
+# MITV — Active Feature Queue
 
 This cycle was opened only after independent monitoring published valid `APPROVED` feedback on exact product SHA `af9e884c403b1cd8f60535f1f078fe6fd3c35ed6` via `control/feedback`. All implementation remains pending independent review on the eventual exact cycle head.
 

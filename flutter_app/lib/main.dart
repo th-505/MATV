@@ -15,6 +15,7 @@ import 'src/focus_highlight.dart';
 import 'src/player_page.dart';
 import 'src/virtual_pointer.dart';
 import 'src/unified_media.dart';
+import 'src/supabase_service.dart';
 
 const _brandBg = Color(0xFF0B1220);
 const _brandPanel = Color(0xFF151F32);
@@ -31,10 +32,13 @@ class MitvApp extends StatefulWidget {
 }
 
 class _MitvAppState extends State<MitvApp> {
-  late final Future<LocalLibraryStore> storeFuture = LocalLibraryStore.create();
+  final _supabase = SupabaseService();
+  late final Future<LocalLibraryStore> storeFuture =
+      LocalLibraryStore.create(supabase: _supabase);
   final _pointer = VirtualPointerController();
   @override
   void dispose() {
+    _supabase.close();
     _pointer.dispose();
     super.dispose();
   }
@@ -876,50 +880,42 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   late String selectedCategory = widget.categoryId;
   static const seriesCategories = <String, String>{
-    'laroza-series': 'لاروزا — مسلسلات',
-    'alooy-series': 'Alooy TV',
-    'series-foreign': 'أكوام — أجنبية',
-    'series-arabic': 'أكوام — عربية',
-    'series-turkish': 'أكوام — تركية',
+    'series-foreign': 'مسلسلات أجنبية',
+    'series-arabic': 'مسلسلات عربية',
+    'series-turkish': 'مسلسلات تركية',
+    'series-asian': 'مسلسلات آسيوية',
+    '3isk-dubbed': 'مسلسلات مدبلجة',
+    'laroza-series': 'مسلسلات مختارة',
   };
-  static const iskCategories = <String, String>{
-    '3isk-latest': 'قصة عشق (أحدث الحلقات)',
-    '3isk-turkish': 'جميع المسلسلات (مترجم ومدبلج)',
-    '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
-    '3isk-movies': 'جميع الأفلام',
+  static const movieCategories = <String, String>{
+    'movie-foreign': 'أفلام أجنبية',
+    'movie-arabic': 'أفلام عربية',
+    'movie-turkish': 'أفلام تركية',
+    'movie-asian': 'أفلام آسيوية',
+    'movie-indian': 'أفلام هندية',
+    'laroza-movies': 'أفلام مختارة',
+  };
+  static const animeCategories = <String, String>{
+    'series-anime': 'مسلسلات أنمي',
+    'movie-anime': 'أفلام أنمي',
+    'laroza-anime': 'أنمي مختار',
   };
   Map<String, String> get _categories {
     switch (widget.mediaKind) {
       case 'movie':
-        return {
-          'movie-foreign': 'أكوام — أفلام أجنبية',
-          'movie-arabic': 'أكوام — أفلام عربية',
-          'laroza-movies': 'لاروزا — أفلام',
-          '3isk-movies': 'قصة عشق — أفلام'
-        };
+        return movieCategories;
       case 'series':
-        return {
-          ...seriesCategories,
-          for (final entry in iskCategories.entries)
-            if (entry.key != '3isk-movies') entry.key: entry.value
-        };
+        return seriesCategories;
       case 'anime':
-        return {
-          'movie-anime': 'أكوام — أفلام أنمي',
-          'series-anime': 'أكوام — مسلسلات أنمي',
-          'laroza-anime': 'لاروزا — أنمي'
-        };
+        return animeCategories;
       default:
         return widget.unified
             ? {
-                'movie-foreign': 'أكوام — أفلام أجنبية',
-                'movie-arabic': 'أكوام — أفلام عربية',
+                ...movieCategories,
                 ...seriesCategories,
-                ...iskCategories
+                ...animeCategories,
               }
-            : widget.categoryId.startsWith('3isk-')
-                ? iskCategories
-                : seriesCategories;
+            : seriesCategories;
     }
   }
 

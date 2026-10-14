@@ -17,6 +17,7 @@ import 'media_format_policy.dart';
 import 'models.dart';
 import 'player_controls.dart';
 import 'universal_player.dart';
+import 'subtitles_service.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 
 bool sourcesShareTimeline(PlaybackSource from, PlaybackSource to) {
@@ -134,6 +135,8 @@ class _PlayerPageState extends State<PlayerPage> {
   DownloadService? _downloadService;
   DownloadCancellationToken? _downloadToken;
   DownloadProgress? _downloadProgress;
+  double _subDelay = 0.0;
+  final SubtitlesService _subtitlesService = SubtitlesService();
 
   @override
   void initState() {
@@ -382,12 +385,20 @@ class _PlayerPageState extends State<PlayerPage> {
             value.position < const Duration(milliseconds: 500) &&
                 !value.isPlaying;
         if (value.hasError || neverStarted) {
-          unawaited(_fallbackFromNative('تعذر بدء التشغيل بالمشغل الأصلي'));
+          final isNoMatch = widget.isLive;
+          final msg = isNoMatch
+              ? 'لم يبدأ البث بعد أو المصدر غير متاح حالياً. يرجى تجربة خادم آخر أو المحاولة عند بداية المباراة.'
+              : 'تعذر بدء التشغيل بالمشغل الأصلي';
+          unawaited(_fallbackFromNative(msg));
         }
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted || generation != _generation) return;
-      await _fallbackFromNative('تعذر تشغيل هذا المصدر داخل المشغل الأصلي');
+      final isNoMatch = widget.isLive || e.toString().contains('NO_MATCH_MEDIA');
+      final msg = isNoMatch
+          ? 'لم يبدأ البث بعد أو المصدر غير متاح حالياً. يرجى تجربة خادم آخر أو المحاولة عند بداية المباراة.'
+          : 'تعذر تشغيل هذا المصدر داخل المشغل الأصلي';
+      await _fallbackFromNative(msg);
     }
   }
 
@@ -633,6 +644,7 @@ class _PlayerPageState extends State<PlayerPage> {
     _controller?.dispose();
     _downloadToken?.cancel();
     _downloadService?.close();
+    _subtitlesService.close();
     unawaited(_streamBridge?.close() ?? Future.value());
     super.dispose();
   }
@@ -685,40 +697,333 @@ class _PlayerPageState extends State<PlayerPage> {
 
   String _time(Duration v) =>
       '${v.inMinutes}:${(v.inSeconds % 60).toString().padLeft(2, '0')}';
-  Future<void> _externalSubtitle(mk.Player player) async {
-    final input = TextEditingController();
-    final raw = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-                title: const Text('إضافة ترجمة'),
-                content: TextField(
-                    controller: input,
-                    keyboardType: TextInputType.url,
-                    decoration: const InputDecoration(
-                        hintText: 'رابط HTTPS لملف SRT أو VTT')),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('إلغاء')),
-                  FilledButton(
-                      onPressed: () =>
-                          Navigator.pop(context, input.text.trim()),
-                      child: const Text('إضافة'))
-                ]));
-    input.dispose();
-    if (!mounted || raw == null) return;
-    final uri = Uri.tryParse(raw);
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        uri.host.isEmpty ||
-        uri.userInfo.isNotEmpty ||
-        !RegExp(r'\.(srt|vtt)$', caseSensitive: false).hasMatch(uri.path)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('أدخل رابط ترجمة صالحًا')));
-      return;
+  Future<void> _adjustSubtitleDelay(UniversalPlayer controller, double delta) async {
+    setState(() => _subDelay = double.parse((_subDelay + delta).toStringAsFixed(2)));
+    await controller.setSubtitleDelay(_subDelay);
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        duration: const Duration(seconds: 1),
+        content: Text('تزامن الترجمة: ${_subDelay >= 0 ? '+' : ''}${_subDelay.toStringAsFixed(2)} ث'),
+      ));
     }
-    await player.setSubtitleTrack(
-        mk.SubtitleTrack.uri(uri.toString(), title: 'ترجمة خارجية'));
+  }
+
+  Future<void> _resetSubtitleDelay(UniversalPlayer controller) async {
+    setState(() => _subDelay = 0.0);
+    await controller.setSubtitleDelay(0.0);
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        duration: Duration(seconds: 1),
+        content: Text('تمت إعادة ضبط تزامن الترجمة إلى 0.0 ث'),
+      ));
+    }
+  }
+
+  void _showSubtitleDelayDialog(UniversalPlayer controller) {
+    _controlsTimer?.cancel();
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF151F32),
+          title: const Text('موازنة تزامن الترجمة (sub-delay)'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'التأخير الحالي: ${_subDelay >= 0 ? '+' : ''}${_subDelay.toStringAsFixed(2)} ث',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFDEE9F8)),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: () {
+                      _adjustSubtitleDelay(controller, -0.5);
+                      setDialogState(() {});
+                    },
+                    child: const Text('−0.5 ث'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () {
+                      _adjustSubtitleDelay(controller, -0.25);
+                      setDialogState(() {});
+                    },
+                    child: const Text('−0.25 ث'),
+                  ),
+                  FilledButton.tonal(
+                    onPressed: () {
+                      _resetSubtitleDelay(controller);
+                      setDialogState(() {});
+                    },
+                    child: const Text('إعادة ضبط (0 ث)'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () {
+                      _adjustSubtitleDelay(controller, 0.25);
+                      setDialogState(() {});
+                    },
+                    child: const Text('+0.25 ث'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () {
+                      _adjustSubtitleDelay(controller, 0.5);
+                      setDialogState(() {});
+                    },
+                    child: const Text('+0.5 ث'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إغلاق'),
+            ),
+          ],
+        ),
+      ),
+    ).then((_) => _revealControls());
+  }
+
+  Future<void> _externalSubtitle(mk.Player player) async {
+    _controlsTimer?.cancel();
+    final effectiveImdb = widget.item.imdbId.isNotEmpty ? widget.item.imdbId : '';
+    final searchController = TextEditingController(text: effectiveImdb);
+    final urlController = TextEditingController();
+
+    List<ExternalSubtitleItem>? fetchedSubtitles;
+    bool loading = false;
+    String? fetchError;
+
+    Future<void> loadOpenSubtitles(String imdbId, StateSetter setModalState) async {
+      if (imdbId.trim().isEmpty) return;
+      setModalState(() {
+        loading = true;
+        fetchError = null;
+      });
+      final results = await _subtitlesService.fetchSubtitles(
+        imdbId: imdbId.trim(),
+        season: widget.item.season,
+        episode: widget.episodeNumber ?? widget.item.episode,
+      );
+      if (mounted) {
+        setModalState(() {
+          loading = false;
+          fetchedSubtitles = results;
+          if (results.isEmpty) {
+            fetchError = 'لم يتم العثور على ترجمات لهذا المعرّف في OpenSubtitles v3';
+          }
+        });
+      }
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF151F32),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          if (effectiveImdb.isNotEmpty && fetchedSubtitles == null && !loading && fetchError == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) loadOpenSubtitles(effectiveImdb, setModalState);
+            });
+          }
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'ترجمات Stremio OpenSubtitles v3',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFDEE9F8)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'معرف IMDb (مثال: tt0111161)',
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: loading
+                            ? null
+                            : () => loadOpenSubtitles(
+                                searchController.text.trim(), setModalState),
+                        child: const Text('بحث'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (loading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (fetchError != null)
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        fetchError!,
+                        style: const TextStyle(color: Colors.orangeAccent),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  else if (fetchedSubtitles != null && fetchedSubtitles!.isNotEmpty)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: fetchedSubtitles!.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final sub = fetchedSubtitles![i];
+                          final isArabic = sub.lang == 'ara' || sub.lang == 'ar';
+                          return ListTile(
+                            dense: true,
+                            leading: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isArabic
+                                    ? const Color(0xFF708DB8).withAlpha(50)
+                                    : Colors.white10,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isArabic
+                                      ? const Color(0xFF708DB8)
+                                      : Colors.white24,
+                                ),
+                              ),
+                              child: Text(
+                                sub.lang.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isArabic
+                                      ? const Color(0xFFDEE9F8)
+                                      : Colors.white70,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              sub.languageLabel,
+                              style: const TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              sub.fileName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.white60),
+                            ),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await player.setSubtitleTrack(mk.SubtitleTrack.uri(
+                                sub.url,
+                                title: '${sub.languageLabel} (${sub.lang})',
+                              ));
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'تم تفعيل الترجمة: ${sub.languageLabel}')),
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: urlController,
+                          keyboardType: TextInputType.url,
+                          decoration: const InputDecoration(
+                            hintText: 'أو أدخل رابط HTTPS لملف SRT/VTT مباشر',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: () async {
+                          final raw = urlController.text.trim();
+                          final uri = Uri.tryParse(raw);
+                          if (uri == null ||
+                              uri.scheme != 'https' ||
+                              uri.host.isEmpty ||
+                              uri.userInfo.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('أدخل رابط HTTPS صالحًا للترجمة')),
+                            );
+                            return;
+                          }
+                          Navigator.pop(context);
+                          await player.setSubtitleTrack(mk.SubtitleTrack.uri(
+                            uri.toString(),
+                            title: 'ترجمة خارجية مخصصة',
+                          ));
+                        },
+                        child: const Text('إضافة'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    searchController.dispose();
+    urlController.dispose();
     _revealControls();
   }
 
@@ -827,8 +1132,13 @@ class _PlayerPageState extends State<PlayerPage> {
             onSelected: player.setAudioTrack),
       if (player != null)
         IconButton(
-            tooltip: 'إضافة ترجمة خارجية',
-            icon: const Icon(Icons.add_comment_outlined),
+            tooltip: 'موازنة تزامن الترجمة',
+            icon: const Icon(Icons.av_timer),
+            onPressed: () => _showSubtitleDelayDialog(controller)),
+      if (player != null)
+        IconButton(
+            tooltip: 'ترجمات Stremio OpenSubtitles v3',
+            icon: const Icon(Icons.subtitles_outlined),
             onPressed: () => _externalSubtitle(player)),
       if (player != null && player.state.tracks.subtitle.length > 2)
         PopupMenuButton<mk.SubtitleTrack>(

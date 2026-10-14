@@ -5,7 +5,7 @@ last_audit_at: 2026-09-18T01:15:00Z
 last_feature_index: 20
 ---
 
-# Al-Qahtani TV — Feature Registry
+# MITV — Feature Registry
 
 `FEATURE_REGISTRY.md` is the single source of truth for feature identity and lifecycle history. Audit rows are append-only/event-sourced. Current status is derived only from the newest event for a `FEATURE_ID`. Historical events must never be deleted or rewritten. New IDs are allocated as `FEAT-NNNN` by incrementing `last_feature_index`. Regressions and reopenings reuse the original ID and canonical name; aliases are descriptive only.
 
