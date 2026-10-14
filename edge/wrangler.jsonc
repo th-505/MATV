@@ -10,6 +10,24 @@
     "enabled": true,
     "head_sampling_rate": 0.1
   },
+  "ratelimits": [
+    {
+      "name": "EDGE_REQUEST_LIMITER",
+      "namespace_id": "280101",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_RESOLVE_LIMITER",
+      "namespace_id": "280102",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "EPISODES",

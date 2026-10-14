@@ -127,6 +127,9 @@ async function handleMatchRuntime(req, res, url, matchRuntime) {
     res.writeHead(204);
     return res.end();
   }
+  if (media) return sendRuntimeJson(req,res,410,{
+    status:'error',message:'MATCH_PROXY_RETIRED_USE_DIRECT_PLAYBACK',media_proxy:false,
+  });
   if (req.method !== "GET") return sendRuntimeJson(req, res, 405, { status: "error", message: "METHOD_NOT_ALLOWED" });
   try {
     if (url.pathname === "/api/v1/matches") return sendRuntimeJson(req, res, 200, await matchRuntime.matches());
@@ -139,9 +142,6 @@ async function handleMatchRuntime(req, res, url, matchRuntime) {
       const ref = String(url.searchParams.get("ref") || "").trim();
       if (!ref) return sendRuntimeJson(req, res, 400, { status: "error", message: "MISSING_MATCH_SERVER_REFERENCE" });
       return sendRuntimeJson(req, res, 200, await matchRuntime.playback(ref));
-    }
-    if (url.pathname === "/api/matches/media") {
-      return await matchRuntime.proxyMedia(req, res, String(url.searchParams.get("id") || ""));
     }
   } catch (error) {
     const message = String(error?.message || "MATCH_RUNTIME_FAILED");
@@ -161,7 +161,6 @@ export function createProductionServer({
 
   appServer.removeAllListeners("request");
   appServer.on("request", async (req, res) => {
-    let wantsDownload = false;
     try {
       const url = new URL(req.url || "/", "http://localhost");
       if (url.pathname === "/api/matches/logo") return await proxyMatchLogo(req, res, url);
@@ -176,34 +175,7 @@ export function createProductionServer({
       ].includes(url.pathname)) {
         return await handleMatchRuntime(req, res, url, matchRuntime);
       }
-      wantsDownload = url.pathname === "/api/cinema/media" && url.searchParams.get("download") === "1";
     } catch {}
-
-    if (wantsDownload) {
-      const originalWrite = res.write.bind(res);
-      const originalEnd = res.end.bind(res);
-      let decorated = false;
-
-      const decorateValidatedMedia = () => {
-        if (decorated || res.statusCode < 200 || res.statusCode >= 300) return;
-        const contentType = String(res.getHeader("Content-Type") || "").toLowerCase();
-        if (contentType.includes("application/json")) return;
-        if (!res.hasHeader("Content-Disposition")) {
-          res.setHeader("Content-Disposition", 'attachment; filename="al-qahtani-media"');
-        }
-        res.setHeader("X-Content-Type-Options", "nosniff");
-        decorated = true;
-      };
-
-      res.write = (...args) => {
-        decorateValidatedMedia();
-        return originalWrite(...args);
-      };
-      res.end = (...args) => {
-        decorateValidatedMedia();
-        return originalEnd(...args);
-      };
-    }
 
     return appHandler(req, res);
   });

@@ -11,8 +11,8 @@ const cases = [
   ["The Odyssey", "The Odyssey"],
   ["../فيلم\\اختبار:نسخة?.mp4", "فيلم اختبار نسخة .mp4"],
   ["  اسم\n\r\tنظيف  ", "اسم نظيف"],
-  ["\u0000\u0001\u007f", "al-qahtani-media"],
-  ["....", "al-qahtani-media"],
+  ["\u0000\u0001\u007f", "mitv-media"],
+  ["....", "mitv-media"],
   ["a".repeat(300), "a".repeat(DOWNLOAD_FILENAME_LIMIT)],
 ];
 

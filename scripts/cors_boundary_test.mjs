@@ -82,21 +82,21 @@ try {
 
   for (const origin of [EVIL, LOOKALIKE]) {
     const { response, text } = await request("/api/cinema/media?id=not-a-real-reference&download=1", { origin });
-    assert.equal(response.status, 404);
+    assert.equal(response.status, 410);
     assertNoCorsGrant(response, `rejected media error ${origin}`);
     assert.equal(response.headers.get("content-disposition"), null, "rejected media reference must not gain download decoration");
     assert.equal(response.headers.get("x-content-type-options"), null, "rejected media reference must not gain download-only headers");
     assert.match(response.headers.get("content-type") || "", /^application\/json\b/i);
-    assert.equal(JSON.parse(text).message, "MEDIA_REFERENCE_EXPIRED");
+    assert.equal(JSON.parse(text).message, "MEDIA_PROXY_RETIRED_USE_DIRECT_PLAYBACK");
   }
 
   {
     const { response, text } = await request("/api/cinema/media?id=not-a-real-reference&download=1", { origin: ALLOWED });
-    assert.equal(response.status, 404);
+    assert.equal(response.status, 410);
     assertAllowedCors(response, "allowed-origin media error");
     assert.equal(response.headers.get("content-disposition"), null);
     assert.equal(response.headers.get("x-content-type-options"), null);
-    assert.equal(JSON.parse(text).message, "MEDIA_REFERENCE_EXPIRED");
+    assert.equal(JSON.parse(text).message, "MEDIA_PROXY_RETIRED_USE_DIRECT_PLAYBACK");
   }
 
   {

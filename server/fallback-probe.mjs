@@ -79,13 +79,12 @@ export async function probeFallbackTarget(target, {
 
   try {
     const response = await fetchImpl(url, {
-      method: "GET",
+      method: "HEAD",
       redirect: "manual",
       signal: controller.signal,
       headers: {
         Accept: "video/mp4,application/vnd.apple.mpegurl,application/x-mpegurl,video/mp2t,text/html;q=0.7,*/*;q=0.2",
-        Range: "bytes=0-1023",
-        "User-Agent": "Al-Qahtani-Runtime/1.0 fallback-probe",
+        "User-Agent": "MITV-Runtime/1.0 metadata-probe",
       },
     });
 

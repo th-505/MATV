@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { EventEmitter } from "node:events";
-import { PassThrough } from "node:stream";
 import {
   createAlooyProvider,
   encodeAlooyRef,
@@ -72,50 +70,20 @@ try {
         "&platform=web",
     )
   ).json();
-  assert.equal(json.playback_mode, "proxy");
-  assert(json.media_path.startsWith("/api/alooy/media?id="));
-  assert.deepEqual(json.headers, {});
+  assert.equal(json.playback_unavailable, true);
+  assert.equal(json.playback_reason, "DIRECT_WEB_CORS_UNAVAILABLE");
+  assert.equal(json.media_path, undefined);
+  assert.deepEqual(json.media_sources, []);
+  const native=await (await fetch(base+"/api/cinema/details?ref="+encodeURIComponent(details.episodes[0].ref))).json();
+  assert.equal(native.media_path,e.media_path);assert.equal(native.playback_mode,"local_proxy");
+  assert.equal(native.headers.Referer,e.headers.Referer);
 } finally {
   server.closeAllConnections();
   await new Promise((r) => server.close(r));
 }
-let captured;
-const bridge = createAlooyWebBridge({
-  requestImpl: (_url, opts, callback) => {
-    captured = opts.headers;
-    const req = new EventEmitter();
-    req.setTimeout = () => {};
-    req.end = () =>
-      queueMicrotask(() => {
-        const res = new PassThrough();
-        res.statusCode = 206;
-        res.headers = {
-          "content-range": "bytes 10-13/100",
-          "content-length": "4",
-          "content-type": "video/mp4",
-        };
-        callback(res);
-        res.end(Buffer.from([1, 2, 3, 4]));
-      });
-    return req;
-  },
-});
-const source = bridge.register(e.media_sources[0]);
-const output = new PassThrough();
-output.setHeader = (k, v) => (output[k] = v);
-let bytes = 0;
-output.on("data", (c) => (bytes += c.length));
-await bridge.proxy(
-  { method: "GET", headers: { range: "bytes=10-13" } },
-  output,
-  new URL(source.media_path, "http://local").searchParams.get("id"),
-);
-assert.equal(output.statusCode, 206);
-assert.equal(output["content-range"], "bytes 10-13/100");
-assert.equal(bytes, 4);
-assert.equal(captured.Range, "bytes=10-13");
-assert.equal(captured.Referer, e.headers.Referer);
-assert.equal(captured.Origin, ALOOY_ORIGIN);
-console.log(
-  "Alooy parser, pagination, trust boundaries, HTTP routing and ranged web stream: passed",
-);
+let requests=0,status,body;
+const bridge=createAlooyWebBridge({requestImpl:()=>{requests++;throw Error('must not call');}});
+assert.throws(()=>bridge.register(e.media_sources[0]),/PROXY_RETIRED/);
+await bridge.proxy({method:'GET',headers:{range:'bytes=10-13'}},{set statusCode(v){status=v;},setHeader(){},end(v){body=v;}},'legacy');
+assert.equal(status,410);assert.equal(JSON.parse(body).media_proxy,false);assert.equal(requests,0);
+console.log('Alooy parser, pagination, native direct metadata and retired web bridge: passed');

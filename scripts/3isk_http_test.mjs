@@ -47,10 +47,15 @@ try {
   const handoffResponse = await fetch(`${base}/api/v1/3isk/resolve?ref=${encodeURIComponent(movieRef)}`);
   assert.equal(handoffResponse.status, 200);
   const handoff = await handoffResponse.json();
-  assert.equal(handoff.playback_mode, 'client_resolve');
-  assert.equal(handoff.player_type, 'miravd');
+  assert.equal(handoff.playback_unavailable, true);
+  assert.equal(handoff.playback_reason, 'EDGE_DIRECT_RESOLUTION_REQUIRED');
+  assert.equal(handoff.playback_mode, undefined);
+  assert.equal(handoff.player_type, undefined);
+  assert.equal(handoff.iframe_url, undefined);
+  assert.equal(handoff.resolver_url, undefined);
   assert.equal(handoff.stream_url, undefined);
-  assert.equal(handoff.resolver_headers.Referer, handoff.wrapper_url);
+  assert.equal(handoff.resolver_headers, undefined);
+  assert.equal(handoff.wrapper_url, undefined);
   assert.equal((await fetch(`${base}/api/v1/3isk/resolve?ref=${encodeURIComponent(seriesRef)}`)).status, 400);
   assert.equal((await fetch(`${base}/api/cinema/details?ref=3isk:!!!`)).status, 400);
   assert.equal((await fetch(`${base}/hls/demo/master.m3u8`)).status, 404, 'no video relay endpoint is installed');

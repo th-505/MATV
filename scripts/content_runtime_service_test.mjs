@@ -102,7 +102,7 @@ const homeBeforeCalls = categoryCalls;
 const home = await service.home();
 assert.equal(home.version, PRODUCT_VERSION);
 assert.equal(home.kind, "home");
-assert.equal(home.source, "al-qahtani-runtime");
+assert.equal(home.source, "mitv-runtime");
 assert.equal(home.data.partial, false);
 assert.equal(home.data.stale, false);
 assert.equal(home.data.matches.status, "ready");

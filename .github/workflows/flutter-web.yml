@@ -1,8 +1,5 @@
 name: MITV Flutter Web
 on:
-  push:
-    branches: [main, 'web/mitv-*']
-    paths: ['flutter_app/**', '.github/workflows/flutter-web.yml', '.github/workflows/mobile-trial.yml']
   workflow_dispatch:
   workflow_call:
 permissions:

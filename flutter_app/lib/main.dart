@@ -159,18 +159,24 @@ class _BrandTitle extends StatelessWidget {
 }
 
 class Shell extends StatefulWidget {
-  const Shell({super.key, required this.store});
+  const Shell({super.key, required this.store, this.api});
   final LocalLibraryStore store;
+  final MitvApi? api;
   @override
   State<Shell> createState() => _ShellState();
 }
 
 class _ShellState extends State<Shell> {
   int index = 0;
-  final api = MitvApi();
+  late final MitvApi api;
+  late final bool _ownsApi;
+  final _pages = List<Widget?>.filled(7, null);
   @override
   void initState() {
     super.initState();
+    _ownsApi = widget.api == null;
+    api = widget.api ?? MitvApi();
+    _pages[index] = _createPage(index);
     final ref = kIsWeb ? Uri.base.queryParameters['ref'] ?? '' : '';
     if (ref.startsWith('alooy:') ||
         ref.startsWith('3isk:') ||
@@ -194,42 +200,55 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
-    api.close();
+    if (_ownsApi) api.close();
     super.dispose();
+  }
+
+  Widget _createPage(int page) => switch (page) {
+        0 => MatchesPage(api: api, store: widget.store),
+        1 => NewsPage(api: api),
+        2 => CatalogPage(
+            api: api,
+            store: widget.store,
+            title: 'الأفلام',
+            categoryId: 'movie-foreign'),
+        3 => CatalogPage(
+            api: api,
+            store: widget.store,
+            title: 'المسلسلات',
+            categoryId: 'series-foreign'),
+        4 => CatalogPage(
+            api: api,
+            store: widget.store,
+            title: 'قصة عشق',
+            categoryId: '3isk-latest'),
+        5 => SearchPage(api: api, store: widget.store),
+        6 => LibraryPage(api: api, store: widget.store),
+        _ => throw RangeError.index(page, _pages),
+      };
+
+  void _selectPage(int value) {
+    if (value == index) return;
+    setState(() {
+      _pages[value] ??= _createPage(value);
+      index = value;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      MatchesPage(api: api, store: widget.store),
-      NewsPage(api: api),
-      CatalogPage(
-          api: api,
-          store: widget.store,
-          title: 'الأفلام',
-          categoryId: 'movie-foreign'),
-      CatalogPage(
-          api: api,
-          store: widget.store,
-          title: 'المسلسلات',
-          categoryId: 'series-foreign'),
-      CatalogPage(
-          api: api,
-          store: widget.store,
-          title: 'قصة عشق',
-          categoryId: '3isk-latest'),
-      SearchPage(api: api, store: widget.store),
-      LibraryPage(api: api, store: widget.store),
-    ];
-    final content = IndexedStack(index: index, children: pages);
+    // Preserve visited sections without mounting unseen catalog fetchers.
+    final content = IndexedStack(
+        index: index,
+        children: _pages
+            .map((page) => page ?? const SizedBox.shrink())
+            .toList(growable: false));
     return Scaffold(
       appBar: AppBar(title: const _BrandTitle()),
       body: isTvTarget
           ? FocusTraversalGroup(
               child: Row(children: [
-              _TvNavigation(
-                  selectedIndex: index,
-                  onSelected: (value) => setState(() => index = value)),
+              _TvNavigation(selectedIndex: index, onSelected: _selectPage),
               const VerticalDivider(width: 1),
               Expanded(child: content),
             ]))
@@ -238,7 +257,7 @@ class _ShellState extends State<Shell> {
           ? null
           : NavigationBar(
               selectedIndex: index,
-              onDestinationSelected: (value) => setState(() => index = value),
+              onDestinationSelected: _selectPage,
               destinations: const [
                 NavigationDestination(
                     icon: Icon(Icons.sports_soccer), label: 'المباريات'),
@@ -350,10 +369,36 @@ class _TeamBadge extends StatelessWidget {
       );
 }
 
-class MatchesPage extends StatelessWidget {
+class MatchesPage extends StatefulWidget {
   final LocalLibraryStore store;
   const MatchesPage({super.key, required this.api, required this.store});
   final MitvApi api;
+
+  @override
+  State<MatchesPage> createState() => _MatchesPageState();
+}
+
+class _MatchesPageState extends State<MatchesPage> {
+  late Future<List<MatchItem>> _matches;
+
+  @override
+  void initState() {
+    super.initState();
+    _matches = widget.api.matches();
+  }
+
+  @override
+  void didUpdateWidget(covariant MatchesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.api != widget.api) _matches = widget.api.matches();
+  }
+
+  void _reload() {
+    final next = widget.api.matches();
+    setState(() {
+      _matches = next;
+    });
+  }
 
   void _open(BuildContext context, MatchItem match) {
     if (match.status == 'ended') {
@@ -367,86 +412,99 @@ class MatchesPage extends StatelessWidget {
       return;
     }
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => MatchPlayerPage(api: api, match: match, store: store)));
+        builder: (_) => MatchPlayerPage(
+            api: widget.api, match: match, store: widget.store)));
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<List<MatchItem>>(
-        future: api.matches(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const _ErrorState('تعذر تحميل المباريات حاليًا');
-          }
-          final items = snapshot.data ?? const [];
-          if (items.isEmpty) {
-            return const _ErrorState('لا توجد مباريات متاحة الآن');
-          }
-          return ListView.builder(
-            padding: EdgeInsets.all(isTvTarget ? 24 : 12),
-            itemCount: items.length,
-            itemBuilder: (context, i) {
-              final m = items[i];
-              final time = _localizedMatchTime(m.time);
-              final status = _matchStatusLabel(m.status);
-              final score =
-                  m.hasScore ? '${m.homeGoals} - ${m.awayGoals}' : null;
-              final center = m.status == 'scheduled'
-                  ? (time.isEmpty ? 'موعد غير متاح' : time)
-                  : (score ?? 'النتيجة غير متاحة');
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => _open(context, m),
-                  canRequestFocus: true,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: isTvTarget ? 24 : 14,
-                        vertical: isTvTarget ? 22 : 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                            child: _TeamBadge(name: m.home, logo: m.homeLogo)),
-                        SizedBox(
-                          width: isTvTarget ? 180 : 110,
-                          child: Column(
-                            children: [
-                              Text(status,
-                                  style: TextStyle(
-                                      color: m.status == 'live'
-                                          ? Colors.redAccent
-                                          : const Color(0xFFBEB7A7))),
-                              const SizedBox(height: 8),
-                              Text(center,
-                                  style: TextStyle(
-                                      fontSize: isTvTarget ? 28 : 20,
-                                      fontWeight: FontWeight.w800)),
-                              if (m.competition.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(m.competition,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: Color(0xFF9E9686),
-                                        fontSize: 12)),
+  Widget build(BuildContext context) => Column(children: [
+        Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: IconButton(
+                key: const Key('matches-refresh'),
+                tooltip: 'تحديث المباريات',
+                onPressed: _reload,
+                icon: const Icon(Icons.refresh))),
+        Expanded(
+            child: FutureBuilder<List<MatchItem>>(
+          future: _matches,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return const _ErrorState('تعذر تحميل المباريات حاليًا');
+            }
+            final items = snapshot.data ?? const [];
+            if (items.isEmpty) {
+              return const _ErrorState('لا توجد مباريات متاحة الآن');
+            }
+            return ListView.builder(
+              padding: EdgeInsets.all(isTvTarget ? 24 : 12),
+              itemCount: items.length,
+              itemBuilder: (context, i) {
+                final m = items[i];
+                final time = _localizedMatchTime(m.time);
+                final status = _matchStatusLabel(m.status);
+                final score =
+                    m.hasScore ? '${m.homeGoals} - ${m.awayGoals}' : null;
+                final center = m.status == 'scheduled'
+                    ? (time.isEmpty ? 'موعد غير متاح' : time)
+                    : (score ?? 'النتيجة غير متاحة');
+                return Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => _open(context, m),
+                    canRequestFocus: true,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isTvTarget ? 24 : 14,
+                          vertical: isTvTarget ? 22 : 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child:
+                                  _TeamBadge(name: m.home, logo: m.homeLogo)),
+                          SizedBox(
+                            width: isTvTarget ? 180 : 110,
+                            child: Column(
+                              children: [
+                                Text(status,
+                                    style: TextStyle(
+                                        color: m.status == 'live'
+                                            ? Colors.redAccent
+                                            : const Color(0xFFBEB7A7))),
+                                const SizedBox(height: 8),
+                                Text(center,
+                                    style: TextStyle(
+                                        fontSize: isTvTarget ? 28 : 20,
+                                        fontWeight: FontWeight.w800)),
+                                if (m.competition.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(m.competition,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: Color(0xFF9E9686),
+                                          fontSize: 12)),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                        Expanded(
-                            child: _TeamBadge(name: m.away, logo: m.awayLogo)),
-                      ],
+                          Expanded(
+                              child:
+                                  _TeamBadge(name: m.away, logo: m.awayLogo)),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          );
-        },
-      );
+                );
+              },
+            );
+          },
+        ))
+      ]);
 }
 
 class CatalogPage extends StatefulWidget {

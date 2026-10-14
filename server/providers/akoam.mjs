@@ -69,7 +69,7 @@ export async function fetchSourceHtml(value, { referer = SOURCE_ORIGIN + "/", ti
     let response;
     for (let redirects = 0; redirects <= 4; redirects++) {
       response = await fetch(current, {
-        method: "GET", redirect: "manual", cache: "no-store", signal: controller.signal,
+        method: current.hostname === SOURCE_HOST && mediaKindFromUrl(current.href) === "unknown" ? "GET" : "HEAD", redirect: "manual", cache: "no-store", signal: controller.signal,
         headers: { Accept: "text/html,application/xhtml+xml", "Accept-Language": "ar-SA,ar;q=0.9,en-US;q=0.8,en;q=0.7",
           "User-Agent": UA, Referer: safeHeaderUrl(referer) },
       });

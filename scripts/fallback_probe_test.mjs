@@ -49,9 +49,9 @@ const direct = await probeFallbackTarget("https://example.com/video", {
     };
   },
 });
-assert.equal(observedOptions.method, "GET");
+assert.equal(observedOptions.method, "HEAD");
 assert.equal(observedOptions.redirect, "manual", "probe must not follow upstream redirects");
-assert.equal(observedOptions.headers.Range, "bytes=0-1023", "probe must be byte-bounded");
+assert.equal(observedOptions.headers.Range, undefined, "HEAD probe must not request video bytes");
 assert.equal(direct.kind, "direct");
 assert.equal(direct.container, "mp4");
 assert.equal(direct.range206, true);

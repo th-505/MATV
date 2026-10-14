@@ -1,4 +1,4 @@
-const FALLBACK = "al-qahtani-media";
+const FALLBACK = "mitv-media";
 const MAX_FILENAME_CHARS = 120;
 
 export function sanitizeDownloadFilename(value, fallback = FALLBACK) {

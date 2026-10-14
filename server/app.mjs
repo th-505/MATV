@@ -1,7 +1,5 @@
-import { rewriteDashManifest, dashProxyParameters, expandDashTemplate } from './dash-manifest.mjs';
 import http from "node:http";
-import https from "node:https";
-import crypto from "node:crypto";
+import { directSource, probeDirectMedia, filterBrowserSources } from "./direct-media.mjs";
 import {
   assertSourceUrl,
   directCategory,
@@ -12,21 +10,18 @@ import {
   fetchSourceHtml,
   BasriSource,
 } from "./providers/akoam.mjs";
-import { buildDownloadContentDisposition, sanitizeDownloadFilename } from "./download-filename.mjs";
 import { createContentRuntimeService } from "./content-runtime-service.mjs";
 import { create3iskRuntime } from "./3isk-runtime.mjs";
-import { createAlooyWebBridge } from './alooy-stream-bridge.mjs';
 import { createAlooyProvider, ALOOY_ORIGIN } from './providers/alooy.mjs';
 import { ISK_CATEGORIES } from "./providers/3isk.mjs";
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
-import { createRateLimiter, getClientAddress, maybeCompress, startMediaRefSweeper } from "./hardening.mjs";
+import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
 const CINEMA = "https://albas.albesriali03.workers.dev/";
 const BASRI_ORIGIN = "https://www.albasritv.abrdns.com";
 const BASRI_REFERER = `${BASRI_ORIGIN}/2026/09/movies-series.html`;
-const DEFAULT_MEDIA_REF_TTL_MS = 15 * 60_000;
 
 const ALLOWED_ORIGINS = new Set([
   "https://th-505.github.io",
@@ -35,30 +30,13 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
 ]);
 
-const mediaRefs = new Map();
 const apiRateLimit = createRateLimiter({ windowMs: 60_000, max: 120 });
-const mediaRateLimit = createRateLimiter({ windowMs: 60_000, max: 600 });
-startMediaRefSweeper(mediaRefs);
-let mediaRefTtlMs = DEFAULT_MEDIA_REF_TTL_MS;
 let cinemaToken = "";
 let cinemaTokenExpiresAt = 0;
 let cinemaSessionPromise = null;
 
 function requireTestMode() {
   if (process.env.NODE_ENV !== "test") throw new Error("TEST_ONLY_MEDIA_REFERENCE_HOOK");
-}
-
-export function __setMediaReferenceTtlForTest(ttlMs) {
-  requireTestMode();
-  const value = Number(ttlMs);
-  if (!Number.isFinite(value) || value < 1 || value > DEFAULT_MEDIA_REF_TTL_MS) throw new Error("INVALID_TEST_MEDIA_REFERENCE_TTL");
-  mediaRefTtlMs = value;
-}
-
-export function __resetMediaReferenceTtlForTest() {
-  requireTestMode();
-  mediaRefTtlMs = DEFAULT_MEDIA_REF_TTL_MS;
-  mediaRefs.clear();
 }
 
 function applyCors(req, res) {
@@ -201,40 +179,6 @@ function normalizeCatalog(items = []) {
   }).filter((item) => item.href);
 }
 
-function storeMedia(url, referer = BasriSource.origin + "/", metadata = {}) {
-  const parsed = assertSourceUrl(url, { allowMedia: true });
-  const id = crypto.randomBytes(18).toString("base64url");
-  const downloadName = sanitizeDownloadFilename(metadata.title || metadata.filename || "al-qahtani-media");
-  const downloadUrl = metadata.downloadUrl ? assertSourceUrl(String(metadata.downloadUrl), { allowMedia: true }).href : "";
-  const downloadReferer = metadata.downloadReferer ? assertSourceUrl(String(metadata.downloadReferer)).href : referer;
-  mediaRefs.set(id, {
-    url: parsed.href,
-    referer,
-    downloadUrl,
-    downloadReferer,
-    downloadName,
-    expiresAt: Date.now() + mediaRefTtlMs,
-  });
-  if (mediaRefs.size > 256) {
-    const now = Date.now();
-    for (const [key, value] of mediaRefs) if (value.expiresAt <= now) mediaRefs.delete(key);
-  }
-  return id;
-}
-
-export function __createMediaReferenceForTest(url, referer = BasriSource.origin + "/", metadata = {}) {
-  requireTestMode();
-  return `/api/cinema/media?id=${encodeURIComponent(storeMedia(url, referer, metadata))}`;
-}
-
-export function __mediaReferenceTargetForTest(ref, download = false) {
-  requireTestMode();
-  const id = new URL(String(ref || ""), "http://localhost").searchParams.get("id") || "";
-  const entry = mediaRefs.get(id);
-  if (!entry) throw new Error("MISSING_TEST_MEDIA_REFERENCE");
-  return download && entry.downloadUrl ? entry.downloadUrl : entry.url;
-}
-
 function wrapEpisodes(episodes = []) {
   return episodes.map((episode, index) => {
     const raw = episode.link || episode.url || episode.href || "";
@@ -247,16 +191,28 @@ function wrapEpisodes(episodes = []) {
   });
 }
 
-function normalizeWorkerDetails(data = {}) {
-  const normalized = { ...data, status: "success", source: "basri-worker", episodes: wrapEpisodes(data.episodes || []) };
+async function normalizeWorkerDetails(data = {}) {
+  const normalized = {
+    status: "success", source: "basri-worker",
+    movie_title: String(data.movie_title || data.title || "MITV"),
+    poster: String(data.poster || ""), episodes: wrapEpisodes(data.episodes || []),
+    download_available: false, is_iframe: false,
+  };
   if (data.media_src && !data.is_iframe) {
-    const title = data.movie_title || data.title || "al-qahtani-media";
-    const id = storeMedia(String(data.media_src), BASRI_REFERER, { title });
-    normalized.media_path = `/api/cinema/media?id=${encodeURIComponent(id)}`;
-    delete normalized.media_src;
-    normalized.media_type = data.media_type || "stream";
+    try {
+      const url = assertSourceUrl(String(data.media_src), { allowMedia: true });
+      const headers = { Referer: BASRI_REFERER, 'User-Agent': BasriSource.userAgent };
+      const inspection = await inspectMediaCandidate(url.href, BASRI_REFERER);
+      if (!inspection.playable) throw Error('NO_HEALTHY_DIRECT_MEDIA');
+      const source = directSource(inspection.url, headers, {
+        kind:inspection.kind, webPlayable:await browserPlayable(inspection.url, headers),
+      });
+      return { ...normalized, ...source, media_sources: [source] };
+    } catch { /* Embedded or non-media fallback content is never playable. */ }
   }
-  return normalized;
+  return { ...normalized, ...(normalized.episodes.length ? {} : {
+    playback_unavailable: true, playback_reason: 'NO_SAFE_DIRECT_MEDIA', media_sources: [],
+  }) };
 }
 
 async function cinemaSearch(query) {
@@ -297,92 +253,19 @@ export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cin
   });
 }
 
-function requestMedia(target, headers, { allowBrokenChain = false, redirects = 0, timeoutMs = 60_000 } = {}) {
-  return new Promise((resolve, reject) => {
-    const request = https.request(target, {
-      method: "GET",
-      headers,
-      rejectUnauthorized: !allowBrokenChain,
-    }, (response) => {
-      const status = Number(response.statusCode || 0);
-      const location = response.headers.location;
-      if ([301, 302, 303, 307, 308].includes(status) && location && redirects < 4) {
-        response.resume();
-        try {
-          const next = assertSourceUrl(new URL(location, target).href, { allowMedia: true });
-          resolve(requestMedia(next, headers, { allowBrokenChain, redirects: redirects + 1, timeoutMs }));
-        } catch (error) {
-          reject(error);
-        }
-        return;
-      }
-      resolve(response);
-    });
-    request.setTimeout(timeoutMs, () => request.destroy(new Error("MEDIA_UPSTREAM_TIMEOUT")));
-    request.on("error", reject);
-    request.end();
+async function inspectMediaCandidate(value, referer) {
+  const headers = { Accept: '*/*', Referer: safeHeaderUrl(referer || BasriSource.origin + '/'), 'User-Agent': BasriSource.userAgent };
+  return probeDirectMedia(value, headers, {
+    validateUrl: url => assertSourceUrl(url, { allowMedia: true }),
   });
 }
 
-async function openMedia(target, headers, options = {}) {
+async function browserPlayable(value, headers) {
   try {
-    return await requestMedia(target, headers, options);
-  } catch (error) {
-    const tlsCodes = new Set(["UNABLE_TO_VERIFY_LEAF_SIGNATURE", "SELF_SIGNED_CERT_IN_CHAIN", "DEPTH_ZERO_SELF_SIGNED_CERT"]);
-    const host = target.hostname.toLowerCase();
-    if (!tlsCodes.has(String(error?.code || "")) || !host.endsWith(".downet.net")) throw error;
-    log("media_tls_compat", { host, code: String(error.code) });
-    return requestMedia(target, headers, { ...options, allowBrokenChain: true });
-  }
-}
-
-function classifyMediaBytes(bytes, contentType = "") {
-  const type = String(contentType || "").toLowerCase();
-  const mp4 = bytes.length >= 12 && bytes.subarray(4, 8).toString("ascii") === "ftyp";
-  const matroska = bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
-  const mpegTs = bytes.length >= 188 && bytes[0] === 0x47 && (bytes.length < 376 || bytes[188] === 0x47);
-  const hls = bytes.subarray(0, 64).toString("utf8").trimStart().startsWith("#EXTM3U");
-  if (type.includes("dash+xml") || bytes.subarray(0,4096).toString("utf8").match(/<MPD[\s>]/)) return "dash";
-  if (hls || type.includes("mpegurl")) return "hls";
-  if (mp4 || type.includes("video/mp4")) return "mp4";
-  if (mpegTs || type.includes("video/mp2t")) return "mpeg-ts";
-  if (matroska || type.includes("matroska") || type.includes("webm")) return "matroska-webm";
-  return "unknown";
-}
-
-async function inspectMediaCandidate(value, referer) {
-  const target = assertSourceUrl(value, { allowMedia: true });
-  const upstream = await openMedia(target, {
-    Accept: "*/*",
-    Range: "bytes=0-4095",
-    Referer: safeHeaderUrl(referer || BasriSource.origin + "/"),
-    "User-Agent": BasriSource.userAgent,
-  }, {timeoutMs:8000});
-  const status = Number(upstream.statusCode || 0);
-  if (status < 200 || status >= 300) {
-    upstream.resume();
-    return { playable: false, kind: "unknown", status, reason: `MEDIA_UPSTREAM_${status}` };
-  }
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of upstream) {
-    const remaining = 4096 - size;
-    if (remaining <= 0) break;
-    const slice = chunk.length > remaining ? chunk.subarray(0, remaining) : chunk;
-    chunks.push(slice);
-    size += slice.length;
-    if (size >= 4096) {
-      upstream.destroy();
-      break;
-    }
-  }
-  const bytes = Buffer.concat(chunks, size);
-  const contentType = String(upstream.headers["content-type"] || "");
-  const contentDisposition = String(upstream.headers["content-disposition"] || "");
-  const kind = classifyMediaBytes(bytes, contentType);
-  const attachment = /attachment/i.test(contentDisposition);
-  const playable = ["hls", "mp4", "mpeg-ts", "matroska-webm", "dash"].includes(kind);
-  return { playable, kind, status, attachment, contentType, contentDisposition };
+    return (await probeDirectMedia(value, headers, {
+      validateUrl: url => assertSourceUrl(url, { allowMedia: true }), browser: true,
+    })).webPlayable;
+  } catch { return false; }
 }
 
 function extractDownloadCandidates(html = "", pageUrl = BasriSource.origin + "/") {
@@ -398,8 +281,7 @@ function extractDownloadCandidates(html = "", pageUrl = BasriSource.origin + "/"
       try {
         const target = assertSourceUrl(new URL(match[1], pageUrl).href, { allowMedia: true });
         const looksLikeFile = /\.(?:mp4|m3u8|mpd|ts|m2ts|webm|mkv)(?:$|\?)/i.test(target.pathname + target.search);
-        const mediaHost = target.hostname.toLowerCase() !== "akwam.ss";
-        if ((!looksLikeFile && !mediaHost) || candidates.includes(target.href)) continue;
+        if (!looksLikeFile || candidates.includes(target.href)) continue;
         candidates.push(target.href);
       } catch {}
     }
@@ -425,7 +307,7 @@ async function resolveDirectWatch(details, target) {
   for (const source of sources) {
     try {
       const inspection = await inspectMediaCandidate(source.candidate, source.watchUrl);
-      if (inspection.playable) return {...source, inspection, alternatives:sources.filter(value=>value!==source)};
+      if (inspection.playable) return {...source, candidate:inspection.url, inspection, alternatives:sources.filter(value=>value!==source)};
       unsupported.push({kind:inspection.kind, attachment:inspection.attachment===true});
     } catch { /* Try the next validated source without exposing its URL. */ }
   }
@@ -439,8 +321,8 @@ async function resolveDirectDownload(details, target) {
     try {
       assertSourceUrl(downloadPage);
       const directInspection = await inspectMediaCandidate(downloadPage, target);
-      if (directInspection.kind !== "hls" && (directInspection.playable || directInspection.attachment)) {
-        return { downloadPage, candidate: downloadPage, inspection: directInspection };
+      if (directInspection.playable && directInspection.kind === "mp4") {
+        return { downloadPage, candidate: directInspection.url, inspection: directInspection };
       }
     } catch {}
 
@@ -449,8 +331,7 @@ async function resolveDirectDownload(details, target) {
       for (const candidate of extractDownloadCandidates(html, downloadPage).slice(0, 8)) {
         try {
           const inspection = await inspectMediaCandidate(candidate, downloadPage);
-          if (inspection.kind === "hls") continue;
-          if (inspection.playable || inspection.attachment) return { downloadPage, candidate, inspection };
+          if (inspection.playable && inspection.kind === "mp4") return { downloadPage, candidate:inspection.url, inspection };
         } catch (error) {
           log("cinema_download_probe_failed", { host: new URL(candidate).hostname, code: String(error?.code || ""), reason: String(error?.message || error) });
         }
@@ -474,84 +355,33 @@ async function akoamMetadata(target) {
 
 async function directDetailsResolved(target) {
   const details = await akoamMetadata(target);
-  if (Array.isArray(details.episodes) && details.episodes.length) {
-    return { ...details, episodes: wrapEpisodes(details.episodes) };
+  const base = { status: 'success', source: 'basri-direct', movie_title: details.movie_title || 'MITV',
+    poster: details.poster || '', episodes: wrapEpisodes(details.episodes || []), is_iframe: false, download_available: false };
+  if (base.episodes.length) return base;
+  if (!details.watch?.length && !details.downloads?.length) return { ...base, playback_unavailable:true, playback_reason:'NO_SAFE_DIRECT_MEDIA' };
+  const [resolved, download] = await Promise.all([
+    resolveDirectWatch(details, target), resolveDirectDownload(details, target),
+  ]);
+  const candidates = [
+    ...(resolved.candidate ? [resolved, ...(resolved.alternatives || []).slice(0, 3)] : []),
+    ...(download?.candidate ? [{ ...download, watchUrl: download.downloadPage }] : []),
+  ];
+  const sources = [], seen = new Set();
+  for (const candidate of candidates) {
+    try {
+      const inspection = candidate.inspection || await inspectMediaCandidate(candidate.candidate, candidate.watchUrl);
+      if (!inspection.playable || seen.has(inspection.url)) continue;
+      seen.add(inspection.url);
+      const headers = { Referer: safeHeaderUrl(candidate.watchUrl), 'User-Agent': BasriSource.userAgent };
+      const source = directSource(inspection.url, headers, { kind:inspection.kind,
+        label: sources.length ? `مصدر ${sources.length + 1}` : 'تلقائي',
+        webPlayable:await browserPlayable(inspection.url, headers) });
+      sources.push(source);
+    } catch { /* Skip blocked or unsafe candidates; never offer an embed or cloud proxy. */ }
   }
-  if (Array.isArray(details.watch) && details.watch.length) {
-    const [resolved, downloadResolved] = await Promise.all([
-      resolveDirectWatch(details, target),
-      resolveDirectDownload(details, target),
-    ]);
-    if (resolved.candidate) {
-      const title = details.movie_title || resolved.watch?.movie_title || "al-qahtani-media";
-      const id = storeMedia(resolved.candidate, resolved.watchUrl, {
-        title,
-        downloadUrl: downloadResolved?.candidate || "",
-        downloadReferer: downloadResolved?.downloadPage || target,
-      });
-      const mediaType = resolved.inspection.kind === "hls" ? "m3u8" : resolved.inspection.kind;
-      return {
-        status: "success",
-        source: "basri-direct",
-        movie_title: title,
-        poster: details.poster || "",
-        episodes: [],
-        media_path: `/api/cinema/media?id=${encodeURIComponent(id)}`,
-        media_type: mediaType,
-        media_sources: [{media_path:`/api/cinema/media?id=${encodeURIComponent(id)}`,media_type:mediaType,label:'تلقائي'},
-          ...(resolved.alternatives || []).slice(0,7).map((alternative,index) => ({
-            media_path:`/api/cinema/media?id=${encodeURIComponent(storeMedia(alternative.candidate,alternative.watchUrl,{title}))}`,
-            media_type:mediaKindFromUrl(alternative.candidate),label:`مصدر ${index+2}`,
-          }))],
-        is_iframe: false,
-        download_available: Boolean(downloadResolved?.candidate),
-      };
-    }
-    if (downloadResolved?.candidate && downloadResolved.inspection?.playable) {
-      const title = details.movie_title || "al-qahtani-media";
-      const id = storeMedia(downloadResolved.candidate, downloadResolved.downloadPage, {
-        title,
-        downloadUrl: downloadResolved.candidate,
-        downloadReferer: downloadResolved.downloadPage,
-      });
-      const kind = downloadResolved.inspection.kind;
-      return {
-        status: "success",
-        source: "basri-direct",
-        movie_title: title,
-        poster: details.poster || "",
-        episodes: [],
-        media_path: `/api/cinema/media?id=${encodeURIComponent(id)}`,
-        media_type: kind === "mp4" ? "mp4" : kind === "mpeg-ts" ? "stream" : kind,
-        is_iframe: false,
-        download_available: true,
-      };
-    }
-    // A failed datacenter probe does not establish failure on the user's network.
-    // Offer only source-validated, same-work URLs for bounded native attempts.
-    const clientSources=(resolved.unchecked || []).filter(source=>mediaKindFromUrl(source.candidate)!=='unknown').slice(0,8);
-    if(clientSources.length) {
-      const first=clientSources[0];
-      return {status:'success',source:'basri-direct',movie_title:details.movie_title,poster:details.poster || '',episodes:[],
-        playback_mode:'direct',media_url:first.candidate,media_path:first.candidate,media_type:mediaKindFromUrl(first.candidate),
-        playback_headers:{Referer:first.watchUrl,'User-Agent':BasriSource.userAgent},
-        expires_at:new Date(Date.now()+5*60_000).toISOString(),download_available:false,server_probe_unavailable:true,
-        media_sources:clientSources.map((source,index)=>({media_path:source.candidate,media_type:mediaKindFromUrl(source.candidate),
-          playback_mode:'direct',headers:{Referer:source.watchUrl,'User-Agent':BasriSource.userAgent},label:`مصدر ${index+1}`}))};
-    }
-    const kinds = [...new Set((resolved.unsupported || []).map(item => item.kind).filter(kind => kind && kind !== "unknown"))];
-    return {
-      status: "success",
-      source: "basri-direct",
-      movie_title: details.movie_title || "التفاصيل",
-      poster: details.poster || "",
-      episodes: [],
-      playback_unavailable: true,
-      playback_reason: kinds.length ? "UNSUPPORTED_MEDIA_CONTAINER" : "NO_PLAYABLE_MEDIA",
-      unsupported_media_types: kinds,
-    };
-  }
-  return { ...details, episodes: wrapEpisodes(details.episodes || []) };
+  if (!sources.length) return { ...base, media_sources:[], playback_unavailable:true, playback_reason:'NO_HEALTHY_DIRECT_MEDIA' };
+  return { ...base, ...sources[0], media_sources:sources,
+    download_available:sources.some(s => s.media_type === 'mp4') };
 }
 
 async function cinemaDetails(ref) {
@@ -562,142 +392,28 @@ async function cinemaDetails(ref) {
   catch { const data = await cinemaWorkerRequest("series", {series:target}); return normalizeWorkerDetails(data); }
 }
 
-function hlsChildPath(value, baseUrl, entry) {
-  const raw = String(value || "").trim();
-  if (!raw || raw.startsWith("data:") || raw.startsWith("blob:")) return raw;
-  const target = assertSourceUrl(new URL(raw, baseUrl).href, { allowMedia: true });
-  const id = storeMedia(target.href, baseUrl, { title: entry.downloadName });
-  return `/api/cinema/media?id=${encodeURIComponent(id)}`;
+function retiredMedia(req, res) {
+  return sendJson(req, res, 410, { status: 'error', message: 'MEDIA_PROXY_RETIRED_USE_DIRECT_PLAYBACK', media_proxy:false });
 }
 
-function rewriteHlsAttributeUris(line, baseUrl, entry) {
-  return line.replace(/URI=(?:"([^"]+)"|'([^']+)'|([^,\s]+))/gi, (match, doubleQuoted, singleQuoted, bare) => {
-    const raw = doubleQuoted || singleQuoted || bare || "";
-    const proxied = hlsChildPath(raw, baseUrl, entry);
-    return `URI="${proxied}"`;
-  });
-}
-
-function rewriteHlsManifest(manifest, baseUrl, entry) {
-  return String(manifest || "")
-    .split(/\r?\n/)
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return line;
-      if (trimmed.startsWith("#")) return rewriteHlsAttributeUris(line, baseUrl, entry);
-      return hlsChildPath(trimmed, baseUrl, entry);
-    })
-    .join("\n");
-}
-
-export function __rewriteHlsManifestForTest(manifest, baseUrl, metadata = {}) {
-  requireTestMode();
-  const entry = { downloadName: sanitizeDownloadFilename(metadata.title || metadata.filename || "al-qahtani-media") };
-  return rewriteHlsManifest(manifest, assertSourceUrl(baseUrl, { allowMedia: true }).href, entry);
-}
-
-function isHlsResponse(target, contentType = "") {
-  const type = String(contentType || "").toLowerCase();
-  return type.includes("mpegurl") || /\.m3u8(?:$|\?)/i.test(target.pathname + target.search);
-}
-
-async function readUpstreamText(upstream, maxBytes = 2 * 1024 * 1024) {
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of upstream) {
-    size += chunk.length;
-    if (size > maxBytes) throw new Error("HLS_MANIFEST_TOO_LARGE");
-    chunks.push(chunk);
+function publicDetails(data, web = false) {
+  if (data.playback_mode === 'client_resolve' || data.is_iframe) {
+    return { status:'success', source:data.source, movie_title:data.movie_title,
+      poster:data.poster || '', episodes:data.episodes || [], media_sources:[], is_iframe:false,
+      download_available:false, playback_unavailable:true, playback_reason:'EDGE_DIRECT_RESOLUTION_REQUIRED' };
   }
-  return Buffer.concat(chunks, size).toString("utf8");
-}
-
-async function proxyMedia(req, res, id) {
-  const entry = mediaRefs.get(id);
-  if (!entry || entry.expiresAt <= Date.now()) {
-    mediaRefs.delete(id);
-    return sendJson(req, res, 404, { status: "error", message: "MEDIA_REFERENCE_EXPIRED" });
-  }
-  const requestUrl = new URL(req.url || "/", "http://localhost");
-  const wantsDownload = requestUrl.searchParams.get("download") === "1";
-  const selectedUrl = wantsDownload && entry.downloadUrl ? entry.downloadUrl : entry.url;
-  const selectedReferer = wantsDownload && entry.downloadUrl ? entry.downloadReferer : entry.referer;
-  const target = assertSourceUrl(expandDashTemplate(selectedUrl,requestUrl.searchParams), { allowMedia: true });
-  const headers = {
-    Accept: "*/*",
-    Referer: safeHeaderUrl(selectedReferer || BasriSource.origin + "/"),
-    "User-Agent": BasriSource.userAgent,
-  };
-  if (req.headers.range && !/\.(?:m3u8|mpd)(?:$|\?)/i.test(target.pathname + target.search)) headers.Range = req.headers.range;
-  try {
-    const upstream = await openMedia(target, headers);
-    const status = Number(upstream.statusCode || 502);
-    if (status < 200 || status >= 300) {
-      upstream.resume();
-      return sendJson(req, res, status, { status: "error", message: `MEDIA_UPSTREAM_${status}` });
-    }
-
-    const contentType = String(upstream.headers["content-type"] || "");
-    if (contentType.includes('dash+xml') || /\.mpd$/.test(target.pathname)) {
-      if (wantsDownload) {upstream.resume();return sendJson(req,res,409,{status:'error',message:'DASH_DOWNLOAD_REQUIRES_PACKAGING'});}
-      const xml = await readUpstreamText(upstream);
-      const rewritten = rewriteDashManifest(xml,target.href,url => {
-        const childId=storeMedia(url,selectedReferer,{title:entry.downloadName});
-        return `/api/cinema/media?id=${encodeURIComponent(childId)}${dashProxyParameters(url)}`;
-      },value=>assertSourceUrl(value,{allowMedia:true}));
-      applyCors(req,res);res.writeHead(200,{'Content-Type':'application/dash+xml','Cache-Control':'no-store'});return res.end(rewritten);
-    }
-    if (isHlsResponse(target, contentType)) {
-      if (wantsDownload) {
-        upstream.resume();
-        return sendJson(req, res, 409, { status: "error", message: "HLS_DOWNLOAD_REQUIRES_PACKAGING" });
-      }
-      const manifest = await readUpstreamText(upstream);
-      if (!manifest.trimStart().startsWith("#EXTM3U")) {
-        return sendJson(req, res, 502, { status: "error", message: "INVALID_HLS_MANIFEST" });
-      }
-      const rewritten = rewriteHlsManifest(manifest, target.href, entry);
-      const body = Buffer.from(rewritten, "utf8");
-      applyCors(req, res);
-      res.setHeader("Content-Type", "application/vnd.apple.mpegurl; charset=utf-8");
-      res.setHeader("Content-Length", String(body.byteLength));
-      res.setHeader("Cache-Control", "no-store");
-      res.setHeader("X-Content-Type-Options", "nosniff");
-      res.statusCode = 200;
-      return res.end(body);
-    }
-
-    applyCors(req, res);
-    for (const name of ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified"]) {
-      const value = upstream.headers[name];
-      if (value) res.setHeader(name, value);
-    }
-    if (!upstream.headers["content-type"]) res.setHeader("Content-Type", "video/mp4");
-    if (wantsDownload) {
-      res.setHeader("Content-Disposition", buildDownloadContentDisposition(entry.downloadName));
-      res.setHeader("X-Content-Type-Options", "nosniff");
-    }
-    res.setHeader("Cache-Control", "no-store");
-    res.statusCode = status;
-    for await (const chunk of upstream) res.write(chunk);
-    res.end();
-  } catch (error) {
-    log("media_proxy_failed", { host: target.hostname, code: String(error?.code || ""), error: String(error?.message || error) });
-    if (!res.headersSent) return sendJson(req, res, 502, { status: "error", message: "MEDIA_PROXY_FAILED" });
-    res.destroy(error);
-  }
+  return web ? filterBrowserSources(data) : data;
 }
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime }) } = {}) {
-  const alooyBridge = createAlooyWebBridge();
   return http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
     const url = new URL(req.url, "http://localhost");
     const started = Date.now();
     const client = getClientAddress(req);
-    const limiter = ["/api/cinema/media", "/api/alooy/media"].includes(url.pathname) ? mediaRateLimit : apiRateLimit;
-    const rate = limiter(`${client}:${url.pathname}`);
+    if (["/api/cinema/media", "/api/alooy/media"].includes(url.pathname)) return retiredMedia(req, res);
+    const rate = apiRateLimit(`${client}:${url.pathname}`);
     if (!rate.ok) {
       res.setHeader("Retry-After", String(rate.retryAfterSec));
       res.setHeader("X-RateLimit-Remaining", "0");
@@ -715,8 +431,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (url.pathname === '/api/v1/3isk/status') return sendJson(req, res, 200, iskRuntime.status());
         if (url.pathname === '/api/v1/3isk/search') return sendJson(req, res, 200, await iskRuntime.search(url.searchParams.get('q') || ''));
         if (url.pathname === '/api/v1/3isk/category') return sendJson(req, res, 200, await iskRuntime.category(ref, Number(url.searchParams.get('p') || 1)));
-        if (url.pathname === '/api/v1/3isk/resolve') return sendJson(req, res, 200, await iskRuntime.resolve(ref, { refresh: url.searchParams.get('refresh') === '1' }));
-        if (url.pathname === '/api/v1/3isk/details') return sendJson(req, res, 200, await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }));
+        if (url.pathname === '/api/v1/3isk/resolve') return sendJson(req, res, 200, publicDetails(await iskRuntime.resolve(ref, { refresh: url.searchParams.get('refresh') === '1' }), url.searchParams.get('platform') === 'web'));
+        if (url.pathname === '/api/v1/3isk/details') return sendJson(req, res, 200, publicDetails(await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }), url.searchParams.get('platform') === 'web'));
         return sendJson(req, res, 404, { status: 'error', message: 'NOT_FOUND' });
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
@@ -744,19 +460,13 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       if (url.pathname === "/api/cinema/details") {
         const ref = url.searchParams.get('ref') || '';
-        if (ref.startsWith('alooy:')) {
-          const data = await alooyRuntime.details(ref, {refresh:url.searchParams.get('refresh')==='1'});
-          if (url.searchParams.get('platform') === 'web' && data.media_path) {
-            const sources=data.media_sources.map(alooyBridge.register);
-            return sendJson(req,res,200,{...data,...sources[0],media_sources:sources});
-          }
-          return sendJson(req,res,200,data);
-        }
-        return sendJson(req, res, 200, ref.startsWith('3isk:')
-          ? await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }) : await cinemaDetails(ref));
+        const data = ref.startsWith('alooy:')
+          ? await alooyRuntime.details(ref, { refresh:url.searchParams.get('refresh') === '1' })
+          : ref.startsWith('3isk:')
+            ? await iskRuntime.details(ref, { refresh:url.searchParams.get('refresh') === '1' })
+            : await cinemaDetails(ref);
+        return sendJson(req,res,200,publicDetails(data, url.searchParams.get('platform') === 'web'));
       }
-      if (url.pathname === "/api/alooy/media") return await alooyBridge.proxy(req,res,url.searchParams.get("id") || "");
-      if (url.pathname === "/api/cinema/media") return proxyMedia(req, res, url.searchParams.get("id") || "");
       return sendJson(req, res, 404, { error: "NOT_FOUND" });
     } catch (error) {
       if (String(error?.message).startsWith('ALOOY_BAD_') || String(error?.message).startsWith('3ISK_BAD_') || String(error?.message).startsWith('3ISK_EXPECTED_')) return sendJson(req, res, 400, { status: 'error', message: error.message });

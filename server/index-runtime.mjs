@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { createProductionServer } from "./index.mjs";
 import { createTmdbRuntime } from "./tmdb-runtime.mjs";
@@ -32,7 +31,7 @@ function applyCors(req, res) {
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
-  res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,X-Al-Qahtani-Container");
+  res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,X-MITV-Container");
 }
 
 function sendJson(req, res, status, payload) {
@@ -50,7 +49,7 @@ function errorStatus(message) {
   if (message === "TMDB_TIMEOUT") return 504;
   if (["TMDB_BAD_REFERENCE", "TMDB_BAD_SEASON", "TMDB_SEASON_REQUIRES_SERIES"].includes(message)) return 400;
   if (["INVALID_TMDB_ID", "INVALID_MEDIA_TYPE", "INVALID_SEASON", "INVALID_EPISODE", "BAD_FALLBACK_REFERENCE", "BAD_FALLBACK_RANGE"].includes(message)) return 400;
-  if (message === "FALLBACK_REFERENCE_EXPIRED") return 410;
+  if (message === "FALLBACK_REFERENCE_EXPIRED" || message === "EMBEDDED_FALLBACK_DISABLED") return 410;
   if (["FALLBACK_MEDIA_TIMEOUT"].includes(message)) return 504;
   if (["NO_FALLBACK_PROVIDER_AVAILABLE"].includes(message)) return 503;
   if (["FALLBACK_HLS_PROXY_PENDING", "FALLBACK_MEDIA_NOT_DIRECT", "FALLBACK_MEDIA_UNSUPPORTED", "FALLBACK_MEDIA_CLASSIFICATION_CHANGED"].includes(message)) return 409;
@@ -67,38 +66,7 @@ function fallbackIdentity(url) {
   };
 }
 
-function copyHeader(res, name, value) {
-  if (value !== null && value !== undefined && String(value).trim()) res.setHeader(name, String(value));
-}
-
-async function sendFallbackMedia(req, res, fallbackRuntime, ref) {
-  const opened = await fallbackRuntime.openDirectMedia(ref, { range: req.headers.range });
-  const { response, meta } = opened;
-  applyCors(req, res);
-  res.setHeader("Cache-Control", "private, no-store");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Al-Qahtani-Container", meta.container);
-  copyHeader(res, "Content-Type", meta.contentType);
-  copyHeader(res, "Content-Length", meta.contentLength);
-  copyHeader(res, "Content-Range", meta.contentRange);
-  copyHeader(res, "Accept-Ranges", meta.acceptRanges || "bytes");
-  res.writeHead(meta.status);
-  if (!response.body) return res.end();
-  try {
-    await new Promise((resolve, reject) => {
-      const stream = Readable.fromWeb(response.body);
-      stream.on("error", reject);
-      res.on("error", reject);
-      res.on("finish", resolve);
-      req.on("aborted", () => stream.destroy());
-      stream.pipe(res);
-    });
-  } finally {
-    if (!res.writableEnded) res.end();
-  }
-}
-
-export function createAlQahtaniRuntimeServer({
+export function createMitvRuntimeServer({
   baseServer = createProductionServer(),
   tmdbRuntime = createTmdbRuntime(),
   fallbackRuntime = createFallbackPlaybackRuntime(),
@@ -139,6 +107,10 @@ export function createAlQahtaniRuntimeServer({
       }
     }
 
+    if (url.pathname === "/api/v1/fallback/media") {
+      return sendJson(req,res,410,{status:"error",message:"MEDIA_PROXY_RETIRED_USE_DIRECT_PLAYBACK",media_proxy:false});
+    }
+
     if (FALLBACK_ROUTES.has(url.pathname)) {
       applyCors(req, res);
       if (req.method === "OPTIONS") {
@@ -151,7 +123,6 @@ export function createAlQahtaniRuntimeServer({
         if (url.pathname === "/api/v1/fallback/resolve") return sendJson(req, res, 200, fallbackRuntime.resolve(fallbackIdentity(url)));
         const ref = String(url.searchParams.get("ref") || "").trim();
         if (url.pathname === "/api/v1/fallback/probe") return sendJson(req, res, 200, await fallbackRuntime.probe(ref));
-        if (url.pathname === "/api/v1/fallback/media") return await sendFallbackMedia(req, res, fallbackRuntime, ref);
         return sendJson(req, res, 200, fallbackRuntime.recordFailure(ref));
       } catch (error) {
         const message = String(error?.message || "FALLBACK_FAILED");
@@ -164,12 +135,12 @@ export function createAlQahtaniRuntimeServer({
   return baseServer;
 }
 
-export function startAlQahtaniRuntimeServer({ port = Number(process.env.PORT || 3000) } = {}) {
-  const server = createAlQahtaniRuntimeServer();
+export function startMitvRuntimeServer({ port = Number(process.env.PORT || 3000) } = {}) {
+  const server = createMitvRuntimeServer();
   return server.listen(port, "0.0.0.0", () => {
     console.log(`MITV backend listening on ${port}`);
   });
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
-if (invokedPath === import.meta.url) startAlQahtaniRuntimeServer();
+if (invokedPath === import.meta.url) startMitvRuntimeServer();

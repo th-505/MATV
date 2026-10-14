@@ -21,8 +21,6 @@ dependencies:
   share_plus: ^10.1.4
   shared_preferences: ^2.5.3
   video_player: ^2.14.0
-  webview_flutter: ^4.13.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
