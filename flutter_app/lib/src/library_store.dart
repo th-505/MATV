@@ -99,7 +99,7 @@ class LocalLibraryStore extends ChangeNotifier {
     }
     await _persistFavorites();
     if (_supabase != null) {
-      unawaited(_supabase!.syncFavorite(item.toJson(), isFav));
+      unawaited(_supabase.syncFavorite(item.toJson(), isFav));
     }
     notifyListeners();
   }
@@ -111,7 +111,7 @@ class LocalLibraryStore extends ChangeNotifier {
     final ordered = history; if (ordered.length > _historyLimit) { for (final old in ordered.skip(_historyLimit)) { _history.remove(old.key); } }
     await _persistHistory();
     if (_supabase != null) {
-      unawaited(_supabase!.syncWatchProgress(entry.toJson()));
+      unawaited(_supabase.syncWatchProgress(entry.toJson()));
     }
     notifyListeners();
   }

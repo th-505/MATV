@@ -959,13 +959,14 @@ class _PlayerPageState extends State<PlayerPage> {
                                   fontSize: 12, color: Colors.white60),
                             ),
                             onTap: () async {
+                              final messenger = ScaffoldMessenger.of(context);
                               Navigator.pop(context);
                               await player.setSubtitleTrack(mk.SubtitleTrack.uri(
                                 sub.url,
                                 title: '${sub.languageLabel} (${sub.lang})',
                               ));
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   SnackBar(
                                       content: Text(
                                           'تم تفعيل الترجمة: ${sub.languageLabel}')),
