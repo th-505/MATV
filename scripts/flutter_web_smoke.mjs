@@ -45,13 +45,21 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+const corsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, HEAD, POST, OPTIONS",
+  "access-control-allow-headers": "*",
+};
 await page.route("https://matv.onrender.com/**", async (route) => {
+  if (route.request().method() === "OPTIONS") {
+    await route.fulfill({ status: 204, headers: corsHeaders });
+    return;
+  }
   const u = new URL(route.request().url());
-  const headers = { "access-control-allow-origin": "*" };
   if (u.pathname.endsWith(".ts")) {
     await route.fulfill({
       status: 200,
-      headers: { ...headers, "content-type": "video/mp2t" },
+      headers: { ...corsHeaders, "content-type": "video/mp2t" },
       body: fs.readFileSync(
         "/tmp/matv-codec-fixtures/" + path.basename(u.pathname),
       ),
@@ -63,7 +71,10 @@ await page.route("https://matv.onrender.com/**", async (route) => {
       u.searchParams.get("format") === "m3u8" ? "master.m3u8" : "sample.mp4";
     await route.fulfill({
       status: 200,
-      headers: { ...headers, "content-type": mime[path.extname(file)] },
+      headers: {
+        ...corsHeaders,
+        "content-type": mime[path.extname(file)] || "application/octet-stream",
+      },
       body: fs.readFileSync("/tmp/matv-codec-fixtures/" + file),
     });
     return;
@@ -74,24 +85,27 @@ await page.route("https://matv.onrender.com/**", async (route) => {
       status: "success",
       movie_title: "Web playback fixture",
       poster: "",
-      media_path: "/api/alooy/media?id=fixture",
-      media_type: format,
-      playback_mode: "proxy",
+      playback_unavailable: true,
+      playback_reason: "EDGE_DIRECT_RESOLUTION_REQUIRED",
       download_available: false,
     };
   await route.fulfill({
     status: 200,
-    headers: { ...headers, "content-type": "application/json" },
+    headers: { ...corsHeaders, "content-type": "application/json" },
     body: JSON.stringify(data),
   });
 });
 await page.route(
   "https://matv-edge-resolver.dada1000100.workers.dev/**",
   async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers: corsHeaders });
+      return;
+    }
     await route.fulfill({
       status: 200,
       headers: {
-        "access-control-allow-origin": "*",
+        ...corsHeaders,
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -116,13 +130,17 @@ await page.route(
   },
 );
 await page.route("https://media.fixture.example/**", async (route) => {
+  if (route.request().method() === "OPTIONS") {
+    await route.fulfill({ status: 204, headers: corsHeaders });
+    return;
+  }
   const u = new URL(route.request().url());
   const name = path.basename(u.pathname);
   await route.fulfill({
     status: 200,
     headers: {
-      "access-control-allow-origin": "*",
-      "content-type": mime[path.extname(name)],
+      ...corsHeaders,
+      "content-type": mime[path.extname(name)] || "application/octet-stream",
     },
     body: fs.readFileSync("/tmp/matv-codec-fixtures/" + name),
   });

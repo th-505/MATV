@@ -256,17 +256,22 @@ class MitvApi implements MediaRepository {
     if (_useEdge &&
         !metadata.hasEpisodes &&
         ['3isk:', 'alooy:', 'legacy:', 'laroza:'].any(ref.startsWith)) {
-      final playback = await resolvePlayback(ref);
-      return metadata.copyWith(
-          mediaPath: playback.mediaPath,
-          mediaType: playback.mediaType,
-          playbackMode: playback.playbackMode,
-          playbackHeaders: playback.playbackHeaders,
-          mediaSources: playback.mediaSources,
-          expiresAt: playback.expiresAt,
-          downloadAvailable: playback.downloadAvailable,
-          playbackUnavailable: false,
-          playbackReason: '');
+      try {
+        final playback = await resolvePlayback(ref);
+        return metadata.copyWith(
+            mediaPath: playback.mediaPath,
+            mediaType: playback.mediaType,
+            playbackMode: playback.playbackMode,
+            playbackHeaders: playback.playbackHeaders,
+            mediaSources: playback.mediaSources,
+            expiresAt: playback.expiresAt,
+            downloadAvailable: playback.downloadAvailable,
+            playbackUnavailable: false,
+            playbackReason: '');
+      } catch (_) {
+        if (metadata.hasDirectMedia || metadata.canPlay) return metadata;
+        rethrow;
+      }
     }
     return metadata;
   }
