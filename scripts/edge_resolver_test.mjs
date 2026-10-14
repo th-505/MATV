@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { resolveProvider, decodeRef, unpack } from "../edge/src/provider.mjs";
-import gateway, { aggregate, refKey } from "../edge/src/router.mjs";
+import gateway, { aggregate, refKey, providerOf } from "../edge/src/router.mjs";
 const configs = JSON.parse(fs.readFileSync("edge/config/providers.json"));
 const alooy =
   "alooy:" + Buffer.from("/watch/test.html?key=one").toString("base64url");
@@ -66,10 +66,16 @@ const result = await aggregate(
     refs: { "3isk": "i", akoam: "a", alooy: "b" },
   },
   { ISK: service("3isk"), AKOAM: service("akoam"), ALOOY: service("alooy") },
+  { verifiedIdentity: true },
 );
 assert.equal(maximum, 3);
 assert.equal(result.sources.length, 2);
 assert(result.sources.every((s) => s.edition === "dubbed-cut-a"));
+assert(
+  result.sources.every(
+    (s) => s.timeline_verified && s.timeline_offset_ms === 0,
+  ),
+);
 assert.equal(result.episode_id, "same-episode");
 const partial = await aggregate(
   { episode_id: "own", refs: { alooy: "b" } },
@@ -77,6 +83,69 @@ const partial = await aggregate(
 );
 assert.equal(partial.sources.length, 1);
 assert.equal(partial.sources[0].provider_id, "alooy");
+assert.equal(partial.sources[0].timeline_verified, false);
+assert.equal(partial.sources[0].timeline_offset_ms, null);
+const larozaRef =
+  "laroza:" + Buffer.from("/play.php?vid=stable-one").toString("base64url");
+assert.equal(providerOf(larozaRef), "laroza");
+const larozaPartial = await aggregate(
+  { episode_id: "unknown-cut", refs: { "3isk": "i", laroza: larozaRef } },
+  {
+    ISK: {
+      async fetch() {
+        return Response.json({ error: "SOURCE_BLOCKED" }, { status: 403 });
+      },
+    },
+    LAROZA: service("laroza"),
+  },
+);
+assert.equal(larozaPartial.sources.length, 1);
+assert.equal(larozaPartial.sources[0].provider_id, "laroza");
+assert.equal(larozaPartial.sources[0].timeline_verified, false);
+assert.equal(
+  larozaPartial.availability.find((r) => r.provider_id === "3isk").status,
+  "unavailable",
+);
+const many = (provider) => ({
+  async fetch() {
+    return Response.json({
+      sources: Array.from({ length: 6 }, (_, i) => ({
+        provider_id: provider,
+        url: `https://video.test/${provider}/${i}.mp4`,
+        expires_at: new Date(Date.now() + 120000).toISOString(),
+      })),
+    });
+  },
+});
+const capped = await aggregate(
+  {
+    episode_id: "known-edition",
+    edition: "original-cut-26",
+    refs: {
+      "3isk": "i",
+      akoam: "a",
+      alooy: "b",
+      laroza: larozaRef,
+    },
+  },
+  {
+    ISK: many("3isk"),
+    AKOAM: many("akoam"),
+    ALOOY: many("alooy"),
+    LAROZA: many("laroza"),
+  },
+  { verifiedIdentity: true },
+);
+assert.equal(capped.sources.length, 8);
+assert.deepEqual(
+  [...new Set(capped.sources.map((s) => s.provider_id))],
+  ["3isk", "akoam", "alooy", "laroza"],
+);
+assert(
+  capped.sources.every(
+    (s) => s.edition === "original-cut-26" && s.timeline_verified,
+  ),
+);
 const isk =
   "3isk:" +
   Buffer.from("/watch/episodes/test-season-1-episode-1/").toString("base64url");
@@ -140,6 +209,7 @@ const env = {
     async get(key) {
       counts.kv++;
       if (key === "episode:unregistered") return null;
+      if (key === (await refKey(larozaRef))) return null;
       return {
         episode_id:
           key === "episode:exact-dubbed" ? "exact-dubbed" : "exact-original",
@@ -184,6 +254,12 @@ try {
   const first = await send("ref=" + encodeURIComponent(isk));
   assert.equal(first.response.status, 200);
   assert.equal(first.body.edition, "turkish-original-cut-a");
+  assert.equal(first.body.timeline_verified, true);
+  assert(
+    first.body.sources.every(
+      (s) => s.timeline_verified && s.timeline_offset_ms === 0,
+    ),
+  );
   assert.equal(counts.kv, 1);
   assert.equal(counts.extraction, 1);
   const cached = await send(
@@ -300,9 +376,146 @@ try {
   );
   assert.equal(matchCalls, 1, "live list polling uses a short metadata cache");
   assert.equal((await send("", "/v1/matches/unknown")).response.status, 404);
+  const metadataRequests = [];
+  env.LAROZA = {
+    async fetch(input) {
+      const u = new URL(input.url);
+      metadataRequests.push(u);
+      assert.equal(
+        u.hostname,
+        u.pathname === "/resolve" ? "provider.internal" : "laroza.internal",
+      );
+      assert.equal(u.searchParams.has("refresh"), false);
+      if (u.pathname === "/resolve")
+        return Response.json({
+          sources: [
+            {
+              provider_id: "laroza",
+              url: "https://video.test/direct.mp4",
+              expires_at: new Date(Date.now() + 120000).toISOString(),
+            },
+          ],
+        });
+      return Response.json({
+        status: "success",
+        data:
+          u.pathname === "/details"
+            ? { title: "Laroza Film", ref: larozaRef, episodes: [] }
+            : [{ title: "Laroza Film", ref: larozaRef }],
+      });
+    },
+  };
+  const beforeMetadataKv = counts.kv;
+  const catalog = await send("section=movies&page=2", "/v1/laroza/category");
+  assert.equal(catalog.response.status, 200);
+  assert.equal(catalog.body.data[0].title, "Laroza Film");
+  assert.equal(metadataRequests[0].pathname, "/category");
+  assert.equal(metadataRequests[0].searchParams.get("section"), "movies");
+  const metadataHit = await send(
+    "page=2&section=movies&refresh=1",
+    "/v1/laroza/category",
+  );
+  assert.equal(metadataHit.body.cached, true);
+  assert.equal(
+    metadataRequests.length,
+    1,
+    "canonical metadata query ignores refresh/order",
+  );
+  const catalogCacheKey = [...entries.keys()].find((k) =>
+    k.includes("/laroza/"),
+  );
+  assert.equal(
+    entries.get(catalogCacheKey).headers.get("Cache-Control"),
+    "public,max-age=300",
+  );
+  const search = await send(
+    "q=" + encodeURIComponent("  فيلم  ") + "&page=1",
+    "/v1/laroza/search",
+  );
+  assert.equal(search.response.status, 200);
+  assert.equal(metadataRequests.at(-1).searchParams.get("q"), "فيلم");
+  const details = await send(
+    "ref=" + encodeURIComponent(larozaRef),
+    "/v1/laroza/details",
+  );
+  assert.equal(details.response.status, 200);
+  assert.equal(details.body.data.ref, larozaRef);
+  assert.equal(
+    counts.kv,
+    beforeMetadataKv,
+    "Laroza catalog/search/details must never read KV",
+  );
+  const detailKey = [...entries.keys()].find(
+    (k) =>
+      k.includes("/laroza/") &&
+      entries.get(k).headers.get("Cache-Control") === "public,max-age=120",
+  );
+  assert(detailKey, "details metadata uses its separate short cache");
+  const invalidQueries = [
+    ["section=other", "/v1/laroza/category"],
+    ["page=0", "/v1/laroza/category"],
+    ["page=1001", "/v1/laroza/category"],
+    ["page=1.5", "/v1/laroza/category"],
+    ["page=1&page=2", "/v1/laroza/category"],
+    ["url=https://127.0.0.1", "/v1/laroza/category"],
+    ["q=" + "x".repeat(121), "/v1/laroza/search"],
+    ["q=%00bad", "/v1/laroza/search"],
+    ["q=", "/v1/laroza/search"],
+    ["q=a", "/v1/laroza/search"],
+    ["ref=laroza:", "/v1/laroza/details"],
+    ["ref=http://127.0.0.1", "/v1/laroza/details"],
+    ["ref=laroza:" + "x".repeat(1500), "/v1/laroza/details"],
+  ];
+  const metadataCallsBeforeInvalid = metadataRequests.length;
+  for (const [query, route] of invalidQueries)
+    assert.equal((await send(query, route)).response.status, 400);
+  assert.equal(
+    metadataRequests.length,
+    metadataCallsBeforeInvalid,
+    "malicious metadata parameters never reach the private worker",
+  );
+  assert.equal(counts.kv, beforeMetadataKv);
+  assert.equal((await send("", "/v1/laroza/stream")).response.status, 404);
+  const unmappedLaroza = await send("ref=" + encodeURIComponent(larozaRef));
+  assert.equal(unmappedLaroza.response.status, 200);
+  assert.equal(unmappedLaroza.body.sources[0].provider_id, "laroza");
+  assert.equal(unmappedLaroza.body.timeline_verified, false);
+  assert.equal(unmappedLaroza.body.sources[0].timeline_offset_ms, null);
+  assert.equal(
+    counts.kv,
+    beforeMetadataKv + 1,
+    "only playback resolution performs the one identity lookup",
+  );
+  const health = await send("", "/health");
+  assert.deepEqual(health.body.providers, ["3isk", "akoam", "alooy", "laroza"]);
+  env.LAROZA = {
+    async fetch() {
+      return Response.json({
+        status: "success",
+        data: { stream_url: "https://video.test/master.m3u8" },
+      });
+    },
+  };
+  const unexpectedMedia = await send(
+    "ref=" + encodeURIComponent("laroza:bmV3"),
+    "/v1/laroza/details",
+  );
+  assert.equal(
+    unexpectedMedia.response.status,
+    502,
+    "metadata endpoints reject media URLs instead of caching them",
+  );
+  env.LAROZA = {
+    async fetch() {
+      return new Response("x".repeat(131073));
+    },
+  };
+  const oversized = await send("q=oversized", "/v1/laroza/search");
+  assert.equal(oversized.response.status, 502);
+  assert.equal(oversized.body.error, "RESPONSE_TOO_LARGE");
 } finally {
   globalThis.caches = originalCaches;
 }
 console.log(
-  "Edge tests: concurrent services, partial failures, edition isolation, HEAD-only validation, cache before KV, expiry renewal, public refresh protection, and request/cold-resolution limits passed",
+  "Edge tests: four-provider partial aggregation, exact edition timelines, metadata-only Laroza routes, bounded/validated queries, eight-source cap, HEAD-only validation, cache-before-KV, expiry renewal and quota guards passed",
 );

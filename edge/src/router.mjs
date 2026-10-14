@@ -1,6 +1,11 @@
-const PROVIDERS = ["3isk", "akoam", "alooy"];
-const BINDINGS = { "3isk": "ISK", akoam: "AKOAM", alooy: "ALOOY" };
-const CACHE_VERSION = "v2";
+const PROVIDERS = ["3isk", "akoam", "alooy", "laroza"];
+const BINDINGS = {
+  "3isk": "ISK",
+  akoam: "AKOAM",
+  alooy: "ALOOY",
+  laroza: "LAROZA",
+};
+const CACHE_VERSION = "v3";
 const EXPIRY_SAFETY_MS = 30000;
 // Responses contain metadata only. Bound every service/cache JSON read as well.
 async function boundedJson(response, limit = 131072) {
@@ -98,6 +103,68 @@ async function permitted(binding, key) {
     throw Error("RATE_LIMITER_UNAVAILABLE");
   }
 }
+// Route names, parameters and canonical cache keys are all defined locally.
+// A client cannot turn the metadata gateway into an arbitrary URL fetcher.
+function larozaTarget(url) {
+  const route = {
+    "/v1/laroza/category": "/category",
+    "/v1/laroza/search": "/search",
+    "/v1/laroza/details": "/details",
+  }[url.pathname];
+  if (!route) return null;
+  const allowed =
+    route === "/category"
+      ? ["section", "page", "refresh"]
+      : route === "/search"
+        ? ["q", "page", "refresh"]
+        : ["ref", "refresh"];
+  for (const [key] of url.searchParams)
+    if (!allowed.includes(key) || url.searchParams.getAll(key).length !== 1)
+      throw Error("BAD_CATALOG_QUERY");
+  const target = new URL("https://laroza.internal" + route);
+  if (route === "/details") {
+    const ref = url.searchParams.get("ref") || "";
+    if (ref.length > 1500 || !/^laroza:[A-Za-z0-9_-]+$/.test(ref))
+      throw Error("BAD_REFERENCE");
+    target.searchParams.set("ref", ref);
+  } else {
+    const page = url.searchParams.get("page") ?? "1";
+    if (!/^[1-9][0-9]{0,3}$/.test(page) || Number(page) > 1000)
+      throw Error("BAD_CATALOG_QUERY");
+    if (route === "/category") {
+      const section = url.searchParams.get("section") ?? "latest";
+      if (!["latest", "movies", "series", "anime"].includes(section))
+        throw Error("BAD_CATALOG_QUERY");
+      target.searchParams.set("section", section);
+    } else {
+      const query = (url.searchParams.get("q") || "").trim().normalize("NFC");
+      if (query.length < 2 || query.length > 120 || /[\x00-\x1f\x7f]/.test(query))
+        throw Error("BAD_CATALOG_QUERY");
+      target.searchParams.set("q", query);
+    }
+    target.searchParams.set("page", page);
+  }
+  return target;
+}
+function metadataOnly(data) {
+  const pending = [data];
+  let values = 0;
+  while (pending.length) {
+    if (++values > 10000) return false;
+    const value = pending.pop();
+    if (typeof value === "string") {
+      if (/^https?:\/\/.+\.(?:m3u8|mp4|mpd|mkv|webm|ts)(?:$|[?#])/i.test(value))
+        return false;
+    } else if (value && typeof value === "object") {
+      for (const [key, child] of Object.entries(value)) {
+        if (["stream_url", "media_url", "video_url"].includes(key) && child)
+          return false;
+        pending.push(child);
+      }
+    }
+  }
+  return true;
+}
 export async function refKey(ref) {
   return (
     "ref:" +
@@ -114,9 +181,14 @@ export function providerOf(ref) {
   if (ref.startsWith("3isk:")) return "3isk";
   if (ref.startsWith("alooy:")) return "alooy";
   if (ref.startsWith("legacy:")) return "akoam";
+  if (ref.startsWith("laroza:")) return "laroza";
   throw Error("BAD_REFERENCE");
 }
-export async function aggregate(identity, env, { now = Date.now } = {}) {
+export async function aggregate(
+  identity,
+  env,
+  { now = Date.now, verifiedIdentity = false } = {},
+) {
   const settled = await Promise.allSettled(
     PROVIDERS.map(async (provider) => {
       const ref = identity.refs[provider];
@@ -150,19 +222,25 @@ export async function aggregate(identity, env, { now = Date.now } = {}) {
           latency_ms: now() - started,
           priority: PROVIDERS.indexOf(provider),
           edition: identity.edition || "source-original",
-          timeline_offset_ms: 0,
+          timeline_verified: verifiedIdentity,
+          timeline_offset_ms: verifiedIdentity ? 0 : null,
         }));
     }),
   );
-  const sources = settled
-    .filter((s) => s.status === "fulfilled")
-    .flatMap((s) => s.value)
-    .slice(0, 8);
+  // Preserve at least one healthy source from every available provider before
+  // filling remaining slots. A late provider must not disappear behind the
+  // first provider's four servers when the unified response is capped at eight.
+  const sources = [];
+  for (let slot = 0; slot < 4 && sources.length < 8; slot++)
+    for (const row of settled)
+      if (row.status === "fulfilled" && row.value[slot] && sources.length < 8)
+        sources.push(row.value[slot]);
   const result = {
     status: sources.length ? "success" : "unavailable",
     schema_version: 1,
     episode_id: identity.episode_id,
     edition: identity.edition || "source-original",
+    timeline_verified: verifiedIdentity,
     sources,
     availability: settled.map((r, i) => ({
       provider_id: PROVIDERS[i],
@@ -221,7 +299,8 @@ export default {
       });
     if (
       url.pathname !== "/v1/resolve" &&
-      !url.pathname.startsWith("/v1/matches")
+      !url.pathname.startsWith("/v1/matches") &&
+      !url.pathname.startsWith("/v1/laroza/")
     )
       return reply({ error: "NOT_FOUND" }, 404);
     try {
@@ -235,6 +314,45 @@ export default {
       );
       if (!(await permitted(env.EDGE_REQUEST_LIMITER, actor)))
         return reply({ error: "RATE_LIMITED" }, 429, { "Retry-After": "60" });
+      if (url.pathname.startsWith("/v1/laroza/")) {
+        const target = larozaTarget(url);
+        if (!target) return reply({ error: "NOT_FOUND" }, 404);
+        const cacheKey = new Request(
+          url.origin +
+            `/cache/${CACHE_VERSION}/laroza/` +
+            (await refKey(target.pathname + target.search)),
+        );
+        const cached = await cachedResult(cacheKey, false);
+        if (cached) return reply({ ...cached, cached: true });
+        if (!(await permitted(env.EDGE_RESOLVE_LIMITER, actor)))
+          return reply({ error: "RESOLUTION_RATE_LIMITED" }, 429, {
+            "Retry-After": "60",
+          });
+        const response = await env.LAROZA.fetch(
+          new Request(target, {
+            signal: AbortSignal.timeout(22000),
+          }),
+        );
+        const data = await boundedJson(response);
+        if (!metadataOnly(data)) throw Error("UNEXPECTED_MEDIA_IN_CATALOG");
+        if (response.ok && data.status === "success") {
+          const correctShape =
+            target.pathname === "/details"
+              ? data.data &&
+                typeof data.data === "object" &&
+                !Array.isArray(data.data)
+              : Array.isArray(data.data);
+          if (!correctShape) throw Error("BAD_PROVIDER_RESPONSE");
+          cacheResult(
+            cacheKey,
+            data,
+            ctx,
+            target.pathname === "/details" ? 120 : 300,
+            false,
+          );
+        }
+        return reply(data, response.status);
+      }
       if (url.pathname.startsWith("/v1/matches")) {
         const route = {
           "/v1/matches": "/list",
@@ -303,6 +421,14 @@ export default {
           "Retry-After": "60",
         });
       let identity = await env.EPISODES.get(lookupKey, "json");
+      // Only an explicitly curated KV edition can assert cross-provider timing.
+      // Unregistered individual references remain playable but unverified.
+      const verifiedIdentity = Boolean(
+        identity &&
+        typeof identity.edition === "string" &&
+        identity.edition &&
+        identity.edition !== "source-original",
+      );
       if (!identity) {
         if (!ref) return reply({ error: "EPISODE_NOT_REGISTERED" }, 404);
         identity = {
@@ -311,7 +437,7 @@ export default {
           edition: "source-original",
         };
       }
-      const result = await aggregate(identity, env);
+      const result = await aggregate(identity, env, { verifiedIdentity });
       if (!result.sources.length) return reply(result, 503);
       cacheResult(cacheKey, result, ctx);
       console.log(
@@ -325,7 +451,7 @@ export default {
     } catch (e) {
       return reply(
         { error: String(e.message).slice(0, 100) },
-        /BAD_REFERENCE/.test(e.message)
+        /BAD_REFERENCE|BAD_CATALOG_QUERY/.test(e.message)
           ? 400
           : /RATE_LIMITER_UNAVAILABLE/.test(e.message)
             ? 503

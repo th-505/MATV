@@ -1,0 +1,19 @@
+{
+  "name": "mitv-extract-laroza",
+  "main": "../src/laroza.mjs",
+  "compatibility_date": "2026-10-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
+  "vars": {
+    "PROVIDER_CONFIG": {
+      "provider": "laroza", "label": "Laroza", "origin": "https://larooza.beer",
+      "pageHosts": ["larooza.beer", "mp5.okhd.site", "mp4plus.org", "vidspeed.org", "vidmoly.net", "vidmoly.biz"],
+      "playerHosts": ["mp5.okhd.site", "mp4plus.org", "vidspeed.org", "vidmoly.net", "vidmoly.biz"],
+      "mediaHosts": ["cdn2.okprimeone.site", "*.cdnz.quest", "*.vmget.online"],
+      "imageHosts": ["larooza.beer"],
+      "subtitleHosts": ["larooza.beer", "cdn2.okprimeone.site", "*.cdnz.quest", "*.vmget.online"],
+      "fetchBudget": 40, "timeoutMs": 8000
+    }
+  }
+}

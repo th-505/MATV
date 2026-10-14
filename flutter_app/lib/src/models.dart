@@ -10,6 +10,14 @@ class MediaItem {
     this.year,
     this.rating = 0,
     this.source = 'mitv',
+    this.genres = const [],
+    this.season,
+    this.episode,
+    this.audioLanguage = '',
+    this.edition = '',
+    this.imdbId = '',
+    this.identityVerified = false,
+    this.sourceRefs = const {},
   });
   final String id;
   final String title;
@@ -19,6 +27,72 @@ class MediaItem {
   final int? year;
   final double rating;
   final String source;
+  final List<String> genres;
+  final int? season;
+  final int? episode;
+  final String audioLanguage;
+  final String edition;
+  final String imdbId;
+  final bool identityVerified;
+  final Map<String, String> sourceRefs;
+
+  MediaItem copyWith({
+    String? id,
+    String? title,
+    String? poster,
+    String? type,
+    String? ref,
+    int? year,
+    double? rating,
+    String? source,
+    List<String>? genres,
+    int? season,
+    int? episode,
+    String? audioLanguage,
+    String? edition,
+    String? imdbId,
+    bool? identityVerified,
+    Map<String, String>? sourceRefs,
+  }) =>
+      MediaItem(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        poster: poster ?? this.poster,
+        type: type ?? this.type,
+        ref: ref ?? this.ref,
+        year: year ?? this.year,
+        rating: rating ?? this.rating,
+        source: source ?? this.source,
+        genres: List.unmodifiable(genres ?? this.genres),
+        season: season ?? this.season,
+        episode: episode ?? this.episode,
+        audioLanguage: audioLanguage ?? this.audioLanguage,
+        edition: edition ?? this.edition,
+        imdbId: imdbId ?? this.imdbId,
+        identityVerified: identityVerified ?? this.identityVerified,
+        sourceRefs: Map.unmodifiable(sourceRefs ?? this.sourceRefs),
+      );
+
+  /// Persist only descriptive identity and provider references. Resolved media
+  /// URLs, request headers and expiring tokens are not part of this model.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'poster': poster,
+        'type': type,
+        'ref': ref,
+        'year': year,
+        'rating': rating,
+        'source': source,
+        'genres': genres,
+        if (season != null) 'season_number': season,
+        if (episode != null) 'episode_number': episode,
+        if (audioLanguage.isNotEmpty) 'audio_language': audioLanguage,
+        if (edition.isNotEmpty) 'edition': edition,
+        if (imdbId.isNotEmpty) 'imdb_id': imdbId,
+        'identity_verified': identityVerified,
+        if (sourceRefs.isNotEmpty) 'source_refs': sourceRefs,
+      };
 
   factory MediaItem.fromJson(Map<String, dynamic> json) => CatalogItem(
         id: '${json['id'] ?? ''}',
@@ -29,6 +103,16 @@ class MediaItem {
         year: int.tryParse('${json['year'] ?? ''}'),
         rating: (json['rating'] as num?)?.toDouble() ?? 0,
         source: '${json['source'] ?? 'mitv'}',
+        genres: _descriptiveGenres(json),
+        season:
+            _positiveIdentityNumber(json['season_number'] ?? json['season']),
+        episode:
+            _positiveIdentityNumber(json['episode_number'] ?? json['episode']),
+        audioLanguage: '${json['audio_language'] ?? ''}',
+        edition: '${json['edition'] ?? ''}',
+        imdbId: '${json['imdb_id'] ?? ''}',
+        identityVerified: json['identity_verified'] == true,
+        sourceRefs: _sourceReferenceMap(json['source_refs']),
       );
 }
 
@@ -39,6 +123,7 @@ class EpisodeItem {
     required this.title,
     required this.ref,
     required this.watchAvailable,
+    this.season,
   });
 
   final String id;
@@ -46,6 +131,7 @@ class EpisodeItem {
   final String title;
   final String ref;
   final bool watchAvailable;
+  final int? season;
 
   factory EpisodeItem.fromJson(Map<String, dynamic> json) {
     final parsedNumber = int.tryParse(
@@ -56,6 +142,7 @@ class EpisodeItem {
       title: '${json['title'] ?? json['name'] ?? ''}',
       ref: '${json['ref'] ?? json['link'] ?? json['href'] ?? ''}',
       watchAvailable: json['watch_available'] != false,
+      season: _positiveIdentityNumber(json['season_number'] ?? json['season']),
     );
   }
 }
@@ -72,6 +159,10 @@ class StreamSource {
       this.priority = 0,
       this.latencyMs,
       this.provider = '',
+      this.providerId = '',
+      this.edition = '',
+      this.timelineVerified = false,
+      this.timelineOffsetMs,
       this.expiresAt,
       this.resolution});
   final String mediaPath;
@@ -83,10 +174,18 @@ class StreamSource {
   final int? latencyMs;
   final ResolutionOption? resolution;
   final String provider;
+  final String providerId;
+  final String edition;
+  final bool timelineVerified;
+  final int? timelineOffsetMs;
   final DateTime? expiresAt;
   String get displayLabel => provider.isEmpty ? label : '$provider • $label';
   factory StreamSource.fromJson(Map<String, dynamic> json) => PlaybackSource(
       provider: '${json['provider'] ?? ''}',
+      providerId: '${json['provider_id'] ?? ''}',
+      edition: '${json['edition'] ?? ''}',
+      timelineVerified: json['timeline_verified'] == true,
+      timelineOffsetMs: int.tryParse('${json['timeline_offset_ms'] ?? ''}'),
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       priority: int.tryParse('${json['priority'] ?? 0}') ?? 0,
       latencyMs: int.tryParse('${json['latency_ms'] ?? ''}'),
@@ -121,6 +220,16 @@ class TitleDetails {
     this.resolverHeaders = const {},
     this.expiresAt,
     this.downloadAvailable = true,
+    this.year,
+    this.plot = '',
+    this.genres = const [],
+    this.season,
+    this.episode,
+    this.audioLanguage = '',
+    this.edition = '',
+    this.imdbId = '',
+    this.identityVerified = false,
+    this.sourceRefs = const {},
   });
 
   final String title;
@@ -137,6 +246,71 @@ class TitleDetails {
   final Map<String, String> resolverHeaders;
   final DateTime? expiresAt;
   final bool downloadAvailable;
+  final int? year;
+  final String plot;
+  final List<String> genres;
+  final int? season;
+  final int? episode;
+  final String audioLanguage;
+  final String edition;
+  final String imdbId;
+  final bool identityVerified;
+  final Map<String, String> sourceRefs;
+
+  TitleDetails copyWith({
+    String? title,
+    String? poster,
+    List<EpisodeItem>? episodes,
+    String? mediaPath,
+    String? mediaType,
+    bool? playbackUnavailable,
+    String? playbackReason,
+    String? playbackMode,
+    Map<String, String>? playbackHeaders,
+    List<PlaybackSource>? mediaSources,
+    String? resolverUrl,
+    Map<String, String>? resolverHeaders,
+    DateTime? expiresAt,
+    bool? downloadAvailable,
+    int? year,
+    String? plot,
+    List<String>? genres,
+    int? season,
+    int? episode,
+    String? audioLanguage,
+    String? edition,
+    String? imdbId,
+    bool? identityVerified,
+    Map<String, String>? sourceRefs,
+  }) =>
+      TitleDetails(
+        title: title ?? this.title,
+        poster: poster ?? this.poster,
+        episodes: List.unmodifiable(episodes ?? this.episodes),
+        mediaPath: mediaPath ?? this.mediaPath,
+        mediaType: mediaType ?? this.mediaType,
+        playbackUnavailable: playbackUnavailable ?? this.playbackUnavailable,
+        playbackReason: playbackReason ?? this.playbackReason,
+        playbackMode: playbackMode ?? this.playbackMode,
+        playbackHeaders:
+            Map.unmodifiable(playbackHeaders ?? this.playbackHeaders),
+        mediaSources: List.unmodifiable(mediaSources ?? this.mediaSources),
+        resolverUrl: resolverUrl ?? this.resolverUrl,
+        resolverHeaders:
+            Map.unmodifiable(resolverHeaders ?? this.resolverHeaders),
+        expiresAt: expiresAt ?? this.expiresAt,
+        downloadAvailable: downloadAvailable ?? this.downloadAvailable,
+        year: year ?? this.year,
+        plot: plot ?? this.plot,
+        genres: List.unmodifiable(genres ?? this.genres),
+        season: season ?? this.season,
+        episode: episode ?? this.episode,
+        audioLanguage: audioLanguage ?? this.audioLanguage,
+        edition: edition ?? this.edition,
+        imdbId: imdbId ?? this.imdbId,
+        identityVerified: identityVerified ?? this.identityVerified,
+        sourceRefs: Map.unmodifiable(sourceRefs ?? this.sourceRefs),
+      );
 
   bool get hasEpisodes => episodes.isNotEmpty;
   bool get hasDirectMedia => mediaPath.isNotEmpty;
@@ -189,8 +363,55 @@ class TitleDetails {
       }),
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       downloadAvailable: json['download_available'] != false,
+      year: int.tryParse('${json['year'] ?? ''}'),
+      plot: '${json['plot'] ?? json['description'] ?? json['story'] ?? ''}',
+      genres: _descriptiveGenres(json),
+      season: _positiveIdentityNumber(json['season_number'] ?? json['season']),
+      episode:
+          _positiveIdentityNumber(json['episode_number'] ?? json['episode']),
+      audioLanguage: '${json['audio_language'] ?? ''}',
+      edition: '${json['edition'] ?? ''}',
+      imdbId: '${json['imdb_id'] ?? ''}',
+      identityVerified: json['identity_verified'] == true,
+      sourceRefs: _sourceReferenceMap(json['source_refs']),
     );
   }
+}
+
+int? _positiveIdentityNumber(dynamic raw) {
+  final value = int.tryParse('$raw');
+  return value != null && value > 0 ? value : null;
+}
+
+List<String> _descriptiveGenres(Map<String, dynamic> json) =>
+    List.unmodifiable({
+      ..._genreList(json['genres']),
+      ..._genreList(json['category']),
+    });
+
+List<String> _genreList(dynamic raw) {
+  final values = raw is List
+      ? raw.map((item) => item is Map ? item['name'] ?? '' : item)
+      : raw is String
+          ? raw.split(RegExp(r'[,،|/]'))
+          : const <dynamic>[];
+  return List.unmodifiable(values
+      .whereType<String>()
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
+      .toSet());
+}
+
+Map<String, String> _sourceReferenceMap(dynamic raw) {
+  if (raw is! Map) return const {};
+  return Map.unmodifiable({
+    for (final entry in raw.entries.take(16))
+      if (entry.key is String &&
+          entry.value is String &&
+          (entry.key as String).isNotEmpty &&
+          (entry.value as String).isNotEmpty)
+        entry.key as String: entry.value as String,
+  });
 }
 
 int? _nullableScore(dynamic value) {

@@ -54,6 +54,7 @@ class _DetailsPageState extends State<DetailsPage> {
     super.initState();
     _downloads = widget.downloads ?? DownloadService();
     _ownsDownloads = widget.downloads == null;
+    widget.api.rememberIdentity(widget.item);
     future = widget.api.details(widget.item.ref);
   }
 

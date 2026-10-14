@@ -44,6 +44,20 @@ assert.deepEqual(normalizeCatalogItem({ name: "Test", image: "poster.jpg", is_se
   ref: "legacy:x",
 });
 
+const identity = normalizeCatalogItem({ title:'Same title', ref:'laroza:fixture', source:'laroza', type:'episode',
+  year:'2024', genres:['Drama','Drama','anime'], category:'anime', audio_language:'', edition:'',
+  season_number:1, episode_number:2, imdb_id:'tt1234567', identity_verified:true,
+  source_refs:{laroza:'laroza:fixture',akoam:'legacy:fixture',unknown:'https://ads.test/embed'} });
+assert.equal(identity.type,'episode');
+assert.equal(identity.audio_language,'','a foreign title must not imply an audio language');
+assert.equal(identity.edition,'','a provider name must not imply a matching cut');
+assert.deepEqual(identity.genres,['Drama','anime']);
+assert.equal(identity.imdb_id,'tt1234567');assert.equal(identity.identity_verified,true);
+assert.equal(identity.season_number,1);assert.equal(identity.episode_number,2);
+assert.deepEqual(identity.source_refs,{laroza:'laroza:fixture',akoam:'legacy:fixture'});
+assert.equal(identity.category,'anime');
+assert.equal(normalizeCatalogItem({imdb_id:'not-proof',identity_verified:'true'}).identity_verified,false);
+
 const episode = normalizeEpisode({ id: 89517, num: 2, title: "الحلقة الثانية", link: "legacy:episode" }, 8);
 assert.equal(episode.episode_id, "89517");
 assert.equal(episode.episode_number, 2);

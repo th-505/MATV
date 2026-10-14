@@ -1,4 +1,8 @@
 const CATEGORY_ROWS = [
+  ["laroza-latest", "series", "لاروزا — أحدث الإضافات", "edge:laroza:latest"],
+  ["laroza-movies", "movie", "لاروزا — أفلام", "edge:laroza:movies"],
+  ["laroza-series", "series", "لاروزا — مسلسلات", "edge:laroza:series"],
+  ["laroza-anime", "anime", "لاروزا — أنمي", "edge:laroza:anime"],
   ["alooy-series", "series", "Alooy TV", "https://fa.alooytv16.xyz/tv-series.html"],
   ["3isk-latest", "series", "قصة عشق (أحدث الحلقات)", "https://3iskk.xyz/"],
   ["3isk-movies", "movie", "جميع الأفلام", "https://3iskk.xyz/w-mvs/"],
@@ -29,7 +33,7 @@ export function resolveCatalogCategory(ref) {
   if (mapped) return mapped;
 
   // Transitional compatibility for already-deployed callers. New UI must use IDs.
-  const legacy = CATEGORY_ROWS.find(([, , , sourceUrl]) => sourceUrl === value);
+  const legacy = CATEGORY_ROWS.find(([, , , sourceUrl]) => sourceUrl.startsWith('https:') && sourceUrl === value);
   if (!legacy) return null;
   const [id, type, title, sourceUrl] = legacy;
   return { id, type, title, sourceUrl };

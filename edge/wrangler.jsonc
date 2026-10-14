@@ -48,6 +48,10 @@
       "service": "matv-extract-alooy"
     },
     {
+      "binding": "LAROZA",
+      "service": "mitv-extract-laroza"
+    },
+    {
       "binding": "MATCHES",
       "service": "mitv-extract-matches"
     }

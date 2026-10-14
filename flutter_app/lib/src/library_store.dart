@@ -100,6 +100,6 @@ class LocalLibraryStore extends ChangeNotifier {
     final sort = _prefs.getString(_librarySortKey) ?? 'recent'; _librarySort = const {'recent', 'title', 'progress'}.contains(sort) ? sort : 'recent';
   }
 
-  Future<void> _persistFavorites() => _prefs.setStringList(_favoritesKey, _favorites.values.map((item) => jsonEncode({'id': item.id, 'title': item.title, 'poster': item.poster, 'type': item.type, 'ref': item.ref})).toList(growable: false));
+  Future<void> _persistFavorites() => _prefs.setStringList(_favoritesKey, _favorites.values.map((item) => jsonEncode(item.toJson())).toList(growable: false));
   Future<void> _persistHistory() => _prefs.setStringList(_historyKey, history.map((entry) => jsonEncode(entry.toJson())).toList(growable: false));
 }

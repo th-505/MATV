@@ -21,7 +21,7 @@ jobs:
       - run: npm ci
       - run: npm run test:edge
       - run: |
-          for provider in 3isk akoam alooy matches; do
+          for provider in 3isk akoam alooy laroza matches; do
             npx wrangler deploy --dry-run --config edge/config/$provider.jsonc
           done
           npx wrangler deploy --dry-run --config edge/wrangler.jsonc
@@ -34,7 +34,7 @@ jobs:
             echo '::notice::Automatic deployment requires the CLOUDFLARE_API_TOKEN repository secret. Connected Cloudflare deployment remains available.'
             exit 0
           fi
-          for provider in 3isk akoam alooy matches; do
+          for provider in 3isk akoam alooy laroza matches; do
             npx wrangler deploy --config edge/config/$provider.jsonc
           done
           node scripts/edge_registry.mjs --json > /tmp/matv-edge-identities.json

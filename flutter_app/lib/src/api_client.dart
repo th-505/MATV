@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
 import 'alooy_policy.dart';
+import 'unified_media.dart';
 
 class MitvApi implements MediaRepository {
   final sourceRouter = SourceRouter();
@@ -24,6 +25,41 @@ class MitvApi implements MediaRepository {
   bool get usesEdge => _useEdge;
   final _edgeStreams = <String, DateTime>{};
   final _playbackCache = <String, TitleDetails>{};
+  final _catalogGroups = <String, CatalogItem>{};
+  final _pagination = <String, bool>{};
+  bool? categoryHasMore(String categoryId, int page) =>
+      _pagination['$categoryId:$page'];
+
+  void rememberIdentity(CatalogItem item) {
+    final normalized = UnifiedMedia.mergeSources([item]).single;
+    for (final ref in normalized.sourceRefs.values.take(4)) {
+      _catalogGroups[ref] = normalized;
+    }
+    while (_catalogGroups.length > 256) {
+      _catalogGroups.remove(_catalogGroups.keys.first);
+    }
+  }
+
+  Future<Map<String, dynamic>> _metadataJson(String ref,
+      {bool refresh = false, bool metadataOnly = false}) async {
+    if (_useEdge && ref.startsWith('laroza:')) {
+      final response = await _edgeJson('/v1/laroza/details', {'ref': ref});
+      if (response['data'] is! Map) {
+        throw const ApiException('INVALID_TITLE_METADATA');
+      }
+      return (response['data'] as Map).cast<String, dynamic>();
+    }
+    return _getJson(
+        metadataOnly ? '/api/cinema/metadata' : '/api/cinema/details',
+        {
+          'ref': ref,
+          if (refresh) 'refresh': '1',
+          if (const bool.fromEnvironment('dart.library.js_interop'))
+            'platform': 'web',
+        },
+        Duration(seconds: metadataOnly ? 12 : 60));
+  }
+
   TitleDetails? cachedPlayback(String ref) {
     final value = _playbackCache[ref];
     return value?.expiresAt?.isAfter(DateTime.now()) == true ? value : null;
@@ -58,8 +94,7 @@ class MitvApi implements MediaRepository {
     }
     return _metadataPending.putIfAbsent(ref, () async {
       try {
-        final json = await _getJson(
-            '/api/cinema/metadata', {'ref': ref}, const Duration(seconds: 12));
+        final json = await _metadataJson(ref, metadataOnly: true);
         _metadata[ref] = (
           expires: DateTime.now().add(const Duration(minutes: 2)),
           details: TitleDetails.fromJson(json)
@@ -143,19 +178,10 @@ class MitvApi implements MediaRepository {
   CatalogItem _catalogItem(Map<String, dynamic> json) {
     final item = CatalogItem.fromJson(json);
     final rawPoster = item.poster.trim();
-    final poster = rawPoster.startsWith('/')
-        ? _baseUri.resolve(rawPoster).toString()
-        : rawPoster;
-    return CatalogItem(
-      id: item.id,
-      title: item.title,
-      poster: poster,
-      type: item.type,
-      ref: item.ref,
-      year: item.year,
-      rating: item.rating,
-      source: item.source,
-    );
+    return item.copyWith(
+        poster: rawPoster.startsWith('/')
+            ? _baseUri.resolve(rawPoster).toString()
+            : rawPoster);
   }
 
   Future<List<NewsItem>> news() async {
@@ -176,9 +202,18 @@ class MitvApi implements MediaRepository {
 
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
-    final json =
-        await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
-    return _list(json['data']).map(_catalogItem).toList(growable: false);
+    final json = _useEdge && categoryId.startsWith('laroza-')
+        ? await _edgeJson('/v1/laroza/category',
+            {'section': categoryId.substring(7), 'page': '$page'})
+        : await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
+    final pagination = json['pagination'];
+    if (pagination is Map && pagination['has_more'] is bool) {
+      _pagination['$categoryId:$page'] = pagination['has_more'] as bool;
+      while (_pagination.length > 128) {
+        _pagination.remove(_pagination.keys.first);
+      }
+    }
+    return _dedupeCatalog(_list(json['data']).map(_catalogItem));
   }
 
   @override
@@ -200,36 +235,29 @@ class MitvApi implements MediaRepository {
   }
 
   List<CatalogItem> _dedupeCatalog(Iterable<CatalogItem> values) {
-    final seenRefs = <String>{};
-    final seenFallback = <String>{};
-    final out = <CatalogItem>[];
-    for (final item in values) {
-      final ref = item.ref.trim();
-      final fallback =
-          '${item.source}|${item.type}|${item.title.trim().toLowerCase()}|${item.year ?? ''}';
-      if (ref.isNotEmpty) {
-        if (!seenRefs.add(ref)) continue;
-      } else if (!seenFallback.add(fallback)) {
-        continue;
-      }
-      out.add(item);
+    final merged = UnifiedMedia.mergeSources(values);
+    for (final item in merged) {
+      rememberIdentity(item);
     }
-    return out;
+    return merged;
   }
 
   @override
   Future<TitleDetails> details(String ref) async {
     final cached = cachedMetadata(ref);
-    final metadata =
-        cached?.hasEpisodes == true ? cached! : await _details(ref);
+    var metadata = cached?.hasEpisodes == true ? cached! : await _details(ref);
+    final group = _catalogGroups[ref];
+    if (group != null) {
+      metadata = metadata.copyWith(sourceRefs: group.sourceRefs);
+      if (metadata.hasEpisodes && group.sourceRefs.length > 1) {
+        await _rememberEpisodeGroups(ref, group, metadata);
+      }
+    }
     if (_useEdge &&
         !metadata.hasEpisodes &&
-        ['3isk:', 'alooy:', 'legacy:'].any(ref.startsWith)) {
+        ['3isk:', 'alooy:', 'legacy:', 'laroza:'].any(ref.startsWith)) {
       final playback = await resolvePlayback(ref);
-      return TitleDetails(
-          title: metadata.title,
-          poster: metadata.poster,
-          episodes: metadata.episodes,
+      return metadata.copyWith(
           mediaPath: playback.mediaPath,
           mediaType: playback.mediaType,
           playbackMode: playback.playbackMode,
@@ -245,15 +273,7 @@ class MitvApi implements MediaRepository {
 
   Future<TitleDetails> _details(String ref, {bool refresh = false}) async {
     if (ref.trim().isEmpty) throw const ApiException('MISSING_TITLE_REFERENCE');
-    final json = await _getJson(
-        '/api/cinema/details',
-        {
-          'ref': ref,
-          if (refresh) 'refresh': '1',
-          if (const bool.fromEnvironment('dart.library.js_interop'))
-            'platform': 'web'
-        },
-        const Duration(seconds: 60));
+    final json = await _metadataJson(ref, refresh: refresh);
     final normalized = <String, dynamic>{...json};
     if (json['media_sources'] is List) {
       normalized['media_sources'] = [
@@ -278,6 +298,15 @@ class MitvApi implements MediaRepository {
       ];
     }
     final details = TitleDetails.fromJson(normalized);
+    if (!details.hasDirectMedia) {
+      _metadata[ref] = (
+        expires: DateTime.now().add(const Duration(minutes: 2)),
+        details: details
+      );
+      if (_metadata.length > 64) {
+        _metadata.remove(_metadata.keys.first);
+      }
+    }
     if (details.hasDirectMedia) {
       _registerDirectMetadata(details);
       _playbackCache[ref] = details;
@@ -323,7 +352,7 @@ class MitvApi implements MediaRepository {
   Future<TitleDetails> resolvePlayback(String ref,
       {bool refresh = false}) async {
     if (_useEdge &&
-        ['3isk:', 'alooy:', 'legacy:', 'match:', 'matchserver:']
+        ['3isk:', 'alooy:', 'legacy:', 'laroza:', 'match:', 'matchserver:']
             .any(ref.startsWith)) {
       return _resolveEdge(ref, refresh: refresh);
     }
@@ -348,6 +377,127 @@ class MitvApi implements MediaRepository {
   }
 
   Future<TitleDetails> _resolveEdge(String ref, {required bool refresh}) async {
+    final group = _catalogGroups[ref];
+    TitleDetails? primary;
+    try {
+      primary = await _resolveSingleEdge(ref, refresh: refresh);
+    } catch (_) {
+      if (group == null || group.sourceRefs.length < 2) rethrow;
+    }
+    final providers =
+        primary?.mediaSources.map((source) => source.providerId).toSet() ??
+            <String>{};
+    final refs = group?.sourceRefs.entries
+            .where(
+                (entry) => entry.value != ref && !providers.contains(entry.key))
+            .take(3) ??
+        const <MapEntry<String, String>>[];
+    final alternatives = await Future.wait(refs.map((entry) async {
+      try {
+        return await _resolveSingleEdge(entry.value, refresh: refresh);
+      } catch (_) {
+        return null;
+      }
+    }));
+    final ranked = sourceRouter.rank([
+      if (primary != null) ...primary.mediaSources,
+      for (final other in alternatives)
+        if (other != null) ...other.mediaSources,
+    ]);
+    if (ranked.isEmpty) throw const ApiException('EDGE_NO_HEALTHY_SOURCES');
+    final first = ranked.first;
+    final base = primary ?? alternatives.whereType<TitleDetails>().first;
+    final resolved = base.copyWith(
+        mediaPath: first.mediaPath,
+        mediaType: first.mediaType,
+        playbackMode: first.playbackMode,
+        playbackHeaders: first.headers,
+        expiresAt: first.expiresAt,
+        mediaSources: ranked,
+        sourceRefs: group?.sourceRefs,
+        downloadAvailable:
+            !const bool.fromEnvironment('dart.library.js_interop') &&
+                ranked.any((s) => s.mediaType == 'mp4'));
+    _playbackCache[ref] = resolved;
+    while (_playbackCache.length > 64) {
+      _playbackCache.remove(_playbackCache.keys.first);
+    }
+    return resolved;
+  }
+
+  bool _parentMatches(CatalogItem group, String ref, TitleDetails details) {
+    final actual = CatalogItem(
+        id: ref,
+        ref: ref,
+        title: details.title,
+        poster: details.poster,
+        type: group.type,
+        year: details.year,
+        genres: details.genres,
+        audioLanguage: details.audioLanguage,
+        edition: details.edition,
+        imdbId: details.imdbId,
+        identityVerified: details.identityVerified);
+    return UnifiedMedia.sameIdentity(group, actual);
+  }
+
+  // Resolve only explicitly aligned episode numbers. Missing season/cut data
+  // keeps providers separate; recommendation cards never become alternatives.
+  Future<void> _rememberEpisodeGroups(
+      String primaryRef, CatalogItem group, TitleDetails primary) async {
+    if (!_parentMatches(group, primaryRef, primary)) return;
+    final parents = await Future.wait(group.sourceRefs.values
+        .where((ref) => ref != primaryRef)
+        .take(3)
+        .map((ref) async {
+      try {
+        final cached = cachedMetadata(ref);
+        final details = cached ??
+            TitleDetails.fromJson(await _metadataJson(ref, metadataOnly: true));
+        _metadata[ref] = (
+          expires: DateTime.now().add(const Duration(minutes: 2)),
+          details: details
+        );
+        if (_metadata.length > 64) {
+          _metadata.remove(_metadata.keys.first);
+        }
+        return (ref, details);
+      } catch (_) {
+        return null;
+      }
+    }));
+    for (final episode in primary.episodes) {
+      if (episode.season == null || episode.ref.isEmpty) continue;
+      final refs = <String, String>{episode.ref.split(':').first: episode.ref};
+      for (final parent in parents) {
+        if (parent == null) continue;
+        final details = parent.$2;
+        if (!_parentMatches(group, parent.$1, details)) {
+          continue;
+        }
+        final matches = details.episodes
+            .where((other) =>
+                other.season == episode.season &&
+                other.number == episode.number &&
+                other.watchAvailable &&
+                other.ref.isNotEmpty)
+            .toList();
+        if (matches.length == 1) {
+          refs[matches.single.ref.split(':').first] = matches.single.ref;
+        }
+      }
+      if (refs.length > 1) {
+        rememberIdentity(group.copyWith(
+            ref: episode.ref,
+            season: episode.season,
+            episode: episode.number,
+            sourceRefs: refs));
+      }
+    }
+  }
+
+  Future<TitleDetails> _resolveSingleEdge(String ref,
+      {required bool refresh}) async {
     if (_edgeUri.scheme != 'https' ||
         _edgeUri.userInfo.isNotEmpty ||
         _edgeUri.hasQuery ||
@@ -382,7 +532,8 @@ class MitvApi implements MediaRepository {
       if (raw is! Map ||
           (const bool.fromEnvironment('dart.library.js_interop') &&
               raw['web_playable'] != true) ||
-          !['3isk', 'akoam', 'alooy', 'matches'].contains(raw['provider_id'])) {
+          !['3isk', 'akoam', 'alooy', 'laroza', 'matches']
+              .contains(raw['provider_id'])) {
         continue;
       }
       final source = PlaybackSource.fromJson(raw.cast<String, dynamic>());
@@ -497,7 +648,9 @@ class MitvApi implements MediaRepository {
     if (!response.statusCode.toString().startsWith('2') ||
         data is! Map<String, dynamic> ||
         data['status'] != 'success') {
-      throw const ApiException('MATCH_EDGE_UNAVAILABLE');
+      throw ApiException(path.startsWith('/v1/matches')
+          ? 'MATCH_EDGE_UNAVAILABLE'
+          : 'CATALOG_EDGE_UNAVAILABLE');
     }
     return data;
   }
@@ -510,6 +663,9 @@ class MitvApi implements MediaRepository {
         headers: const {'accept': 'application/json'}).timeout(timeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException('HTTP ${response.statusCode}');
+    }
+    if (response.bodyBytes.length > 128 * 1024) {
+      throw const ApiException('RUNTIME_RESPONSE_TOO_LARGE');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {

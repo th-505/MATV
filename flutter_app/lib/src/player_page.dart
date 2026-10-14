@@ -19,6 +19,38 @@ import 'player_controls.dart';
 import 'universal_player.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 
+bool sourcesShareTimeline(PlaybackSource from, PlaybackSource to) {
+  final fromEdition = from.edition.trim();
+  final toEdition = to.edition.trim();
+  if (fromEdition.isNotEmpty &&
+      toEdition.isNotEmpty &&
+      fromEdition != toEdition) {
+    return false;
+  }
+  if (from.mediaPath == to.mediaPath && from.mediaPath.isNotEmpty) return true;
+  const providers = {'3isk', 'akoam', 'alooy', 'laroza', 'matches'};
+  final sameProvider =
+      providers.contains(from.providerId) && from.providerId == to.providerId;
+  return sameProvider ||
+      (from.timelineVerified &&
+          to.timelineVerified &&
+          fromEdition.isNotEmpty &&
+          fromEdition == toEdition);
+}
+
+Duration sourceHandoffPosition(
+    Duration position, PlaybackSource from, PlaybackSource to) {
+  if (!sourcesShareTimeline(from, to)) return Duration.zero;
+  final verifiedOffsets = from.timelineVerified &&
+      to.timelineVerified &&
+      from.edition.trim().isNotEmpty &&
+      from.edition.trim() == to.edition.trim();
+  final milliseconds = position.inMilliseconds -
+      (verifiedOffsets ? from.timelineOffsetMs ?? 0 : 0) +
+      (verifiedOffsets ? to.timelineOffsetMs ?? 0 : 0);
+  return Duration(milliseconds: milliseconds < 0 ? 0 : milliseconds);
+}
+
 class PlayerPage extends StatefulWidget {
   const PlayerPage({
     super.key,
@@ -92,6 +124,7 @@ class _PlayerPageState extends State<PlayerPage> {
   DateTime? _expiresAt;
   Duration? _handoffPosition;
   Duration? _lastObservedPosition;
+  PlaybackSource? _activeSource;
   final _decoderRetries = <int>{};
   int _bufferedTicks = 0;
   bool _requestedPlaying = true;
@@ -210,6 +243,8 @@ class _PlayerPageState extends State<PlayerPage> {
       var playbackHeaders = widget.playbackHeaders;
       DateTime? expiresAt;
       if (!keepSources && (mediaPath.isEmpty || widget.sourceRef.isNotEmpty)) {
+        final previousSource = _activeSource;
+        final previousPosition = _handoffPosition;
         final TitleDetails resolved = await widget.api
             .resolvePlayback(widget.sourceRef, refresh: forceRefresh);
         if (!mounted || generation != _generation) return;
@@ -226,8 +261,20 @@ class _PlayerPageState extends State<PlayerPage> {
             resolved.mediaSources.isEmpty
                 ? [PlaybackSource(mediaPath: mediaPath, mediaType: mediaType)]
                 : resolved.mediaSources));
+        if (previousSource != null) {
+          final compatible = _sources.indexWhere(
+              (source) => sourcesShareTimeline(previousSource, source));
+          if (compatible < 0) {
+            throw StateError('NO_COMPATIBLE_SOURCE_TIMELINE');
+          }
+          _sourceIndex = compatible;
+          if (previousPosition != null) {
+            _handoffPosition = sourceHandoffPosition(
+                previousPosition, previousSource, _sources[compatible]);
+          }
+        }
       }
-      if (keepSources && _sources.isNotEmpty) {
+      if (_sources.isNotEmpty) {
         mediaPath = _sources[_sourceIndex].mediaPath;
         mediaType = _sources[_sourceIndex].mediaType;
         playbackMode = _sources[_sourceIndex].playbackMode.isNotEmpty
@@ -278,6 +325,12 @@ class _PlayerPageState extends State<PlayerPage> {
             headers: playbackHeaders,
             software: software,
           );
+      if (_sources.isNotEmpty) {
+        if (_activeSource?.mediaPath != _sources[_sourceIndex].mediaPath) {
+          _lastObservedPosition = null;
+        }
+        _activeSource = _sources[_sourceIndex];
+      }
       _controller = controller;
       controller.addListener(_nativeValueChanged);
       final startup = Stopwatch()..start();
@@ -357,10 +410,12 @@ class _PlayerPageState extends State<PlayerPage> {
     _nativeStartupTimer?.cancel();
     final controller = _controller;
     if (controller != null) {
-      if (controller.value.isInitialized) {
+      if (controller.value.isInitialized && !controller.value.hasError) {
         _handoffPosition = controller.value.position;
       } else if (_lastObservedPosition != null) {
         _handoffPosition = _lastObservedPosition;
+      } else if (controller.value.isInitialized) {
+        _handoffPosition = controller.value.position;
       }
       controller.removeListener(_nativeValueChanged);
       try {
@@ -391,8 +446,9 @@ class _PlayerPageState extends State<PlayerPage> {
     if (edgeSources && _sources.isNotEmpty) {
       widget.api.sourceRouter
           .record(_sources[_sourceIndex].mediaPath, success: false);
-      if (_sourceIndex + 1 < _sources.length) {
-        _sourceIndex += 1;
+      final alternative = _compatibleAlternative();
+      if (alternative != null) {
+        _prepareHandoff(alternative);
         _nativeFailureInFlight = false;
         await _initialize(keepSources: true);
         return;
@@ -424,8 +480,9 @@ class _PlayerPageState extends State<PlayerPage> {
       }
       widget.api.sourceRouter
           .record(_sources[_sourceIndex].mediaPath, success: false);
-      if (_sourceIndex + 1 < _sources.length) {
-        _sourceIndex += 1;
+      final alternative = _compatibleAlternative();
+      if (alternative != null) {
+        _prepareHandoff(alternative);
         _nativeFailureInFlight = false;
         await _initialize(keepSources: true);
         return;
@@ -448,6 +505,71 @@ class _PlayerPageState extends State<PlayerPage> {
     });
     _nativeFailureInFlight = false;
   }
+
+  int? _compatibleAlternative() {
+    final origin = _activeSource;
+    if (origin == null) return null;
+    for (var index = _sourceIndex + 1; index < _sources.length; index++) {
+      if (sourcesShareTimeline(origin, _sources[index])) return index;
+    }
+    return null;
+  }
+
+  void _prepareHandoff(int index) {
+    final origin = _activeSource;
+    if (origin != null && _handoffPosition != null) {
+      _handoffPosition =
+          sourceHandoffPosition(_handoffPosition!, origin, _sources[index]);
+    }
+    _sourceIndex = index;
+  }
+
+  Future<void> _selectSource(int index) async {
+    if (index < 0 || index >= _sources.length || _nativeFailureInFlight) return;
+    final controller = _controller;
+    if (index == _sourceIndex && controller != null) return;
+    final origin = _activeSource;
+    final position = controller?.value.isInitialized == true &&
+            controller?.value.hasError == false
+        ? controller!.value.position
+        : _lastObservedPosition ?? _handoffPosition ?? Duration.zero;
+    final compatible =
+        origin != null && sourcesShareTimeline(origin, _sources[index]);
+    _handoffPosition = compatible
+        ? sourceHandoffPosition(position, origin, _sources[index])
+        : Duration.zero;
+    if (!compatible) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('نسخة هذا المصدر غير متطابقة؛ يبدأ التشغيل من البداية.')));
+    }
+    _nativeFailureInFlight = true;
+    _nativeStartupTimer?.cancel();
+    _progressTimer?.cancel();
+    controller?.removeListener(_nativeValueChanged);
+    _controller = null;
+    if (mounted) {
+      setState(() {
+        _failed = false;
+        _status = 'جاري تبديل المصدر…';
+      });
+    }
+    await controller?.dispose();
+    if (!mounted) return;
+    _sourceIndex = index;
+    await _initialize(keepSources: true);
+  }
+
+  Widget _sourceMenu() => PopupMenuButton<int>(
+      tooltip: 'الجودة / المصدر',
+      onOpened: () => _controlsTimer?.cancel(),
+      onCanceled: _revealControls,
+      icon: const Icon(Icons.high_quality),
+      itemBuilder: (_) => [
+            for (var i = 0; i < _sources.length; i++)
+              PopupMenuItem(value: i, child: Text(_sources[i].displayLabel))
+          ],
+      onSelected: _selectSource);
 
   Future<void> _saveProgress() async {
     if (widget.isLive || !widget.persistProgress) return;
@@ -673,29 +795,7 @@ class _PlayerPageState extends State<PlayerPage> {
               _decoderRetries.add(_sourceIndex);
               await _initialize(keepSources: true, software: true);
             }),
-      if (_sources.length > 1)
-        PopupMenuButton<int>(
-            tooltip: 'الجودة / المصدر',
-            onOpened: () => _controlsTimer?.cancel(),
-            onCanceled: _revealControls,
-            icon: const Icon(Icons.high_quality),
-            itemBuilder: (_) => [
-                  for (var i = 0; i < _sources.length; i++)
-                    PopupMenuItem(
-                        value: i, child: Text(_sources[i].displayLabel))
-                ],
-            onSelected: (i) async {
-              _revealControls();
-              if (i == _sourceIndex) return;
-              if (controller.value.isInitialized) {
-                _handoffPosition = controller.value.position;
-              }
-              controller.removeListener(_nativeValueChanged);
-              await controller.dispose();
-              _controller = null;
-              _sourceIndex = i;
-              await _initialize(keepSources: true);
-            }),
+      if (_sources.length > 1) _sourceMenu(),
       if (player != null &&
           player.state.tracks.video
                   .where((t) => t.id != 'auto' && t.id != 'no')
@@ -844,6 +944,7 @@ class _PlayerPageState extends State<PlayerPage> {
                         _initialize(forceRefresh: true);
                       },
                       child: const Text('إعادة المحاولة')),
+                if (_failed && _sources.length > 1) _sourceMenu(),
                 TextButton(
                     onPressed: () => Navigator.of(context).maybePop(),
                     child: const Text('رجوع')),

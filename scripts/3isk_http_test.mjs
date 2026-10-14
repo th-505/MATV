@@ -18,6 +18,8 @@ const provider = {
 };
 const iskRuntime = create3iskRuntime({ provider, store: null });
 const integrated = createIntegratedContentRuntime(iskRuntime, {
+  alooyRuntime:{ search:async()=>({status:'success',source:'alooy',data:[]}) },
+  larozaRuntime:{ search:async()=>({status:'success',source:'laroza',data:[]}) },
   searchCatalog: async () => { throw new Error('Akoam unavailable'); },
   fetchCategory: async () => ({ status: 'success', data: [] }),
   fetchMatches: async () => ({ data: [] }),

@@ -28,7 +28,32 @@ function asText(value){return value==null?"":String(value).trim();}
 function asNumber(value,fallback=null){if(value==null)return fallback;if(typeof value==="string"&&!value.trim())return fallback;const number=Number(value);return Number.isFinite(number)?number:fallback;}
 function firstScore(...values){for(const value of values){const number=asNumber(value,null);if(number!==null)return Math.max(0,Math.trunc(number));}return null;}
 
-export function normalizeCatalogItem(item={}){return {id:asText(item.id||item.ref||item.href||item.link),title:asText(item.title||item.name)||"بدون عنوان",poster:asText(item.poster||item.img||item.image),type:item.is_series===false||item.type==="movie"?"movie":"series",year:asNumber(item.year),ref:asText(item.ref||item.href||item.link),...(item.source?{source:asText(item.source)}:{})};}
+export function normalizeCatalogItem(item={}) {
+  const declaredType = asText(item.type).toLowerCase();
+  const result = {
+    id:asText(item.id||item.ref||item.href||item.link), title:asText(item.title||item.name)||'بدون عنوان',
+    poster:asText(item.poster||item.img||item.image),
+    type:['movie','series','episode','anime'].includes(declaredType) ? declaredType : item.is_series===false ? 'movie' : 'series',
+    year:asNumber(item.year), ref:asText(item.ref||item.href||item.link),
+    ...(item.source ? {source:asText(item.source)} : {}),
+  };
+  // Preserve explicit identity evidence; never guess a language, edition or
+  // cross-provider identity from a title, a genre or the source website.
+  if (Array.isArray(item.genres)) result.genres = [...new Set(item.genres.filter(x => typeof x === 'string').map(x => x.trim().slice(0,64)).filter(Boolean))].slice(0,20);
+  if (typeof item.category === 'string') result.category = asText(item.category).slice(0,64);
+  for (const key of ['audio_language','edition']) if (Object.hasOwn(item,key)) result[key] = typeof item[key] === 'string' ? asText(item[key]).slice(0,120) : '';
+  for (const key of ['season_number','episode_number']) if (Object.hasOwn(item,key)) {
+    const n = asNumber(item[key]); result[key] = Number.isInteger(n) && n >= 0 ? n : null;
+  }
+  if (Object.hasOwn(item,'imdb_id')) result.imdb_id = /^tt\d{5,12}$/.test(asText(item.imdb_id)) ? asText(item.imdb_id) : null;
+  for (const key of ['identity_verified','work_identity_verified','timeline_verified']) if (Object.hasOwn(item,key)) result[key] = item[key] === true;
+  if (item.source_refs && typeof item.source_refs === 'object' && !Array.isArray(item.source_refs)) {
+    const prefixes = { akoam:'legacy:', '3isk':'3isk:', alooy:'alooy:', laroza:'laroza:' };
+    result.source_refs = Object.fromEntries(Object.entries(item.source_refs).filter(([provider,ref]) =>
+      Object.hasOwn(prefixes,provider) && typeof ref === 'string' && ref.length <= 2048 && ref.startsWith(prefixes[provider]) && !/[\r\n]/.test(ref)));
+  }
+  return result;
+}
 
 export function normalizeEpisode(episode={},index=0){const episodeNumber=asNumber(episode.episode_number??episode.num??episode.number,index+1);return {episode_id:asText(episode.episode_id||episode.id||episode.link||episode.href),episode_number:Math.max(1,Math.trunc(episodeNumber||index+1)),title:asText(episode.title||episode.name)||`الحلقة ${Math.max(1,Math.trunc(episodeNumber||index+1))}`,ref:asText(episode.ref||episode.link||episode.href),watch_available:episode.watch_available!==false&&Boolean(episode.ref||episode.link||episode.href)};}
 

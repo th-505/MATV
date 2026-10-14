@@ -14,6 +14,7 @@ import 'src/adaptive_viewport.dart';
 import 'src/focus_highlight.dart';
 import 'src/player_page.dart';
 import 'src/virtual_pointer.dart';
+import 'src/unified_media.dart';
 
 const _brandBg = Color(0xFF0B1220);
 const _brandPanel = Color(0xFF151F32);
@@ -111,6 +112,7 @@ class _MitvAppState extends State<MitvApp> {
 
 void openDetails(BuildContext context, MitvApi api, LocalLibraryStore store,
     CatalogItem item) {
+  api.rememberIdentity(item);
   Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => DetailsPage(api: api, store: store, item: item)));
 }
@@ -874,6 +876,7 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   late String selectedCategory = widget.categoryId;
   static const seriesCategories = <String, String>{
+    'laroza-series': 'لاروزا — مسلسلات',
     'alooy-series': 'Alooy TV',
     'series-foreign': 'أكوام — أجنبية',
     'series-arabic': 'أكوام — عربية',
@@ -891,6 +894,7 @@ class _CatalogPageState extends State<CatalogPage> {
         return {
           'movie-foreign': 'أكوام — أفلام أجنبية',
           'movie-arabic': 'أكوام — أفلام عربية',
+          'laroza-movies': 'لاروزا — أفلام',
           '3isk-movies': 'قصة عشق — أفلام'
         };
       case 'series':
@@ -902,7 +906,8 @@ class _CatalogPageState extends State<CatalogPage> {
       case 'anime':
         return {
           'movie-anime': 'أكوام — أفلام أنمي',
-          'series-anime': 'أكوام — مسلسلات أنمي'
+          'series-anime': 'أكوام — مسلسلات أنمي',
+          'laroza-anime': 'لاروزا — أنمي'
         };
       default:
         return widget.unified
@@ -919,18 +924,12 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   bool _matchesKind(CatalogItem item) {
-    if (widget.mediaKind == null) return true;
-    final type = item.type.toLowerCase();
-    if (widget.mediaKind == 'anime') {
-      return selectedCategory.endsWith('-anime') ||
-          ['anime', 'animation'].contains(type);
-    }
-    return type == widget.mediaKind;
+    return widget.mediaKind == null ||
+        MediaTaxonomy.classify(item) == widget.mediaKind;
   }
 
   final controller = ScrollController();
   final items = <CatalogItem>[];
-  final seen = <String>{};
   int page = 0;
   bool loading = false;
   bool done = false;
@@ -990,13 +989,17 @@ class _CatalogPageState extends State<CatalogPage> {
     try {
       final next = await widget.api.category(selectedCategory, page: page + 1);
       if (!mounted || generation != requestGeneration) return;
-      final fresh = next
-          .where((e) => e.ref.isNotEmpty && seen.add(e.ref))
+      final previousCount = items.length;
+      final merged = UnifiedMedia.mergeSources([...items, ...next])
+          .where((item) => item.ref.isNotEmpty && _matchesKind(item))
           .toList(growable: false);
+      final hasMore = widget.api.categoryHasMore(selectedCategory, page + 1);
       setState(() {
         page += 1;
-        items.addAll(fresh.where(_matchesKind));
-        done = next.isEmpty || fresh.isEmpty;
+        items
+          ..clear()
+          ..addAll(merged);
+        done = hasMore == null ? next.isEmpty : !hasMore;
         loading = false;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1006,7 +1009,7 @@ class _CatalogPageState extends State<CatalogPage> {
           return;
         }
         _prefetchVisible();
-        if (fresh.any(_matchesKind) &&
+        if (items.length > previousCount &&
             controller.position.extentAfter < (isTvTarget ? 1400 : 900)) {
           _loadMore();
         }
@@ -1025,7 +1028,6 @@ class _CatalogPageState extends State<CatalogPage> {
     requestGeneration += 1;
     setState(() {
       items.clear();
-      seen.clear();
       _prefetched.clear();
       page = 0;
       done = false;
@@ -1142,7 +1144,13 @@ class _CatalogCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                         [
-                          item.type == 'movie' ? 'فيلم' : 'مسلسل',
+                          switch (MediaTaxonomy.classify(item)) {
+                            'movie' => 'فيلم',
+                            'series' => 'مسلسل',
+                            'anime' => 'أنمي',
+                            'program' => 'برنامج',
+                            _ => 'عمل',
+                          },
                           if (item.year != null) '${item.year}'
                         ].join(' • '),
                         style: const TextStyle(

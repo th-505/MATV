@@ -20,6 +20,9 @@ Map<String, dynamic> payload() => {
         for (final p in ['3isk', 'akoam', 'alooy'])
           {
             'provider_id': p,
+            'edition': 'turkish-original-fixture',
+            'timeline_verified': true,
+            'timeline_offset_ms': 0,
             'provider': p == '3isk'
                 ? 'قصة عشق'
                 : p == 'akoam'

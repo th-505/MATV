@@ -113,11 +113,13 @@ void main() {
                 {
                   'media_path': 'https://s201d1.downet.net/movie.mp4?id=bad',
                   'media_type': 'mp4',
+                  'provider_id': 'akoam',
                   'label': '720p'
                 },
                 {
                   'media_path': 'https://s201d1.downet.net/movie.mp4?id=good',
                   'media_type': 'mp4',
+                  'provider_id': 'akoam',
                   'label': '1080p'
                 },
               ]
