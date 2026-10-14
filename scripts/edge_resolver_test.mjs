@@ -363,7 +363,7 @@ try {
       assert.equal(new URL(input.url).searchParams.has("refresh"), false);
       return Response.json({
         status: "success",
-        version: "1.0.43",
+        version: "1.0.44",
         data: [{ id: "match-one" }],
       });
     },

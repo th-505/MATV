@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.0.43"
+  #define AppVersion "1.0.44"
 #endif
 #ifndef SourceRoot
   #define SourceRoot "..\flutter_app\build\windows\x64\runner\Release"
