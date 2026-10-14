@@ -94,9 +94,9 @@ void main() {
       final utf8Bytes = Uint8List.fromList(utf8.encode(sampleArabic));
       expect(SubtitlesService.decodeSubtitleBytes(utf8Bytes), sampleArabic);
 
-      // 2. CP1256 encoded Arabic bytes (e.g. 'مرحبا' in CP1256: C5 D1 CD C8 C7)
-      // C5: م (0x0645), D1: ر (0x0631), CD: ح (0x062D), C8: ب (0x0628), C7: ا (0x0627)
-      final cp1256Bytes = Uint8List.fromList([0xC5, 0xD1, 0xCD, 0xC8, 0xC7]);
+      // 2. CP1256 encoded Arabic bytes (e.g. 'مرحبا' in CP1256: E3 D1 CD C8 C7)
+      // E3: م (0x0645), D1: ر (0x0631), CD: ح (0x062D), C8: ب (0x0628), C7: ا (0x0627)
+      final cp1256Bytes = Uint8List.fromList([0xE3, 0xD1, 0xCD, 0xC8, 0xC7]);
       final decoded = SubtitlesService.decodeSubtitleBytes(cp1256Bytes);
       expect(decoded, 'مرحبا');
     });

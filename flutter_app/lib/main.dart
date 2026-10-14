@@ -879,6 +879,12 @@ class CatalogPage extends StatefulWidget {
 
 class _CatalogPageState extends State<CatalogPage> {
   late String selectedCategory = widget.categoryId;
+  static const iskCategories = <String, String>{
+    '3isk-latest': 'قصة عشق (أحدث الحلقات)',
+    '3isk-turkish': 'جميع المسلسلات (مترجم ومدبلج)',
+    '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
+    '3isk-movies': 'جميع الأفلام',
+  };
   static const seriesCategories = <String, String>{
     'series-foreign': 'مسلسلات أجنبية',
     'series-arabic': 'مسلسلات عربية',
@@ -893,6 +899,7 @@ class _CatalogPageState extends State<CatalogPage> {
     'movie-turkish': 'أفلام تركية',
     'movie-asian': 'أفلام آسيوية',
     'movie-indian': 'أفلام هندية',
+    '3isk-movies': 'جميع الأفلام',
     'laroza-movies': 'أفلام مختارة',
   };
   static const animeCategories = <String, String>{
@@ -901,6 +908,9 @@ class _CatalogPageState extends State<CatalogPage> {
     'laroza-anime': 'أنمي مختار',
   };
   Map<String, String> get _categories {
+    if (widget.categoryId.startsWith('3isk-')) {
+      return iskCategories;
+    }
     switch (widget.mediaKind) {
       case 'movie':
         return movieCategories;
