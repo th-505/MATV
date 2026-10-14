@@ -46,9 +46,24 @@ This document serves as the official handover and state transition log for the M
 - **Encoding Correction:** Built smart character set normalization to convert legacy encodings (`Windows-1256` / `CP1256`) to clean `UTF-8`.
 - **Sub-Delay Control:** Added runtime synchronization adjustments (`sub-delay` via `NativePlayer.setProperty`) with an intuitive on-screen offset selector ($\pm0.5\text{s}$).
 
+### Agent 7: Modern Web Frontend (Netflix-Style UI & Cache Busting v1.0.44)
+- **Complete Visual Overhaul:** Completely rebuilt `index.html` with Netflix-Style Dark Navy UI (`#0B1220`, `#151F32`, `#708DB8`, `#DEE9F8`), Hero Banner, horizontal carousels, responsive grid cards, and mobile bottom bar with `safe-area-inset` support.
+- **Unified 6-Tab Navigation (RTL):** Fixed order `[المباشر] -> [الرئيسية] -> [أفلام] -> [مسلسلات] -> [أنمي] -> [الإعدادات]` with news completely purged.
+- **Web Cinema Player:** Embedded HTML5 + `HLS.js` player with aspect ratio toggle (`contain`/`cover`), server switcher, Stremio OpenSubtitles v3 with Arabic priority and Windows-1256 to UTF-8 decoding, and `sub-delay` offsets ($\pm0.5\text{s}$).
+- **Hard Cache Busting:** Added root `sw.js` and updated `app/flutter_service_worker.js` with aggressive `caches.delete()` for all stale versions, caching under `mitv-web-v1.0.44`.
+- **Automated Web CI Deployment:** Updated `.github/workflows/flutter-web.yml` to trigger on push to `main` branch.
+
 ---
 
 ## 3. Summary of Key Files Modified/Created
+- `index.html` (Complete Netflix-Style Web SPA v2.9)
+- `sw.js` (Root Service Worker with aggressive v1.0.44 cache busting)
+- `app/flutter_service_worker.js` (Stale Flutter cache purge)
+- `web/core/api-client.js` (Brand cleanup to MITV, retired news)
+- `albasri-cinema.html` & `Player.html` (Dark Navy theme alignment)
+- `.github/workflows/flutter-web.yml` (Added push to main trigger)
+- `scripts/production_entry_test.mjs` (Aligned with 410 GONE news retirement)
+- `scripts/runtime_version_contract_test.mjs` & `server/content-runtime.mjs` (1.0.44 contract parity)
 - `flutter_app/lib/src/subtitles_service.dart`
 - `flutter_app/lib/src/supabase_service.dart`
 - `flutter_app/lib/src/universal_player.dart`
@@ -58,3 +73,4 @@ This document serves as the official handover and state transition log for the M
 - `supabase/migrations/20261014220000_mitv_anonymous_sync_and_ttl.sql`
 - `server/providers/laroza.mjs` & `edge/src/laroza.mjs`
 - `.github/workflows/mobile-trial.yml`
+
