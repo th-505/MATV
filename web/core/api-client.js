@@ -10,8 +10,8 @@ const MATCH_TIMEOUT_MS=25000;
 function installBrandTheme(){
   if(typeof document==='undefined')return;
   const themeMeta=document.querySelector('meta[name="theme-color"]');
-  if(themeMeta)themeMeta.setAttribute('content','#0B1220');
-  document.title='MITV';
+  if(themeMeta)themeMeta.setAttribute('content','#07090b');
+  document.title='MITV | 4BA';
   document.documentElement.style.colorScheme='dark';
 }
 installBrandTheme();
