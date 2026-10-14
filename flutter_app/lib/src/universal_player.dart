@@ -1,36 +1,50 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 import 'package:media_kit_video/media_kit_video.dart' as mv;
-import 'package:video_player/video_player.dart';
-import 'media_format_policy.dart';
+import 'package:video_player/video_player.dart' show VideoPlayerValue;
 
-/// Native decoding for common HLS/MP4; libmpv/FFmpeg for other containers
-/// and for an explicit native decoder retry. Media headers reach both engines.
+/// One media_kit player for all formats and native platforms. On the web,
+/// media_kit selects its HTML5 implementation; native platforms use libmpv.
+/// VideoPlayerValue is retained only as the UI's existing listenable contract.
 class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
   UniversalPlayer(this.uri,
       {required this.mediaType,
-      this.headers = const {},
-      this.software = false});
+      Map<String, String> headers = const {},
+      this.software = false,
+      this.mediaKitPlayerFactory,
+      this.videoOutputFactory})
+      : headers = Map.unmodifiable(headers);
+
   final Uri uri;
   final String mediaType;
   final Map<String, String> headers;
+
+  /// A decoder retry creates a new player with GPU decoding disabled, rather
+  /// than selecting a different playback plugin or dropping request headers.
   final bool software;
+
+  /// Dependency seams let adapter tests exercise real media_kit Media/Player
+  /// contracts without loading libmpv or creating a Flutter texture.
+  @visibleForTesting
+  final mk.Player Function()? mediaKitPlayerFactory;
+  @visibleForTesting
+  final Widget Function(mk.Player, mv.VideoControllerConfiguration)?
+      videoOutputFactory;
+
   final _state = ValueNotifier(const VideoPlayerValue.uninitialized());
   final _subscriptions = <StreamSubscription<dynamic>>[];
-  VideoPlayerController? _native;
   mk.Player? _player;
   mv.VideoController? _video;
+  Widget? _injectedVideoOutput;
+  Future<void>? _initialization;
   bool _closed = false;
-  bool get usesExtendedEngine =>
-      kIsWeb ||
-      software ||
-      (!kIsWeb &&
-          [TargetPlatform.windows, TargetPlatform.linux, TargetPlatform.macOS]
-              .contains(defaultTargetPlatform)) ||
-      usesExtendedMediaEngine(mediaType, uri.path);
+  bool _failed = false;
+
+  /// Kept for existing controls; every format now uses the extended engine.
+  bool get usesExtendedEngine => true;
   mk.Player? get extendedPlayer => _player;
   @override
   VideoPlayerValue get value => _state.value;
@@ -38,39 +52,38 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
   void addListener(VoidCallback listener) => _state.addListener(listener);
   @override
   void removeListener(VoidCallback listener) => _state.removeListener(listener);
+
   void _update(VideoPlayerValue next) {
     if (!_closed) _state.value = next;
   }
 
-  void _nativeChanged() {
-    final controller = _native;
-    if (controller != null) _update(controller.value);
-  }
+  Future<void> initialize() => _initialization ??= _initialize();
 
-  Future<void> initialize() async {
-    if (!usesExtendedEngine) {
-      _native = uri.scheme == 'file'
-          ? VideoPlayerController.file(File(uri.toFilePath()))
-          : VideoPlayerController.networkUrl(uri,
-              httpHeaders: headers,
-              formatHint: videoFormatHintForRuntimeMedia(mediaType));
-      _native!.addListener(_nativeChanged);
-      await _native!.initialize();
-      return;
-    }
-    mk.MediaKit.ensureInitialized();
-    final player = mk.Player();
+  Future<void> _initialize() async {
+    if (_closed) throw StateError('PLAYER_DISPOSED');
+    if (mediaKitPlayerFactory == null) mk.MediaKit.ensureInitialized();
+    final player = mediaKitPlayerFactory?.call() ?? mk.Player();
     _player = player;
-    _video = mv.VideoController(player,
-        configuration: const mv.VideoControllerConfiguration(
-            enableHardwareAcceleration: true));
+    final configuration = mv.VideoControllerConfiguration(
+        enableHardwareAcceleration: !software, hwdec: software ? 'no' : null);
+    if (videoOutputFactory != null) {
+      _injectedVideoOutput = videoOutputFactory!(player, configuration);
+    } else {
+      _video = mv.VideoController(player, configuration: configuration);
+    }
     _subscriptions.addAll([
-      player.stream.position
-          .listen((v) => _update(value.copyWith(position: v))),
+      player.stream.position.listen((v) {
+        // libmpv can reset its clock to zero after an HTTP/decoder failure.
+        // Keep the last position for a subsequent source/decoder handoff.
+        if (!_failed) _update(value.copyWith(position: v));
+      }),
       player.stream.duration
           .listen((v) => _update(value.copyWith(duration: v))),
-      player.stream.playing
-          .listen((v) => _update(value.copyWith(isPlaying: v))),
+      player.stream.playing.listen((v) {
+        if (!_failed) _update(value.copyWith(isPlaying: v));
+      }),
+      player.stream.completed
+          .listen((v) => _update(value.copyWith(isCompleted: v))),
       player.stream.buffering
           .listen((v) => _update(value.copyWith(isBuffering: v))),
       player.stream.width.listen((v) {
@@ -86,52 +99,57 @@ class UniversalPlayer implements ValueListenable<VideoPlayerValue> {
       player.stream.tracks.listen((_) => _update(value.copyWith())),
       player.stream.error.listen((v) {
         if (v.isNotEmpty) {
+          _failed = true;
+          // Native messages may contain signed URLs; keep them out of the UI.
           _update(value.copyWith(
               isPlaying: false, errorDescription: 'تعذر تشغيل المصدر'));
         }
       }),
     ]);
-    final playbackUri = kIsWeb &&
-            ['hls', 'm3u8'].contains(mediaType.toLowerCase()) &&
-            !uri.toString().toLowerCase().contains('m3u8')
-        ? uri.replace(
-            queryParameters: {...uri.queryParameters, 'format': 'm3u8'})
-        : uri;
     await player.open(
-        mk.Media(playbackUri.toString(),
-            httpHeaders: kIsWeb ? const {} : headers),
+        mk.Media(uri.toString(), httpHeaders: kIsWeb ? const {} : headers),
         play: false);
+    if (_closed) throw StateError('PLAYER_DISPOSED');
     if (value.hasError) throw StateError('DECODER_OPEN_FAILED');
     _update(value.copyWith(
         isInitialized: true,
         duration: player.state.duration,
-        size: Size((player.state.width ?? 1920).toDouble(),
-            (player.state.height ?? 1080).toDouble())));
+        size: Size((player.state.width ?? 0).toDouble(),
+            (player.state.height ?? 0).toDouble())));
   }
 
-  Future<void> play() => _native?.play() ?? _player!.play();
-  Future<void> pause() => _native?.pause() ?? _player!.pause();
-  Future<void> seekTo(Duration position) =>
-      _native?.seekTo(position) ?? _player!.seek(position);
-  Future<void> setPlaybackSpeed(double speed) =>
-      _native?.setPlaybackSpeed(speed) ?? _player!.setRate(speed);
+  mk.Player get _activePlayer {
+    if (_closed) throw StateError('PLAYER_DISPOSED');
+    final player = _player;
+    if (player == null) throw StateError('PLAYER_NOT_INITIALIZED');
+    return player;
+  }
+
+  Future<void> play() => _activePlayer.play();
+  Future<void> pause() => _activePlayer.pause();
+  Future<void> seekTo(Duration position) => _activePlayer.seek(position);
+  Future<void> setPlaybackSpeed(double speed) => _activePlayer.setRate(speed);
   Future<void> setVolume(double volume) =>
-      _native?.setVolume(volume) ?? _player!.setVolume(volume * 100);
-  Widget video() => _native != null
-      ? VideoPlayer(_native!)
-      : mv.Video(
+      _activePlayer.setVolume(volume * 100);
+
+  Widget video() =>
+      _injectedVideoOutput ??
+      mv.Video(
           controller: _video!,
           fit: BoxFit.contain,
           controls: mv.NoVideoControls);
+
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;
-    _native?.removeListener(_nativeChanged);
-    for (final subscription in _subscriptions) {
-      await subscription.cancel();
-    }
-    await _native?.dispose();
-    await _player?.dispose();
+    // Start all cancellation before releasing libmpv. In particular, an
+    // unawaited widget disposal must not keep the native allocation alive while
+    // waiting for a chain of stream cancellation futures.
+    final cleanup = <Future<void>>[
+      for (final subscription in _subscriptions) subscription.cancel(),
+      if (_player != null) _player!.dispose(),
+    ];
     _state.dispose();
+    await Future.wait(cleanup);
   }
 }

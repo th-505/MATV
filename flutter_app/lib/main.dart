@@ -10,13 +10,16 @@ import 'src/download_library_section.dart';
 import 'src/library_store.dart';
 import 'src/match_player_page.dart';
 import 'src/models.dart';
-import 'src/news_page.dart';
+import 'src/adaptive_viewport.dart';
+import 'src/focus_highlight.dart';
+import 'src/player_page.dart';
+import 'src/virtual_pointer.dart';
 
-const _brandBg = Color(0xFF090B12);
-const _brandPanel = Color(0xFF151822);
-const _brandAccent = Color(0xFFE50914);
-const _brandAccentMuted = Color(0xFFB5212A);
-const _brandAccentLight = Color(0xFFFFDDE0);
+const _brandBg = Color(0xFF0B1220);
+const _brandPanel = Color(0xFF151F32);
+const _brandAccent = Color(0xFF708DB8);
+const _brandAccentMuted = Color(0xFF526B94);
+const _brandAccentLight = Color(0xFFDEE9F8);
 
 void main() => runApp(const MitvApp());
 
@@ -28,12 +31,22 @@ class MitvApp extends StatefulWidget {
 
 class _MitvAppState extends State<MitvApp> {
   late final Future<LocalLibraryStore> storeFuture = LocalLibraryStore.create();
+  final _pointer = VirtualPointerController();
+  @override
+  void dispose() {
+    _pointer.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'MITV',
+      builder: (context, child) => isTvTarget
+          ? VirtualPointerScope(controller: _pointer, child: child!)
+          : child!,
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -49,7 +62,7 @@ class _MitvAppState extends State<MitvApp> {
           color: _brandPanel,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0x55C6974C)),
+            side: const BorderSide(color: Color(0x55526B94)),
           ),
         ),
         colorScheme: ColorScheme.fromSeed(
@@ -61,7 +74,7 @@ class _MitvAppState extends State<MitvApp> {
         ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: const Color(0xFF131E30),
-          indicatorColor: const Color(0x554B3A20),
+          indicatorColor: const Color(0x554F688F),
           iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
                 color: states.contains(WidgetState.selected)
                     ? _brandAccentLight
@@ -88,7 +101,7 @@ class _MitvAppState extends State<MitvApp> {
               return const Scaffold(
                   body: Center(child: CircularProgressIndicator()));
             }
-            return Shell(store: snapshot.data!);
+            return Shell(store: snapshot.data!, pointer: _pointer);
           },
         ),
       ),
@@ -158,19 +171,38 @@ class _BrandTitle extends StatelessWidget {
       );
 }
 
+class ConfiguredTvChannel {
+  const ConfiguredTvChannel(
+      {required this.title, required this.package, required this.sourceRef});
+  final String title;
+  final String package;
+  final String sourceRef;
+}
+
 class Shell extends StatefulWidget {
-  const Shell({super.key, required this.store, this.api});
+  const Shell(
+      {super.key,
+      required this.store,
+      this.api,
+      this.pointer,
+      this.channels = const [],
+      this.clearCache,
+      this.clearDownloads});
   final LocalLibraryStore store;
   final MitvApi? api;
+  final VirtualPointerController? pointer;
+  final List<ConfiguredTvChannel> channels;
+  final Future<void> Function()? clearCache;
+  final Future<void> Function()? clearDownloads;
   @override
   State<Shell> createState() => _ShellState();
 }
 
 class _ShellState extends State<Shell> {
-  int index = 0;
+  int index = 1;
   late final MitvApi api;
   late final bool _ownsApi;
-  final _pages = List<Widget?>.filled(7, null);
+  final _pages = List<Widget?>.filled(6, null);
   @override
   void initState() {
     super.initState();
@@ -178,9 +210,7 @@ class _ShellState extends State<Shell> {
     api = widget.api ?? MitvApi();
     _pages[index] = _createPage(index);
     final ref = kIsWeb ? Uri.base.queryParameters['ref'] ?? '' : '';
-    if (ref.startsWith('alooy:') ||
-        ref.startsWith('3isk:') ||
-        ref.startsWith('legacy:')) {
+    if (['alooy:', '3isk:', 'legacy:'].any(ref.startsWith)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           openDetails(
@@ -205,115 +235,365 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _createPage(int page) => switch (page) {
-        0 => MatchesPage(api: api, store: widget.store),
-        1 => NewsPage(api: api),
+        0 => LivePage(api: api, store: widget.store, channels: widget.channels),
+        1 => HomePage(api: api, store: widget.store),
         2 => CatalogPage(
             api: api,
             store: widget.store,
             title: 'الأفلام',
-            categoryId: 'movie-foreign'),
+            categoryId: 'movie-foreign',
+            mediaKind: 'movie',
+            unified: true),
         3 => CatalogPage(
             api: api,
             store: widget.store,
             title: 'المسلسلات',
-            categoryId: 'series-foreign'),
+            categoryId: 'series-foreign',
+            mediaKind: 'series',
+            unified: true),
         4 => CatalogPage(
             api: api,
             store: widget.store,
-            title: 'قصة عشق',
-            categoryId: '3isk-latest'),
-        5 => SearchPage(api: api, store: widget.store),
-        6 => LibraryPage(api: api, store: widget.store),
-        _ => throw RangeError.index(page, _pages),
+            title: 'الأنمي',
+            categoryId: 'movie-anime',
+            mediaKind: 'anime',
+            unified: true),
+        5 => SettingsPage(
+            api: api,
+            store: widget.store,
+            pointer: widget.pointer,
+            clearCache: widget.clearCache,
+            clearDownloads: widget.clearDownloads),
+        _ => throw RangeError.index(page, _pages)
       };
-
   void _selectPage(int value) {
-    if (value == index) return;
+    if (index == value) return;
     setState(() {
       _pages[value] ??= _createPage(value);
       index = value;
     });
   }
 
+  static const _labels = [
+    'المباشر',
+    'الرئيسية',
+    'الأفلام',
+    'المسلسلات',
+    'الأنمي',
+    'الإعدادات'
+  ];
+  static const _icons = [
+    Icons.live_tv,
+    Icons.home_outlined,
+    Icons.movie_outlined,
+    Icons.video_library_outlined,
+    Icons.animation,
+    Icons.settings_outlined
+  ];
   @override
-  Widget build(BuildContext context) {
-    // Preserve visited sections without mounting unseen catalog fetchers.
-    final content = IndexedStack(
-        index: index,
-        children: _pages
-            .map((page) => page ?? const SizedBox.shrink())
-            .toList(growable: false));
-    return Scaffold(
-      appBar: AppBar(title: const _BrandTitle()),
-      body: isTvTarget
-          ? FocusTraversalGroup(
-              child: Row(children: [
-              _TvNavigation(selectedIndex: index, onSelected: _selectPage),
-              const VerticalDivider(width: 1),
-              Expanded(child: content),
-            ]))
-          : content,
-      bottomNavigationBar: isTvTarget
-          ? null
-          : NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: _selectPage,
-              destinations: const [
-                NavigationDestination(
-                    icon: Icon(Icons.sports_soccer), label: 'المباريات'),
-                NavigationDestination(
-                    icon: Icon(Icons.newspaper_outlined),
-                    selectedIcon: Icon(Icons.newspaper),
-                    label: 'الأخبار'),
-                NavigationDestination(
-                    icon: Icon(Icons.movie_outlined), label: 'الأفلام'),
-                NavigationDestination(
-                    icon: Icon(Icons.live_tv_outlined), label: 'المسلسلات'),
-                NavigationDestination(
-                    icon: Icon(Icons.video_library_outlined), label: 'قصة عشق'),
-                NavigationDestination(icon: Icon(Icons.search), label: 'البحث'),
-                NavigationDestination(
-                    icon: Icon(Icons.bookmark_outline),
-                    selectedIcon: Icon(Icons.bookmark),
-                    label: 'مكتبتي'),
-              ],
-            ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      AdaptiveViewport(builder: (context, viewport) {
+        final content = IndexedStack(
+            index: index,
+            children: _pages
+                .map((page) => page ?? const SizedBox.shrink())
+                .toList(growable: false));
+        final side =
+            isTvTarget || viewport.usesSideNavigation || isDesktopTarget;
+        return Scaffold(
+            appBar: AppBar(title: const _BrandTitle()),
+            body: SafeArea(
+                top: false,
+                child: side
+                    ? FocusTraversalGroup(
+                        child: Row(children: [
+                        NavigationRail(
+                            extended: viewport.size.width >= 700,
+                            selectedIndex: index,
+                            onDestinationSelected: _selectPage,
+                            destinations: List.generate(
+                                _labels.length,
+                                (i) => NavigationRailDestination(
+                                    icon: Icon(_icons[i]),
+                                    label: Text(_labels[i])))),
+                        const VerticalDivider(width: 1),
+                        Expanded(child: content)
+                      ]))
+                    : content),
+            bottomNavigationBar: side
+                ? null
+                : NavigationBar(
+                    selectedIndex: index,
+                    onDestinationSelected: _selectPage,
+                    destinations: List.generate(
+                        _labels.length,
+                        (i) => NavigationDestination(
+                            icon: Icon(_icons[i]), label: _labels[i]))));
+      });
 }
 
-class _TvNavigation extends StatelessWidget {
-  const _TvNavigation({required this.selectedIndex, required this.onSelected});
-  final int selectedIndex;
-  final ValueChanged<int> onSelected;
+void _openLibrary(BuildContext context, MitvApi api, LocalLibraryStore store) =>
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('مكتبتي والتنزيلات')),
+            body: LibraryPage(api: api, store: store))));
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key, required this.api, required this.store});
+  final MitvApi api;
+  final LocalLibraryStore store;
   @override
-  Widget build(BuildContext context) => NavigationRail(
-        extended: true,
-        minExtendedWidth: 190,
-        backgroundColor: const Color(0xFF131E30),
-        selectedIndex: selectedIndex,
-        onDestinationSelected: onSelected,
-        destinations: const [
-          NavigationRailDestination(
-              icon: Icon(Icons.sports_soccer), label: Text('المباريات')),
-          NavigationRailDestination(
-              icon: Icon(Icons.newspaper_outlined),
-              selectedIcon: Icon(Icons.newspaper),
-              label: Text('الأخبار')),
-          NavigationRailDestination(
-              icon: Icon(Icons.movie_outlined), label: Text('الأفلام')),
-          NavigationRailDestination(
-              icon: Icon(Icons.live_tv_outlined), label: Text('المسلسلات')),
-          NavigationRailDestination(
-              icon: Icon(Icons.video_library_outlined), label: Text('قصة عشق')),
-          NavigationRailDestination(
-              icon: Icon(Icons.search), label: Text('البحث')),
-          NavigationRailDestination(
-              icon: Icon(Icons.bookmark_outline),
-              selectedIcon: Icon(Icons.bookmark),
-              label: Text('مكتبتي')),
-        ],
-      );
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final Future<List<CatalogItem>> _latest =
+      widget.api.category('3isk-latest');
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) =>
+          ListView(padding: const EdgeInsets.all(16), children: [
+            FutureBuilder<List<CatalogItem>>(
+                future: _latest,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final item = snapshot.data!.first;
+                  return FocusHighlight(
+                      child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: LayoutBuilder(
+                              builder: (context, bounds) => SizedBox(
+                                  height:
+                                      (bounds.maxWidth * .45).clamp(220, 400),
+                                  child: Stack(fit: StackFit.expand, children: [
+                                    if (item.poster.isNotEmpty)
+                                      Image.network(item.poster,
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 1000,
+                                          errorBuilder: (_, __, ___) =>
+                                              const SizedBox.shrink()),
+                                    const DecoratedBox(
+                                        decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [
+                                          Colors.black26,
+                                          Color(0xF00B1220)
+                                        ]))),
+                                    Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('أحدث الإضافات'),
+                                              const SizedBox(height: 8),
+                                              Text(item.title,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headlineSmall),
+                                              const SizedBox(height: 12),
+                                              FilledButton.icon(
+                                                  onPressed: () => openDetails(
+                                                      context,
+                                                      widget.api,
+                                                      widget.store,
+                                                      item),
+                                                  icon: const Icon(
+                                                      Icons.play_arrow),
+                                                  label: const Text(
+                                                      'التفاصيل والتشغيل'))
+                                            ]))
+                                  ])))));
+                }),
+            const SizedBox(height: 16),
+            Wrap(spacing: 12, runSpacing: 8, children: [
+              FilledButton.tonalIcon(
+                  onPressed: () =>
+                      _openLibrary(context, widget.api, widget.store),
+                  icon: const Icon(Icons.bookmark_outline),
+                  label: const Text('مكتبتي والتنزيلات')),
+              FilledButton.tonalIcon(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                          appBar: AppBar(title: const Text('البحث')),
+                          body: SearchPage(
+                              api: widget.api, store: widget.store)))),
+                  icon: const Icon(Icons.search),
+                  label: const Text('البحث'))
+            ]),
+            const SizedBox(height: 24),
+            Text('أكمل المشاهدة',
+                style: Theme.of(context).textTheme.titleLarge),
+            if (widget.store.continueWatching.isEmpty)
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('ستظهر الأعمال التي تتابعها هنا')),
+            for (final entry in widget.store.continueWatching)
+              FocusHighlight(
+                  child: ListTile(
+                      title: Text(entry.title,
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                      subtitle: LinearProgressIndicator(
+                          value: entry.durationMs > 0 ? entry.progress : null),
+                      leading: const Icon(Icons.play_circle_outline),
+                      onTap: () => openDetails(context, widget.api,
+                          widget.store, entry.catalogItem))),
+          ]));
+}
+
+class LivePage extends StatelessWidget {
+  const LivePage(
+      {super.key,
+      required this.api,
+      required this.store,
+      this.channels = const []});
+  final MitvApi api;
+  final LocalLibraryStore store;
+  final List<ConfiguredTvChannel> channels;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Expanded(child: MatchesPage(api: api, store: store)),
+        Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('القنوات المباشرة',
+                style: Theme.of(context).textTheme.titleLarge)),
+        if (channels.isEmpty)
+          const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Text('لا توجد قنوات مباشرة مهيأة حاليًا')),
+        if (channels.isNotEmpty)
+          Expanded(
+              child: ListView(children: [
+            for (final package in channels.map((c) => c.package).toSet()) ...[
+              Padding(padding: const EdgeInsets.all(12), child: Text(package)),
+              for (final channel in channels.where((c) => c.package == package))
+                FocusHighlight(
+                    child: ListTile(
+                        title: Text(channel.title),
+                        leading: const Icon(Icons.live_tv),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => PlayerPage(
+                                    api: api,
+                                    store: store,
+                                    item: CatalogItem(
+                                        id: channel.sourceRef,
+                                        title: channel.title,
+                                        poster: '',
+                                        type: 'live',
+                                        ref: channel.sourceRef),
+                                    title: channel.title,
+                                    sourceRef: channel.sourceRef,
+                                    isLive: true)))))
+            ]
+          ]))
+      ]);
+}
+
+class SettingsPage extends StatefulWidget {
+  const SettingsPage(
+      {super.key,
+      required this.api,
+      required this.store,
+      this.pointer,
+      this.clearCache,
+      this.clearDownloads});
+  final MitvApi api;
+  final LocalLibraryStore store;
+  final VirtualPointerController? pointer;
+  final Future<void> Function()? clearCache;
+  final Future<void> Function()? clearDownloads;
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  bool _busy = false;
+  Future<void> _clear(String title, Future<void> Function() action) async {
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+                title: Text(title),
+                content:
+                    const Text('تأكيد حذف البيانات المحددة من هذا الجهاز؟'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('إلغاء')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('حذف'))
+                ]));
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await action();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('تعذر إكمال التنظيف')));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      ListView(padding: const EdgeInsets.all(16), children: [
+        const ListTile(
+            title: Text('MITV'), subtitle: Text('المظهر الليلي الأزرق الهادئ')),
+        FocusHighlight(
+            child: ListTile(
+                title: const Text('مكتبتي والتنزيلات'),
+                leading: const Icon(Icons.video_library_outlined),
+                onTap: () => _openLibrary(context, widget.api, widget.store))),
+        if (isTvTarget && widget.pointer != null)
+          AnimatedBuilder(
+              animation: widget.pointer!,
+              builder: (context, _) => SwitchListTile(
+                  title: const Text('الفأرة الافتراضية'),
+                  subtitle: const Text(
+                      'زر القائمة أو F8 للتبديل؛ الأسهم للحركة وOK للاختيار'),
+                  value: widget.pointer!.enabled,
+                  onChanged: widget.pointer!.setEnabled)),
+        if (widget.clearCache != null)
+          ListTile(
+              title: const Text('مسح الكاش المحلي'),
+              leading: const Icon(Icons.cleaning_services_outlined),
+              enabled: !_busy,
+              onTap: () => _clear('مسح الكاش المحلي', widget.clearCache!)),
+        if (!kIsWeb && widget.clearDownloads != null)
+          ListTile(
+              title: const Text('حذف الملفات المحمّلة'),
+              leading: const Icon(Icons.delete_outline),
+              enabled: !_busy,
+              onTap: () =>
+                  _clear('حذف الملفات المحمّلة', widget.clearDownloads!)),
+        ListTile(
+            title: const Text('مسح سجل المشاهدة'),
+            enabled: !_busy,
+            leading: const Icon(Icons.history),
+            onTap: () => _clear('مسح سجل المشاهدة', widget.store.clearHistory)),
+        ListTile(
+            title: const Text('مسح سجل البحث'),
+            enabled: !_busy,
+            leading: const Icon(Icons.search_off),
+            onTap: () =>
+                _clear('مسح سجل البحث', widget.store.clearSearchHistory)),
+        if (_busy) const LinearProgressIndicator()
+      ]);
 }
 
 String _matchStatusLabel(String status) {
@@ -338,35 +618,39 @@ class _TeamBadge extends StatelessWidget {
   final String name;
   final String logo;
   @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: isTvTarget ? 82 : 62,
-            height: isTvTarget ? 82 : 62,
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF1B293D),
-              border: Border.all(color: const Color(0x44C6974C)),
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, bounds) {
+        final diameter = bounds.maxWidth.clamp(0.0, isTvTarget ? 82.0 : 62.0);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: diameter,
+              height: diameter,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF1B293D),
+                border: Border.all(color: const Color(0x44526B94)),
+              ),
+              child: logo.isEmpty
+                  ? const Icon(Icons.shield_outlined, color: _brandAccentMuted)
+                  : Image.network(
+                      logo,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.shield_outlined,
+                          color: _brandAccentMuted),
+                    ),
             ),
-            child: logo.isEmpty
-                ? const Icon(Icons.shield_outlined, color: _brandAccentMuted)
-                : Image.network(
-                    logo,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
-                        Icons.shield_outlined,
-                        color: _brandAccentMuted),
-                  ),
-          ),
-          const SizedBox(height: 7),
-          Text(name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis),
-        ],
-      );
+            const SizedBox(height: 7),
+            Text(name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+          ],
+        );
+      });
 }
 
 class MatchesPage extends StatefulWidget {
@@ -380,6 +664,22 @@ class MatchesPage extends StatefulWidget {
 
 class _MatchesPageState extends State<MatchesPage> {
   late Future<List<MatchItem>> _matches;
+  final _carousel = ScrollController();
+  @override
+  void dispose() {
+    _carousel.dispose();
+    super.dispose();
+  }
+
+  void _scrollMatches(int direction) {
+    if (!_carousel.hasClients) return;
+    _carousel.animateTo(
+        (_carousel.offset +
+                direction * _carousel.position.viewportDimension * .8)
+            .clamp(0, _carousel.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut);
+  }
 
   @override
   void initState() {
@@ -418,13 +718,26 @@ class _MatchesPageState extends State<MatchesPage> {
 
   @override
   Widget build(BuildContext context) => Column(children: [
-        Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: IconButton(
-                key: const Key('matches-refresh'),
-                tooltip: 'تحديث المباريات',
-                onPressed: _reload,
-                icon: const Icon(Icons.refresh))),
+        Row(children: [
+          const Expanded(
+              child: Padding(
+                  padding: EdgeInsets.all(16), child: Text('مباريات اليوم'))),
+          if (MediaQuery.sizeOf(context).width >= 700) ...[
+            IconButton(
+                tooltip: 'المباريات السابقة',
+                onPressed: () => _scrollMatches(-1),
+                icon: const Icon(Icons.chevron_right)),
+            IconButton(
+                tooltip: 'المباريات التالية',
+                onPressed: () => _scrollMatches(1),
+                icon: const Icon(Icons.chevron_left))
+          ],
+          IconButton(
+              key: const Key('matches-refresh'),
+              tooltip: 'تحديث المباريات',
+              onPressed: _reload,
+              icon: const Icon(Icons.refresh))
+        ]),
         Expanded(
             child: FutureBuilder<List<MatchItem>>(
           future: _matches,
@@ -439,69 +752,101 @@ class _MatchesPageState extends State<MatchesPage> {
             if (items.isEmpty) {
               return const _ErrorState('لا توجد مباريات متاحة الآن');
             }
-            return ListView.builder(
-              padding: EdgeInsets.all(isTvTarget ? 24 : 12),
-              itemCount: items.length,
-              itemBuilder: (context, i) {
-                final m = items[i];
-                final time = _localizedMatchTime(m.time);
-                final status = _matchStatusLabel(m.status);
-                final score =
-                    m.hasScore ? '${m.homeGoals} - ${m.awayGoals}' : null;
-                final center = m.status == 'scheduled'
-                    ? (time.isEmpty ? 'موعد غير متاح' : time)
-                    : (score ?? 'النتيجة غير متاحة');
-                return Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => _open(context, m),
-                    canRequestFocus: true,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: isTvTarget ? 24 : 14,
-                          vertical: isTvTarget ? 22 : 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child:
-                                  _TeamBadge(name: m.home, logo: m.homeLogo)),
-                          SizedBox(
-                            width: isTvTarget ? 180 : 110,
-                            child: Column(
-                              children: [
-                                Text(status,
-                                    style: TextStyle(
-                                        color: m.status == 'live'
-                                            ? Colors.redAccent
-                                            : const Color(0xFFBEB7A7))),
-                                const SizedBox(height: 8),
-                                Text(center,
-                                    style: TextStyle(
-                                        fontSize: isTvTarget ? 28 : 20,
-                                        fontWeight: FontWeight.w800)),
-                                if (m.competition.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(m.competition,
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: Color(0xFF9E9686),
-                                          fontSize: 12)),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                              child:
-                                  _TeamBadge(name: m.away, logo: m.awayLogo)),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
+            return LayoutBuilder(
+                builder: (context, bounds) => Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                        height: bounds.maxHeight.clamp(160, 260),
+                        width: bounds.maxWidth,
+                        child: ListView.builder(
+                          key: const Key('live-match-carousel'),
+                          controller: _carousel,
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.all(isTvTarget ? 24 : 12),
+                          itemCount: items.length,
+                          itemBuilder: (context, i) {
+                            final m = items[i];
+                            final time = _localizedMatchTime(m.time);
+                            final status = _matchStatusLabel(m.status);
+                            final score = m.hasScore
+                                ? '${m.homeGoals} - ${m.awayGoals}'
+                                : null;
+                            final center = m.status == 'scheduled'
+                                ? (time.isEmpty ? 'موعد غير متاح' : time)
+                                : (score ?? 'النتيجة غير متاحة');
+                            return FocusHighlight(
+                                child: SizedBox(
+                                    width: (bounds.maxWidth /
+                                            (bounds.maxWidth >= 900
+                                                ? 2.6
+                                                : bounds.maxWidth >= 600
+                                                    ? 1.8
+                                                    : 1.08))
+                                        .clamp(240, 460),
+                                    child: Card(
+                                      clipBehavior: Clip.antiAlias,
+                                      child: InkWell(
+                                        onTap: () => _open(context, m),
+                                        canRequestFocus: true,
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: isTvTarget ? 24 : 14,
+                                              vertical: isTvTarget ? 22 : 16),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                  child: _TeamBadge(
+                                                      name: m.home,
+                                                      logo: m.homeLogo)),
+                                              SizedBox(
+                                                width: isTvTarget ? 180 : 110,
+                                                child: Column(
+                                                  children: [
+                                                    Text(status,
+                                                        style: TextStyle(
+                                                            color: m.status ==
+                                                                    'live'
+                                                                ? Colors
+                                                                    .redAccent
+                                                                : const Color(
+                                                                    0xFFBEB7A7))),
+                                                    const SizedBox(height: 8),
+                                                    Text(center,
+                                                        style: TextStyle(
+                                                            fontSize: isTvTarget
+                                                                ? 28
+                                                                : 20,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w800)),
+                                                    if (m.competition
+                                                        .isNotEmpty) ...[
+                                                      const SizedBox(height: 6),
+                                                      Text(m.competition,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: const TextStyle(
+                                                              color: Color(
+                                                                  0xFF9E9686),
+                                                              fontSize: 12)),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              Expanded(
+                                                  child: _TeamBadge(
+                                                      name: m.away,
+                                                      logo: m.awayLogo)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    )));
+                          },
+                        ))));
           },
         ))
       ]);
@@ -513,11 +858,15 @@ class CatalogPage extends StatefulWidget {
       required this.api,
       required this.store,
       required this.title,
-      required this.categoryId});
+      required this.categoryId,
+      this.unified = false,
+      this.mediaKind});
   final MitvApi api;
   final LocalLibraryStore store;
   final String title;
   final String categoryId;
+  final bool unified;
+  final String? mediaKind;
   @override
   State<CatalogPage> createState() => _CatalogPageState();
 }
@@ -536,6 +885,49 @@ class _CatalogPageState extends State<CatalogPage> {
     '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
     '3isk-movies': 'جميع الأفلام',
   };
+  Map<String, String> get _categories {
+    switch (widget.mediaKind) {
+      case 'movie':
+        return {
+          'movie-foreign': 'أكوام — أفلام أجنبية',
+          'movie-arabic': 'أكوام — أفلام عربية',
+          '3isk-movies': 'قصة عشق — أفلام'
+        };
+      case 'series':
+        return {
+          ...seriesCategories,
+          for (final entry in iskCategories.entries)
+            if (entry.key != '3isk-movies') entry.key: entry.value
+        };
+      case 'anime':
+        return {
+          'movie-anime': 'أكوام — أفلام أنمي',
+          'series-anime': 'أكوام — مسلسلات أنمي'
+        };
+      default:
+        return widget.unified
+            ? {
+                'movie-foreign': 'أكوام — أفلام أجنبية',
+                'movie-arabic': 'أكوام — أفلام عربية',
+                ...seriesCategories,
+                ...iskCategories
+              }
+            : widget.categoryId.startsWith('3isk-')
+                ? iskCategories
+                : seriesCategories;
+    }
+  }
+
+  bool _matchesKind(CatalogItem item) {
+    if (widget.mediaKind == null) return true;
+    final type = item.type.toLowerCase();
+    if (widget.mediaKind == 'anime') {
+      return selectedCategory.endsWith('-anime') ||
+          ['anime', 'animation'].contains(type);
+    }
+    return type == widget.mediaKind;
+  }
+
   final controller = ScrollController();
   final items = <CatalogItem>[];
   final seen = <String>{};
@@ -568,7 +960,11 @@ class _CatalogPageState extends State<CatalogPage> {
   final _prefetched = <String>{};
   void _prefetchVisible() {
     if (!mounted || !controller.hasClients || items.isEmpty) return;
-    final columns = isTvTarget ? 5 : 2;
+    final columns = ViewportMetrics(
+            size: MediaQuery.sizeOf(context),
+            safeInsets: MediaQuery.viewPaddingOf(context),
+            textScaler: MediaQuery.textScalerOf(context))
+        .columns(minimumCardWidth: isTvTarget ? 200 : 160);
     final width = MediaQuery.sizeOf(context).width / columns;
     final rowHeight = width / (isTvTarget ? .68 : .62) + 18;
     final start = ((controller.offset / rowHeight).floor() * columns)
@@ -599,7 +995,7 @@ class _CatalogPageState extends State<CatalogPage> {
           .toList(growable: false);
       setState(() {
         page += 1;
-        items.addAll(fresh);
+        items.addAll(fresh.where(_matchesKind));
         done = next.isEmpty || fresh.isEmpty;
         loading = false;
       });
@@ -610,7 +1006,8 @@ class _CatalogPageState extends State<CatalogPage> {
           return;
         }
         _prefetchVisible();
-        if (controller.position.extentAfter < (isTvTarget ? 1400 : 900)) {
+        if (fresh.any(_matchesKind) &&
+            controller.position.extentAfter < (isTvTarget ? 1400 : 900)) {
           _loadMore();
         }
       });
@@ -640,17 +1037,15 @@ class _CatalogPageState extends State<CatalogPage> {
 
   @override
   Widget build(BuildContext context) => Column(children: [
-        if (widget.categoryId.startsWith('series-') ||
+        if (widget.unified ||
+            widget.categoryId.startsWith('series-') ||
             widget.categoryId.startsWith('3isk-'))
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: DropdownButton<String>(
               isExpanded: true,
               value: selectedCategory,
-              items: (widget.categoryId.startsWith('3isk-')
-                      ? iskCategories
-                      : seriesCategories)
-                  .entries
+              items: _categories.entries
                   .map((entry) => DropdownMenuItem(
                       value: entry.key, child: Text(entry.value)))
                   .toList(),
@@ -670,8 +1065,8 @@ class _CatalogPageState extends State<CatalogPage> {
           child: GridView.builder(
             controller: controller,
             padding: EdgeInsets.all(isTvTarget ? 24 : 12),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: isTvTarget ? 5 : 2,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: isTvTarget ? 260 : 220,
                 childAspectRatio: isTvTarget ? .68 : .62,
                 crossAxisSpacing: isTvTarget ? 18 : 10,
                 mainAxisSpacing: isTvTarget ? 18 : 10),
@@ -686,7 +1081,12 @@ class _CatalogPageState extends State<CatalogPage> {
                                 onPressed: _loadMore,
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('إعادة المحاولة'))
-                            : Text(done ? 'تم عرض كل الأعمال المتاحة' : ''));
+                            : done
+                                ? const Text('تم عرض كل الأعمال المتاحة')
+                                : TextButton.icon(
+                                    onPressed: _loadMore,
+                                    icon: const Icon(Icons.expand_more),
+                                    label: const Text('عرض الصفحة التالية')));
               }
               final item = items[i];
               return _CatalogCard(
@@ -704,7 +1104,8 @@ class _CatalogCard extends StatelessWidget {
   final CatalogItem item;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => FocusHighlight(
+          child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -750,7 +1151,7 @@ class _CatalogCard extends StatelessWidget {
             ),
           ]),
         ),
-      );
+      ));
 }
 
 class SearchPage extends StatefulWidget {
@@ -857,8 +1258,8 @@ class _SearchPageState extends State<SearchPage> {
                             child: Text('اكتب اسم فيلم أو مسلسل للبحث'))
                         : GridView.builder(
                             gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: isTvTarget ? 5 : 2,
+                                SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: isTvTarget ? 260 : 220,
                               childAspectRatio: isTvTarget ? .68 : .62,
                               crossAxisSpacing: isTvTarget ? 18 : 10,
                               mainAxisSpacing: isTvTarget ? 18 : 10,

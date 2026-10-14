@@ -13,7 +13,7 @@ http.Response jsonResponse(Object value, [int statusCode = 200]) =>
     );
 
 void main() {
-  test('resolvePlayback accepts only backend-issued opaque media path',
+  test('resolvePlayback registers direct backend-issued media and expiry',
       () async {
     final client = MockClient((request) async {
       expect(request.url.path, '/api/cinema/details');
@@ -22,15 +22,86 @@ void main() {
         'status': 'success',
         'movie_title': 'الحلقة 1',
         'episodes': const [],
-        'media_path': '/api/cinema/media?id=opaque-short-lived',
-        'media_type': 'm3u8',
+        'media_path': 'https://video.example/movie.mp4',
+        'media_type': 'mp4',
+        'playback_mode': 'direct',
+        'expires_at':
+            DateTime.now().add(const Duration(minutes: 4)).toIso8601String(),
       });
     });
-    final api = MitvApi(
-        client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api =
+        MitvApi(client: client, baseUri: Uri.parse('https://runtime.example'));
     final resolved = await api.resolvePlayback('legacy:episode-1');
-    expect(resolved.mediaPath, '/api/cinema/media?id=opaque-short-lived');
-    expect(api.mediaUri(resolved.mediaPath).host, 'runtime.example');
+    expect(resolved.mediaPath, 'https://video.example/movie.mp4');
+    expect(
+        api
+            .mediaUri(resolved.mediaPath, playbackMode: resolved.playbackMode)
+            .host,
+        'video.example');
+    expect(() => api.mediaUri('/api/cinema/media?id=old'),
+        throwsA(isA<ApiException>()));
+  });
+
+  test('retired cloud video and private direct metadata are rejected',
+      () async {
+    for (final payload in [
+      {'media_path': '/api/cinema/media?id=old', 'media_type': 'mp4'},
+      {
+        'media_path': 'https://127.0.0.1/private.mp4',
+        'media_type': 'mp4',
+        'playback_mode': 'direct',
+        'expires_at':
+            DateTime.now().add(const Duration(minutes: 4)).toIso8601String()
+      },
+    ]) {
+      final api = MitvApi(
+          client: MockClient(
+              (_) async => jsonResponse({'status': 'success', ...payload})));
+      await expectLater(
+          api.resolvePlayback('legacy:fixture'), throwsA(isA<ApiException>()));
+      api.close();
+    }
+  });
+
+  test('edge movie resolution survives unavailable Render playback metadata',
+      () async {
+    final paths = <String>[];
+    final expiry =
+        DateTime.now().add(const Duration(minutes: 4)).toIso8601String();
+    final api = MitvApi(
+        useEdge: true,
+        edgeUri: Uri.parse('https://edge.example'),
+        client: MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/cinema/details') {
+            return jsonResponse({
+              'status': 'success',
+              'movie_title': 'فيلم',
+              'playback_unavailable': true,
+              'playback_reason': 'EDGE_DIRECT_RESOLUTION_REQUIRED'
+            });
+          }
+          return jsonResponse({
+            'status': 'success',
+            'schema_version': 1,
+            'sources': [
+              {
+                'provider_id': '3isk',
+                'provider': 'قصة عشق',
+                'url': 'https://cdn.example/master.m3u8',
+                'format': 'hls',
+                'playback_mode': 'edge_direct',
+                'expires_at': expiry,
+                'headers': {}
+              }
+            ]
+          });
+        }));
+    final details = await api.details('3isk:movie');
+    expect(details.title, 'فيلم');
+    expect(details.canPlay, true);
+    expect(paths, ['/api/cinema/details', '/v1/resolve']);
+    api.close();
   });
 
   test('playback extraction bypasses prefetched episode metadata', () async {
@@ -47,19 +118,22 @@ void main() {
       extracted++;
       return jsonResponse({
         'status': 'success',
-        'media_path': '/api/alooy/media?id=fresh',
-        'media_type': 'mp4'
+        'media_path': 'https://vid1.ujeklsj.site/fresh.mp4',
+        'media_type': 'mp4',
+        'playback_mode': 'local_proxy',
+        'expires_at':
+            DateTime.now().add(const Duration(minutes: 4)).toIso8601String()
       });
     }));
     await api.prefetchMetadata('alooy:episode');
     expect(api.cachedMetadata('alooy:episode')?.hasEpisodes, true);
     expect((await api.resolvePlayback('alooy:episode')).mediaPath,
-        '/api/alooy/media?id=fresh');
+        'https://vid1.ujeklsj.site/fresh.mp4');
     expect(extracted, 1);
     api.close();
   });
 
-  test('match logos are routed through the Al-Qahtani runtime proxy', () async {
+  test('match logos are routed through the MITV runtime proxy', () async {
     final client = MockClient((request) async {
       expect(request.url.path, '/api/v1/matches');
       return jsonResponse({
@@ -82,8 +156,8 @@ void main() {
         ],
       });
     });
-    final api = MitvApi(
-        client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api =
+        MitvApi(client: client, baseUri: Uri.parse('https://runtime.example'));
     final item = (await api.matches()).single;
     final home = Uri.parse(item.homeLogo);
     final away = Uri.parse(item.awayLogo);
@@ -96,8 +170,7 @@ void main() {
         'https://kooorracity.com/wp-content/uploads/team-b.png');
   });
 
-  test('catalog poster runtime paths are resolved against Al-Qahtani API',
-      () async {
+  test('catalog poster runtime paths are resolved against MITV API', () async {
     final client = MockClient((request) async => jsonResponse({
           'status': 'success',
           'kind': 'search',
@@ -112,15 +185,15 @@ void main() {
             }
           ],
         }));
-    final api = MitvApi(
-        client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api =
+        MitvApi(client: client, baseUri: Uri.parse('https://runtime.example'));
     final result = await api.search('عمل');
     expect(result.single.poster,
         'https://runtime.example/api/cinema/media?id=opaque-poster');
     expect(result.single.year, 2026);
   });
 
-  test('news stays behind Al-Qahtani runtime and maps opaque refs', () async {
+  test('news stays behind MITV runtime and maps opaque refs', () async {
     final client = MockClient((request) async {
       expect(request.url.host, 'runtime.example');
       if (request.url.path == '/api/v1/news') {
@@ -153,8 +226,8 @@ void main() {
         },
       });
     });
-    final api = MitvApi(
-        client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api =
+        MitvApi(client: client, baseUri: Uri.parse('https://runtime.example'));
     final items = await api.news();
     expect(items.single.ref, 'opaque-news-1');
     final article = await api.newsArticle(items.single.ref);
@@ -180,8 +253,8 @@ void main() {
           'playback_unavailable': true,
           'playback_reason': 'NO_PLAYABLE_MEDIA',
         }));
-    final api = MitvApi(
-        client: client, baseUri: Uri.parse('https://runtime.example'));
+    final api =
+        MitvApi(client: client, baseUri: Uri.parse('https://runtime.example'));
     await expectLater(
       api.resolvePlayback('legacy:unavailable'),
       throwsA(predicate((error) =>

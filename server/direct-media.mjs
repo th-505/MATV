@@ -1,5 +1,6 @@
 // Cloud services only inspect response headers. Video bodies belong to devices.
 const BROWSER_ORIGIN = 'https://th-505.github.io';
+const WEB_FORMATS = new Set(['hls', 'mp4', 'webm']);
 const FORMATS = new Map([
   ['.m3u8', 'hls'], ['.mp4', 'mp4'], ['.mpd', 'dash'],
   ['.mkv', 'matroska'], ['.webm', 'webm'], ['.ts', 'mpeg-ts'], ['.m2ts', 'mpeg-ts'],
@@ -51,7 +52,7 @@ export async function probeDirectMedia(value, headers, {
     return {
       url: target.href || String(target), status: response.status, kind,
       playable: response.ok && kind !== 'unknown',
-      webPlayable: browser && response.ok && kind !== 'unknown' && (acao === '*' || acao === BROWSER_ORIGIN),
+      webPlayable: browser && response.ok && WEB_FORMATS.has(kind) && (acao === '*' || acao === BROWSER_ORIGIN),
       contentType: response.headers.get('content-type') || '',
     };
   }
@@ -81,7 +82,10 @@ export function directSource(url, headers, { kind = directFormat(url), label = '
 }
 
 export function filterBrowserSources(data) {
-  const sources = (data.media_sources || [data]).filter(s => s.web_playable === true);
+  const sources = (data.media_sources || [data]).filter(s => {
+    const format = String(s.format || s.media_type || '').toLowerCase();
+    return s.web_playable === true && WEB_FORMATS.has(format === 'm3u8' ? 'hls' : format);
+  });
   if (sources.length) return { ...data, ...sources[0], media_sources: sources, download_available: false };
   const result = { ...data };
   for (const key of ['media_path', 'media_url', 'media_src', 'stream_url', 'headers', 'playback_headers', 'iframe_url', 'resolver_url', 'resolver_headers', 'wrapper_url']) delete result[key];

@@ -177,29 +177,18 @@ class _DetailsPageState extends State<DetailsPage> {
       _reportedBytes.remove(key);
     });
     try {
-      var resolvedPath = mediaPath;
-      Map<String, String> downloadHeaders = const {};
-      Uri uri;
-      if (widget.api.usesEdge) {
-        final ref = sourceRef.isEmpty ? widget.item.ref : sourceRef;
-        var source = widget.api.downloadableSource(ref);
-        if (source == null) {
-          await widget.api.resolvePlayback(ref, refresh: true);
-          source = widget.api.downloadableSource(ref);
-        }
-        if (source == null) {
-          throw const DownloadException('HLS_DOWNLOAD_UNSUPPORTED');
-        }
-        downloadHeaders = source.headers;
-        uri = widget.api.mediaUri(source.mediaPath,
-            download: true, playbackMode: 'edge_direct');
-      } else {
-        if (resolvedPath.isEmpty) {
-          resolvedPath =
-              (await widget.api.resolvePlayback(sourceRef)).mediaPath;
-        }
-        uri = widget.api.mediaUri(resolvedPath, download: true);
+      final ref = sourceRef.isEmpty ? widget.item.ref : sourceRef;
+      var source = widget.api.downloadableSource(ref);
+      if (source == null) {
+        await widget.api.resolvePlayback(ref, refresh: true);
+        source = widget.api.downloadableSource(ref);
       }
+      if (source == null) {
+        throw const DownloadException('HLS_DOWNLOAD_UNSUPPORTED');
+      }
+      final downloadHeaders = source.headers;
+      final uri = widget.api.mediaUri(source.mediaPath,
+          download: true, playbackMode: 'edge_direct');
       if (token.isCancelled) {
         throw const DownloadException('DOWNLOAD_CANCELLED');
       }
@@ -312,9 +301,8 @@ class _DetailsPageState extends State<DetailsPage> {
                     final key = 'episode:${episode.id}:${episode.number}';
                     final focusNode = _episodeFocus(episode);
                     return _EpisodeTile(
-                      downloadAvailable: widget.api.usesEdge
-                          ? widget.api.downloadableSource(episode.ref) != null
-                          : details.downloadAvailable,
+                      downloadAvailable:
+                          widget.api.downloadableSource(episode.ref) != null,
                       episode: episode,
                       focusNode: focusNode,
                       downloadFocusNode:

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:mitv/src/api_client.dart';
 import 'package:mitv/src/details_page.dart';
 import 'package:mitv/src/download_service.dart';
@@ -50,7 +51,20 @@ void main() {
       client: MockClient((request) async {
         expect(request.url.path, '/api/cinema/details');
         return http.Response(
-          '{"status":"success","movie_title":"فيلم","media_path":"/api/cinema/media?ref=opaque-direct","media_type":"mp4"}',
+          jsonEncode({
+            'status': 'success',
+            'movie_title': 'فيلم',
+            'media_path': 'https://cdn.example/movie.mp4',
+            'media_type': 'mp4',
+            'playback_mode': 'direct',
+            'expires_at': DateTime.now()
+                .add(const Duration(minutes: 4))
+                .toIso8601String(),
+            'headers': {
+              'Referer': 'https://source.example/watch',
+              'User-Agent': 'UA'
+            }
+          }),
           200,
           headers: const {'content-type': 'application/json'},
         );
@@ -75,8 +89,8 @@ void main() {
 
     expect(downloads.resumeKeys, <String>['movie-501:direct']);
     expect(downloads.resumeKeys.single, isNot(contains('opaque-title-direct')));
-    expect(downloads.uris.single.path, '/api/cinema/media');
-    expect(downloads.uris.single.queryParameters['download'], '1');
+    expect(downloads.uris.single.host, 'cdn.example');
+    expect(downloads.uris.single.queryParameters, isEmpty);
 
     api.close();
     downloads.close();
@@ -100,7 +114,16 @@ void main() {
         if (request.url.path == '/api/cinema/details' &&
             request.url.queryParameters['ref'] == 'opaque-episode') {
           return http.Response(
-            '{"status":"success","movie_title":"الحلقة 9","media_path":"/api/cinema/media?ref=opaque-media","media_type":"mp4"}',
+            jsonEncode({
+              'status': 'success',
+              'movie_title': 'الحلقة 9',
+              'media_path': 'https://cdn.example/episode.mp4',
+              'media_type': 'mp4',
+              'playback_mode': 'direct',
+              'expires_at': DateTime.now()
+                  .add(const Duration(minutes: 4))
+                  .toIso8601String()
+            }),
             200,
             headers: const {'content-type': 'application/json'},
           );
@@ -118,6 +141,7 @@ void main() {
       ref: 'series-ref',
     );
 
+    await api.resolvePlayback('opaque-episode');
     await tester.pumpWidget(MaterialApp(
         home: DetailsPage(
             api: api, store: store, item: item, downloads: downloads)));
@@ -127,8 +151,8 @@ void main() {
 
     expect(downloads.resumeKeys, <String>['series-88:episode:ep-9:9']);
     expect(downloads.resumeKeys.single, isNot(contains('opaque-episode')));
-    expect(downloads.uris.single.path, '/api/cinema/media');
-    expect(downloads.uris.single.queryParameters['download'], '1');
+    expect(downloads.uris.single.host, 'cdn.example');
+    expect(downloads.uris.single.queryParameters, isEmpty);
 
     api.close();
     downloads.close();

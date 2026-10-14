@@ -78,6 +78,7 @@ class _PlayerPageState extends State<PlayerPage> {
   double _brightness = 1.0;
   bool _nativeBrightness = false;
   bool _fullscreen = true;
+  BoxFit _videoFit = BoxFit.contain;
   Timer? _seekFeedbackTimer;
   String _seekFeedback = "";
   bool _controlsVisible = true;
@@ -164,13 +165,11 @@ class _PlayerPageState extends State<PlayerPage> {
   void _revealControls() {
     _controlsTimer?.cancel();
     if (mounted) setState(() => _controlsVisible = true);
-    if (!isTvTarget) {
-      _controlsTimer = Timer(const Duration(seconds: 4), () {
-        if (mounted && _controller?.value.isPlaying == true) {
-          setState(() => _controlsVisible = false);
-        }
-      });
-    }
+    _controlsTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && _controller?.value.isPlaying == true) {
+        setState(() => _controlsVisible = false);
+      }
+    });
   }
 
   Future<void> _toggleFullscreen() async {
@@ -382,7 +381,7 @@ class _PlayerPageState extends State<PlayerPage> {
     if (!mounted) return;
     if (widget.localFileUri != null &&
         controller != null &&
-        !controller.usesExtendedEngine &&
+        !controller.software &&
         _decoderRetries.add(-1)) {
       _nativeFailureInFlight = false;
       await _initialize(keepSources: true, software: true);
@@ -417,7 +416,7 @@ class _PlayerPageState extends State<PlayerPage> {
         !widget.sourceRef.startsWith('3isk:') &&
         _sources.isNotEmpty) {
       if (controller != null &&
-          !controller.usesExtendedEngine &&
+          !controller.software &&
           _decoderRetries.add(_sourceIndex)) {
         _nativeFailureInFlight = false;
         await _initialize(keepSources: true, software: true);
@@ -752,116 +751,143 @@ class _PlayerPageState extends State<PlayerPage> {
   Widget build(BuildContext context) {
     final controller = _controller;
     final active = controller?.value.isInitialized == true ? controller : null;
-    final insets = MediaQuery.paddingOf(context);
+    final insets = MediaQuery.viewPaddingOf(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: _fullscreen ? null : AppBar(title: Text(widget.title)),
-      body: SizedBox.expand(
-          child: Stack(fit: StackFit.expand, children: [
-        if (active != null)
-          GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _controlsVisible
-                  ? setState(() => _controlsVisible = false)
-                  : _revealControls(),
-              onDoubleTapDown: (d) => _gestureRight =
-                  d.localPosition.dx > MediaQuery.sizeOf(context).width / 2,
-              onDoubleTap: _doubleTapSeek,
-              onVerticalDragStart: isTvTarget
-                  ? null
-                  : (d) => _gestureRight =
-                      d.localPosition.dx > MediaQuery.sizeOf(context).width / 2,
-              onVerticalDragUpdate: isTvTarget
-                  ? null
-                  : (d) {
-                      final change = -(d.primaryDelta ?? 0) /
-                          MediaQuery.sizeOf(context).height;
-                      setState(() {
-                        if (_gestureRight) {
-                          _volume = (_volume + change).clamp(0, 1);
-                        } else {
-                          _brightness = (_brightness + change).clamp(.15, 1);
-                        }
-                      });
-                      if (_gestureRight) {
-                        unawaited(active.setVolume(_volume));
-                      } else {
-                        unawaited(_setBrightness());
-                      }
-                      _revealControls();
-                    },
+      body: Focus(
+          autofocus: isTvTarget,
+          onKeyEvent: (_, event) {
+            if (isTvTarget && event is KeyDownEvent) _revealControls();
+            return KeyEventResult.ignored;
+          },
+          child: SizedBox.expand(
               child: Stack(fit: StackFit.expand, children: [
-                ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: active,
-                    child: active.video(),
-                    builder: (_, value, video) => FullscreenVideoSurface(
-                        videoSize: value.size, child: video!)),
-                if (!_nativeBrightness && _brightness < 1)
-                  IgnorePointer(
-                      child: ColoredBox(
-                          color:
-                              Colors.black.withValues(alpha: 1 - _brightness))),
-                if (_seekFeedback.isNotEmpty)
-                  IgnorePointer(
-                      child: Align(
-                          alignment: _gestureRight
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                              margin: const EdgeInsets.all(28),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(20)),
-                              child: Text(_seekFeedback,
-                                  style: const TextStyle(
-                                      fontSize: 22, color: Colors.white))))),
-              ])),
-        if (active == null)
-          Center(
-              child: SafeArea(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _failed
-                ? const Icon(Icons.error_outline, size: 64)
-                : const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(_status, textAlign: TextAlign.center)),
-            if (_failed)
-              FilledButton(
-                  onPressed: () {
-                    setState(() => _failed = false);
-                    _initialize(forceRefresh: true);
-                  },
-                  child: const Text('إعادة المحاولة')),
-            TextButton(
-                onPressed: () => Navigator.of(context).maybePop(),
-                child: const Text('رجوع')),
+            if (active != null)
+              GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _controlsVisible
+                      ? setState(() => _controlsVisible = false)
+                      : _revealControls(),
+                  onDoubleTapDown: (d) => _gestureRight =
+                      d.localPosition.dx > MediaQuery.sizeOf(context).width / 2,
+                  onDoubleTap: _doubleTapSeek,
+                  onVerticalDragStart: isTvTarget
+                      ? null
+                      : (d) => _gestureRight = d.localPosition.dx >
+                          MediaQuery.sizeOf(context).width / 2,
+                  onVerticalDragUpdate: isTvTarget
+                      ? null
+                      : (d) {
+                          final change = -(d.primaryDelta ?? 0) /
+                              MediaQuery.sizeOf(context).height;
+                          setState(() {
+                            if (_gestureRight) {
+                              _volume = (_volume + change).clamp(0, 1);
+                            } else {
+                              _brightness =
+                                  (_brightness + change).clamp(.15, 1);
+                            }
+                          });
+                          if (_gestureRight) {
+                            unawaited(active.setVolume(_volume));
+                          } else {
+                            unawaited(_setBrightness());
+                          }
+                          _revealControls();
+                        },
+                  child: Stack(fit: StackFit.expand, children: [
+                    ValueListenableBuilder<VideoPlayerValue>(
+                        valueListenable: active,
+                        child: active.video(),
+                        builder: (_, value, video) => FullscreenVideoSurface(
+                            videoSize: value.size,
+                            fit: _videoFit,
+                            child: video!)),
+                    if (!_nativeBrightness && _brightness < 1)
+                      IgnorePointer(
+                          child: ColoredBox(
+                              color: Colors.black
+                                  .withValues(alpha: 1 - _brightness))),
+                    if (_seekFeedback.isNotEmpty)
+                      IgnorePointer(
+                          child: Align(
+                              alignment: _gestureRight
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                  margin: const EdgeInsets.all(28),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(20)),
+                                  child: Text(_seekFeedback,
+                                      style: const TextStyle(
+                                          fontSize: 22,
+                                          color: Colors.white))))),
+                  ])),
+            if (active == null)
+              Center(
+                  child: SafeArea(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                _failed
+                    ? const Icon(Icons.error_outline, size: 64)
+                    : const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(_status, textAlign: TextAlign.center)),
+                if (_failed)
+                  FilledButton(
+                      onPressed: () {
+                        setState(() => _failed = false);
+                        _initialize(forceRefresh: true);
+                      },
+                      child: const Text('إعادة المحاولة')),
+                TextButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    child: const Text('رجوع')),
+              ]))),
+            if (active != null && _controlsVisible) ...[
+              Positioned(
+                  top: insets.top + 4,
+                  left: insets.left + 4,
+                  child: IconButton(
+                      tooltip: 'رجوع',
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.of(context).maybePop())),
+              Positioned(
+                  top: insets.top + 4,
+                  right: insets.right + 4,
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    IconButton(
+                        key: const Key('player-fit-toggle'),
+                        tooltip: _videoFit == BoxFit.contain
+                            ? 'ملء الأبعاد مع قص الأطراف'
+                            : 'عرض الأبعاد الأصلية',
+                        icon: Icon(_videoFit == BoxFit.contain
+                            ? Icons.crop_free
+                            : Icons.fit_screen),
+                        onPressed: () {
+                          setState(() => _videoFit = _videoFit == BoxFit.contain
+                              ? BoxFit.cover
+                              : BoxFit.contain);
+                          _revealControls();
+                        }),
+                    IconButton(
+                        tooltip: _fullscreen ? 'تصغير' : 'ملء الشاشة',
+                        icon: Icon(_fullscreen
+                            ? Icons.fullscreen_exit
+                            : Icons.fullscreen),
+                        onPressed: _toggleFullscreen)
+                  ])),
+              Positioned(
+                  left: insets.left,
+                  right: insets.right,
+                  bottom: insets.bottom,
+                  child: _modernControls(active)),
+            ],
           ]))),
-        if (active != null && _controlsVisible) ...[
-          Positioned(
-              top: insets.top + 4,
-              left: insets.left + 4,
-              child: IconButton(
-                  tooltip: 'رجوع',
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).maybePop())),
-          Positioned(
-              top: insets.top + 4,
-              right: insets.right + 4,
-              child: IconButton(
-                  tooltip: _fullscreen ? 'تصغير' : 'ملء الشاشة',
-                  icon: Icon(
-                      _fullscreen ? Icons.fullscreen_exit : Icons.fullscreen),
-                  onPressed: _toggleFullscreen)),
-          Positioned(
-              left: insets.left,
-              right: insets.right,
-              bottom: insets.bottom,
-              child: _modernControls(active)),
-        ],
-      ])),
     );
   }
 }

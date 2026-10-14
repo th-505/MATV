@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
-import 'miravd_resolver.dart';
 import 'alooy_policy.dart';
 
 class MitvApi implements MediaRepository {
@@ -225,7 +224,6 @@ class MitvApi implements MediaRepository {
         cached?.hasEpisodes == true ? cached! : await _details(ref);
     if (_useEdge &&
         !metadata.hasEpisodes &&
-        metadata.canPlay &&
         ['3isk:', 'alooy:', 'legacy:'].any(ref.startsWith)) {
       final playback = await resolvePlayback(ref);
       return TitleDetails(
@@ -256,7 +254,69 @@ class MitvApi implements MediaRepository {
             'platform': 'web'
         },
         const Duration(seconds: 60));
-    return TitleDetails.fromJson(json);
+    final normalized = <String, dynamic>{...json};
+    if (json['media_sources'] is List) {
+      normalized['media_sources'] = [
+        for (final raw in (json['media_sources'] as List).whereType<Map>())
+          <String, dynamic>{
+            ...raw.cast<String, dynamic>(),
+            'playback_mode': raw['playback_mode'] ?? json['playback_mode'],
+            'expires_at': raw['expires_at'] ?? json['expires_at'],
+            'headers':
+                raw['headers'] ?? json['headers'] ?? json['playback_headers'],
+          }
+      ];
+    }
+    final rawPath =
+        json['stream_url'] ?? json['media_url'] ?? json['media_path'];
+    if ((normalized['media_sources'] is! List ||
+            (normalized['media_sources'] as List).isEmpty) &&
+        rawPath is String &&
+        rawPath.isNotEmpty) {
+      normalized['media_sources'] = [
+        {...json, 'url': rawPath}
+      ];
+    }
+    final details = TitleDetails.fromJson(normalized);
+    if (details.hasDirectMedia) {
+      _registerDirectMetadata(details);
+      _playbackCache[ref] = details;
+      if (_playbackCache.length > 64) {
+        _playbackCache.remove(_playbackCache.keys.first);
+      }
+    }
+    return details;
+  }
+
+  void _registerDirectMetadata(TitleDetails details) {
+    if (!['direct', 'local_proxy', 'edge_direct', 'edge_local_proxy']
+        .contains(details.playbackMode)) {
+      throw const ApiException('CLOUD_VIDEO_PROXY_RETIRED');
+    }
+    final validated = <String, DateTime>{};
+    final sources = <PlaybackSource>[
+      PlaybackSource(
+          mediaPath: details.mediaPath,
+          mediaType: details.mediaType,
+          expiresAt: details.expiresAt),
+      ...details.mediaSources,
+    ];
+    for (final source in sources) {
+      final uri = Uri.tryParse(source.mediaPath);
+      final expiry = source.expiresAt ?? details.expiresAt;
+      if (uri == null ||
+          !isPublicMediaUri(uri) ||
+          expiry == null ||
+          !expiry.isAfter(DateTime.now().add(const Duration(seconds: 30)))) {
+        throw const ApiException('INVALID_DIRECT_MEDIA');
+      }
+      validated[source.mediaPath] = expiry;
+    }
+    _edgeStreams.addAll(validated);
+    _edgeStreams.removeWhere((_, expiry) => !expiry.isAfter(DateTime.now()));
+    while (_edgeStreams.length > 64) {
+      _edgeStreams.remove(_edgeStreams.keys.first);
+    }
   }
 
   @override
@@ -269,8 +329,16 @@ class MitvApi implements MediaRepository {
     }
     // Metadata prefetch never substitutes for a playable, token-aware response.
     final resolved = await _details(ref, refresh: refresh);
-    if (resolved.needsClientResolution) return _resolveClientPlayer(resolved);
-    if (resolved.hasDirectMedia) return resolved;
+    if (resolved.needsClientResolution) {
+      throw const ApiException('EDGE_DIRECT_RESOLUTION_REQUIRED');
+    }
+    if (resolved.hasDirectMedia) {
+      _playbackCache[ref] = resolved;
+      if (_playbackCache.length > 64) {
+        _playbackCache.remove(_playbackCache.keys.first);
+      }
+      return resolved;
+    }
     if (resolved.playbackUnavailable) {
       throw ApiException(resolved.playbackReason.isEmpty
           ? 'PLAYBACK_UNAVAILABLE'
@@ -362,71 +430,12 @@ class MitvApi implements MediaRepository {
     return details;
   }
 
-  Future<TitleDetails> _resolveClientPlayer(TitleDetails details) async {
-    var uri = Uri.parse(details.resolverUrl);
-    for (var redirects = 0; redirects <= 3; redirects++) {
-      if (uri.scheme != 'https' ||
-          uri.host != 'miravd.com' ||
-          uri.userInfo.isNotEmpty ||
-          uri.hasPort ||
-          uri.hasQuery ||
-          uri.hasFragment ||
-          !RegExp(r'^/embed-[a-zA-Z0-9]+\.html$').hasMatch(uri.path)) {
-        throw const ApiException('INVALID_PLAYER_METADATA');
-      }
-      final request = http.Request('GET', uri)..followRedirects = false;
-      request.headers.addAll(details.resolverHeaders);
-      final response =
-          await _client.send(request).timeout(const Duration(seconds: 20));
-      if ([301, 302, 303, 307, 308].contains(response.statusCode)) {
-        final location = response.headers['location'];
-        await response.stream.listen((_) {}).cancel();
-        if (location == null) {
-          throw const ApiException('INVALID_PLAYER_REDIRECT');
-        }
-        uri = uri.resolve(location);
-        continue;
-      }
-      if (response.statusCode != 200) {
-        await response.stream.listen((_) {}).cancel();
-        throw ApiException('PLAYER_HTTP_${response.statusCode}');
-      }
-      final bytes = <int>[];
-      await for (final chunk
-          in response.stream.timeout(const Duration(seconds: 20))) {
-        if (bytes.length + chunk.length > 2 * 1024 * 1024) {
-          throw const ApiException('PLAYER_METADATA_TOO_LARGE');
-        }
-        bytes.addAll(chunk);
-      }
-      final media = miravdMediaUrl(utf8.decode(bytes));
-      final expiry = DateTime.now().toUtc().add(const Duration(minutes: 5));
-      mediaUri(media, playbackMode: 'direct', expiresAt: expiry);
-      return TitleDetails(
-          title: details.title,
-          poster: details.poster,
-          episodes: const [],
-          mediaPath: media,
-          mediaType: Uri.parse(media).path.endsWith('.mp4') ? 'mp4' : 'm3u8',
-          playbackMode: 'direct',
-          playbackHeaders: {
-            'Referer': 'https://miravd.com/',
-            if (details.resolverHeaders['User-Agent'] != null)
-              'User-Agent': details.resolverHeaders['User-Agent']!
-          },
-          expiresAt: expiry,
-          downloadAvailable: false,
-          playbackUnavailable: false,
-          playbackReason: '');
-    }
-    throw const ApiException('PLAYER_REDIRECT_LIMIT');
-  }
-
   Uri mediaUri(String mediaPath,
       {bool download = false,
       String playbackMode = 'proxy',
       DateTime? expiresAt}) {
-    if (playbackMode == 'edge_direct') {
+    if (playbackMode == 'edge_direct' ||
+        (playbackMode == 'direct' && _edgeStreams.containsKey(mediaPath))) {
       final expiry = _edgeStreams[mediaPath];
       final uri = Uri.tryParse(mediaPath);
       if ((download && !(uri?.path.toLowerCase().endsWith('.mp4') ?? false)) ||
@@ -471,17 +480,7 @@ class MitvApi implements MediaRepository {
       }
       return uri;
     }
-    final cinema = mediaPath.startsWith('/api/cinema/media?') ||
-        mediaPath.startsWith('/api/alooy/media?');
-    final matches = mediaPath.startsWith('/api/matches/media?');
-    if (!cinema && !matches) {
-      throw const ApiException('INVALID_MEDIA_REFERENCE');
-    }
-    final uri = _baseUri.resolve(mediaPath);
-    if (!download) return uri;
-    final params = Map<String, String>.from(uri.queryParameters)
-      ..['download'] = '1';
-    return uri.replace(queryParameters: params);
+    throw const ApiException('CLOUD_VIDEO_PROXY_RETIRED');
   }
 
   Future<Map<String, dynamic>> _edgeJson(String path,

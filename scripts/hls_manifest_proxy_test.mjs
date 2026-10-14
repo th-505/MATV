@@ -71,6 +71,24 @@ try {
     inspected++;assert.equal(init.method,'HEAD');return new Response(null,{status:403,headers:{'content-type':'video/mp4','access-control-allow-origin':'*'}});
   }});
   assert.equal(denied.playable,false);assert.equal(denied.webPlayable,false);assert.equal(inspected,1);
+  for (const [extension,type,accepted] of [
+    ['mkv','video/x-matroska',false], ['mpd','application/dash+xml',false],
+    ['ts','video/mp2t',false], ['mp4','video/mp4',true],
+    ['m3u8','application/vnd.apple.mpegurl',true], ['webm','video/webm',true],
+  ]) {
+    const url=`https://video.downet.net/video/format.${extension}`;
+    const probe=await probeDirectMedia(url,{}, {validateUrl,browser:true,fetchImpl:async(_url,init)=>{
+      assert.equal(init.method,'HEAD');
+      return new Response(null,{headers:{'content-type':type,'access-control-allow-origin':'*'}});
+    }});
+    assert.equal(probe.playable,true,'native direct format remains eligible');
+    assert.equal(probe.webPlayable,accepted,`${extension} browser eligibility`);
+    // Reject a stale or overly broad upstream flag independently of HEAD probing.
+    const source={...directSource(url,{}),web_playable:true};
+    const filtered=filterBrowserSources({...source,media_sources:[source]});
+    assert.equal(filtered.media_sources.length,accepted?1:0,`${extension} source filter`);
+    assert.equal(filtered.media_path,accepted?url:undefined);
+  }
   await assert.rejects(()=>probeDirectMedia('https://evil.test/video.mp4',{}, {validateUrl,fetchImpl:async()=>{inspected++;}}),/UNSAFE_CINEMA_SOURCE_URL/);
   assert.equal(inspected,1,'untrusted redirect/input must fail before network');
   const hidden=filterBrowserSources({movie_title:'protected',...directSource('https://video.downet.net/v.mp4',{Referer:'https://akwam.ss/watch/test'})});

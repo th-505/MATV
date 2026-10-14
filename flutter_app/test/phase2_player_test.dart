@@ -103,16 +103,20 @@ void main() {
         client: MockClient((request) async => http.Response(
             jsonEncode({
               'status': 'success',
-              'media_path': '/api/cinema/media?id=bad',
+              'playback_mode': 'direct',
+              'expires_at': DateTime.now()
+                  .add(const Duration(minutes: 3))
+                  .toIso8601String(),
+              'media_path': 'https://s201d1.downet.net/movie.mp4?id=bad',
               'media_type': 'mp4',
               'media_sources': [
                 {
-                  'media_path': '/api/cinema/media?id=bad',
+                  'media_path': 'https://s201d1.downet.net/movie.mp4?id=bad',
                   'media_type': 'mp4',
                   'label': '720p'
                 },
                 {
-                  'media_path': '/api/cinema/media?id=good',
+                  'media_path': 'https://s201d1.downet.net/movie.mp4?id=good',
                   'media_type': 'mp4',
                   'label': '1080p'
                 },
@@ -182,6 +186,9 @@ void main() {
               'media_path': 'https://vid8.ujeklsj.site/test.mp4',
               'media_type': 'mp4',
               'playback_mode': 'local_proxy',
+              'expires_at': DateTime.now()
+                  .add(const Duration(minutes: 3))
+                  .toIso8601String(),
               'headers': {
                 'Referer':
                     'https://fa.alooytv16.xyz/watch/test.html?key=abc123',

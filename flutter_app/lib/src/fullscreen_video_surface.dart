@@ -11,19 +11,22 @@ class FullscreenVideoSurface extends StatelessWidget {
   final Widget child;
   final BoxFit fit;
   @override
-  Widget build(BuildContext context) {
-    final size = videoSize.width > 0 && videoSize.height > 0
-        ? videoSize
-        : const Size(1920, 1080);
-    return SizedBox.expand(
-        key: const Key('fullscreen-video-viewport'),
-        child: ColoredBox(
-            color: Colors.black,
-            child: FittedBox(
-                fit: fit,
-                alignment: Alignment.center,
-                clipBehavior: Clip.hardEdge,
-                child: SizedBox(
-                    width: size.width, height: size.height, child: child))));
-  }
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, bounds) {
+        final size = videoSize.width > 0 && videoSize.height > 0
+            ? videoSize
+            : bounds.biggest;
+        return SizedBox.expand(
+            key: const Key('fullscreen-video-viewport'),
+            child: ColoredBox(
+                color: Colors.black,
+                child: FittedBox(
+                    fit: fit,
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.hardEdge,
+                    child: SizedBox(
+                        width: size.width,
+                        height: size.height,
+                        child: child))));
+      });
 }

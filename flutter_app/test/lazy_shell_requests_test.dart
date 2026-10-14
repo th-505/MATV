@@ -52,34 +52,46 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: Shell(store: store, api: api)));
     await tester.pumpAndSettle();
 
-    expect(api.matchesRequests, 1);
+    expect(api.matchesRequests, 0);
     expect(api.newsRequests, 0);
-    expect(api.categoryRequests, isEmpty);
+    expect(api.categoryRequests, ['3isk-latest:1']);
     expect(find.byType(CatalogPage, skipOffstage: false), findsNothing);
 
     await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
-    expect(api.categoryRequests, ['movie-foreign:1']);
-    final movieState = tester.state(find.byType(CatalogPage));
+    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
+    final cinemaState = tester.state(find.byType(CatalogPage));
 
-    await tester.tap(find.text('المسلسلات'));
+    await tester.tap(find.text('الإعدادات'));
     await tester.pumpAndSettle();
-    expect(api.categoryRequests, ['movie-foreign:1', 'series-foreign:1']);
-    expect(api.matchesRequests, 1);
+    expect(api.matchesRequests, 0);
     expect(api.newsRequests, 0);
 
     await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
-    expect(tester.state(find.byType(CatalogPage)), same(movieState));
-    expect(api.categoryRequests, ['movie-foreign:1', 'series-foreign:1']);
+    expect(tester.state(find.byType(CatalogPage)), same(cinemaState));
+    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
 
-    await tester.tap(find.text('الأخبار'));
-    await tester.pumpAndSettle();
-    expect(api.newsRequests, 1);
-    await tester.tap(find.text('المباريات'));
+    await tester.tap(find.text('المباشر'));
     await tester.pumpAndSettle();
     expect(api.matchesRequests, 1);
-    expect(api.categoryRequests, isNot(contains('3isk-latest:1')));
+    await tester.tap(find.text('الرئيسية'));
+    await tester.pumpAndSettle();
+    expect(api.matchesRequests, 1);
+    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
+    expect(api.newsRequests, 0);
+    expect(find.text('الأخبار'), findsNothing);
+
+    await tester.tap(find.text('المسلسلات'));
+    await tester.pumpAndSettle();
+    expect(api.categoryRequests.last, 'series-foreign:1');
+    await tester.tap(find.text('الأنمي'));
+    await tester.pumpAndSettle();
+    expect(api.categoryRequests.last, 'movie-anime:1');
+    expect(api.categoryRequests.length, 4);
+    await tester.tap(find.text('المسلسلات'));
+    await tester.pumpAndSettle();
+    expect(api.categoryRequests.length, 4);
 
     await tester.pumpWidget(const SizedBox());
     expect(api.closeCalls, 0,
