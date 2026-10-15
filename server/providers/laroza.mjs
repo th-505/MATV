@@ -129,6 +129,8 @@ export function createLarozaProvider({
       });
       return { ...item, movie_title:item.title, status:'success', episodes,
         description:String(result.data.description || result.data.plot || '').slice(0,8000),
+        ...(typeof result.data.published_at==='string' && Number.isFinite(Date.parse(result.data.published_at))
+          ? {published_at:new Date(result.data.published_at).toISOString()} : {}),
         is_iframe:false, download_available:false, media_sources:[],
         ...(episodes.length ? {} : {playback_unavailable:true, playback_reason:'EDGE_DIRECT_RESOLUTION_REQUIRED'}) };
     },

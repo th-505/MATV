@@ -61,7 +61,7 @@ Future<void> main() async {
         InternetAddress.loopbackIPv4, upstream!.port,
         onBadCertificate: (_) => true);
     client.badCertificateCallback =
-        (_, host, __) => host == 'vid8.ujeklsj.site';
+        (_, host, _) => host == 'vid8.ujeklsj.site';
     bridge = LocalStreamBridge(client: client);
     final local = await bridge.open(
         Uri.parse('https://vid8.ujeklsj.site/test.mp4'), headers);

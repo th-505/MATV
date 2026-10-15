@@ -9,9 +9,11 @@ class MediaTaxonomy {
     final genres = item.genres.map(_words).toSet();
     final title = _words(item.title);
     if (_animeTypes.contains(type) ||
-        genres.any((genre) =>
-            _animeTypes.contains(genre) ||
-            RegExp(r'(^|\s)(anime|انمي|انيمي)(\s|$)').hasMatch(genre))) {
+        genres.any(
+          (genre) =>
+              _animeTypes.contains(genre) ||
+              RegExp(r'(^|\s)(anime|انمي|انيمي)(\s|$)').hasMatch(genre),
+        )) {
       return 'anime';
     }
     if (_programTypes.contains(type) ||
@@ -85,24 +87,21 @@ class MediaTaxonomy {
     'برامج',
     'البرامج',
   };
-  static const _animeTypes = {
-    'anime',
-    'انمي',
-    'انيمي',
-    'الانمي',
-    'انميات',
-  };
+  static const _animeTypes = {'anime', 'انمي', 'انيمي', 'الانمي', 'انميات'};
 }
 
 final _episodeMarker = RegExp(
-    r'(?:^|\s)(?:s\s*\d+\s*e\s*\d+(?:\s|$)|(?:episode|ep)(?:\s*\d+|\s|$)|(?:الحلقة|الحلقه|حلقة|حلقه|الموسم)(?:\s*\d+|\s|$))',
-    caseSensitive: false);
+  r'(?:^|\s)(?:s\s*\d+\s*e\s*\d+(?:\s|$)|(?:episode|ep)(?:\s*\d+|\s|$)|(?:الحلقة|الحلقه|حلقة|حلقه|الموسم)(?:\s*\d+|\s|$))',
+  caseSensitive: false,
+);
 final _qualitySuffix = RegExp(
-    r'(?:\s|[\[\(\-–—|:])+(?:(?:بجودة|جودة)\s+)?(?:\d{3,4}p|[248]k|full[\s-]?hd|hd|sd|web[\s-]?dl|web[\s-]?rip|blu[\s-]?ray|brrip|hdtv|dvdrip|hdrip|hdr|10bit|[xh]26[45])\s*[\]\)]*$',
-    caseSensitive: false);
+  r'(?:\s|[\[\(\-–—|:])+(?:(?:بجودة|جودة)\s+)?(?:\d{3,4}p|[248]k|full[\s-]?hd|hd|sd|web[\s-]?dl|web[\s-]?rip|blu[\s-]?ray|brrip|hdtv|dvdrip|hdrip|hdr|10bit|[xh]26[45])\s*[\]\)]*$',
+  caseSensitive: false,
+);
 final _translationSuffix = RegExp(
-    r'(?:\s|[\[\(\-–—|:])+(?:مترجم|مترجمة|مدبلج|مدبلجة|dubbed|subbed|subtitled)\s*[\]\)]*$',
-    caseSensitive: false);
+  r'(?:\s|[\[\(\-–—|:])+(?:مترجم|مترجمة|مدبلج|مدبلجة|dubbed|subbed|subtitled)\s*[\]\)]*$',
+  caseSensitive: false,
+);
 
 String _fold(String value) {
   var result = value
@@ -173,13 +172,14 @@ class UnifiedMedia {
   }
 
   static Map<String, String> _references(MediaItem item) => {
-        for (final entry in item.sourceRefs.entries)
-          if (entry.key.trim().isNotEmpty && entry.value.isNotEmpty)
-            _providerAliases[entry.key.trim().toLowerCase()] ??
-                entry.key.trim().toLowerCase(): entry.value,
-        if (item.ref.isNotEmpty && providerId(item).isNotEmpty)
-          providerId(item): item.ref,
-      };
+    for (final entry in item.sourceRefs.entries)
+      if (entry.key.trim().isNotEmpty && entry.value.isNotEmpty)
+        _providerAliases[entry.key.trim().toLowerCase()] ??
+                entry.key.trim().toLowerCase():
+            entry.value,
+    if (item.ref.isNotEmpty && providerId(item).isNotEmpty)
+      providerId(item): item.ref,
+  };
 
   static const _providerAliases = {
     '3isk': '3isk',
@@ -220,8 +220,9 @@ class _MediaGroup {
     identities.add(identity);
     final currentVerifiedId = _verifiedImdb(item);
     final incomingVerifiedId = _verifiedImdb(incoming);
-    final verifiedId =
-        currentVerifiedId.isNotEmpty ? currentVerifiedId : incomingVerifiedId;
+    final verifiedId = currentVerifiedId.isNotEmpty
+        ? currentVerifiedId
+        : incomingVerifiedId;
     item = item.copyWith(
       title: item.title.isNotEmpty ? item.title : incoming.title,
       poster: item.poster.isNotEmpty ? item.poster : incoming.poster,
@@ -243,13 +244,13 @@ class _MediaGroup {
 
 class _MediaIdentity {
   _MediaIdentity(MediaItem item)
-      : title = MediaTaxonomy.normalizeTitle(item.title),
-        year = item.year != null && item.year! > 0 ? item.year : null,
-        imdb = _verifiedImdb(item),
-        kind = _underlyingKind(item),
-        scope = _scope(item),
-        audio = _knownAudio(item.audioLanguage),
-        edition = _knownEdition(item.edition);
+    : title = MediaTaxonomy.normalizeTitle(item.title),
+      year = item.year != null && item.year! > 0 ? item.year : null,
+      imdb = _verifiedImdb(item),
+      kind = _underlyingKind(item),
+      scope = _scope(item),
+      audio = _knownAudio(item.audioLanguage),
+      edition = _knownEdition(item.edition);
   final String title;
   final int? year;
   final String imdb;
@@ -295,7 +296,8 @@ class _MediaIdentity {
 
 String _verifiedImdb(MediaItem item) {
   final id = item.imdbId.trim().toLowerCase();
-  return item.identityVerified && RegExp(r'^tt\d{7,10}$').hasMatch(id)
+  return (item.identityVerified || item.workIdentityVerified) &&
+          RegExp(r'^tt\d{7,10}$').hasMatch(id)
       ? id
       : '';
 }
@@ -392,8 +394,14 @@ String _knownAudio(String value) {
     'العربيه': 'ar',
   };
   if (aliases.containsKey(trimmed)) return aliases[trimmed]!;
-  if ({'und', 'unk', 'unknown', 'original', 'dubbed', 'subbed'}
-      .contains(trimmed)) {
+  if ({
+    'und',
+    'unk',
+    'unknown',
+    'original',
+    'dubbed',
+    'subbed',
+  }.contains(trimmed)) {
     return '';
   }
   const knownCodes = {
@@ -461,7 +469,7 @@ String _knownEdition(String value) {
     'n a',
     'غير معروف',
     'غير محدد',
-    'source original'
+    'source original',
   }.contains(edition)) {
     return '';
   }

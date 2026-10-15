@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'alooy_policy.dart';
+
 /// Native boundary for background download execution.
 ///
 /// Native completion is never equivalent to a user-visible completed download.
@@ -17,15 +19,25 @@ class BackgroundDownloadRequest {
     required this.uri,
     required this.resumeKey,
     required this.fallbackName,
+    this.headers = const {},
   });
 
   final String taskId;
   final Uri uri;
   final String resumeKey;
   final String fallbackName;
+  final Map<String, String> headers;
 }
 
-enum BackgroundDownloadState { queued, running, paused, verifying, completed, failed, cancelled }
+enum BackgroundDownloadState {
+  queued,
+  running,
+  paused,
+  verifying,
+  completed,
+  failed,
+  cancelled,
+}
 
 class BackgroundDownloadEvent {
   const BackgroundDownloadEvent({
@@ -58,7 +70,8 @@ class BackgroundDownloadEvent {
   }
 }
 
-typedef BackgroundCompletionVerifier = Future<bool> Function(BackgroundDownloadEvent event);
+typedef BackgroundCompletionVerifier =
+    Future<bool> Function(BackgroundDownloadEvent event);
 
 class BackgroundDownloadCoordinator {
   BackgroundDownloadCoordinator(
@@ -72,8 +85,10 @@ class BackgroundDownloadCoordinator {
 
   final BackgroundDownloadBridge bridge;
   final BackgroundCompletionVerifier _completionVerifier;
-  final Map<String, BackgroundDownloadEvent> _latest = <String, BackgroundDownloadEvent>{};
-  final StreamController<BackgroundDownloadEvent> _controller = StreamController<BackgroundDownloadEvent>.broadcast();
+  final Map<String, BackgroundDownloadEvent> _latest =
+      <String, BackgroundDownloadEvent>{};
+  final StreamController<BackgroundDownloadEvent> _controller =
+      StreamController<BackgroundDownloadEvent>.broadcast();
   late final StreamSubscription<BackgroundDownloadEvent> _subscription;
 
   Stream<BackgroundDownloadEvent> get events => _controller.stream;
@@ -84,15 +99,31 @@ class BackgroundDownloadCoordinator {
     if (request.taskId.trim().isEmpty || request.resumeKey.trim().isEmpty) {
       throw const BackgroundDownloadException('INVALID_BACKGROUND_TASK');
     }
-    if (request.uri.path != '/api/cinema/media' || request.uri.queryParameters['download'] != '1') {
+    if (!isPublicMediaUri(request.uri) ||
+        !request.uri.path.toLowerCase().endsWith('.mp4')) {
       throw const BackgroundDownloadException('INVALID_DOWNLOAD_REFERENCE');
     }
-    _publish(BackgroundDownloadEvent(taskId: request.taskId, state: BackgroundDownloadState.queued));
+    if (request.headers.keys.any(
+          (key) => !['Referer', 'Origin', 'User-Agent'].contains(key),
+        ) ||
+        request.headers.values.any(
+          (value) => value.contains(RegExp(r'[\r\n]')),
+        )) {
+      throw const BackgroundDownloadException('INVALID_DOWNLOAD_HEADERS');
+    }
+    _publish(
+      BackgroundDownloadEvent(
+        taskId: request.taskId,
+        state: BackgroundDownloadState.queued,
+      ),
+    );
     await bridge.enqueue(request);
   }
 
   Future<void> cancel(String taskId) async {
-    if (taskId.trim().isEmpty) throw const BackgroundDownloadException('INVALID_BACKGROUND_TASK');
+    if (taskId.trim().isEmpty) {
+      throw const BackgroundDownloadException('INVALID_BACKGROUND_TASK');
+    }
     await bridge.cancel(taskId);
   }
 
@@ -120,15 +151,18 @@ class BackgroundDownloadCoordinator {
     if (verified) {
       _publish(event);
     } else {
-      _publish(event.copyWith(
-        state: BackgroundDownloadState.failed,
-        errorCode: 'FINAL_FILE_VERIFICATION_FAILED',
-      ));
+      _publish(
+        event.copyWith(
+          state: BackgroundDownloadState.failed,
+          errorCode: 'FINAL_FILE_VERIFICATION_FAILED',
+        ),
+      );
     }
   }
 
   void _validateProgress(BackgroundDownloadEvent event) {
-    if (event.receivedBytes < 0 || (event.totalBytes != null && event.totalBytes! < event.receivedBytes)) {
+    if (event.receivedBytes < 0 ||
+        (event.totalBytes != null && event.totalBytes! < event.receivedBytes)) {
       throw const BackgroundDownloadException('INVALID_BACKGROUND_PROGRESS');
     }
   }
@@ -138,7 +172,9 @@ class BackgroundDownloadCoordinator {
     _controller.add(event);
   }
 
-  static Future<bool> _rejectUnverifiedCompletion(BackgroundDownloadEvent _) async => false;
+  static Future<bool> _rejectUnverifiedCompletion(
+    BackgroundDownloadEvent _,
+  ) async => false;
 
   static bool _isTerminal(BackgroundDownloadState state) =>
       state == BackgroundDownloadState.completed ||

@@ -1,4 +1,5 @@
 import { load } from "cheerio";
+import { sourcePublishedAt } from '../source-publication.mjs';
 import { TtlCache } from "../content-runtime.mjs";
 export const ALOOY_ORIGIN = "https://fa.alooytv16.xyz";
 export const ALOOY_UA =
@@ -127,6 +128,7 @@ export function parseAlooyDetails(html, pageUrl) {
     movie_title:
       $("h1").first().text().trim() || $("title").text().split("|")[0].trim(),
     poster: img ? new URL(img, ALOOY_ORIGIN).href : "",
+    ...(sourcePublishedAt(html) ? {published_at:sourcePublishedAt(html)} : {}),
     episodes: [...episodes.values()].sort(
       (a, b) => a.episode_number - b.episode_number,
     ),

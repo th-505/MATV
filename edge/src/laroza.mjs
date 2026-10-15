@@ -201,12 +201,31 @@ function hasNextPage(html, current) {
 function meta(root, name) {
   return nodes(root, (n) => n.tag === "meta" && [n.a.name, n.a.property, n.a.itemprop].includes(name))[0]?.a.content || "";
 }
+function publicationTime(root) {
+  // A release year or a generic <time> label is not evidence of publication.
+  // Accept explicitly named metadata with an unambiguous ISO timezone only.
+  for (const node of nodes(root, (n) => ["meta", "time"].includes(n.tag))) {
+    const marker = String(node.a.property || node.a.itemprop || node.a.name || "").toLowerCase();
+    if (!["article:published_time", "og:published_time", "datepublished"].includes(marker)) continue;
+    const raw = node.a.content || node.a.datetime || "";
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})$/i);
+    if (!iso) continue;
+    const [year, month, day, hour, minute, second] = iso.slice(1).map(Number);
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (month < 1 || month > 12 || day < 1 || day > days[month - 1] || hour > 23 || minute > 59 || second > 59) continue;
+    const stamp = Date.parse(raw);
+    if (Number.isFinite(stamp)) return new Date(stamp).toISOString();
+  }
+  return null;
+}
 export function parseLarozaDetails(html, ref, config = LAROZA_CONFIG) {
   const u = decodeLarozaRef(ref, config), root = tree(html);
   const main = nodes(root, (n) => n.a.id === "content")[0] || nodes(root, (n) => hasClass(n, "pm-video-watch-main"))[0] || nodes(root, (n) => hasClass(n, "pm-section-highlighted"))[0] || root;
   const title = (text(nodes(main, (n) => n.tag === "h1")[0]) || text(nodes(root, (n) => n.tag === "h1")[0]) || meta(root, "og:title") || text(nodes(root, (n) => n.tag === "title")[0]).replace(/\s*-\s*فيديو لاروزا\s*$/, "")).slice(0, 300);
   const type = u.pathname === "/view-serie1.php" || /مسلسل|الحلقة|حلقة/i.test(title) ? "series" : "movie";
-  const base = { id: u.searchParams.get("ser") || u.searchParams.get("vid"), ref, source: "laroza", title, poster: safeImage(meta(root, "og:image") || meta(root, "thumbnailUrl"), config), ...metadata(title, type) };
+  const publishedAt = publicationTime(root);
+  const base = { id: u.searchParams.get("ser") || u.searchParams.get("vid"), ref, source: "laroza", title, poster: safeImage(meta(root, "og:image") || meta(root, "thumbnailUrl"), config), ...metadata(title, type), ...(publishedAt ? { published_at: publishedAt } : {}) };
   const episodes = [], seen = new Set();
   // Only the source's declared same-work episode areas are traversed. Related
   // recommendations, footer links, comments and generic video links are ignored.
@@ -262,7 +281,7 @@ export function larozaPlayerData(html, page, config = LAROZA_CONFIG) {
     if (["subtitles", "captions"].includes((a.kind || "").toLowerCase())) addSub(subtitle(a.src, config, page, headers, a.srclang, a.label));
   }
   // Literal JWPlayer track objects only; arbitrary expressions/JS are ignored.
-  for (const list of plain.matchAll(/\btracks\s*:\s*\[([^\]]{0,12000})\]/gi)) for (const m of list[1].matchAll(/\{([^{}]{1,4096})\}/g)) {
+  for (const list of plain.matchAll(/(?:\btracks|["']tracks["'])\s*:\s*\[([^\]]{0,12000})\]/gi)) for (const m of list[1].matchAll(/\{([^{}]{1,4096})\}/g)) {
     const values = {};
     for (const p of m[1].matchAll(/(?:["']?)(file|kind|label|language)(?:["']?)\s*:\s*["']((?:\\.|[^"'\\])*)["']/g)) values[p[1]] = entity(p[2]);
     if (["subtitles", "captions"].includes(values.kind)) addSub(subtitle(values.file, config, page, headers, values.language, values.label));

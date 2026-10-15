@@ -1,4 +1,5 @@
 import {unpack3iskPlayer} from './3isk-playback/miravd.mjs';
+import { sourcePublishedAt } from '../source-publication.mjs';
 const SOURCE_ORIGIN = "https://akwam.ss";
 const SOURCE_HOST = "akwam.ss";
 const MEDIA_HOST_SUFFIXES = [".downet.net"];
@@ -245,6 +246,7 @@ export function parseDetails(html = "", pageUrl = "") {
     source: "basri-direct",
     movie_title: pageTitle(html),
     poster: pagePoster(html),
+    ...(sourcePublishedAt(html) ? {published_at:sourcePublishedAt(html)} : {}),
     episodes: normalizedEpisodes,
     page_url: pageUrl,
   };

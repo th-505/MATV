@@ -38,3 +38,45 @@ export function createSupabaseProviderStore({ url = process.env.SUPABASE_URL, ke
     },
   };
 }
+
+// A separate private table holds catalog metadata, never playback tokens or
+// headers. Clients can request a reference, but cannot submit cache payloads.
+export function createSupabaseCatalogStore({ url = process.env.SUPABASE_URL,
+  key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
+  fetchImpl = globalThis.fetch } = {}) {
+  if (!url || !key) return null;
+  const base = new URL(url);
+  if (base.protocol !== 'https:' || !base.hostname.endsWith('.supabase.co') || base.username || base.password || base.port || base.pathname !== '/') throw Error('SUPABASE_BAD_URL');
+  if (key.startsWith('sb_publishable_')) throw Error('SUPABASE_SERVER_KEY_REQUIRED');
+  const headers = { apikey:key, 'Content-Type':'application/json',
+    ...(key.startsWith('sb_secret_') ? {} : {Authorization:`Bearer ${key}`}) };
+  async function request(path, params, body) {
+    const target = new URL('/rest/v1/' + path,base);
+    for (const [key,value] of Object.entries(params)) target.searchParams.set(key,value);
+    const response = await fetchImpl(target,{method:body ? 'POST' : 'GET',redirect:'error',
+      signal:AbortSignal.timeout(5000),headers:{...headers,...(body ? {Prefer:'return=minimal'} : {})},
+      ...(body ? {body:JSON.stringify(body)} : {})});
+    if (!response.ok) {await response.body?.cancel();throw Error(`SUPABASE_CATALOG_HTTP_${response.status}`);}
+    if (body || response.status===204) {await response.body?.cancel();return null;}
+    const reader=response.body?.getReader(); if(!reader) throw Error('SUPABASE_CATALOG_BAD_RESPONSE');
+    let size=0,text='';const decoder=new TextDecoder();
+    try {
+      for (;;) {const {done,value}=await reader.read();if(done) break;
+        size+=value.byteLength;if(size>160*1024) throw Error('SUPABASE_CATALOG_RESPONSE_TOO_LARGE');
+        text+=decoder.decode(value,{stream:true});}
+      return JSON.parse(text+decoder.decode());
+    } finally {await reader.cancel();}
+  }
+  return {
+    async get(provider,ref) {
+      const rows=await request('mitv_catalog_cache',{provider:`eq.${provider}`,ref:`eq.${ref}`,
+        select:'metadata,request_count,refresh_after,last_requested_at,demand_hits',limit:'1'});
+      if(!Array.isArray(rows)) throw Error('SUPABASE_CATALOG_BAD_RESPONSE');
+      return rows[0] || null;
+    },
+    async touch(provider,ref,{metadata=null,count=1,newUntil=null,trendingUntil=null}={}) {
+      await request('rpc/mitv_touch_catalog',{}, {p_provider:provider,p_ref:ref,p_metadata:metadata,
+        p_count:count,p_new_until:newUntil,p_trending_until:trendingUntil});
+    },
+  };
+}

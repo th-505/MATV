@@ -33,6 +33,16 @@ assert(declaredSeasonDetails.episodes.every((episode) => episode.season_number =
 assert.equal(declaredSeasonDetails.timeline_verified, false);
 assert.equal(detail.description, "A short fixture story.");
 assert.deepEqual(detail.subtitles, []);
+assert.equal(detail.published_at, undefined, "a work release year is not its publication timestamp");
+for (const marker of ['property="article:published_time"', 'property="og:published_time"', 'itemprop="datePublished"']) {
+  const dated = parseLarozaDetails(`<meta ${marker} content="2026-10-15T10:00:00+03:00">` + fixture("series.html"), series);
+  assert.equal(dated.published_at, "2026-10-15T07:00:00.000Z");
+}
+const timeDated = parseLarozaDetails('<time itemprop="datePublished" datetime="2026-10-15T10:30Z"></time>' + fixture("series.html"), series);
+assert.equal(timeDated.published_at, "2026-10-15T10:30:00.000Z");
+for (const invalid of ['<time datetime="2026-10-15T10:00:00Z">new</time>', '<script>datePublished="2026-10-15T10:00:00Z"</script>', '<meta property="article:published_time" content="2026">', '<meta property="article:published_time" content="2026-10-15T10:00:00">', '<meta property="article:published_time" content="2026-02-30T10:00:00Z">']) {
+  assert.equal(parseLarozaDetails(invalid + fixture("series.html"), series).published_at, undefined, "reject inferred, ambiguous or invalid publication dates");
+}
 assert(!JSON.stringify(detail).includes("recommendation"));
 assert.equal(parseLarozaDetails(fixture("watch.html"), play).episodes.length, 0);
 assert.equal(larozaPlayerData(fixture("packed-player.html"), "https://mp5.okhd.site/embed-fixture1.html").candidates[0], "https://cdn2.okprimeone.site/hls/demo/master.m3u8");

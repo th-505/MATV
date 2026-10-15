@@ -5,68 +5,109 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 const _validMp4Bytes = <int>[
-  0x00, 0x00, 0x00, 0x18,
-  0x66, 0x74, 0x79, 0x70,
-  0x69, 0x73, 0x6f, 0x6d,
-  0x00, 0x00, 0x00, 0x00,
-  0x69, 0x73, 0x6f, 0x6d,
-  0x6d, 0x70, 0x34, 0x32,
+  0x00,
+  0x00,
+  0x00,
+  0x18,
+  0x66,
+  0x74,
+  0x79,
+  0x70,
+  0x69,
+  0x73,
+  0x6f,
+  0x6d,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x69,
+  0x73,
+  0x6f,
+  0x6d,
+  0x6d,
+  0x70,
+  0x34,
+  0x32,
 ];
 
 void main() {
-  test('pre-existing partial resumes from the exact byte on a later attempt', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-persistent-resume-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
+  test(
+    'pre-existing partial resumes from the exact byte on a later attempt',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-persistent-resume-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
 
-    final splitAt = 12;
-    final partial = File('${root.path}${Platform.pathSeparator}.mitv-series_ref_episode_5.part');
-    await partial.writeAsBytes(_validMp4Bytes.sublist(0, splitAt));
+      final splitAt = 12;
+      final partial = File(
+        '${root.path}${Platform.pathSeparator}.mitv-series_ref_episode_5.part',
+      );
+      await partial.writeAsBytes(_validMp4Bytes.sublist(0, splitAt));
 
-    final client = _LaterAttemptClient(splitAt: splitAt);
-    final service = DownloadService(client: client, directoryProvider: () async => root);
-    addTearDown(service.close);
+      final client = _LaterAttemptClient(splitAt: splitAt);
+      final service = DownloadService(
+        client: client,
+        directoryProvider: () async => root,
+      );
+      addTearDown(service.close);
 
-    final result = await service.download(
-      Uri.parse('https://matv.onrender.com/api/cinema/media?id=fresh-opaque&download=1'),
-      fallbackName: 'Episode 5',
-      resumeKey: 'series/ref:episode:5',
-    );
-
-    expect(client.rangeHeader, 'bytes=$splitAt-');
-    expect(result.bytes, _validMp4Bytes.length);
-    expect(result.path, endsWith('episode-5.mp4'));
-    expect(await File(result.path).readAsBytes(), _validMp4Bytes);
-    expect(await partial.exists(), isFalse);
-  });
-
-  test('invalid resume range deletes the stale partial instead of corrupting output', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-invalid-resume-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-
-    final partial = File('${root.path}${Platform.pathSeparator}.mitv-series_ref_episode_5.part');
-    await partial.writeAsBytes(<int>[1, 2, 3, 4, 5]);
-
-    final service = DownloadService(
-      client: _InvalidRangeClient(),
-      directoryProvider: () async => root,
-    );
-    addTearDown(service.close);
-
-    await expectLater(
-      service.download(
-        Uri.parse('https://matv.onrender.com/api/cinema/media?id=fresh-opaque&download=1'),
+      final result = await service.download(
+        Uri.parse('https://cdn.example.com/episode.mp4?token=fresh'),
         fallbackName: 'Episode 5',
         resumeKey: 'series/ref:episode:5',
-      ),
-      throwsA(isA<DownloadException>().having((e) => e.code, 'code', 'INVALID_RESUME_RANGE')),
-    );
+      );
 
-    expect(await partial.exists(), isFalse);
-  });
+      expect(client.rangeHeader, 'bytes=$splitAt-');
+      expect(result.bytes, _validMp4Bytes.length);
+      expect(result.path, endsWith('episode-5.mp4'));
+      expect(await File(result.path).readAsBytes(), _validMp4Bytes);
+      expect(await partial.exists(), isFalse);
+    },
+  );
+
+  test(
+    'invalid resume range deletes the stale partial instead of corrupting output',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-invalid-resume-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final partial = File(
+        '${root.path}${Platform.pathSeparator}.mitv-series_ref_episode_5.part',
+      );
+      await partial.writeAsBytes(<int>[1, 2, 3, 4, 5]);
+
+      final service = DownloadService(
+        client: _InvalidRangeClient(),
+        directoryProvider: () async => root,
+      );
+      addTearDown(service.close);
+
+      await expectLater(
+        service.download(
+          Uri.parse('https://cdn.example.com/episode.mp4?token=fresh'),
+          fallbackName: 'Episode 5',
+          resumeKey: 'series/ref:episode:5',
+        ),
+        throwsA(
+          isA<DownloadException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_RESUME_RANGE',
+          ),
+        ),
+      );
+
+      expect(await partial.exists(), isFalse);
+    },
+  );
 }
 
 class _LaterAttemptClient extends http.BaseClient {
@@ -85,7 +126,8 @@ class _LaterAttemptClient extends http.BaseClient {
       request: request,
       contentLength: tail.length,
       headers: {
-        'content-range': 'bytes $splitAt-${_validMp4Bytes.length - 1}/${_validMp4Bytes.length}',
+        'content-range':
+            'bytes $splitAt-${_validMp4Bytes.length - 1}/${_validMp4Bytes.length}',
         'content-length': '${tail.length}',
         'content-disposition': 'attachment; filename="episode-5.mp4"',
         'accept-ranges': 'bytes',

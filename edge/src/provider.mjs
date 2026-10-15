@@ -142,6 +142,31 @@ function format(value) {
         ? "matroska"
         : p.split(".").pop();
 }
+export function attachedSubtitleTracks(html, page, config, requestHeaders = {}) {
+  const plain = (html + "\n" + unpack(html)).replaceAll("\\/", "/").replaceAll("&amp;", "&");
+  const hosts = config.subtitleHosts || [...config.pageHosts, ...config.mediaHosts];
+  const descriptors = [], seen = new Set();
+  const attributes = (input) => Object.fromEntries([...input.matchAll(/([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((m) => [m[1].toLowerCase(), m[2] ?? m[3]]));
+  const add = (file, kind, language, label) => {
+    if (!["subtitles", "captions"].includes(String(kind).toLowerCase()) || descriptors.length >= 4 || !file || file.length > 2048) return;
+    try {
+      const u = new URL(file, page);
+      if (u.protocol !== "https:" || u.username || u.password || u.port || u.hash || !hosts.some((host) => host.startsWith("*.") ? u.hostname.endsWith(host.slice(1)) && u.hostname !== host.slice(2) : u.hostname === host)) return;
+      const format = u.pathname.match(/\.(srt|vtt|ass)$/i)?.[1].toLowerCase();
+      if (!format || seen.has(u.href)) return;
+      seen.add(u.href);
+      const headers = Object.fromEntries(["Referer", "Origin", "User-Agent"].filter((key) => typeof requestHeaders[key] === "string" && !/[\r\n]/.test(requestHeaders[key])).map((key) => [key, requestHeaders[key]]));
+      descriptors.push({ id: `${config.provider}:${u.pathname}`.slice(0, 300), provider: config.provider, url: u.href, format, kind: "subtitles", language: /^(ar|ara|Arabic|العربية)$/i.test(language || label || "") ? "ara" : String(language || "und").slice(0, 12), label: String(label || language || "ترجمة").slice(0, 100), headers, origin: "attached", encoding_hint: null });
+    } catch { /* Optional malformed tracks never affect valid video sources. */ }
+  };
+  for (const m of plain.matchAll(/<track\b([^>]{1,8192})>/gi)) { const a = attributes(m[1]); add(a.src, a.kind, a.srclang, a.label); }
+  for (const list of plain.matchAll(/(?:\btracks|["']tracks["'])\s*:\s*\[([^\]]{0,12000})\]/gi)) for (const m of list[1].matchAll(/\{([^{}]{1,4096})\}/g)) {
+    const fields = {};
+    for (const p of m[1].matchAll(/["']?(file|kind|label|language)["']?\s*:\s*["']((?:\\.|[^"'\\])*)["']/g)) fields[p[1]] = p[2];
+    add(fields.file, fields.kind, fields.language, fields.label);
+  }
+  return descriptors;
+}
 export async function resolveProvider(ref, config, fetchImpl = fetch) {
   const source = decodeRef(ref, config),
     cookies = new Map();
@@ -190,6 +215,8 @@ export async function resolveProvider(ref, config, fetchImpl = fetch) {
   if (config.provider === "alooy") {
     headers.Origin = source.origin;
     candidates = urls(html, config);
+    const subtitles = attachedSubtitleTracks(html, source.href, config, headers);
+    candidates = candidates.map((url) => ({ url, headers, subtitles }));
   }
   if (config.provider === "akoam") {
     const watches = [...html.matchAll(/href=["']([^"']*\/watch\/[^"']+)["']/g)]
@@ -207,6 +234,7 @@ export async function resolveProvider(ref, config, fetchImpl = fetch) {
             ...found.map((url) => ({
               url,
               headers: { Referer: current, "User-Agent": UA },
+              subtitles: attachedSubtitleTracks(body, current, config, { Referer: current, "User-Agent": UA }),
             })),
           );
           break;
@@ -263,10 +291,12 @@ export async function resolveProvider(ref, config, fetchImpl = fetch) {
       const json = JSON.parse(await page(api, player.href));
       candidates = [assertUrl(json.url, config, true).href];
     } else candidates = urls(body, config);
+    const subtitles = attachedSubtitleTracks(body, player.href, config, headers);
+    candidates = candidates.map((url) => ({ url, headers, subtitles }));
     if (!mira)
-      candidates = candidates.map((url) => ({
-        url,
-        headers: { ...headers, Referer: new URL(url).origin + "/" },
+      candidates = candidates.map((candidate) => ({
+        ...candidate,
+        headers: { ...headers, Referer: new URL(candidate.url).origin + "/" },
       }));
   }
   const results = await Promise.allSettled(
@@ -326,6 +356,7 @@ export async function resolveProvider(ref, config, fetchImpl = fetch) {
         playback_mode:
           config.provider === "alooy" ? "edge_local_proxy" : "edge_direct",
         source_ref: ref,
+        subtitles: typeof c === "string" ? [] : c.subtitles || [],
       };
     }),
   );

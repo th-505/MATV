@@ -7,97 +7,132 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 List<int> _mp4Bytes([int payloadBytes = 8]) => <int>[
-      0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70,
-      ...List<int>.filled(payloadBytes, 0),
-    ];
+  0,
+  0,
+  0,
+  16,
+  0x66,
+  0x74,
+  0x79,
+  0x70,
+  ...List<int>.filled(payloadBytes, 0),
+];
 
 void main() {
-  test('download rejects any non Al-Qahtani opaque media path', () async {
-    final service = DownloadService(
-      client: MockClient((_) async => http.Response('ignored', 200)),
-      directoryProvider: () async => Directory.systemTemp.createTemp('mitv-download-test'),
-    );
-    addTearDown(service.close);
+  test(
+    'download rejects HLS and non-media references before requesting bytes',
+    () async {
+      final service = DownloadService(
+        client: MockClient((_) async => http.Response('ignored', 200)),
+        directoryProvider: () async =>
+            Directory.systemTemp.createTemp('mitv-download-test'),
+      );
+      addTearDown(service.close);
 
-    expect(
-      () => service.download(Uri.parse('https://example.com/video.mp4?download=1')),
-      throwsA(isA<DownloadException>()),
-    );
-  });
+      expect(
+        () => service.download(Uri.parse('https://example.com/master.m3u8')),
+        throwsA(isA<DownloadException>()),
+      );
+    },
+  );
 
-  test('download requires explicit trusted download semantics', () async {
-    final service = DownloadService(
-      client: MockClient((_) async => http.Response('ignored', 200)),
-      directoryProvider: () async => Directory.systemTemp.createTemp('mitv-download-test'),
-    );
-    addTearDown(service.close);
+  test(
+    'download rejects retired server proxy even with download flag',
+    () async {
+      final service = DownloadService(
+        client: MockClient((_) async => http.Response('ignored', 200)),
+        directoryProvider: () async =>
+            Directory.systemTemp.createTemp('mitv-download-test'),
+      );
+      addTearDown(service.close);
 
-    expect(
-      () => service.download(Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque')),
-      throwsA(isA<DownloadException>()),
-    );
-  });
+      expect(
+        () => service.download(
+          Uri.parse(
+            'https://matv.onrender.com/api/cinema/media?id=opaque&download=1',
+          ),
+        ),
+        throwsA(isA<DownloadException>()),
+      );
+    },
+  );
 
-  test('download writes atomically using a sanitized trusted filename', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-download-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-    final media = _mp4Bytes();
-    final service = DownloadService(
-      client: MockClient((request) async {
-        expect(request.url.path, '/api/cinema/media');
-        expect(request.url.queryParameters['download'], '1');
-        return http.Response.bytes(
-          media,
-          200,
-          headers: {
-            'content-disposition': 'attachment; filename="episode:01?.mp4"',
-            'content-type': 'video/mp4',
-          },
-        );
-      }),
-      directoryProvider: () async => root,
-    );
-    addTearDown(service.close);
+  test(
+    'download writes atomically using a sanitized trusted filename',
+    () async {
+      final root = await Directory.systemTemp.createTemp('mitv-download-test');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final media = _mp4Bytes();
+      final service = DownloadService(
+        client: MockClient((request) async {
+          expect(request.url.path, '/episode.mp4');
+          expect(request.url.scheme, 'https');
+          return http.Response.bytes(
+            media,
+            200,
+            headers: {
+              'content-disposition': 'attachment; filename="episode:01?.mp4"',
+              'content-type': 'video/mp4',
+            },
+          );
+        }),
+        directoryProvider: () async => root,
+      );
+      addTearDown(service.close);
 
-    final result = await service.download(
-      Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1'),
-      fallbackName: 'ignored-name',
-    );
+      final result = await service.download(
+        Uri.parse('https://cdn.example.com/episode.mp4?token=fixture'),
+        fallbackName: 'ignored-name',
+      );
 
-    expect(result.bytes, media.length);
-    expect(result.path, endsWith('episode_01_.mp4'));
-    expect(await File(result.path).readAsBytes(), media);
-    expect(await File('${result.path}.part').exists(), isFalse);
-  });
+      expect(result.bytes, media.length);
+      expect(result.path, endsWith('episode_01_.mp4'));
+      expect(await File(result.path).readAsBytes(), media);
+      expect(await File('${result.path}.part').exists(), isFalse);
+    },
+  );
 
-  test('interrupted partial response resumes at the exact byte using Range', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-download-resume-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-    final client = _ResumeClient();
-    final service = DownloadService(client: client, directoryProvider: () async => root);
-    addTearDown(service.close);
+  test(
+    'interrupted partial response resumes at the exact byte using Range',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-download-resume-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final client = _ResumeClient();
+      final service = DownloadService(
+        client: client,
+        directoryProvider: () async => root,
+      );
+      addTearDown(service.close);
 
-    final result = await service.download(
-      Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1'),
-    );
+      final result = await service.download(
+        Uri.parse('https://cdn.example.com/episode.mp4?token=fixture'),
+      );
 
-    expect(client.requests, 2);
-    expect(result.bytes, 16);
-    expect(await File(result.path).readAsBytes(), _mp4Bytes());
-    expect(await File('${result.path}.part').exists(), isFalse);
-  });
+      expect(client.requests, 2);
+      expect(result.bytes, 16);
+      expect(await File(result.path).readAsBytes(), _mp4Bytes());
+      expect(await File('${result.path}.part').exists(), isFalse);
+    },
+  );
 
-  test('206 Content-Range total wins over chunk Content-Length and rejects invalid resume ranges', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-download-range-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-    final service = DownloadService(
-      client: MockClient((_) async => http.Response.bytes(
+  test(
+    '206 Content-Range total wins over chunk Content-Length and rejects invalid resume ranges',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-download-range-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final service = DownloadService(
+        client: MockClient(
+          (_) async => http.Response.bytes(
             _mp4Bytes().sublist(0, 8),
             206,
             headers: {
@@ -106,52 +141,75 @@ void main() {
               'content-disposition': 'attachment; filename="partial.mp4"',
               'content-type': 'video/mp4',
             },
-          )),
-      directoryProvider: () async => root,
-    );
-    addTearDown(service.close);
+          ),
+        ),
+        directoryProvider: () async => root,
+      );
+      addTearDown(service.close);
 
-    await expectLater(
-      service.download(Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1')),
-      throwsA(isA<DownloadException>().having((e) => e.code, 'code', 'INVALID_RESUME_RANGE')),
-    );
-    expect(root.listSync().whereType<File>(), isEmpty);
-  });
+      await expectLater(
+        service.download(
+          Uri.parse('https://cdn.example.com/episode.mp4?token=fixture'),
+        ),
+        throwsA(
+          isA<DownloadException>().having(
+            (e) => e.code,
+            'code',
+            'INVALID_RESUME_RANGE',
+          ),
+        ),
+      );
+      expect(root.listSync().whereType<File>(), isEmpty);
+    },
+  );
 
-  test('cancellation interrupts a streaming download and removes the partial file', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-download-cancel-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-    final controller = StreamController<List<int>>();
-    final service = DownloadService(
-      client: _StreamingClient(controller.stream),
-      directoryProvider: () async => root,
-    );
-    addTearDown(() async {
-      await controller.close();
-      service.close();
-    });
-    final token = DownloadCancellationToken();
-    final firstChunkSeen = Completer<void>();
+  test(
+    'cancellation interrupts a streaming download and removes the partial file',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-download-cancel-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final controller = StreamController<List<int>>();
+      final service = DownloadService(
+        client: _StreamingClient(controller.stream),
+        directoryProvider: () async => root,
+      );
+      addTearDown(() async {
+        await controller.close();
+        service.close();
+      });
+      final token = DownloadCancellationToken();
+      final firstChunkSeen = Completer<void>();
 
-    final future = service.download(
-      Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1'),
-      cancellationToken: token,
-      onProgress: (progress) {
-        if (progress.receivedBytes > 0 && !firstChunkSeen.isCompleted) firstChunkSeen.complete();
-      },
-    );
-    controller.add(_mp4Bytes());
-    await firstChunkSeen.future;
-    token.cancel();
+      final future = service.download(
+        Uri.parse('https://cdn.example.com/episode.mp4?token=fixture'),
+        cancellationToken: token,
+        onProgress: (progress) {
+          if (progress.receivedBytes > 0 && !firstChunkSeen.isCompleted) {
+            firstChunkSeen.complete();
+          }
+        },
+      );
+      controller.add(_mp4Bytes());
+      await firstChunkSeen.future;
+      token.cancel();
 
-    await expectLater(
-      future,
-      throwsA(isA<DownloadException>().having((e) => e.code, 'code', 'DOWNLOAD_CANCELLED')),
-    );
-    expect(root.listSync().whereType<File>(), isEmpty);
-  });
+      await expectLater(
+        future,
+        throwsA(
+          isA<DownloadException>().having(
+            (e) => e.code,
+            'code',
+            'DOWNLOAD_CANCELLED',
+          ),
+        ),
+      );
+      expect(root.listSync().whereType<File>(), isEmpty);
+    },
+  );
 
   test('empty downloads fail closed and leave no partial file', () async {
     final root = await Directory.systemTemp.createTemp('mitv-download-test');
@@ -165,49 +223,77 @@ void main() {
     addTearDown(service.close);
 
     await expectLater(
-      service.download(Uri.parse('https://matv.onrender.com/api/cinema/media?id=opaque&download=1')),
+      service.download(
+        Uri.parse('https://cdn.example.com/episode.mp4?token=fixture'),
+      ),
       throwsA(isA<DownloadException>()),
     );
     expect(root.listSync().whereType<File>(), isEmpty);
   });
 
-  test('local download list ignores partial and empty files and sorts newest first', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-download-list-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-    final oldFile = File('${root.path}${Platform.pathSeparator}old.mp4')..writeAsBytesSync(_mp4Bytes(4));
-    final newFile = File('${root.path}${Platform.pathSeparator}new.mp4')..writeAsBytesSync(_mp4Bytes(12));
-    File('${root.path}${Platform.pathSeparator}ignored.part').writeAsBytesSync(_mp4Bytes());
-    File('${root.path}${Platform.pathSeparator}empty.mp4').writeAsBytesSync(const []);
-    final now = DateTime.now();
-    await oldFile.setLastModified(now.subtract(const Duration(minutes: 2)));
-    await newFile.setLastModified(now);
+  test(
+    'local download list ignores partial and empty files and sorts newest first',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-download-list-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final oldFile = File('${root.path}${Platform.pathSeparator}old.mp4')
+        ..writeAsBytesSync(_mp4Bytes(4));
+      final newFile = File('${root.path}${Platform.pathSeparator}new.mp4')
+        ..writeAsBytesSync(_mp4Bytes(12));
+      File(
+        '${root.path}${Platform.pathSeparator}ignored.part',
+      ).writeAsBytesSync(_mp4Bytes());
+      File(
+        '${root.path}${Platform.pathSeparator}empty.mp4',
+      ).writeAsBytesSync(const []);
+      final now = DateTime.now();
+      await oldFile.setLastModified(now.subtract(const Duration(minutes: 2)));
+      await newFile.setLastModified(now);
 
-    final service = DownloadService(directoryProvider: () async => root);
-    addTearDown(service.close);
+      final service = DownloadService(directoryProvider: () async => root);
+      addTearDown(service.close);
 
-    final items = await service.listDownloads();
-    expect(items.map((item) => item.name).toList(), ['new.mp4', 'old.mp4']);
-    expect(items.first.bytes, _mp4Bytes(12).length);
-  });
+      final items = await service.listDownloads();
+      expect(items.map((item) => item.name).toList(), ['new.mp4', 'old.mp4']);
+      expect(items.first.bytes, _mp4Bytes(12).length);
+    },
+  );
 
-  test('deleteDownload deletes safe local file and rejects unsafe stored names', () async {
-    final root = await Directory.systemTemp.createTemp('mitv-download-delete-test');
-    addTearDown(() async {
-      if (await root.exists()) await root.delete(recursive: true);
-    });
-    final file = File('${root.path}${Platform.pathSeparator}episode-1.mp4')..writeAsBytesSync(_mp4Bytes());
-    final service = DownloadService(directoryProvider: () async => root);
-    addTearDown(service.close);
+  test(
+    'deleteDownload deletes safe local file and rejects unsafe stored names',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'mitv-download-delete-test',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final file = File('${root.path}${Platform.pathSeparator}episode-1.mp4')
+        ..writeAsBytesSync(_mp4Bytes());
+      final service = DownloadService(directoryProvider: () async => root);
+      addTearDown(service.close);
 
-    expect(await service.deleteDownload('episode-1.mp4'), isTrue);
-    expect(await file.exists(), isFalse);
+      expect(await service.deleteDownload('episode-1.mp4'), isTrue);
+      expect(await file.exists(), isFalse);
 
-    await expectLater(service.deleteDownload('folder/file.mp4'), throwsA(isA<DownloadException>()));
-    await expectLater(service.deleteDownload('folder\\file.mp4'), throwsA(isA<DownloadException>()));
-    await expectLater(service.deleteDownload('unfinished.part'), throwsA(isA<DownloadException>()));
-  });
+      await expectLater(
+        service.deleteDownload('folder/file.mp4'),
+        throwsA(isA<DownloadException>()),
+      );
+      await expectLater(
+        service.deleteDownload('folder\\file.mp4'),
+        throwsA(isA<DownloadException>()),
+      );
+      await expectLater(
+        service.deleteDownload('unfinished.part'),
+        throwsA(isA<DownloadException>()),
+      );
+    },
+  );
 }
 
 class _ResumeClient extends http.BaseClient {

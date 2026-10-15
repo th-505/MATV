@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'alooy_policy.dart';
+import 'download_cleanup_coordinator.dart';
 import 'download_directory_migration.dart';
 
 class DownloadResult {
@@ -51,19 +52,17 @@ class DownloadCancellationToken {
 
 typedef DownloadDirectoryProvider = Future<Directory> Function();
 typedef DownloadProgressCallback = void Function(DownloadProgress progress);
-typedef DownloadReconnectDelay = Future<void> Function(
-  int attempt,
-  DownloadCancellationToken? token,
-);
+typedef DownloadReconnectDelay =
+    Future<void> Function(int attempt, DownloadCancellationToken? token);
 
 class DownloadService {
   DownloadService({
     http.Client? client,
     DownloadDirectoryProvider? directoryProvider,
     DownloadReconnectDelay? reconnectDelay,
-  })  : _client = client ?? http.Client(),
-        _directoryProvider = directoryProvider ?? _defaultDirectory,
-        _reconnectDelayOverride = reconnectDelay;
+  }) : _client = client ?? http.Client(),
+       _directoryProvider = directoryProvider ?? _defaultDirectory,
+       _reconnectDelayOverride = reconnectDelay;
 
   final http.Client _client;
   final DownloadDirectoryProvider _directoryProvider;
@@ -74,6 +73,11 @@ class DownloadService {
 
   static Future<Directory> _defaultDirectory() async {
     final root = await getApplicationDocumentsDirectory();
+    final brand = Directory('${root.path}${Platform.pathSeparator}MITV');
+    await _assertDownloadDirectory(brand);
+    await _assertDownloadDirectory(
+      Directory('${brand.path}${Platform.pathSeparator}Downloads'),
+    );
     return migrateDownloadDirectory(root);
   }
 
@@ -85,30 +89,63 @@ class DownloadService {
     DownloadProgressCallback? onProgress,
     DownloadCancellationToken? cancellationToken,
   }) async {
-    final direct =
-        isPublicMediaUri(uri) && uri.path.toLowerCase().endsWith('.mp4');
-    final legacy = uri.path == '/api/cinema/media' &&
-        uri.queryParameters['download'] == '1';
-    if (!direct && !legacy) {
+    final token = cancellationToken ?? DownloadCancellationToken();
+    late final DownloadJobRegistration registration;
+    try {
+      registration = DownloadCleanupCoordinator.instance.register(
+        cancel: token.cancel,
+      );
+    } on DownloadCleanupInProgress {
+      throw const DownloadException('DOWNLOAD_CLEANUP_IN_PROGRESS');
+    }
+    try {
+      final result = await _download(
+        uri,
+        fallbackName: fallbackName,
+        headers: headers,
+        resumeKey: resumeKey,
+        onProgress: onProgress,
+        cancellationToken: token,
+      );
+      _throwIfCancelled(token);
+      return result;
+    } finally {
+      registration.complete();
+    }
+  }
+
+  Future<DownloadResult> _download(
+    Uri uri, {
+    required String fallbackName,
+    required Map<String, String> headers,
+    required String? resumeKey,
+    required DownloadProgressCallback? onProgress,
+    required DownloadCancellationToken cancellationToken,
+  }) async {
+    if (!isPublicMediaUri(uri) || !uri.path.toLowerCase().endsWith('.mp4')) {
       throw const DownloadException('INVALID_DOWNLOAD_REFERENCE');
     }
-    if (headers.keys
-            .any((k) => !['Referer', 'Origin', 'User-Agent'].contains(k)) ||
+    if (headers.keys.any(
+          (k) => !['Referer', 'Origin', 'User-Agent'].contains(k),
+        ) ||
         headers.values.any((v) => v.contains(RegExp(r'[\r\n]')))) {
       throw const DownloadException('INVALID_DOWNLOAD_HEADERS');
     }
     _throwIfCancelled(cancellationToken);
 
     final directory = await _downloadDirectory(create: true);
+    _throwIfCancelled(cancellationToken);
     final partialName = _resumeFileName(resumeKey ?? fallbackName);
     final tempFile = File(
       '${directory.path}${Platform.pathSeparator}$partialName',
     );
+    await _assertDownloadFile(tempFile, 'INVALID_PARTIAL_FILE');
     var bytes = await tempFile.exists() ? await tempFile.length() : 0;
     int? total;
     var reconnectAttempt = 0;
     File? finalFile;
     String? responseContentType;
+    var finalized = false;
 
     Future<void> cleanupPartial() async {
       if (await tempFile.exists()) await tempFile.delete();
@@ -123,7 +160,6 @@ class DownloadService {
             uri,
             offset: bytes,
             headers: headers,
-            direct: direct,
             cancellationToken: cancellationToken,
           );
         } catch (error) {
@@ -136,6 +172,7 @@ class DownloadService {
         }
 
         if (response.statusCode < 200 || response.statusCode >= 300) {
+          await response.stream.listen((_) {}).cancel();
           final error = DownloadException('HTTP_${response.statusCode}');
           if (_canReconnect(error, reconnectAttempt, bytes)) {
             reconnectAttempt += 1;
@@ -148,34 +185,44 @@ class DownloadService {
         responseContentType = _normalizedContentType(
           response.headers['content-type'],
         );
-        _assertMediaResponseType(responseContentType);
-
-        var append = bytes > 0;
-        if (append && response.statusCode == 206) {
-          final rangeStart = _contentRangeStart(
-            response.headers['content-range'],
-          );
-          if (rangeStart != bytes) {
-            throw const DownloadException('INVALID_RESUME_RANGE');
-          }
-        } else if (append && response.statusCode == 200) {
-          append = false;
-          bytes = 0;
-          total = null;
-        } else if (append) {
-          throw const DownloadException('RESUME_NOT_SUPPORTED');
+        try {
+          _assertMediaResponseType(responseContentType);
+        } catch (_) {
+          await response.stream.listen((_) {}).cancel();
+          rethrow;
         }
 
-        total = _mergeTotal(total, _responseLength(response.headers));
-        final fileName =
-            _trustedFileName(response.headers['content-disposition']) ??
-                _sanitizeFileName(fallbackName);
-        final safeName = direct && !fileName.toLowerCase().endsWith('.mp4')
-            ? '$fileName.mp4'
-            : fileName;
-        finalFile ??= File(
-          '${directory.path}${Platform.pathSeparator}$safeName',
-        );
+        var append = bytes > 0;
+        try {
+          if (response.statusCode == 206) {
+            final rangeStart = _contentRangeStart(
+              response.headers['content-range'],
+            );
+            if (rangeStart != bytes) {
+              throw const DownloadException('INVALID_RESUME_RANGE');
+            }
+          } else if (append && response.statusCode == 200) {
+            append = false;
+            bytes = 0;
+            total = null;
+          } else if (append) {
+            throw const DownloadException('RESUME_NOT_SUPPORTED');
+          }
+
+          total = _mergeTotal(total, _responseLength(response.headers));
+          final fileName =
+              _trustedFileName(response.headers['content-disposition']) ??
+              _sanitizeFileName(fallbackName);
+          final safeName = !fileName.toLowerCase().endsWith('.mp4')
+              ? '$fileName.mp4'
+              : fileName;
+          finalFile ??= File(
+            '${directory.path}${Platform.pathSeparator}$safeName',
+          );
+        } catch (_) {
+          await response.stream.listen((_) {}).cancel();
+          rethrow;
+        }
 
         IOSink? sink;
         StreamIterator<List<int>>? iterator;
@@ -189,9 +236,8 @@ class DownloadService {
           );
           final stream = response.stream.timeout(
             const Duration(seconds: 30),
-            onTimeout: (eventSink) => eventSink.addError(
-              const DownloadException('DOWNLOAD_STALLED'),
-            ),
+            onTimeout: (eventSink) =>
+                eventSink.addError(const DownloadException('DOWNLOAD_STALLED')),
           );
           iterator = StreamIterator<List<int>>(stream);
           while (await _moveNextOrCancel(iterator, cancellationToken)) {
@@ -238,23 +284,29 @@ class DownloadService {
         }
 
         final completedFile = finalFile;
+        _throwIfCancelled(cancellationToken);
+        await _assertDownloadFile(completedFile, 'INVALID_DOWNLOAD_TARGET');
         if (await completedFile.exists()) await completedFile.delete();
+        _throwIfCancelled(cancellationToken);
 
         // The partial and final file live in the same directory, so rename is the
         // finalization boundary. Nothing is reported as completed before this
         // operation succeeds and the renamed file is re-opened and validated.
         await tempFile.rename(completedFile.path);
+        finalized = true;
 
         final verifiedBytes = await completedFile.length();
-        final lengthValid = verifiedBytes > 0 &&
+        final lengthValid =
+            verifiedBytes > 0 &&
             verifiedBytes == bytes &&
             (total == null || verifiedBytes == total);
-        final mediaValid = lengthValid &&
+        final mediaValid =
+            lengthValid &&
             await _isValidMediaFile(
               completedFile,
               trustedContentType: responseContentType,
             ) &&
-            (!direct || await _isMp4File(completedFile));
+            await _isMp4File(completedFile);
 
         if (!lengthValid || !mediaValid) {
           try {
@@ -267,31 +319,38 @@ class DownloadService {
           );
         }
 
-        return DownloadResult(
-          path: completedFile.path,
-          bytes: verifiedBytes,
-        );
+        _throwIfCancelled(cancellationToken);
+        return DownloadResult(path: completedFile.path, bytes: verifiedBytes);
       }
     } catch (error) {
-      if (!_preservePartial(error, bytes)) await cleanupPartial();
-      rethrow;
+      final effectiveError = cancellationToken.isCancelled
+          ? const DownloadException('DOWNLOAD_CANCELLED')
+          : error;
+      if (!_preservePartial(effectiveError, bytes)) await cleanupPartial();
+      if (cancellationToken.isCancelled && finalized && finalFile != null) {
+        if (await finalFile.exists()) await finalFile.delete();
+      }
+      throw effectiveError;
     }
   }
 
-  Future<http.StreamedResponse> _send(Uri uri,
-      {required int offset,
-      required Map<String, String> headers,
-      required bool direct,
-      DownloadCancellationToken? cancellationToken}) async {
+  Future<http.StreamedResponse> _send(
+    Uri uri, {
+    required int offset,
+    required Map<String, String> headers,
+    DownloadCancellationToken? cancellationToken,
+  }) async {
     var current = uri;
     for (var redirects = 0; redirects <= 3; redirects++) {
-      final request = http.Request('GET', current)..followRedirects = false;
+      final request = http.AbortableRequest(
+        'GET',
+        current,
+        abortTrigger: cancellationToken?.whenCancelled,
+      )..followRedirects = false;
       request.headers.addAll(headers);
       request.headers['accept'] = '*/*';
       if (offset > 0) request.headers['range'] = 'bytes=$offset-';
-      final response = await _awaitOrCancel(
-          _client.send(request).timeout(const Duration(seconds: 30)),
-          cancellationToken);
+      final response = await _sendOrCancel(request, cancellationToken);
       if (![301, 302, 303, 307, 308].contains(response.statusCode)) {
         return response;
       }
@@ -301,14 +360,47 @@ class DownloadService {
         throw const DownloadException('DOWNLOAD_REDIRECT_LIMIT');
       }
       final next = current.resolve(location);
-      if (!direct ||
-          !isPublicMediaUri(next) ||
+      if (!isPublicMediaUri(next) ||
           !next.path.toLowerCase().endsWith('.mp4')) {
         throw const DownloadException('INVALID_DOWNLOAD_REDIRECT');
       }
       current = next;
     }
     throw const DownloadException('DOWNLOAD_REDIRECT_LIMIT');
+  }
+
+  Future<http.StreamedResponse> _sendOrCancel(
+    http.BaseRequest request,
+    DownloadCancellationToken? token,
+  ) async {
+    var abandoned = false;
+    http.StreamedResponse? received;
+    final operation = _client.send(request).then((response) {
+      received = response;
+      if (abandoned) {
+        // Some custom transports cannot abort while awaiting headers. Dispose
+        // their late body too, without opening a file after global cleanup.
+        unawaited(response.stream.listen((_) {}).cancel().catchError((_) {}));
+      }
+      return response;
+    });
+    try {
+      final response = await _awaitOrCancel(
+        operation.timeout(const Duration(seconds: 30)),
+        token,
+      );
+      _throwIfCancelled(token);
+      return response;
+    } catch (_) {
+      abandoned = true;
+      final response = received;
+      if (response != null) {
+        try {
+          await response.stream.listen((_) {}).cancel();
+        } catch (_) {}
+      }
+      rethrow;
+    }
   }
 
   static Future<bool> _isMp4File(File file) async {
@@ -370,14 +462,11 @@ class DownloadService {
         error is http.ClientException;
   }
 
-  Future<void> _reconnectDelay(
-    int attempt,
-    DownloadCancellationToken? token,
-  ) {
+  Future<void> _reconnectDelay(int attempt, DownloadCancellationToken? token) {
     final override = _reconnectDelayOverride;
     if (override != null) return override(attempt, token);
-    final milliseconds =
-        (500 * attempt.clamp(1, _maxReconnectAttempts)).toInt();
+    final milliseconds = (500 * attempt.clamp(1, _maxReconnectAttempts))
+        .toInt();
     return _awaitOrCancel(
       Future<void>.delayed(Duration(milliseconds: milliseconds)),
       token,
@@ -495,6 +584,10 @@ class DownloadService {
   }
 
   Future<File?> _verifyStoredFile(File file) async {
+    if (await FileSystemEntity.type(file.path, followLinks: false) !=
+        FileSystemEntityType.file) {
+      return null;
+    }
     if (!await file.exists()) return null;
     final stat = await file.stat();
     if (stat.type != FileSystemEntityType.file || stat.size <= 0) return null;
@@ -522,8 +615,29 @@ class DownloadService {
 
   Future<Directory> _downloadDirectory({required bool create}) async {
     final directory = await _directoryProvider();
+    await _assertDownloadDirectory(directory);
     if (create) await directory.create(recursive: true);
+    await _assertDownloadDirectory(directory);
     return directory;
+  }
+
+  static Future<void> _assertDownloadDirectory(Directory directory) async {
+    final type = await FileSystemEntity.type(
+      directory.path,
+      followLinks: false,
+    );
+    if (type != FileSystemEntityType.directory &&
+        type != FileSystemEntityType.notFound) {
+      throw const DownloadException('INVALID_DOWNLOAD_DIRECTORY');
+    }
+  }
+
+  static Future<void> _assertDownloadFile(File file, String errorCode) async {
+    final type = await FileSystemEntity.type(file.path, followLinks: false);
+    if (type != FileSystemEntityType.file &&
+        type != FileSystemEntityType.notFound) {
+      throw DownloadException(errorCode);
+    }
   }
 
   static String? _normalizedContentType(String? value) {
@@ -577,8 +691,13 @@ class DownloadService {
 
   static bool _looksLikeTextError(List<int> prefix) {
     final ascii = String.fromCharCodes(
-      prefix.where((byte) =>
-          byte == 9 || byte == 10 || byte == 13 || (byte >= 32 && byte <= 126)),
+      prefix.where(
+        (byte) =>
+            byte == 9 ||
+            byte == 10 ||
+            byte == 13 ||
+            (byte >= 32 && byte <= 126),
+      ),
     ).trimLeft().toLowerCase();
     if (ascii.isEmpty) return false;
     return ascii.startsWith('<!doctype') ||
@@ -678,8 +797,10 @@ class DownloadService {
   }
 
   static String _sanitizeFileName(String value) {
-    final normalized =
-        value.trim().replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1F]'), '_');
+    final normalized = value.trim().replaceAll(
+      RegExp(r'[\\/:*?"<>|\x00-\x1F]'),
+      '_',
+    );
     final compact = normalized.replaceAll(RegExp(r'\s+'), ' ');
     return compact.isEmpty ? 'mitv-media' : compact;
   }

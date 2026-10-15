@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {attachedSubtitleTracks,resolveProvider} from '../edge/src/provider.mjs';
+import {larozaPlayerData} from '../edge/src/laroza.mjs';
+const config={provider:'alooy',label:'Alooy',origin:'https://fa.alooytv16.xyz',pageHosts:['fa.alooytv16.xyz'],mediaHosts:['*.ujeklsj.site']};
+const page=config.origin+'/watch/example.html?key=one';
+const headers={Referer:page,Origin:config.origin,'User-Agent':'fixture'};
+const tracks=attachedSubtitleTracks(`<track src="https://vid1.ujeklsj.site/ar.vtt" kind="subtitles" srclang="ar" label="العربية"><track src="https://vid1.ujeklsj.site/thumbs.vtt" kind="metadata"><track src="https://127.0.0.1/a.srt" kind="subtitles"><script>tracks:[{file:'https://vid1.ujeklsj.site/en.srt',kind:'captions',language:'en',label:'English'}]</script>`,page,config,headers);
+assert.equal(tracks.length,2);assert.equal(tracks[0].language,'ara');assert.deepEqual(tracks[0].headers,headers);assert(tracks.every(s=>s.origin==='attached'));
+const jsonTracks = attachedSubtitleTracks(`<script>{"tracks":[{"file":"https://vid1.ujeklsj.site/ar.vtt","kind":"captions","language":"ar","label":"Arabic"},{"file":"https://vid1.ujeklsj.site/sprites.vtt","kind":"thumbnails"},{"file":"https://vid1.ujeklsj.site.evil.example/fake.srt","kind":"captions"}]}</script>`, page, config, {...headers, Cookie:'must-not-forward'});
+assert.equal(jsonTracks.length,1,'quoted JSON track keys work without treating thumbnail metadata as subtitles');
+assert.equal(jsonTracks[0].language,'ara');assert.equal(jsonTracks[0].headers.Cookie,undefined);
+assert.equal(attachedSubtitleTracks('<track src="https://vid1.ujeklsj.site:8443/ar.vtt" kind="captions">',page,config).length,0);
+assert.equal(attachedSubtitleTracks(Array.from({length:10},(_,i)=>`<track src="https://vid1.ujeklsj.site/${i}.vtt" kind="captions">`).join(''),page,config).length,4,'caption discovery is bounded');
+const larozaTracks = larozaPlayerData(`<script>{"tracks":[{"file":"https://cdn2.okprimeone.site/ar.vtt","kind":"captions","language":"ar"},{"file":"https://cdn2.okprimeone.site/sprites.vtt","kind":"thumbnails"}]}</script>`, 'https://mp5.okhd.site/embed-fixture1.html').subtitles;
+assert.equal(larozaTracks.length,1);assert.equal(larozaTracks[0].language,'ara');
+const calls=[];
+const result=await resolveProvider('alooy:'+Buffer.from('/watch/example.html?key=one').toString('base64url'),config,async(u,o)=>{
+ calls.push([String(u),o.method||'GET']);
+ if(String(u)===page)return new Response(`<video><source src="https://vid1.ujeklsj.site/a.mp4"><track src="https://vid1.ujeklsj.site/ar.srt" kind="subtitles" srclang="ar"></video>`);
+ assert.equal(o.method,'HEAD');return new Response(null);
+});
+assert.equal(result.sources[0].subtitles.length,1);assert.equal(result.sources[0].subtitles[0].headers.Referer,page);
+assert.equal(calls.filter(c=>c[0].endsWith('.srt')).length,0,'Workers never download caption files while resolving a video');
+assert.equal(calls.filter(c=>c[1]==='GET').length,1);
+console.log('Edge attached captions: actual HTML/JWPlayer tracks only, public allowlisted files, thumbnail exclusion, protected headers, no extra fetches');

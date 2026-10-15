@@ -2,6 +2,22 @@ import 'package:mitv/src/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'missing episode number remains unverified for alignment and subtitle search',
+    () {
+      final unknown = EpisodeItem.fromJson({'id': '123', 'season': 1});
+      expect(unknown.hasEpisodeNumber, false);
+      expect(
+        EpisodeItem.fromJson({
+          'id': '123',
+          'season': 1,
+          'number': 2,
+        }).hasEpisodeNumber,
+        true,
+      );
+    },
+  );
+
   test('catalog runtime mapping keeps poster year and opaque ref', () {
     final item = CatalogItem.fromJson({
       'id': 'demo',
@@ -47,7 +63,11 @@ void main() {
       'movie_title': 'عمل تجريبي',
       'poster': 'https://cdn.example/poster.jpg',
       'episodes': [
-        {'episode_id': '101847', 'episode_number': 1, 'link': 'legacy:episode-1'}
+        {
+          'episode_id': '101847',
+          'episode_number': 1,
+          'link': 'legacy:episode-1',
+        },
       ],
       'media_path': '/api/cinema/media?id=opaque',
       'media_type': 'm3u8',
@@ -60,8 +80,16 @@ void main() {
 
   test('match runtime maps real score, logos and opaque ref', () {
     final match = MatchItem.fromJson({
-      'team1': {'name': 'راسينج سانتاندير', 'logo': 'https://cdn.example/racing.png', 'goals': 2},
-      'team2': {'name': 'ألافيس', 'logo': 'https://cdn.example/alaves.png', 'goals': 1},
+      'team1': {
+        'name': 'راسينج سانتاندير',
+        'logo': 'https://cdn.example/racing.png',
+        'goals': 2,
+      },
+      'team2': {
+        'name': 'ألافيس',
+        'logo': 'https://cdn.example/alaves.png',
+        'goals': 1,
+      },
       'time': '03:00',
       'status': 'ended',
       'ref': 'match:opaque',
@@ -75,33 +103,39 @@ void main() {
     expect(match.ref, 'match:opaque');
   });
 
-  test('authoritative top-level match score wins over nested placeholders in Flutter', () {
-    final match = MatchItem.fromJson({
-      'team1': {'name': 'راسينج سانتاندير', 'goals': 0},
-      'team2': {'name': 'ألافيس', 'goals': 0},
-      'home_score': 2,
-      'away_score': 1,
-      'status': 'ended',
-      'ref': 'match:authoritative',
-    });
-    expect(match.homeGoals, 2);
-    expect(match.awayGoals, 1);
-    expect(match.hasScore, true);
-  });
+  test(
+    'authoritative top-level match score wins over nested placeholders in Flutter',
+    () {
+      final match = MatchItem.fromJson({
+        'team1': {'name': 'راسينج سانتاندير', 'goals': 0},
+        'team2': {'name': 'ألافيس', 'goals': 0},
+        'home_score': 2,
+        'away_score': 1,
+        'status': 'ended',
+        'ref': 'match:authoritative',
+      });
+      expect(match.homeGoals, 2);
+      expect(match.awayGoals, 1);
+      expect(match.hasScore, true);
+    },
+  );
 
-  test('explicit authoritative 0-0 remains a legitimate ended result in Flutter', () {
-    final match = MatchItem.fromJson({
-      'team1': {'name': 'فريق أ', 'goals': 7},
-      'team2': {'name': 'فريق ب', 'goals': 4},
-      'home_score': 0,
-      'away_score': 0,
-      'status': 'ended',
-      'ref': 'match:draw',
-    });
-    expect(match.homeGoals, 0);
-    expect(match.awayGoals, 0);
-    expect(match.hasScore, true);
-  });
+  test(
+    'explicit authoritative 0-0 remains a legitimate ended result in Flutter',
+    () {
+      final match = MatchItem.fromJson({
+        'team1': {'name': 'فريق أ', 'goals': 7},
+        'team2': {'name': 'فريق ب', 'goals': 4},
+        'home_score': 0,
+        'away_score': 0,
+        'status': 'ended',
+        'ref': 'match:draw',
+      });
+      expect(match.homeGoals, 0);
+      expect(match.awayGoals, 0);
+      expect(match.hasScore, true);
+    },
+  );
 
   test('ended nested-only 0-0 placeholder stays unknown in Flutter', () {
     final match = MatchItem.fromJson({
@@ -151,8 +185,16 @@ void main() {
   });
 
   test('match server and playback expose opaque references only', () {
-    final server = MatchServer.fromJson({'ref': 'server:opaque', 'name': 'Web Server 1', 'type': 'm3u8'});
-    final playback = MatchPlayback.fromJson({'media_path': '/api/matches/media?id=opaque', 'media_type': 'm3u8', 'server_name': 'Web Server 1'});
+    final server = MatchServer.fromJson({
+      'ref': 'server:opaque',
+      'name': 'Web Server 1',
+      'type': 'm3u8',
+    });
+    final playback = MatchPlayback.fromJson({
+      'media_path': '/api/matches/media?id=opaque',
+      'media_type': 'm3u8',
+      'server_name': 'Web Server 1',
+    });
     expect(server.ref, startsWith('server:'));
     expect(playback.mediaPath, startsWith('/api/matches/media?'));
   });

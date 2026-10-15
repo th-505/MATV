@@ -5,8 +5,74 @@ const BINDINGS = {
   alooy: "ALOOY",
   laroza: "LAROZA",
 };
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const EXPIRY_SAFETY_MS = 30000;
+const RESOLUTION_RESPONSE_BYTES = 12288;
+const jsonBytes = (value) =>
+  new TextEncoder().encode(JSON.stringify(value)).length;
+function arabicCaption(track) {
+  return [track?.language, track?.label].some((value) =>
+    /^(?:ar|ara|arabic|العربية)(?:$|[-_\s(])/i.test(String(value || "").trim()),
+  );
+}
+// Captions are optional metadata. They must not turn a healthy video into a
+// failed resolution merely because a caption URL contains a long signed token.
+// Budget complete JSON values, never substrings of URLs or request headers.
+function budgetResolution(result) {
+  // A subsequent cache hit adds this field. Reserve its bytes now so cached
+  // responses obey the same contract as cold responses.
+  let bytes = jsonBytes({ ...result, cached: true });
+  const captions = result.sources.flatMap((source, sourceIndex) => {
+    if (!Array.isArray(source.subtitles)) return [];
+    source.subtitles = [...source.subtitles].sort(
+      (a, b) => Number(arabicCaption(b)) - Number(arabicCaption(a)),
+    );
+    return source.subtitles.map((track, trackIndex) => ({
+      source,
+      sourceIndex,
+      track,
+      trackIndex,
+      arabic: arabicCaption(track),
+      bytes: jsonBytes(track),
+    }));
+  });
+  // Discard non-Arabic tracks first, then extra Arabic alternatives. Keep the
+  // first caption on each source as long as the response budget permits.
+  captions.sort(
+    (a, b) =>
+      Number(a.arabic) - Number(b.arabic) ||
+      b.trackIndex - a.trackIndex ||
+      b.sourceIndex - a.sourceIndex,
+  );
+  for (const caption of captions) {
+    if (bytes <= RESOLUTION_RESPONSE_BYTES) break;
+    const tracks = caption.source.subtitles;
+    const index = tracks.indexOf(caption.track);
+    bytes -= caption.bytes + Number(tracks.length > 1);
+    tracks.splice(index, 1);
+  }
+  // Only after optional captions have gone may video alternatives be removed.
+  // Remove the largest duplicate-provider row first, retaining at least one
+  // complete source from each healthy provider whenever those rows can fit.
+  while (bytes > RESOLUTION_RESPONSE_BYTES && result.sources.length) {
+    const counts = new Map();
+    for (const source of result.sources)
+      counts.set(source.provider_id, (counts.get(source.provider_id) || 0) + 1);
+    const extras = result.sources.filter((source) => counts.get(source.provider_id) > 1);
+    const candidates = extras.length ? extras : result.sources;
+    const source = candidates.reduce((largest, next) =>
+      jsonBytes(next) >= jsonBytes(largest) ? next : largest,
+    );
+    bytes -= jsonBytes(source) + Number(result.sources.length > 1);
+    result.sources.splice(result.sources.indexOf(source), 1);
+  }
+  result.status = result.sources.length ? "success" : "unavailable";
+  // Status changes when every individually oversized row has been discarded.
+  // The remaining envelope is bounded separately rather than truncated.
+  if (jsonBytes({ ...result, cached: true }) > RESOLUTION_RESPONSE_BYTES)
+    throw Error("RESPONSE_TOO_LARGE");
+  return result;
+}
 // Responses contain metadata only. Bound every service/cache JSON read as well.
 async function boundedJson(response, limit = 131072) {
   if (Number(response.headers.get("Content-Length")) > limit) {
@@ -260,9 +326,7 @@ export async function aggregate(
         : {}),
     })),
   };
-  if (new TextEncoder().encode(JSON.stringify(result)).length > 12288)
-    throw Error("RESPONSE_TOO_LARGE");
-  return result;
+  return budgetResolution(result);
 }
 export default {
   async fetch(request, env, ctx) {

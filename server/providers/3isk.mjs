@@ -1,4 +1,5 @@
 import { load } from 'cheerio';
+import { sourcePublishedAt } from '../source-publication.mjs';
 
 import { ISK_ORIGIN, ISK_UA } from './3isk-playback/contract.mjs';
 import { selectPlayerIframe, resolvePlayer } from './3isk-playback/router.mjs';
@@ -76,7 +77,8 @@ export function parse3iskDetails(html) {
   });
   return { status: 'success', source: '3isk', movie_title: $('h1').first().text().trim() || $('meta[property="og:title"]').attr('content') || 'التفاصيل',
     poster: imageUrl($('meta[property="og:image"]').attr('content') || ''),
-    episodes: [...episodes.values()].sort((a, b) => a.season - b.season || a.num - b.num), download_available: false };
+    episodes: [...episodes.values()].sort((a, b) => a.season - b.season || a.num - b.num),
+    ...(sourcePublishedAt(html) ? {published_at:sourcePublishedAt(html)} : {}), download_available: false };
 }
 
 export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.now,

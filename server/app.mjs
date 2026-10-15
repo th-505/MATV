@@ -13,8 +13,11 @@ import {
 import { createContentRuntimeService } from "./content-runtime-service.mjs";
 import { create3iskRuntime } from "./3isk-runtime.mjs";
 import { createAlooyProvider, ALOOY_ORIGIN } from './providers/alooy.mjs';
-import { createLarozaProvider, LAROZA_CATEGORIES } from './providers/laroza.mjs';
-import { ISK_CATEGORIES } from "./providers/3isk.mjs";
+import { createLarozaProvider, LAROZA_CATEGORIES, assertLarozaRef } from './providers/laroza.mjs';
+import { ISK_CATEGORIES, decode3iskRef } from "./providers/3isk.mjs";
+import { decodeAlooyRef } from './providers/alooy.mjs';
+import { createCatalogMetadataCache } from './catalog-metadata-cache.mjs';
+import { createSupabaseCatalogStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
@@ -406,7 +409,32 @@ function publicDetails(data, web = false) {
   return web ? filterBrowserSources(data) : data;
 }
 
-export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(), runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
+export function assertCatalogReference(ref) {
+  if(typeof ref!=='string' || Buffer.byteLength(ref)>1536) throw Error('BAD_CINEMA_REFERENCE');
+  if(ref.startsWith('laroza:')) {assertLarozaRef(ref);return 'laroza';}
+  if(ref.startsWith('3isk:')) {decode3iskRef(ref);return '3isk';}
+  if(ref.startsWith('alooy:')) {decodeAlooyRef(ref);return 'alooy';}
+  if(ref.startsWith('legacy:')) {
+    let url;
+    try {url=assertSourceUrl(decodeURIComponent(ref.slice(7)));} catch {throw Error('BAD_CINEMA_REFERENCE');}
+    if(url.search || url.hash || !/^\/(?:movie|series|episode)\/[^?#]+$/.test(url.pathname) ||
+      'legacy:'+encodeURIComponent(url.href)!==ref) throw Error('BAD_CINEMA_REFERENCE');
+    return 'akoam';
+  }
+  throw Error('BAD_CINEMA_REFERENCE');
+}
+
+export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
+  catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now,
+  catalogLoader=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
+  const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
+    load:catalogLoader || (async(provider,ref)=>{
+      if(provider==='laroza') return larozaRuntime.metadata(ref);
+      if(provider==='alooy') return alooyRuntime.metadata(ref);
+      if(provider==='3isk') return iskRuntime.metadata(ref);
+      const data=await akoamMetadata(assertSourceUrl(decodeURIComponent(ref.slice(7))).href);
+      return {...data,episodes:wrapEpisodes(data.episodes || [])};
+    })});
   return http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
@@ -442,11 +470,13 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         const ref = url.searchParams.get('ref') || '';
         if (Object.hasOwn(LAROZA_CATEGORIES,ref)) {
           const result = await larozaRuntime.category(ref,Number(url.searchParams.get('p') || 1));
+          if(ref==='laroza-latest' && Number(url.searchParams.get('p') || 1)===1) catalog.observeLatest(result.data);
           return sendJson(req,res,200,{ ...buildRuntimeEnvelope({ kind:'category', data:result.data, source:'laroza' }),
             ...(typeof result.has_more === 'boolean' ? {has_more:result.has_more,pagination:result.pagination} : {}) });
         }
         if (Object.hasOwn(ISK_CATEGORIES, ref)) {
           const result = await iskRuntime.category(ref, Number(url.searchParams.get('p') || 1));
+          if(ref==='3isk-latest' && Number(url.searchParams.get('p') || 1)===1) catalog.observeLatest(result.data);
           return sendJson(req, res, 200, buildRuntimeEnvelope({ kind: 'category', data: result.data.map(normalizeCatalogItem), source: '3isk', cached: result.cached }));
         }
         return sendJson(req, res, 200, await runtimeService.category(ref, Number(url.searchParams.get("p") || 1)));
@@ -456,14 +486,9 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/api/cinema/search") return sendJson(req, res, 200, await cinemaSearch((url.searchParams.get("q") || "").trim()));
       if (url.pathname === "/api/cinema/category") return sendJson(req, res, 200, await cinemaCategory(url.searchParams.get("url") || "", Number(url.searchParams.get("p") || 1)));
       if (url.pathname === '/api/cinema/metadata') {
+        if(req.method!=='GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         const ref = url.searchParams.get('ref') || '';
-        if (ref.startsWith('laroza:')) return sendJson(req,res,200,await larozaRuntime.metadata(ref));
-        if (ref.startsWith('alooy:')) return sendJson(req,res,200,await alooyRuntime.metadata(ref));
-        if (ref.startsWith('3isk:')) return sendJson(req,res,200,await iskRuntime.metadata(ref));
-        if (!ref.startsWith('legacy:')) return sendJson(req,res,400,{status:'error',message:'BAD_CINEMA_REFERENCE'});
-        const target = assertSourceUrl(decodeURIComponent(ref.slice(7))).href;
-        const data = await akoamMetadata(target);
-        return sendJson(req,res,200,{status:'success',movie_title:data.movie_title,poster:data.poster || '',episodes:wrapEpisodes(data.episodes || [])});
+        return sendJson(req,res,200,await catalog.get(ref));
       }
       if (url.pathname === "/api/cinema/details") {
         const ref = url.searchParams.get('ref') || '';
@@ -478,6 +503,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       return sendJson(req, res, 404, { error: "NOT_FOUND" });
     } catch (error) {
+      if(error?.message==='BAD_CINEMA_REFERENCE') return sendJson(req,res,400,{status:'error',message:error.message});
+      if(error?.message==='CATALOG_BUSY') return sendJson(req,res,503,{status:'error',message:error.message});
       if (String(error?.message).startsWith('LAROZA_BAD_REFERENCE') || String(error?.message).startsWith('LAROZA_BAD_CATEGORY') || String(error?.message).startsWith('LAROZA_BAD_PAGE') || String(error?.message).startsWith('ALOOY_BAD_') || String(error?.message).startsWith('3ISK_BAD_') || String(error?.message).startsWith('3ISK_EXPECTED_')) return sendJson(req, res, 400, { status: 'error', message: error.message });
       if (res.headersSent) { res.destroy(error); return; }
       log("request_failed", { path: url.pathname, ms: Date.now() - started, error: String(error?.message || error) });

@@ -146,6 +146,56 @@ assert(
     (s) => s.edition === "original-cut-26" && s.timeline_verified,
   ),
 );
+const byteLength = (value) => Buffer.byteLength(JSON.stringify(value));
+const providerBindings = { "3isk": "ISK", akoam: "AKOAM", alooy: "ALOOY", laroza: "LAROZA" };
+const budgetIdentity = { episode_id: "caption-budget", refs: { "3isk": "i", akoam: "a", alooy: "b", laroza: larozaRef } };
+const budgetServices = (makeSource) => Object.fromEntries(Object.entries(providerBindings).map(([provider, binding]) => [binding, {
+  async fetch() { return Response.json({ sources: Array.from({ length: 4 }, (_, index) => makeSource(provider, index)) }); },
+}]));
+const videoSource = (provider, index) => ({
+  provider_id: provider,
+  url: `https://video.test/${provider}/${index}.mp4?token=preserve-this-value`,
+  headers: { Referer: `https://${provider}.test/watch?key=keep-me`, "User-Agent": "bounded-fixture-browser" },
+  expires_at: new Date(Date.now() + 120000).toISOString(),
+});
+const captionHeavy = await aggregate(budgetIdentity, budgetServices((provider, index) => ({
+  ...videoSource(provider, index),
+  subtitles: ["en", "fr", "ar", "de"].map((language) => ({
+    language,
+    label: language === "ar" ? "العربية" : "Optional translation",
+    url: `https://caption.test/${provider}/${index}/${language}.srt?token=${"x".repeat(1700)}`,
+    headers: { Referer: `https://${provider}.test/watch?key=${"y".repeat(300)}` },
+    kind: "subtitles", origin: "attached",
+  })),
+})));
+assert.equal(captionHeavy.status, "success", "optional captions cannot reject healthy video rows");
+assert.equal(captionHeavy.sources.length, 8, "trim captions before discarding video alternatives");
+assert(byteLength({ ...captionHeavy, cached: true }) <= 12288, "both cold and cache-hit JSON obey 12 KiB");
+assert.deepEqual([...new Set(captionHeavy.sources.map((s) => s.provider_id))], Object.keys(providerBindings));
+const keptTracks = captionHeavy.sources.flatMap((s) => s.subtitles);
+assert(keptTracks.length > 0, "preserve Arabic captions when they fit after metadata trimming");
+assert(keptTracks.every((track) => track.language === "ar"), "prefer Arabic over optional non-Arabic tracks");
+for (const source of captionHeavy.sources) {
+  const index = Number(new URL(source.url).pathname.match(/\/(\d+)\.mp4$/)[1]);
+  assert.equal(source.url, videoSource(source.provider_id, index).url, "never truncate signed media URL");
+  assert.deepEqual(source.headers, videoSource(source.provider_id, index).headers, "never truncate protected headers");
+}
+const largeSources = await aggregate(budgetIdentity, budgetServices((provider, index) => ({
+  ...videoSource(provider, index),
+  url: `https://video.test/${provider}/${index}.mp4?token=${"z".repeat(900)}`,
+  headers: { Referer: `https://${provider}.test/watch?key=${"r".repeat(1000)}` },
+})));
+assert.equal(largeSources.status, "success");
+assert(largeSources.sources.length >= 4 && largeSources.sources.length < 8, "discard complete extra sources when media metadata alone exceeds the budget");
+assert.deepEqual([...new Set(largeSources.sources.map((s) => s.provider_id))], Object.keys(providerBindings), "retain one source per provider whenever possible");
+assert(byteLength({ ...largeSources, cached: true }) <= 12288);
+const oversizedSingle = await aggregate({ episode_id: "oversized-row", refs: { "3isk": "i", akoam: "a" } }, {
+  ISK: { async fetch() { return Response.json({ sources: [{ ...videoSource("3isk", 0), headers: { Referer: "https://video.test/" + "r".repeat(12500) } }] }); } },
+  AKOAM: { async fetch() { return Response.json({ sources: [videoSource("akoam", 0)] }); } },
+});
+assert.equal(oversizedSingle.status, "success", "one oversized essential row cannot reject another healthy provider");
+assert.deepEqual(oversizedSingle.sources.map((s) => s.provider_id), ["akoam"]);
+assert.equal(oversizedSingle.sources[0].url, videoSource("akoam", 0).url);
 const isk =
   "3isk:" +
   Buffer.from("/watch/episodes/test-season-1-episode-1/").toString("base64url");
