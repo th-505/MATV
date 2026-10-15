@@ -1,4 +1,4 @@
-name: MITV Flutter Web
+name: MA TV Flutter Web
 on:
   push:
     branches: [main]
@@ -47,11 +47,13 @@ jobs:
         run: |
           mkdir -p site/app
           cp ./*.html site/
+          cp sw.js site/ 2>/dev/null || true
+          cp manifest.json site/ 2>/dev/null || true
           cp -R web site/web
           cp -R flutter_app/build/web/. site/app/
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-Flutter-Web
+          name: MA-TV-Flutter-Web
           path: site/
           retention-days: 14
 
@@ -63,7 +65,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: MITV-Flutter-Web
+          name: MA-TV-Flutter-Web
           path: site
       - name: Publish through the configured Pages source branch
         env:

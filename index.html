@@ -6,8 +6,13 @@
 <meta name="theme-color" content="#07090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MITV | 4BA">
-<title>MITV | 4BA — منصة البث السينمائي الفاخرة</title>
+<meta name="apple-mobile-web-app-title" content="MA TV">
+<meta name="description" content="MA TV — منصتك العربية الموحدة للأفلام، المسلسلات، الأنمي، والبث المباشر بدون إعلانات وببث مباشر من المصدر.">
+<title>MA TV OFFICIAL — منصة البث السينمائي الفاخرة</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307090b'/%3E%3Cpath d='M9 46 24 15h10l-4 9H21l-4 9h10l-4 8h-9l-2 5H9Zm21 0V15h13c8 0 12 4 12 9 0 4-2 6-5 8 4 2 6 4 6 7 0 5-4 7-12 7H30Zm9-19h4c2 0 3-1 3-2 0-2-1-2-3-2h-4v4Zm0 11h5c2 0 3-1 3-2s-1-2-3-2h-5v4Z' fill='%23e7b86e'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="app/favicon.png">
+<link rel="apple-touch-icon" href="app/icons/Icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800;900&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -185,6 +190,22 @@ header.app-header {
   width: 100%;
 }
 .search-box input::placeholder { color: var(--text-muted); }
+.search-btn {
+  background: transparent;
+  border: none;
+  color: var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 6px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.search-btn:hover {
+  transform: scale(1.15);
+  opacity: 0.9;
+}
 
 /* Floating Luxury Mobile Bottom Navigation */
 nav.mobile-nav {
@@ -384,7 +405,7 @@ main.container {
 .shelf-track::-webkit-scrollbar { height: 6px; }
 .shelf-track::-webkit-scrollbar-thumb { background: var(--gold-border-subtle); border-radius: 3px; }
 
-/* 4BA Luxury Media Cards */
+/* MA TV Luxury Media Cards */
 .media-card {
   flex: 0 0 152px;
   background: var(--bg-card);
@@ -392,17 +413,21 @@ main.container {
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, box-shadow 0.2s;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s, box-shadow 0.22s;
   position: relative;
   user-select: none;
+  outline: none;
 }
 @media (min-width: 600px) {
   .media-card { flex: 0 0 180px; }
 }
-.media-card:hover {
-  transform: translateY(-5px);
+.media-card:hover,
+.media-card:focus-visible,
+.media-card:focus {
+  transform: translateY(-6px);
   border-color: var(--gold-primary);
-  box-shadow: 0 10px 28px var(--gold-glow);
+  box-shadow: 0 12px 30px var(--gold-glow);
+  outline: none;
 }
 .poster-wrap {
   position: relative;
@@ -416,10 +441,12 @@ main.container {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
 }
-.media-card:hover .poster-wrap img {
-  transform: scale(1.04);
+.media-card:hover .poster-wrap img,
+.media-card:focus-visible .poster-wrap img,
+.media-card:focus .poster-wrap img {
+  transform: scale(1.06);
 }
 .poster-type {
   position: absolute;
@@ -785,32 +812,35 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 <header class="app-header">
   <div class="header-inner">
     <div class="brand-wrap" id="brandBtn">
-      <div class="brand-badge">4BA</div>
+      <div class="brand-badge">MA</div>
       <div class="brand-name-wrap">
         <div class="brand-name">
-          <span class="white-text">MITV</span>
-          <span class="gold-sep">|</span>
-          <span class="gold-text">4BA</span>
+          <span class="white-text">MA</span>
+          <span class="gold-text">TV</span>
+          <span class="gold-sep">•</span>
+          <span class="gold-text" style="font-size:0.82em;">OFFICIAL</span>
         </div>
-        <div class="brand-sub">VIP CINEMA</div>
+        <div class="brand-sub">LUXURY CINEMA • ZERO ADS</div>
       </div>
     </div>
 
-    <!-- Desktop Navigation: 7 Tabs strictly ordered RTL -->
+    <!-- Desktop Navigation: Sections ordered as: الرئيسية، أفلام، مسلسلات، أنمي، تركي، والبث المباشر -->
     <nav class="desktop-nav">
       <button class="nav-btn active" data-tab="home">الرئيسية</button>
       <button class="nav-btn" data-tab="movies">أفلام</button>
       <button class="nav-btn" data-tab="series">مسلسلات</button>
-      <button class="nav-btn" data-tab="turkish">تركي</button>
       <button class="nav-btn" data-tab="anime">أنمي</button>
+      <button class="nav-btn" data-tab="turkish">تركي</button>
       <button class="nav-btn" data-tab="live">البث المباشر</button>
       <button class="nav-btn" data-tab="favorites">المفضلة</button>
       <button class="nav-btn" data-tab="settings">الإعدادات</button>
     </nav>
 
     <div class="search-box">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8bd75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="search" id="globalSearch" placeholder="بحث عن فيلم، مسلسل...">
+      <button class="search-btn" id="searchTriggerBtn" title="بحث فوري" aria-label="بحث فوري">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </button>
+      <input type="search" id="globalSearch" placeholder="بحث فوري عن فيلم، مسلسل، أنمي..." autocomplete="off">
     </div>
   </div>
 </header>
@@ -821,7 +851,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="hero-banner" id="homeHero">
       <div class="hero-backdrop" id="heroBackdrop"></div>
       <div class="hero-content">
-        <span class="hero-badge">✦ الأكثر شهرة ورواجاً • 4BA Exclusive</span>
+        <span class="hero-badge">✦ الأكثر شهرة ورواجاً • MA TV Exclusive</span>
         <h1 class="hero-title" id="heroTitle">اختر عملاً للمشاهدة</h1>
         <div class="hero-tags" id="heroTags">
           <span class="rating-pill">★ 8.9</span>
@@ -1001,8 +1031,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       </button>
     </div>
 
-    <div style="text-align:center;color:var(--gold-primary);opacity:0.7;font-size:0.82rem;margin-top:24px;font-weight:700;">
-      MITV | 4BA Luxury Entertainment Platform v1.0.44 • Zero-Cost & Zero-Ads Architecture
+    <div style="text-align:center;color:var(--gold-primary);opacity:0.8;font-size:0.82rem;margin-top:24px;font-weight:700;">
+      MA TV OFFICIAL • منصة البث السينمائي الفاخرة v1.0.44 • Zero-Cost & Zero-Ads Architecture
     </div>
   </section>
 </main>
@@ -1021,13 +1051,13 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
     <span>مسلسلات</span>
   </button>
-  <button class="mob-btn" data-tab="turkish">
-    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-    <span>تركي</span>
-  </button>
   <button class="mob-btn" data-tab="anime">
     <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 19.59 10.56 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
     <span>أنمي</span>
+  </button>
+  <button class="mob-btn" data-tab="turkish">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <span>تركي</span>
   </button>
   <button class="mob-btn" data-tab="live">
     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
@@ -1042,7 +1072,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 <!-- Cinema Player Modal -->
 <div id="cinemaModal" class="cinema-modal" aria-hidden="true">
   <div class="player-header">
-    <div class="player-title" id="playerModalTitle">المشغل السينمائي • 4BA</div>
+    <div class="player-title" id="playerModalTitle">المشغل السينمائي • MA TV</div>
     <button class="close-player-btn" id="closePlayerBtn">✕</button>
   </div>
   <div class="player-stage">
@@ -1088,11 +1118,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.44';
 import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.44';
 import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.44';
-import { directPlaybackUrl } from './web/core/direct-playback.js?v=1.0.44';
+import { directPlaybackUrl, resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.45';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=1.0.44').catch(console.warn);
+  navigator.serviceWorker.register('./sw.js?v=1.0.45').catch(console.warn);
 }
 
 // Global State
@@ -1105,10 +1135,10 @@ let progressSaveInterval = null;
 
 // Persistent Device UUID
 function getOrCreateDeviceUuid() {
-  let id = localStorage.getItem('mitv_device_uuid');
+  let id = localStorage.getItem('matv_device_uuid') || localStorage.getItem('mitv_device_uuid');
   if (!id) {
-    id = 'mitv-4ba-' + Math.random().toString(36).slice(2, 9) + '-' + Date.now().toString(36);
-    localStorage.setItem('mitv_device_uuid', id);
+    id = 'matv-' + Math.random().toString(36).slice(2, 9) + '-' + Date.now().toString(36);
+    localStorage.setItem('matv_device_uuid', id);
   }
   return id;
 }
@@ -1134,12 +1164,12 @@ function toast(msg) {
 // -------------------------------------------------------------
 function getFavorites() {
   try {
-    return JSON.parse(localStorage.getItem('mitv_favorites') || '[]');
+    return JSON.parse(localStorage.getItem('matv_favorites') || localStorage.getItem('mitv_favorites') || '[]');
   } catch { return []; }
 }
 
 function saveFavorites(list) {
-  localStorage.setItem('mitv_favorites', JSON.stringify(list));
+  localStorage.setItem('matv_favorites', JSON.stringify(list));
   renderFavoritesShelves();
   // Silent Supabase sync attempt
   syncSupabaseItem('favorites', list);
@@ -1171,7 +1201,7 @@ function toggleFavorite(item) {
 
 function getContinueWatching() {
   try {
-    return JSON.parse(localStorage.getItem('mitv_continue_watching') || '[]');
+    return JSON.parse(localStorage.getItem('matv_continue_watching') || localStorage.getItem('mitv_continue_watching') || '[]');
   } catch { return []; }
 }
 
@@ -1190,7 +1220,7 @@ function saveContinueWatching(item, currentTime, duration) {
       updatedAt: Date.now()
     });
   }
-  localStorage.setItem('mitv_continue_watching', JSON.stringify(list.slice(0, 30)));
+  localStorage.setItem('matv_continue_watching', JSON.stringify(list.slice(0, 30)));
   renderContinueWatchingShelf();
   // Silent Supabase sync attempt
   syncSupabaseItem('continue_watching', list);
@@ -1353,13 +1383,16 @@ function renderShelf(containerId, items) {
 function createMediaCard(item) {
   const card = document.createElement('div');
   card.className = 'media-card';
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', item.title || 'عمل سينمائي');
   const favActive = isFavorite(item.href);
 
   card.innerHTML = `
     <div class="poster-wrap">
-      <img src="${item.img}" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 200 300\\'><rect width=\\'200\\' height=\\'300\\' fill=\\'%230f141d\\'/></svg>'">
+      <img src="${item.img}" loading="lazy" alt="${item.title || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 200 300\\'><rect width=\\'200\\' height=\\'300\\' fill=\\'%230f141d\\'/></svg>'">
       <span class="poster-type">${item.is_series ? 'مسلسل' : 'فيلم'}</span>
-      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${item.href}">
+      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${item.href}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
         ${favActive ? '♥' : '♡'}
       </button>
     </div>
@@ -1367,7 +1400,7 @@ function createMediaCard(item) {
       <div class="card-title">${item.title}</div>
       <div class="card-sub">
         <span>${item.year || ''}</span>
-        <span class="badge-gold-sm">HD • 4BA</span>
+        <span class="badge-gold-sm">HD • MA TV</span>
       </div>
     </div>
   `;
@@ -1380,6 +1413,12 @@ function createMediaCard(item) {
   };
 
   card.onclick = () => openItemDetails(item);
+  card.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openItemDetails(item);
+    }
+  };
   return card;
 }
 
@@ -1480,20 +1519,39 @@ async function openItemDetails(item) {
     const res = await getCinemaDetails(item.href);
     const data = res.data;
     if (data && data.status === 'success') {
-      document.getElementById('sheetDesc').textContent = data.overview || (item.is_series ? 'مسلسل درامي فاخر مترجم بجودة فائقة 4BA.' : 'فيلم سينمائي بجودة فائقة 4K UHD بدون إعلانات.');
+      document.getElementById('sheetDesc').textContent = data.overview || (item.is_series ? 'مسلسل درامي فاخر مترجم بجودة فائقة MA TV.' : 'فيلم سينمائي بجودة فائقة 4K UHD بدون إعلانات.');
       actions.innerHTML = '';
 
       const playBtn = document.createElement('button');
       playBtn.className = 'btn-gold primary';
       playBtn.textContent = '▶ تشغيل العمل فورا';
-      playBtn.onclick = () => {
-        sheet.classList.remove('open');
-        openCinemaPlayer({
-          item,
-          title: item.title,
-          url: data.media_src || data.media_url || directPlaybackUrl(data),
-          imdbId: data.imdb_id || item.imdb_id
-        });
+      playBtn.onclick = async () => {
+        playBtn.disabled = true;
+        playBtn.innerHTML = '<span class="spinner-sm"></span> جاري تجهيز البث…';
+        toast('جاري فحص وتجهيز البث المباشر بأعلى جودة…');
+        try {
+          const resolved = await resolvePlaybackUrl(item.href, data);
+          sheet.classList.remove('open');
+          openCinemaPlayer({
+            item,
+            title: item.title,
+            url: resolved?.url || null,
+            ref: item.href,
+            servers: resolved?.sources || [],
+            imdbId: data.imdb_id || item.imdb_id
+          });
+        } catch (_) {
+          sheet.classList.remove('open');
+          openCinemaPlayer({
+            item,
+            title: item.title,
+            ref: item.href,
+            imdbId: data.imdb_id || item.imdb_id
+          });
+        } finally {
+          playBtn.disabled = false;
+          playBtn.textContent = '▶ تشغيل العمل فورا';
+        }
       };
       actions.appendChild(playBtn);
 
@@ -1517,19 +1575,33 @@ async function openItemDetails(item) {
           btn.className = 'ep-btn';
           btn.textContent = 'حلقة ' + (ep.num || ep.number);
           btn.onclick = async () => {
-            toast('جاري تجهيز وسيرفرات الحلقة ' + ep.num);
-            const epRes = await getCinemaDetails(ep.link);
-            const epData = epRes.data;
-            if (epData && epData.status === 'success') {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-sm"></span> تجهيز…';
+            toast('جاري تجهيز سيرفرات الحلقة ' + (ep.num || ep.number));
+            try {
+              const epRes = await getCinemaDetails(ep.link);
+              const epData = epRes.data;
+              const resolved = await resolvePlaybackUrl(ep.link, epData);
               sheet.classList.remove('open');
               openCinemaPlayer({
                 item,
-                title: item.title + ' — حلقة ' + ep.num,
-                url: epData.media_src || epData.media_url || directPlaybackUrl(epData),
+                title: item.title + ' — حلقة ' + (ep.num || ep.number),
+                url: resolved?.url || null,
+                ref: ep.link,
+                servers: resolved?.sources || [],
                 imdbId: data.imdb_id || item.imdb_id
               });
-            } else {
-              toast('رابط الحلقة غير متاح حالياً');
+            } catch (err) {
+              sheet.classList.remove('open');
+              openCinemaPlayer({
+                item,
+                title: item.title + ' — حلقة ' + (ep.num || ep.number),
+                ref: ep.link,
+                imdbId: data.imdb_id || item.imdb_id
+              });
+            } finally {
+              btn.disabled = false;
+              btn.textContent = 'حلقة ' + (ep.num || ep.number);
             }
           };
           epGrid.appendChild(btn);
@@ -1613,13 +1685,26 @@ async function openMatchStream(match) {
       return;
     }
     const firstRef = servers[0].ref || servers[0].link;
-    const playRes = await getMatchPlayback(firstRef);
-    const playData = playRes.data?.data;
-    if (playData && (playData.url || playData.stream)) {
+    let playUrl = null;
+    try {
+      const playRes = await getMatchPlayback(firstRef);
+      const playData = playRes.data?.data;
+      if (playData && (playData.url || playData.stream)) {
+        playUrl = playData.url || playData.stream;
+      }
+    } catch (_) {}
+    if (!playUrl) {
+      const edgeResolved = await resolvePlaybackUrl(firstRef);
+      if (edgeResolved && edgeResolved.url) {
+        playUrl = edgeResolved.url;
+      }
+    }
+    if (playUrl) {
       openCinemaPlayer({
         title: (match.team1?.name || '') + ' × ' + (match.team2?.name || ''),
-        url: playData.url || playData.stream,
-        servers: servers.map((s, idx) => ({ name: s.name || `سيرفر ${idx + 1}`, ref: s.ref }))
+        url: playUrl,
+        ref: firstRef,
+        servers: servers.map((s, idx) => ({ name: s.name || `سيرفر ${idx + 1}`, ref: s.ref, url: s.url }))
       });
     } else {
       toast('عذراً: المصدر المباشر غير متوفر الآن');
@@ -1664,37 +1749,82 @@ function loadLiveChannels() {
 // -------------------------------------------------------------
 // 5. CINEMA VIDEO PLAYER & SUBTITLES ENGINE
 // -------------------------------------------------------------
-function openCinemaPlayer({ item = null, title, url, servers = [], imdbId = null }) {
+function playStreamUrl(sourceUrl) {
+  const video = document.getElementById('cinemaVideo');
+  if (activeHls) { activeHls.destroy(); activeHls = null; }
+  if (!sourceUrl) return;
+
+  if (/\.m3u8(?:$|\?)/i.test(sourceUrl)) {
+    if (Hls.isSupported()) {
+      activeHls = new Hls({ enableWorker: true, lowLatencyMode: true });
+      activeHls.loadSource(sourceUrl);
+      activeHls.attachMedia(video);
+      activeHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      activeHls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              activeHls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              activeHls.recoverMediaError();
+              break;
+            default:
+              activeHls.destroy();
+              break;
+          }
+        }
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = sourceUrl;
+      video.play().catch(() => {});
+    }
+  } else {
+    video.src = sourceUrl;
+    video.play().catch(() => {});
+  }
+}
+
+async function openCinemaPlayer({ item = null, title, url = null, ref = null, servers = [], imdbId = null }) {
   const modal = document.getElementById('cinemaModal');
   const video = document.getElementById('cinemaVideo');
-  document.getElementById('playerModalTitle').textContent = title || 'المشغل السينمائي • 4BA';
+  document.getElementById('playerModalTitle').textContent = title || 'المشغل السينمائي • MA TV';
   modal.classList.add('open');
 
   currentPlayingItem = item;
   if (activeHls) { activeHls.destroy(); activeHls = null; }
   currentSubDelay = 0.0;
   clearSubtitles();
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+
+  // If URL not provided, resolve it on-the-fly via Edge Resolver
+  if (!url) {
+    const targetRef = ref || item?.href || item?.link || item?.ref;
+    if (targetRef) {
+      toast('جاري استخراج وتجهيز رابط البث بأعلى جودة…');
+      try {
+        const resolved = await resolvePlaybackUrl(targetRef, item);
+        if (resolved && resolved.url) {
+          url = resolved.url;
+          if (Array.isArray(resolved.sources) && resolved.sources.length > 0) {
+            servers = resolved.sources;
+          }
+        }
+      } catch (e) {
+        console.warn('In-player resolution failed:', e);
+      }
+    }
+  }
 
   if (!url) {
-    toast('رابط التشغيل غير متوفر حالياً');
+    toast('عذراً: رابط التشغيل غير متوفر حالياً لهذا المصدر');
     return;
   }
 
-  // Handle HLS vs MP4 directly without proxy
-  if (/\.m3u8(?:$|\?)/i.test(url)) {
-    if (Hls.isSupported()) {
-      activeHls = new Hls({ enableWorker: true, lowLatencyMode: true });
-      activeHls.loadSource(url);
-      activeHls.attachMedia(video);
-      activeHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.play().catch(() => {});
-    }
-  } else {
-    video.src = url;
-    video.play().catch(() => {});
-  }
+  // Start video stream
+  playStreamUrl(url);
 
   // Progress tracking interval for Continue Watching
   clearInterval(progressSaveInterval);
@@ -1715,12 +1845,20 @@ function openCinemaPlayer({ item = null, title, url, servers = [], imdbId = null
   if (servers.length > 1) {
     servers.forEach((s, i) => {
       const btn = document.createElement('button');
-      btn.className = 'tool-btn' + (i === 0 ? ' active' : '');
+      btn.className = 'tool-btn' + (s.url === url || (i === 0 && !url) ? ' active' : '');
       btn.textContent = s.name;
       btn.onclick = () => {
         serverWrap.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         toast('جاري تبديل السيرفر إلى: ' + s.name);
+        if (s.url) {
+          playStreamUrl(s.url);
+        } else if (s.ref) {
+          resolvePlaybackUrl(s.ref).then(res => {
+            if (res && res.url) playStreamUrl(res.url);
+            else toast('تعذر تشغيل هذا السيرفر حالياً');
+          });
+        }
       };
       serverWrap.appendChild(btn);
     });
@@ -1803,7 +1941,7 @@ async function loadSubtitles(imdbId) {
     const video = document.getElementById('cinemaVideo');
     const track = document.createElement('track');
     track.kind = 'subtitles';
-    track.label = 'العربية (4BA)';
+    track.label = 'العربية (MA TV)';
     track.srclang = 'ar';
     track.src = trackUrl;
     track.default = true;
@@ -1872,26 +2010,62 @@ document.getElementById('purgeCacheBtn').onclick = async () => {
   }
 };
 
-// Global Search
-document.getElementById('globalSearch').addEventListener('keydown', async (e) => {
-  if (e.key === 'Enter') {
-    const q = e.target.value.trim();
-    if (!q) return;
-    toast('جاري البحث عن: ' + q);
-    switchTab('movies');
-    const grid = document.getElementById('moviesGrid');
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري البحث في كافة المصادر…</div>';
-    try {
-      const res = await searchCinema(q);
-      const items = res.data?.data || [];
-      grid.innerHTML = '';
-      if (!items.length) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لم يتم العثور على أي نتائج لهذا البحث.</div>';
-        return;
-      }
-      items.forEach(it => grid.appendChild(createMediaCard(it)));
-    } catch {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">فشل البحث. يرجى المحاولة لاحقاً.</div>';
+// Instant Search Functionality
+async function performSearch(query) {
+  const q = (query || '').trim();
+  if (!q) return;
+  toast('جاري البحث الفوري عن: ' + q);
+  switchTab('movies');
+  const grid = document.getElementById('moviesGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري البحث في كافة المصادر…</div>';
+  try {
+    const res = await searchCinema(q);
+    const items = res.data?.data || [];
+    grid.innerHTML = '';
+    if (!items.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لم يتم العثور على أي نتائج لهذا البحث.</div>';
+      return;
+    }
+    items.forEach(it => grid.appendChild(createMediaCard(it)));
+  } catch {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">فشل البحث. يرجى المحاولة لاحقاً.</div>';
+  }
+}
+
+const searchInput = document.getElementById('globalSearch');
+const searchTriggerBtn = document.getElementById('searchTriggerBtn');
+
+if (searchTriggerBtn) {
+  searchTriggerBtn.addEventListener('click', () => performSearch(searchInput.value));
+}
+if (searchInput) {
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      performSearch(searchInput.value);
+    }
+  });
+  searchInput.addEventListener('search', () => {
+    performSearch(searchInput.value);
+  });
+}
+
+// Global Keyboard Shortcuts: ESC closes modal player/sheet, '/' focuses search
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const cinemaModal = document.getElementById('cinemaModal');
+    if (cinemaModal && cinemaModal.classList.contains('open')) {
+      document.getElementById('closePlayerBtn').click();
+      return;
+    }
+    const detailsSheet = document.getElementById('detailsSheet');
+    if (detailsSheet && detailsSheet.classList.contains('open')) {
+      document.getElementById('closeSheetBtn').click();
+    }
+  } else if (e.key === '/' && document.activeElement !== searchInput) {
+    e.preventDefault();
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.select();
     }
   }
 });

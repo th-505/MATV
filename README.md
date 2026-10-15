@@ -1,6 +1,6 @@
-# MITV
+# MA TV
 
-**MITV** — Cross-Platform Direct Streaming Media Client (Android Mobile, Android TV, iOS Unsigned, Windows, macOS, Web).
+**MA TV** — Cross-Platform Direct Streaming Media Client (Android Mobile, Android TV, iOS Unsigned, Windows, macOS, Web).
 
 Repository: https://github.com/th-505/MATV  
 Flutter Web: https://th-505.github.io/MATV/app/

@@ -1,5 +1,5 @@
 {
-  "name": "mitv-runtime",
+  "name": "matv-runtime",
   "private": true,
   "type": "module",
   "scripts": {
