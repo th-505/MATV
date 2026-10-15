@@ -1,3 +1,5 @@
+import { generateAntiBanHeaders } from './source-grid.js';
+
 export function directPlaybackUrl(data, now = Date.now()) {
   if (data?.playback_mode !== 'direct') return '';
   try {
@@ -15,15 +17,19 @@ export function directPlaybackUrl(data, now = Date.now()) {
 const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
 
 export async function resolvePlaybackUrl(ref, detailsData = null) {
+  const targetRef = String(ref || detailsData?.ref || detailsData?.link || detailsData?.href || detailsData?.id || '').trim();
+
   // 1. Direct media URL in detailsData if available
   if (detailsData) {
     const direct = detailsData.media_src || detailsData.media_url || detailsData.stream_url || detailsData.url;
     if (direct && typeof direct === 'string' && /^https?:\/\//i.test(direct)) {
+      const antiBan = generateAntiBanHeaders(direct, targetRef);
       return {
         url: direct,
         format: /\.m3u8(?:$|\?)/i.test(direct) ? 'hls' : 'mp4',
         provider: detailsData.provider || 'سيرفر مباشر',
-        sources: [{ name: 'سيرفر مباشر 1', url: direct }]
+        headers: antiBan,
+        sources: [{ name: 'سيرفر مباشر 1', url: direct, headers: antiBan }]
       };
     }
     if (Array.isArray(detailsData.media_sources) && detailsData.media_sources.length > 0) {
@@ -31,22 +37,27 @@ export async function resolvePlaybackUrl(ref, detailsData = null) {
       if (valid.length > 0) {
         const first = valid[0];
         const u = first.url || first.media_path;
+        const antiBan = generateAntiBanHeaders(u, targetRef);
         return {
           url: u,
           format: first.media_type === 'm3u8' || /\.m3u8(?:$|\?)/i.test(u) ? 'hls' : 'mp4',
           provider: first.provider || 'سيرفر مباشر',
-          sources: valid.map((s, idx) => ({
-            name: s.label || s.quality || `سيرفر ${idx + 1}`,
-            url: s.url || s.media_path,
-            format: s.media_type
-          }))
+          headers: antiBan,
+          sources: valid.map((s, idx) => {
+            const streamUrl = s.url || s.media_path;
+            return {
+              name: s.label || s.quality || `سيرفر ${idx + 1}`,
+              url: streamUrl,
+              format: s.media_type,
+              headers: generateAntiBanHeaders(streamUrl, targetRef)
+            };
+          })
         };
       }
     }
   }
 
   // 2. Resolve via Cloudflare Edge Worker
-  const targetRef = String(ref || detailsData?.ref || detailsData?.link || detailsData?.href || detailsData?.id || '').trim();
   if (targetRef) {
     try {
       let edgeUrl = `${EDGE_RESOLVER_BASE}/v1/resolve?ref=${encodeURIComponent(targetRef)}`;
@@ -67,16 +78,17 @@ export async function resolvePlaybackUrl(ref, detailsData = null) {
           const playable = json.sources.filter(s => s.web_playable !== false && s.url && /^https?:\/\//i.test(s.url));
           const list = playable.length > 0 ? playable : json.sources;
           if (list.length > 0 && list[0].url) {
+            const firstAntiBan = { ...generateAntiBanHeaders(list[0].url, targetRef), ...(list[0].headers || {}) };
             return {
               url: list[0].url,
               format: list[0].format === 'hls' || /\.m3u8(?:$|\?)/i.test(list[0].url) ? 'hls' : 'mp4',
               provider: list[0].provider || list[0].provider_id || 'سيرفر مباشر',
-              headers: list[0].headers || {},
+              headers: firstAntiBan,
               sources: list.map((s, idx) => ({
                 name: s.quality ? `${s.provider || ''} ${s.quality}`.trim() : (s.provider || `سيرفر ${idx + 1}`),
                 url: s.url,
                 format: s.format,
-                headers: s.headers || {}
+                headers: { ...generateAntiBanHeaders(s.url, targetRef), ...(s.headers || {}) }
               }))
             };
           }

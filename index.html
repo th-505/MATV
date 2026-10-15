@@ -405,6 +405,35 @@ main.container {
 .shelf-track::-webkit-scrollbar { height: 6px; }
 .shelf-track::-webkit-scrollbar-thumb { background: var(--gold-border-subtle); border-radius: 3px; }
 
+.shelf-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shelf-arrow {
+  background: rgba(18, 24, 36, 0.7);
+  border: 1px solid var(--gold-border-subtle);
+  color: var(--gold-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.15rem;
+  font-weight: 700;
+  transition: all 0.16s ease;
+  user-select: none;
+  line-height: 1;
+}
+.shelf-arrow:hover {
+  background: var(--gold-primary);
+  color: #07090b;
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+
 /* MA TV Luxury Media Cards */
 .media-card {
   flex: 0 0 152px;
@@ -870,6 +899,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf" id="shelfContinueWrap" style="display:none;">
       <div class="shelf-header">
         <h3 class="shelf-title">أكمل المشاهدة</h3>
+        <div class="shelf-actions">
+          <button class="shelf-arrow" onclick="scrollShelf('shelfContinue', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfContinue', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfContinue"></div>
     </div>
@@ -878,7 +911,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf" id="shelfFavsWrap" style="display:none;">
       <div class="shelf-header">
         <h3 class="shelf-title">قائمتي المفضلة</h3>
-        <button class="tool-btn" onclick="switchTab('favorites')">عرض الكل</button>
+        <div class="shelf-actions">
+          <button class="tool-btn" onclick="switchTab('favorites')">عرض الكل</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfFavs', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfFavs', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfFavs"></div>
     </div>
@@ -887,6 +924,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf">
       <div class="shelf-header">
         <h3 class="shelf-title">الأكثر مشاهدة اليوم</h3>
+        <div class="shelf-actions">
+          <button class="shelf-arrow" onclick="scrollShelf('shelfTrending', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfTrending', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfTrending"></div>
     </div>
@@ -895,7 +936,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf">
       <div class="shelf-header">
         <h3 class="shelf-title">أحدث الأفلام السينمائية</h3>
-        <button class="tool-btn" onclick="switchTab('movies')">عرض الكل</button>
+        <div class="shelf-actions">
+          <button class="tool-btn" onclick="switchTab('movies')">عرض الكل</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfMovies', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfMovies', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfMovies"></div>
     </div>
@@ -904,7 +949,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf">
       <div class="shelf-header">
         <h3 class="shelf-title">أحدث المسلسلات الحصرية</h3>
-        <button class="tool-btn" onclick="switchTab('series')">عرض الكل</button>
+        <div class="shelf-actions">
+          <button class="tool-btn" onclick="switchTab('series')">عرض الكل</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfSeries', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfSeries', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfSeries"></div>
     </div>
@@ -913,7 +962,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf">
       <div class="shelf-header">
         <h3 class="shelf-title">الدراما التركية الفاخرة (قصة عشق)</h3>
-        <button class="tool-btn" onclick="switchTab('turkish')">عرض الكل</button>
+        <div class="shelf-actions">
+          <button class="tool-btn" onclick="switchTab('turkish')">عرض الكل</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfTurkish', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfTurkish', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfTurkish"></div>
     </div>
@@ -922,7 +975,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="shelf">
       <div class="shelf-header">
         <h3 class="shelf-title">عالم الأنمي المترجم</h3>
-        <button class="tool-btn" onclick="switchTab('anime')">عرض الكل</button>
+        <div class="shelf-actions">
+          <button class="tool-btn" onclick="switchTab('anime')">عرض الكل</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfAnime', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfAnime', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
       </div>
       <div class="shelf-track" id="shelfAnime"></div>
     </div>
@@ -989,8 +1046,16 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
         <span>معرّف الجهاز الثابت (Device UUID)</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <code id="deviceUuidLabel" style="color:var(--gold-primary);font-size:0.8rem;background:rgba(232,189,117,0.1);padding:4px 8px;border-radius:6px;">...</code>
-          <button id="copyUuidBtn" class="tool-btn" style="padding:4px 10px;font-size:0.75rem;">نسخ</button>
+          <button id="copyUuidBtn" class="tool-btn" style="padding:4px 10px;font-size:0.75rem;">نسخ معرّف الجهاز</button>
         </div>
+      </div>
+      <div class="settings-row">
+        <span>وضع المزامنة والتخزين</span>
+        <select id="settingSyncMode" class="tool-btn" style="background:var(--bg-surface);color:#fff;">
+          <option value="hybrid">محلي وسحابي هجين (كليكما - افتراضي)</option>
+          <option value="local">محلي فقط (LocalStorage)</option>
+          <option value="cloud">سحابي فقط (Supabase)</option>
+        </select>
       </div>
       <div class="settings-row">
         <span>المصادقة الصامتة (Supabase Anonymous Auth)</span>
@@ -998,7 +1063,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       </div>
       <div class="settings-row">
         <span>سجل المشاهدة والمفضلة</span>
-        <span>محلي (LocalStorage) + سحابي متزامن</span>
+        <span id="syncModeLabel">محلي (LocalStorage) + سحابي متزامن</span>
       </div>
     </div>
 
@@ -1108,6 +1173,16 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <h3 style="font-size:1rem;margin-bottom:8px;color:var(--gold-primary);">قائمة الحلقات</h3>
       <div class="episode-grid" id="sheetEpisodesGrid"></div>
     </div>
+    <div id="sheetSimilarSection" style="display:none;margin-top:20px;">
+      <div class="shelf-header">
+        <h3 class="shelf-title" style="font-size:1rem;color:var(--gold-primary);">أعمال مشابهة مقترحة (TMDb)</h3>
+        <div class="shelf-actions">
+          <button class="shelf-arrow" onclick="scrollShelf('sheetSimilarTrack', 380)" title="السابق" aria-label="السابق">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('sheetSimilarTrack', -380)" title="التالي" aria-label="التالي">›</button>
+        </div>
+      </div>
+      <div class="shelf-track" id="sheetSimilarTrack"></div>
+    </div>
   </div>
 </div>
 
@@ -1115,10 +1190,13 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 
 <!-- Unified JavaScript Application -->
 <script type="module">
-import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.44';
-import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.44';
-import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.44';
+import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.45';
+import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.45';
+import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.45';
 import { directPlaybackUrl, resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.45';
+import { getTrendingMovies, getTrendingSeries, getSimilarTitles, getTmdbMovieInfo, searchTmdb } from './web/core/tmdb-service.js?v=1.0.45';
+import { findAndLoadSubtitles } from './web/core/subtitles-hybrid.js?v=1.0.45';
+import { SOURCE_SUPERVISORS, ALL_SOURCES } from './web/core/source-grid.js?v=1.0.45';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -1148,6 +1226,24 @@ document.getElementById('deviceUuidLabel').textContent = deviceUuid;
 document.getElementById('copyUuidBtn').onclick = () => {
   navigator.clipboard.writeText(deviceUuid).then(() => toast('تم نسخ معرّف الجهاز بنجاح!'));
 };
+
+// Sync Mode Settings Wiring
+const syncSelect = document.getElementById('settingSyncMode');
+const syncModeLabel = document.getElementById('syncModeLabel');
+if (syncSelect) {
+  const currentSyncMode = localStorage.getItem('matv_sync_mode') || 'hybrid';
+  syncSelect.value = currentSyncMode;
+  if (syncModeLabel) {
+    syncModeLabel.textContent = currentSyncMode === 'local' ? 'محلي فقط (LocalStorage)' : (currentSyncMode === 'cloud' ? 'سحابي فقط (Supabase)' : 'محلي (LocalStorage) + سحابي متزامن');
+  }
+  syncSelect.addEventListener('change', () => {
+    localStorage.setItem('matv_sync_mode', syncSelect.value);
+    if (syncModeLabel) {
+      syncModeLabel.textContent = syncSelect.value === 'local' ? 'محلي فقط (LocalStorage)' : (syncSelect.value === 'cloud' ? 'سحابي فقط (Supabase)' : 'محلي (LocalStorage) + سحابي متزامن');
+    }
+    toast('تم حفظ وضع المزامنة بنجاح');
+  });
+}
 
 // Toast Helper
 let toastTimer;
@@ -1301,10 +1397,19 @@ document.getElementById('clearFavsBtn').onclick = () => {
 };
 
 // -------------------------------------------------------------
-// TAB SWITCHING & ROUTING
+// TAB SWITCHING & HASH ROUTING (State Persistence)
 // -------------------------------------------------------------
-window.switchTab = function(tabId) {
+function getRouteTab() {
+  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+  const validTabs = ['home', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
+  return validTabs.includes(hash) ? hash : 'home';
+}
+
+window.switchTab = function(tabId, updateHash = true) {
   currentTab = tabId;
+  if (updateHash && window.location.hash !== '#' + tabId) {
+    history.pushState(null, '', '#' + tabId);
+  }
   document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
   document.querySelectorAll('.mob-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
@@ -1319,6 +1424,20 @@ window.switchTab = function(tabId) {
   if (tabId === 'anime' && !animeLoaded) loadAnimeTab();
   if (tabId === 'live' && !matchesLoaded) loadLiveMatches();
   if (tabId === 'favorites') renderFavoritesShelves();
+};
+
+window.addEventListener('hashchange', () => {
+  const tab = getRouteTab();
+  if (tab !== currentTab) {
+    switchTab(tab, false);
+  }
+});
+
+window.scrollShelf = function(shelfId, delta) {
+  const shelf = document.getElementById(shelfId);
+  if (shelf) {
+    shelf.scrollBy({ left: delta, behavior: 'smooth' });
+  }
 };
 
 document.querySelectorAll('.nav-btn, .mob-btn').forEach(btn => {
@@ -1336,21 +1455,30 @@ async function loadHomeShelves() {
   renderFavoritesShelves();
 
   try {
-    const [moviesRes, seriesRes, turkishRes, animeRes] = await Promise.all([
-      getCinemaCategory('movie', 'أجنبية', 'movie-foreign', 1),
-      getCinemaCategory('series', 'أجنبية', 'series-foreign', 1),
-      getCinemaCategory('series', 'تركية', '3isk-latest', 1),
-      getCinemaCategory('movie', 'أنمي', 'movie-anime', 1)
+    const [tmdbMovies, tmdbSeries, moviesRes, seriesRes, turkishRes, animeRes] = await Promise.all([
+      getTrendingMovies().catch(() => []),
+      getTrendingSeries().catch(() => []),
+      getCinemaCategory('movie', 'أجنبية', 'movie-foreign', 1).catch(() => ({ data: { data: [] } })),
+      getCinemaCategory('series', 'أجنبية', 'series-foreign', 1).catch(() => ({ data: { data: [] } })),
+      getCinemaCategory('series', 'تركية', '3isk-latest', 1).catch(() => ({ data: { data: [] } })),
+      getCinemaCategory('movie', 'أنمي', 'movie-anime', 1).catch(() => ({ data: { data: [] } }))
     ]);
-    const movies = moviesRes.data?.data || [];
-    const series = seriesRes.data?.data || [];
+    const movies = (moviesRes.data?.data && moviesRes.data.data.length > 0) ? moviesRes.data.data : tmdbMovies;
+    const series = (seriesRes.data?.data && seriesRes.data.data.length > 0) ? seriesRes.data.data : tmdbSeries;
     const turkish = turkishRes.data?.data || [];
     const anime = animeRes.data?.data || [];
 
-    if (movies.length > 0) {
-      const heroItem = movies[0];
+    // Real Hero Banner populated from TMDb trending or movies
+    const heroPool = tmdbMovies.length > 0 ? tmdbMovies : movies;
+    if (heroPool.length > 0) {
+      const heroItem = heroPool[0];
       document.getElementById('heroTitle').textContent = heroItem.title;
-      document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.img})`;
+      if (heroItem.backdrop || heroItem.img) {
+        document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.backdrop || heroItem.img})`;
+      }
+      if (heroItem.overview) {
+        document.getElementById('heroDesc').textContent = heroItem.overview;
+      }
       document.getElementById('heroPlayBtn').onclick = () => openItemDetails(heroItem);
       const favBtn = document.getElementById('heroFavBtn');
       const active = isFavorite(heroItem.href);
@@ -1361,7 +1489,12 @@ async function loadHomeShelves() {
       };
     }
 
-    renderShelf('shelfTrending', [...movies.slice(1, 8), ...series.slice(0, 6)]);
+    // Real Trending Shelf populated from TMDb
+    const trendingList = tmdbMovies.length > 0
+      ? [...tmdbMovies.slice(0, 8), ...tmdbSeries.slice(0, 6)]
+      : [...movies.slice(1, 8), ...series.slice(0, 6)];
+
+    renderShelf('shelfTrending', trendingList);
     renderShelf('shelfMovies', movies.slice(0, 15));
     renderShelf('shelfSeries', series.slice(0, 15));
     renderShelf('shelfTurkish', turkish.slice(0, 15));
@@ -1461,28 +1594,18 @@ async function loadSeriesTab() {
 
 async function loadTurkishTab() {
   turkishLoaded = true;
-  const turkishCats = [
-    { title: 'قصة عشق (أحدث الحلقات)', url: '3isk-latest' },
-    { title: 'جميع المسلسلات (مترجم ومدبلج)', url: '3isk-turkish' },
-    { title: 'مسلسلات مدبلجة (مدبلج فقط)', url: '3isk-dubbed' },
-    { title: 'جميع الأفلام التركية', url: '3isk-movies' },
-  ];
-  setupCategoryFilters('turkishFilters', turkishCats, (cat) => {
+  setupCategoryFilters('turkishFilters', CinemaCategories.turkish, (cat) => {
     loadCategoryGrid('series', cat, 'turkishGrid', 'turkishLoadMore');
   });
-  loadCategoryGrid('series', turkishCats[0], 'turkishGrid', 'turkishLoadMore');
+  loadCategoryGrid('series', CinemaCategories.turkish[0], 'turkishGrid', 'turkishLoadMore');
 }
 
 async function loadAnimeTab() {
   animeLoaded = true;
-  const animeCats = [
-    { title: 'أفلام أنمي', url: 'movie-anime' },
-    { title: 'مسلسلات أنمي', url: 'series-anime' },
-  ];
-  setupCategoryFilters('animeFilters', animeCats, (cat) => {
+  setupCategoryFilters('animeFilters', CinemaCategories.anime, (cat) => {
     loadCategoryGrid('anime', cat, 'animeGrid', 'animeLoadMore');
   });
-  loadCategoryGrid('anime', animeCats[0], 'animeGrid', 'animeLoadMore');
+  loadCategoryGrid('anime', CinemaCategories.anime[0], 'animeGrid', 'animeLoadMore');
 }
 
 async function loadCategoryGrid(type, cat, gridId, loadMoreId) {
@@ -1606,6 +1729,34 @@ async function openItemDetails(item) {
           };
           epGrid.appendChild(btn);
         });
+      }
+
+      // TMDb Similar Titles Shelf
+      const similarSec = document.getElementById('sheetSimilarSection');
+      const similarTrack = document.getElementById('sheetSimilarTrack');
+      if (similarSec && similarTrack) {
+        similarSec.style.display = 'none';
+        similarTrack.innerHTML = '';
+        getSimilarTitles(item.title, item.is_series ? 'tv' : 'movie').then(simList => {
+          if (Array.isArray(simList) && simList.length > 0) {
+            similarSec.style.display = 'block';
+            similarTrack.innerHTML = '';
+            simList.forEach(sim => {
+              const card = createMediaCard({
+                title: sim.title,
+                img: sim.img,
+                href: item.href,
+                is_series: item.is_series,
+                year: sim.year
+              });
+              card.onclick = () => {
+                document.getElementById('detailsSheet').classList.remove('open');
+                performSearch(sim.title);
+              };
+              similarTrack.appendChild(card);
+            });
+          }
+        }).catch(() => {});
       }
     } else {
       document.getElementById('sheetDesc').textContent = 'تعذر استخراج مصادر التشغيل لهذا العمل حالياً.';
@@ -1749,14 +1900,24 @@ function loadLiveChannels() {
 // -------------------------------------------------------------
 // 5. CINEMA VIDEO PLAYER & SUBTITLES ENGINE
 // -------------------------------------------------------------
-function playStreamUrl(sourceUrl) {
+function playStreamUrl(sourceUrl, streamHeaders = {}) {
   const video = document.getElementById('cinemaVideo');
   if (activeHls) { activeHls.destroy(); activeHls = null; }
   if (!sourceUrl) return;
 
   if (/\.m3u8(?:$|\?)/i.test(sourceUrl)) {
     if (Hls.isSupported()) {
-      activeHls = new Hls({ enableWorker: true, lowLatencyMode: true });
+      activeHls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        xhrSetup: function(xhr, url) {
+          if (streamHeaders && typeof streamHeaders === 'object') {
+            for (const [k, v] of Object.entries(streamHeaders)) {
+              try { xhr.setRequestHeader(k, v); } catch (_) {}
+            }
+          }
+        }
+      });
       activeHls.loadSource(sourceUrl);
       activeHls.attachMedia(video);
       activeHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
@@ -1785,7 +1946,7 @@ function playStreamUrl(sourceUrl) {
   }
 }
 
-async function openCinemaPlayer({ item = null, title, url = null, ref = null, servers = [], imdbId = null }) {
+async function openCinemaPlayer({ item = null, title, url = null, ref = null, servers = [], imdbId = null, headers = {} }) {
   const modal = document.getElementById('cinemaModal');
   const video = document.getElementById('cinemaVideo');
   document.getElementById('playerModalTitle').textContent = title || 'المشغل السينمائي • MA TV';
@@ -1799,6 +1960,8 @@ async function openCinemaPlayer({ item = null, title, url = null, ref = null, se
   video.removeAttribute('src');
   video.load();
 
+  let activeHeaders = headers || {};
+
   // If URL not provided, resolve it on-the-fly via Edge Resolver
   if (!url) {
     const targetRef = ref || item?.href || item?.link || item?.ref;
@@ -1808,6 +1971,7 @@ async function openCinemaPlayer({ item = null, title, url = null, ref = null, se
         const resolved = await resolvePlaybackUrl(targetRef, item);
         if (resolved && resolved.url) {
           url = resolved.url;
+          activeHeaders = resolved.headers || {};
           if (Array.isArray(resolved.sources) && resolved.sources.length > 0) {
             servers = resolved.sources;
           }
@@ -1823,8 +1987,8 @@ async function openCinemaPlayer({ item = null, title, url = null, ref = null, se
     return;
   }
 
-  // Start video stream
-  playStreamUrl(url);
+  // Start video stream with anti-ban headers
+  playStreamUrl(url, activeHeaders);
 
   // Progress tracking interval for Continue Watching
   clearInterval(progressSaveInterval);
@@ -1834,10 +1998,33 @@ async function openCinemaPlayer({ item = null, title, url = null, ref = null, se
     }
   }, 5000);
 
-  // Load Subtitles via Stremio OpenSubtitles v3
-  if (imdbId && imdbId.startsWith('tt')) {
-    loadSubtitles(imdbId);
-  }
+  // Load Subtitles via Hybrid Subtitles Engine (OpenRouter AI + Stremio OpenSubtitles v3)
+  findAndLoadSubtitles({
+    imdbId: imdbId || item?.imdb_id,
+    title: item?.title || title
+  }).then(subResult => {
+    if (subResult && subResult.vtt) {
+      clearSubtitles();
+      const blob = new Blob([subResult.vtt], { type: 'text/vtt' });
+      const trackUrl = URL.createObjectURL(blob);
+      const track = document.createElement('track');
+      track.kind = 'subtitles';
+      track.label = subResult.source === 'openrouter-ai' ? 'العربية (MA TV AI)' : 'العربية (OpenSubtitles)';
+      track.srclang = 'ar';
+      track.src = trackUrl;
+      track.default = true;
+      video.appendChild(track);
+      currentTextTrack = track.track;
+      if (currentTextTrack) currentTextTrack.mode = 'showing';
+      toast('تم تفعيل الترجمة العربية (' + (subResult.source === 'openrouter-ai' ? 'AI' : 'سحابية') + ')');
+    } else if (imdbId && imdbId.startsWith('tt')) {
+      loadSubtitles(imdbId);
+    }
+  }).catch(() => {
+    if (imdbId && imdbId.startsWith('tt')) {
+      loadSubtitles(imdbId);
+    }
+  });
 
   // Server Switcher Buttons
   const serverWrap = document.getElementById('playerServersWrap');
@@ -1852,10 +2039,10 @@ async function openCinemaPlayer({ item = null, title, url = null, ref = null, se
         btn.classList.add('active');
         toast('جاري تبديل السيرفر إلى: ' + s.name);
         if (s.url) {
-          playStreamUrl(s.url);
+          playStreamUrl(s.url, s.headers || {});
         } else if (s.ref) {
           resolvePlaybackUrl(s.ref).then(res => {
-            if (res && res.url) playStreamUrl(res.url);
+            if (res && res.url) playStreamUrl(res.url, res.headers || {});
             else toast('تعذر تشغيل هذا السيرفر حالياً');
           });
         }
@@ -2070,8 +2257,8 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Initial tab load
-switchTab('home');
+// Initial tab load (restore hash route on page reload/direct link)
+switchTab(getRouteTab(), false);
 </script>
 </body>
 </html>

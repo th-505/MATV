@@ -15,6 +15,7 @@ const TMDB_ROUTES = new Set([
   "/api/v1/tmdb/search",
   "/api/v1/tmdb/details",
   "/api/v1/tmdb/season",
+  "/api/v1/tmdb/trending",
 ]);
 
 const FALLBACK_ROUTES = new Set([
@@ -95,6 +96,10 @@ export function createMitvRuntimeServer({
           const query = String(url.searchParams.get("q") || "").trim();
           if (query.length < 2) return sendJson(req, res, 200, { status: "success", source: "tmdb", data: [] });
           return sendJson(req, res, 200, await tmdbRuntime.search(query));
+        }
+        if (url.pathname === "/api/v1/tmdb/trending") {
+          const type = String(url.searchParams.get("type") || "movie").trim();
+          return sendJson(req, res, 200, await tmdbRuntime.trending(type));
         }
         const ref = String(url.searchParams.get("ref") || "").trim();
         if (!ref) return sendJson(req, res, 400, { status: "error", message: "TMDB_BAD_REFERENCE" });

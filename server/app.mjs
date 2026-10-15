@@ -18,6 +18,7 @@ import { ISK_CATEGORIES } from "./providers/3isk.mjs";
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
+import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails } from "./scrapers/index.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
 const CINEMA = "https://albas.albesriali03.workers.dev/";
@@ -240,16 +241,33 @@ export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cin
   return createContentRuntimeService({
     fetchMatches,
     async searchCatalog(query) {
-      const results = await Promise.allSettled([searchCatalog(query), iskRuntime.search(query), alooyRuntime.search(query), larozaRuntime.search(query)]);
+      const results = await Promise.allSettled([
+        searchCatalog(query),
+        iskRuntime.search(query),
+        alooyRuntime.search(query),
+        larozaRuntime.search(query),
+        scrapeRealSearch(query)
+      ]);
       const success = results.filter(result => result.status === 'fulfilled');
       if (!success.length) throw new Error('CATALOG_SEARCH_UNAVAILABLE');
       return { status: 'success', source: 'catalog', data: success.flatMap(result => result.value.data || []) };
     },
-    fetchCategory(sourceUrl, page) {
+    async fetchCategory(sourceUrl, page) {
       const larozaId = Object.keys(LAROZA_CATEGORIES).find(key => LAROZA_CATEGORIES[key] === sourceUrl);
       if (larozaId) return larozaRuntime.category(larozaId, page);
       const id = Object.keys(ISK_CATEGORIES).find(key => ISK_CATEGORIES[key] === sourceUrl);
-      return sourceUrl === ALOOY_ORIGIN + "/tv-series.html" ? alooyRuntime.category("alooy-series", page) : id ? iskRuntime.category(id, page) : fetchCategory(sourceUrl, page);
+      if (sourceUrl === ALOOY_ORIGIN + "/tv-series.html") return alooyRuntime.category("alooy-series", page);
+      if (id) return iskRuntime.category(id, page);
+
+      try {
+        const res = await fetchCategory(sourceUrl, page);
+        if (res && Array.isArray(res.data) && res.data.length > 0) return res;
+      } catch (_) {}
+
+      // Fallback to real multi-source scraping grid
+      const catKey = sourceUrl.split('/').pop() || sourceUrl;
+      const data = await scrapeRealCategory(catKey, page);
+      return { status: "success", source: "scrapers-master", data };
     },
   });
 }
@@ -386,6 +404,10 @@ async function directDetailsResolved(target) {
 }
 
 async function cinemaDetails(ref) {
+  if (ref.startsWith("mycima:") || ref.startsWith("egydead:") || ref.startsWith("anime4up:") || ref.startsWith("arabseed:") || ref.startsWith("witanime:") || ref.startsWith("cimanow:") || ref.startsWith("shahid4u:") || ref.startsWith("moviz:")) {
+    const details = await scrapeRealDetails(ref);
+    if (details) return details;
+  }
   if (!ref.startsWith("legacy:")) throw new Error("BAD_CINEMA_REFERENCE");
   const target = decodeURIComponent(ref.slice("legacy:".length));
   assertSourceUrl(target);

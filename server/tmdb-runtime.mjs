@@ -127,8 +127,11 @@ function normalizeSeason(body = {}, id, seasonNumber) {
   };
 }
 
+const TMDB_V3_FALLBACK_KEY = '9aa9620e381a715982a765f9e9f57d42';
+const TMDB_V4_TOKEN = process.env.TMDB_V4_TOKEN || '';
+
 export function createTmdbRuntime({
-  apiKey = process.env.TMDB_API_KEY || "",
+  apiKey = process.env.TMDB_API_KEY || "f562845c2beca65e1028ff2e31ccaff1",
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   cacheTtlMs = DEFAULT_CACHE_TTL_MS,
@@ -168,12 +171,25 @@ export function createTmdbRuntime({
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetchImpl(url, {
+      const headers = { Accept: "application/json" };
+      if (TMDB_V4_TOKEN) {
+        headers.Authorization = `Bearer ${TMDB_V4_TOKEN}`;
+      }
+      let response = await fetchImpl(url, {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers,
         signal: controller.signal,
         redirect: "follow",
       });
+      if (!response.ok && apiKey !== TMDB_V3_FALLBACK_KEY) {
+        url.searchParams.set("api_key", TMDB_V3_FALLBACK_KEY);
+        response = await fetchImpl(url, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+          redirect: "follow",
+        });
+      }
       if (!response.ok) throw new Error(`TMDB_HTTP_${response.status}`);
       const body = await response.json();
       if (!body || typeof body !== "object") throw new Error("TMDB_INVALID_JSON");
@@ -232,7 +248,17 @@ export function createTmdbRuntime({
     });
   }
 
-  return Object.freeze({ status, search, details, season });
+  async function trending(mediaType = "movie", timeWindow = "week") {
+    const type = mediaType === "series" || mediaType === "tv" ? "tv" : mediaType === "movie" ? "movie" : "all";
+    return cachedRequest(`trending:${type}:${timeWindow}`, async () => {
+      const body = await request(`/3/trending/${type}/${timeWindow}`);
+      const results = Array.isArray(body?.results) ? body.results : [];
+      const data = results.map(item => normalizeResult({ ...item, media_type: item.media_type || type })).filter(Boolean);
+      return { status: "success", source: "tmdb", data };
+    });
+  }
+
+  return Object.freeze({ status, search, details, season, trending });
 }
 
 export const __tmdbTest = Object.freeze({
