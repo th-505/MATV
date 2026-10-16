@@ -22,11 +22,11 @@ class _FocusHighlightState extends State<FocusHighlight> {
               border: Border.all(
                   width: 3,
                   color:
-                      _focused ? const Color(0xFF708DB8) : Colors.transparent),
+                      _focused ? const Color(0xFFE8BD75) : Colors.transparent),
               boxShadow: _focused
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF708DB8).withAlpha(140),
+                        color: const Color(0xFFE8BD75).withAlpha(140),
                         blurRadius: 10,
                         spreadRadius: 1,
                       )

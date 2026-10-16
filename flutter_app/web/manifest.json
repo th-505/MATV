@@ -1,11 +1,11 @@
 {
-  "name": "MITV",
-  "short_name": "MITV",
+  "name": "MA TV OFFICIAL",
+  "short_name": "MA TV",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#090B12",
-  "theme_color": "#090B12",
-  "description": "المباريات والأخبار والأفلام والمسلسلات",
+  "background_color": "#07090b",
+  "theme_color": "#07090b",
+  "description": "MA TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
   "orientation": "any",
   "prefer_related_applications": false,
   "icons": [

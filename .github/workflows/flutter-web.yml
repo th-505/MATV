@@ -1,4 +1,4 @@
-name: MITV Web build for unified release
+name: MA TV Web build for unified release
 
 on:
   workflow_call:
@@ -60,15 +60,15 @@ jobs:
           python3 - <<'PY'
           import pathlib, zipfile
           root = pathlib.Path('flutter_app/build/web')
-          with zipfile.ZipFile('trial/MITV-Web.zip', 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as package:
+          with zipfile.ZipFile('trial/MA-TV-Web.zip', 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as package:
               for path in sorted(root.rglob('*')):
                   if path.is_file():
                       package.write(path, path.relative_to(root))
           PY
-          (cd trial && sha256sum MITV-Web.zip > MITV-Web.zip.sha256)
+          (cd trial && sha256sum MA-TV-Web.zip > MA-TV-Web.zip.sha256)
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-Flutter-Web
+          name: MA-TV-Flutter-Web
           path: trial/
           retention-days: 14
           if-no-files-found: error

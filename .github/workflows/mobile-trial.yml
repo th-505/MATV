@@ -1,4 +1,4 @@
-name: MITV unified six-target release
+name: MA TV unified six-target release
 
 on:
   push:
@@ -62,13 +62,13 @@ jobs:
           - target: mobile
             platform: android-arm64
             abi: arm64-v8a
-            artifact: MITV-Android-Mobile-ARM64
+            artifact: MA-TV-Android-Mobile-ARM64
             manifest_target: android-mobile-arm64
             version_offset: 2000
           - target: tv
             platform: android-arm
             abi: armeabi-v7a
-            artifact: MITV-Android-TV-ARM32
+            artifact: MA-TV-Android-TV-ARM32
             manifest_target: android-tv-armv7
             version_offset: 1000
     env:
@@ -121,7 +121,7 @@ jobs:
           grep -q networkSecurityConfig /tmp/mitv-manifest.txt
           "$AAPT" dump badging "$APK" > /tmp/mitv-badging.txt
           grep -q "package: name='com.mitv.mitv'" /tmp/mitv-badging.txt
-          grep -q "application-label:'MITV'" /tmp/mitv-badging.txt
+          grep -q "application-label:'MA TV'" /tmp/mitv-badging.txt
           grep -qx "native-code: '$EXPECTED_ABI'" /tmp/mitv-badging.txt || { cat /tmp/mitv-badging.txt; exit 1; }
           if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/mitv-badging.txt; fi
           python3 - <<'PY'
@@ -179,14 +179,14 @@ jobs:
           if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
           lipo -verify_arch arm64 trial/Payload/Runner.app/Runner
           cd trial
-          ditto -c -k --keepParent Payload MITV-iPhone-Unsigned.ipa
-          shasum -a 256 MITV-iPhone-Unsigned.ipa > MITV-iPhone-Unsigned.ipa.sha256
+          ditto -c -k --keepParent Payload MA-TV-iPhone-Unsigned.ipa
+          shasum -a 256 MA-TV-iPhone-Unsigned.ipa > MA-TV-iPhone-Unsigned.ipa.sha256
           rm -rf Payload
       - name: Record immutable source identity
         run: python3 scripts/write_source_manifest.py --target ios-unsigned-arm64 --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-iPhone-Unsigned
+          name: MA-TV-iPhone-Unsigned
           path: trial/
           retention-days: 14
           if-no-files-found: error
@@ -205,7 +205,7 @@ jobs:
       - name: Create Windows scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=windows --org com.mitv --project-name mitv .
-      - name: Apply MITV desktop identity
+      - name: Apply MA TV desktop identity
         run: python scripts/apply_native_branding.py flutter_app
       - name: Resolve dependencies and test
         working-directory: flutter_app
@@ -224,7 +224,7 @@ jobs:
           $decoder = Get-ChildItem $sourceRoot -Filter '*mpv*.dll'
           if (!$decoder) { throw 'Missing bundled libmpv' }
           New-Item -ItemType Directory trial -Force | Out-Null
-          Compress-Archive -Path "$sourceRoot/*" -DestinationPath trial/MITV-Windows-x64.zip
+          Compress-Archive -Path "$sourceRoot/*" -DestinationPath trial/MA-TV-Windows-x64.zip
           $compiler = Get-ChildItem 'C:/Program Files (x86)', 'C:/Program Files' -Directory -Filter 'Inno Setup*' | ForEach-Object { Join-Path $_.FullName 'ISCC.exe' } | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (!$compiler) {
             choco install innosetup --yes --no-progress
@@ -237,7 +237,7 @@ jobs:
           & $compiler "/DAppVersion=$version" "/DSourceRoot=$sourceRoot" "/DOutputRoot=$outputRoot" scripts/windows-installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           $installRoot = Join-Path $env:RUNNER_TEMP 'mitv-install-check'
-          $setup = Start-Process -FilePath "$outputRoot/MITV-Windows-x64-Setup.exe" -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installRoot") -Wait -PassThru
+          $setup = Start-Process -FilePath "$outputRoot/MA-TV-Windows-x64-Setup.exe" -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installRoot") -Wait -PassThru
           if ($setup.ExitCode -ne 0) { throw 'Installer smoke test failed' }
           foreach ($file in Get-ChildItem $sourceRoot -Recurse -File) {
             $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
@@ -253,7 +253,7 @@ jobs:
         run: python scripts/write_source_manifest.py --target windows-x64 --output trial/source-manifest.json --api "$env:MITV_API_BASE" --sha "$env:MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-Windows-x64
+          name: MA-TV-Windows-x64
           path: trial/
           retention-days: 14
           if-no-files-found: error
@@ -272,7 +272,7 @@ jobs:
       - name: Create macOS scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=macos --org com.mitv --project-name mitv .
-      - name: Apply MITV identity and sandbox entitlements
+      - name: Apply MA TV identity and sandbox entitlements
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Resolve dependencies and analyze
         working-directory: flutter_app
@@ -292,7 +292,7 @@ jobs:
         run: python3 scripts/write_source_manifest.py --target macos-native --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-macOS-Unsigned
+          name: MA-TV-macOS-Unsigned
           path: trial/
           retention-days: 14
           if-no-files-found: error
@@ -329,7 +329,7 @@ jobs:
           cat device-verification.json
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-device-verification
+          name: MA-TV-device-verification
           path: device-verification.json
           retention-days: 14
           if-no-files-found: error
@@ -344,7 +344,7 @@ jobs:
           git merge-base --is-ancestor origin/main "$MITV_SOURCE_COMMIT"
           python3 - <<'PY'
           import pathlib, zipfile
-          archive = pathlib.Path('device-artifacts/MITV-Flutter-Web/MITV-Web.zip')
+          archive = pathlib.Path('device-artifacts/MA-TV-Flutter-Web/MA-TV-Web.zip')
           destination = pathlib.Path('/tmp/mitv-verified-web')
           with zipfile.ZipFile(archive) as package:
               for name in package.namelist():
@@ -361,7 +361,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app .nojekyll
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish verified six-target MITV Web bundle [skip ci] [skip render]'
+            git commit -m 'Publish verified six-target MA TV Web bundle [skip ci] [skip render]'
             git push origin HEAD:main
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
@@ -376,9 +376,9 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"MITV {version} (build {build}), Master Sprint v2.9.\n\n"
+              f"MA TV {version} (build {build}), Master Sprint v2.9.\n\n"
               "Six targets verified from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
-              "Navy six-tab UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
+              "MA TV charcoal-and-gold six-tab UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
               "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
               "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"
               f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n\n"
@@ -388,4 +388,4 @@ jobs:
           VERSION="$(cat /tmp/mitv-release-version)"
           shopt -s nullglob
           ASSETS=(device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.dmg device-artifacts/*/*.sha256 device-artifacts/*/macOS-report.json device-verification.json)
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "MITV $VERSION" --notes-file /tmp/release-notes.md "${ASSETS[@]}"
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "MA TV $VERSION" --notes-file /tmp/release-notes.md "${ASSETS[@]}"

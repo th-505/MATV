@@ -23,8 +23,11 @@ const integrated = createIntegratedContentRuntime(iskRuntime, {
   searchCatalog: async () => { throw new Error('Akoam unavailable'); },
   fetchCategory: async () => ({ status: 'success', data: [] }),
   fetchMatches: async () => ({ data: [] }),
+  searchScraper: async () => [{ title: 'نتيجة مصدر تجريبي', ref: 'mycima:fixture', source: 'mycima' }],
 });
-assert.equal((await integrated.search('عمل')).data[0].source, '3isk');
+const searchResult = await integrated.search('عمل');
+assert.equal(searchResult.data[0].source, '3isk');
+assert.ok(searchResult.data.some(item => item.source === 'mycima'));
 const server = createServer({ iskRuntime, runtimeService: integrated });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;

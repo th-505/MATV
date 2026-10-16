@@ -18,11 +18,11 @@ import 'src/unified_media.dart';
 import 'src/storage_cleanup.dart';
 import 'src/cloud_library.dart';
 
-const _brandBg = Color(0xFF0B1220);
-const _brandPanel = Color(0xFF151F32);
-const _brandAccent = Color(0xFF708DB8);
-const _brandAccentMuted = Color(0xFF526B94);
-const _brandAccentLight = Color(0xFFDEE9F8);
+const _brandBg = Color(0xFF07090B);
+const _brandPanel = Color(0xFF121416);
+const _brandAccent = Color(0xFFE8BD75);
+const _brandAccentMuted = Color(0xFF8C6C3C);
+const _brandAccentLight = Color(0xFFF3D7A0);
 
 void main() => runApp(const MitvApp());
 
@@ -61,7 +61,7 @@ class _MitvAppState extends State<MitvApp> {
     final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MITV',
+      title: 'MA TV',
       builder: (context, child) => isTvTarget
           ? VirtualPointerScope(controller: _pointer, child: child!)
           : child!,
@@ -80,7 +80,7 @@ class _MitvAppState extends State<MitvApp> {
           color: _brandPanel,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0x55526B94)),
+            side: const BorderSide(color: Color(0x55E8BD75)),
           ),
         ),
         colorScheme: ColorScheme.fromSeed(
@@ -91,8 +91,8 @@ class _MitvAppState extends State<MitvApp> {
           brightness: Brightness.dark,
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFF131E30),
-          indicatorColor: const Color(0x554F688F),
+          backgroundColor: const Color(0xFF101214),
+          indicatorColor: const Color(0x55E8BD75),
           iconTheme: WidgetStateProperty.resolveWith(
             (states) => IconThemeData(
               color: states.contains(WidgetState.selected)
@@ -195,7 +195,7 @@ class _BrandTitle extends StatelessWidget {
       _MPlayMark(size: 38),
       SizedBox(width: 10),
       Text(
-        'MITV',
+        'MA TV',
         style: TextStyle(
           color: _brandAccentLight,
           fontWeight: FontWeight.w800,
@@ -481,7 +481,7 @@ class _HomePageState extends State<HomePage> {
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [Colors.black26, Color(0xF00B1220)],
+                              colors: [Colors.black26, Color(0xF007090B)],
                             ),
                           ),
                         ),
@@ -714,8 +714,8 @@ class _SettingsPageState extends State<SettingsPage> {
     padding: const EdgeInsets.all(16),
     children: [
       const ListTile(
-        title: Text('MITV'),
-        subtitle: Text('المظهر الليلي الأزرق الهادئ'),
+        title: Text('MA TV'),
+        subtitle: Text('المظهر السينمائي الأسود والذهبي'),
       ),
       FocusHighlight(
         child: ListTile(
@@ -801,8 +801,8 @@ class _TeamBadge extends StatelessWidget {
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF1B293D),
-              border: Border.all(color: const Color(0x44526B94)),
+              color: const Color(0xFF1A1A18),
+              border: Border.all(color: const Color(0x44E8BD75)),
             ),
             child: logo.isEmpty
                 ? const Icon(Icons.shield_outlined, color: _brandAccentMuted)
@@ -1335,7 +1335,7 @@ class _CatalogCard extends StatelessWidget {
             Expanded(
               child: item.poster.isEmpty
                   ? const ColoredBox(
-                      color: Color(0xFF162235),
+                      color: Color(0xFF171817),
                       child: Center(
                         child: Icon(
                           Icons.movie_outlined,
@@ -1349,7 +1349,7 @@ class _CatalogCard extends StatelessWidget {
                       cacheWidth: 320,
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => const ColoredBox(
-                        color: Color(0xFF162235),
+                        color: Color(0xFF171817),
                         child: Center(
                           child: Icon(
                             Icons.broken_image_outlined,

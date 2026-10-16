@@ -63,6 +63,10 @@ const runtime = createTmdbRuntime({
             seasons: [
               { season_number: 1, name: "Season 1", episode_count: 7, air_date: "2008-01-20", poster_path: "/s1.jpg" },
             ],
+            genres: [{ name: "Drama" }],
+            credits: { cast: [{ name: "Bryan Cranston", character: "Walter White", profile_path: "/cast.jpg" }] },
+            external_ids: { imdb_id: "tt0903747" },
+            recommendations: { results: [{ id: 1, name: "Better Call Saul", media_type: "tv", first_air_date: "2015-02-08" }] },
           };
         },
       };
@@ -119,6 +123,11 @@ assert.equal(details.data.type, "series");
 assert.equal(details.data.number_of_seasons, 5);
 assert.equal(details.data.seasons[0].season_number, 1);
 assert.equal(details.data.poster, "https://image.tmdb.org/t/p/w500/poster.jpg");
+assert.deepEqual(details.data.genres, ["Drama"]);
+assert.equal(details.data.cast[0].name, "Bryan Cranston");
+assert.equal(details.data.imdb_id, "tt0903747");
+assert.equal(details.data.similar[0].ref, "tmdb:tv:1");
+assert.match(new URL(calls[1]).searchParams.get("append_to_response"), /credits/);
 assert.equal(calls.length, 2);
 
 const detailsCached = await runtime.details("tmdb:tv:1396");
@@ -139,6 +148,28 @@ const disabled = createTmdbRuntime({ apiKey: "", fetchImpl: async () => { throw 
 assert.equal(disabled.status().configured, false);
 await assert.rejects(() => disabled.search("Matrix"), /TMDB_NOT_CONFIGURED/);
 await assert.rejects(() => disabled.details("tmdb:movie:603"), /TMDB_NOT_CONFIGURED/);
+
+let bearerRequest;
+const bearerRuntime = createTmdbRuntime({
+  apiKey: "",
+  bearerToken: "test-bearer-token",
+  fetchImpl: async (url, options) => {
+    bearerRequest = { url: new URL(url), options };
+    return { ok: true, async json() { return { results: [] }; } };
+  },
+});
+assert.equal(bearerRuntime.status().configured, true);
+await bearerRuntime.search("Matrix");
+assert.equal(bearerRequest.options.headers.Authorization, "Bearer test-bearer-token");
+assert.equal(bearerRequest.url.searchParams.has("api_key"), false);
+
+let failedKeyAttempts = 0;
+const noFallbackRuntime = createTmdbRuntime({
+  apiKey: "test-key",
+  fetchImpl: async () => { failedKeyAttempts++; return { ok: false, status: 401 }; },
+});
+await assert.rejects(() => noFallbackRuntime.search("Matrix"), /TMDB_HTTP_401/);
+assert.equal(failedKeyAttempts, 1, "a rejected credential must not trigger hidden fallback keys");
 
 const empty = await runtime.search("a");
 assert.deepEqual(empty.data, []);

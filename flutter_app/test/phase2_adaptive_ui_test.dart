@@ -175,7 +175,7 @@ void main() {
         .widget<AnimatedContainer>(
             find.byKey(const Key('focus-highlight-border')))
         .decoration! as BoxDecoration;
-    expect((border.border! as Border).top.color, const Color(0xFF708DB8));
+    expect((border.border! as Border).top.color, const Color(0xFFE8BD75));
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
     expect(selections, 1);

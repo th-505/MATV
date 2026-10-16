@@ -61,6 +61,7 @@ assert.equal(resolveCatalogCategory('edge:laroza:movies'),null,'internal marker 
 const noSource={search:async()=>({status:'success',data:[]}),status:()=>({provider:'fixture'})};
 const integrated=createIntegratedContentRuntime(noSource,{alooyRuntime:noSource,larozaRuntime:provider,
   searchCatalog:async()=>({status:'success',source:'akoam',data:[{...item,ref:'legacy:other',source:'akoam',audio_language:'',edition:'',identity_verified:false}]}),
+  searchScraper:async()=>[],
   fetchCategory:async()=>{throw Error('Laroza must not reach a source HTML scraper');},fetchMatches:async()=>({data:[]})});
 const combined=await integrated.search('Title');
 assert.equal(combined.data.length,2,'same title/year must not merge different source identities on the server');

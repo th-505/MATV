@@ -89,6 +89,17 @@ function normalizeDetails(body = {}, mediaType, id) {
       number_of_seasons: series ? Number(body.number_of_seasons) || seasons.length : null,
       number_of_episodes: series ? Number(body.number_of_episodes) || null : null,
       seasons,
+      genres: Array.isArray(body.genres) ? body.genres.map((genre) => text(genre?.name)).filter(Boolean) : [],
+      cast: Array.isArray(body.credits?.cast) ? body.credits.cast.slice(0, 12).map((person) => ({
+        name: text(person?.name),
+        character: text(person?.character),
+        photo: posterUrl(person?.profile_path, "w185"),
+      })).filter((person) => person.name) : [],
+      imdb_id: text(body.external_ids?.imdb_id),
+      similar: [...(Array.isArray(body.recommendations?.results) ? body.recommendations.results : []), ...(Array.isArray(body.similar?.results) ? body.similar.results : [])]
+        .map((item) => normalizeResult({ ...item, media_type: item?.media_type || mediaType }))
+        .filter(Boolean)
+        .slice(0, 14),
     },
   };
 }
@@ -128,16 +139,18 @@ function normalizeSeason(body = {}, id, seasonNumber) {
 }
 
 export function createTmdbRuntime({
-  apiKey = process.env.TMDB_API_KEY || "",
+  apiKey = process.env.TMDB_API_KEY || '',
+  bearerToken = process.env.TMDB_V4_TOKEN || '',
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   cacheTtlMs = DEFAULT_CACHE_TTL_MS,
   now = () => Date.now(),
 } = {}) {
   const cache = new Map();
+  const pending = new Map();
 
   function configured() {
-    return Boolean(text(apiKey));
+    return Boolean(text(apiKey) || text(bearerToken));
   }
 
   function status() {
@@ -160,7 +173,7 @@ export function createTmdbRuntime({
     if (!configured()) throw new Error("TMDB_NOT_CONFIGURED");
     if (typeof fetchImpl !== "function") throw new Error("TMDB_FETCH_UNAVAILABLE");
     const url = new URL(path, TMDB_ORIGIN);
-    url.searchParams.set("api_key", text(apiKey));
+    if (url.origin !== TMDB_ORIGIN || !url.pathname.startsWith("/3/")) throw new Error("TMDB_BAD_PATH");
     url.searchParams.set("language", "ar-SA");
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key, String(value));
@@ -168,9 +181,12 @@ export function createTmdbRuntime({
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
+      const headers = { Accept: "application/json" };
+      if (text(bearerToken)) headers.Authorization = `Bearer ${text(bearerToken)}`;
+      else url.searchParams.set("api_key", text(apiKey));
       const response = await fetchImpl(url, {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers,
         signal: controller.signal,
         redirect: "follow",
       });
@@ -190,10 +206,19 @@ export function createTmdbRuntime({
     prune();
     const cached = cache.get(key);
     if (cached && cached.expiresAt > now()) return cached.value;
-    const value = await resolver();
-    cache.set(key, { expiresAt: now() + cacheTtlMs, value });
-    prune();
-    return value;
+    if (pending.has(key)) return pending.get(key);
+    const request = (async () => {
+      try {
+        const value = await resolver();
+        cache.set(key, { expiresAt: now() + cacheTtlMs, value });
+        prune();
+        return value;
+      } finally {
+        pending.delete(key);
+      }
+    })();
+    pending.set(key, request);
+    return request;
   }
 
   async function search(query) {
@@ -216,7 +241,9 @@ export function createTmdbRuntime({
   async function details(ref) {
     const { mediaType, id } = parseRef(ref);
     return cachedRequest(`details:${mediaType}:${id}`, async () => {
-      const body = await request(`/3/${mediaType}/${id}`);
+      const body = await request(`/3/${mediaType}/${id}`, {
+        append_to_response: "credits,similar,recommendations,external_ids",
+      });
       return normalizeDetails(body, mediaType, id);
     });
   }
@@ -232,7 +259,17 @@ export function createTmdbRuntime({
     });
   }
 
-  return Object.freeze({ status, search, details, season });
+  async function trending(mediaType = "movie", timeWindow = "week") {
+    const type = mediaType === "series" || mediaType === "tv" ? "tv" : mediaType === "movie" ? "movie" : "all";
+    return cachedRequest(`trending:${type}:${timeWindow}`, async () => {
+      const body = await request(`/3/trending/${type}/${timeWindow}`);
+      const results = Array.isArray(body?.results) ? body.results : [];
+      const data = results.map(item => normalizeResult({ ...item, media_type: item.media_type || type })).filter(Boolean);
+      return { status: "success", source: "tmdb", data };
+    });
+  }
+
+  return Object.freeze({ status, search, details, season, trending });
 }
 
 export const __tmdbTest = Object.freeze({

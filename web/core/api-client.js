@@ -11,7 +11,7 @@ function installBrandTheme(){
   if(typeof document==='undefined')return;
   const themeMeta=document.querySelector('meta[name="theme-color"]');
   if(themeMeta)themeMeta.setAttribute('content','#07090b');
-  document.title='MITV | 4BA';
+  document.title='MA TV OFFICIAL • LUXURY CINEMA';
   document.documentElement.style.colorScheme='dark';
 }
 installBrandTheme();

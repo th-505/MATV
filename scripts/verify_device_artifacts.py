@@ -1,4 +1,4 @@
-"""Verify all six MITV release targets and their common source provenance."""
+"""Verify all six MA TV release targets and their common source provenance."""
 import hashlib
 import json
 import plistlib
@@ -49,7 +49,7 @@ def record(path, target, architecture):
 def verify_manifest(path, target):
     manifest = json.loads(path.read_text(encoding='utf-8'))
     assert manifest.get('schema_version') == 1
-    assert manifest.get('product') == 'MITV'
+    assert manifest.get('product') == 'MA TV OFFICIAL'
     assert manifest.get('version') == version
     assert manifest.get('build') == build
     assert manifest.get('api_base', '').rstrip('/') == api
@@ -61,8 +61,8 @@ def verify_manifest(path, target):
 
 
 for filename, abi, machine, target in [
-    ('MITV-Android-Mobile-ARM64.apk', 'arm64-v8a', 183, 'android-mobile-arm64'),
-    ('MITV-Android-TV-ARM32.apk', 'armeabi-v7a', 40, 'android-tv-armv7'),
+    ('MA-TV-Android-Mobile-ARM64.apk', 'arm64-v8a', 183, 'android-mobile-arm64'),
+    ('MA-TV-Android-TV-ARM32.apk', 'armeabi-v7a', 40, 'android-tv-armv7'),
 ]:
     apk = unique_file(filename)
     assert apk.stat().st_size <= 35 * 1024 * 1024, f'{filename} exceeds 35 MiB'
@@ -80,7 +80,7 @@ for filename, abi, machine, target in [
     verify_manifest(apk.parent / 'source-manifest.json', target)
 
 
-ipa = unique_file('MITV-iPhone-Unsigned.ipa')
+ipa = unique_file('MA-TV-iPhone-Unsigned.ipa')
 with zipfile.ZipFile(ipa) as archive:
     names = archive.namelist()
     app = 'Payload/Runner.app/'
@@ -89,7 +89,7 @@ with zipfile.ZipFile(ipa) as archive:
     info = plistlib.loads(archive.read(app + 'Info.plist'))
     assert info['CFBundleShortVersionString'] == version
     assert info['CFBundleVersion'] == str(build)
-    assert info['CFBundleDisplayName'] == 'MITV'
+    assert info['CFBundleDisplayName'] == 'MA TV'
     assert info['CFBundleIdentifier'] == 'com.mitv.mitv'
     assert info.get('UIFileSharingEnabled') is True
     assert info.get('NSAppTransportSecurity', {}).get('NSAllowsLocalNetworking') is True
@@ -100,8 +100,8 @@ record(ipa, 'ios-unsigned-arm64', 'arm64')
 verify_manifest(ipa.parent / 'source-manifest.json', 'ios-unsigned-arm64')
 
 
-windows_zip = unique_file('MITV-Windows-x64.zip')
-windows_setup = unique_file('MITV-Windows-x64-Setup.exe')
+windows_zip = unique_file('MA-TV-Windows-x64.zip')
+windows_setup = unique_file('MA-TV-Windows-x64-Setup.exe')
 
 
 def pe_machine(data):
@@ -125,10 +125,10 @@ record(windows_setup, 'windows-x64', 'x64')
 verify_manifest(windows_zip.parent / 'source-manifest.json', 'windows-x64')
 
 
-mac_dmg = unique_file('MITV-macOS-Unsigned.dmg')
+mac_dmg = unique_file('MA-TV-macOS-Unsigned.dmg')
 mac_report_path = unique_file('macOS-report.json')
 mac_report = json.loads(mac_report_path.read_text(encoding='utf-8'))
-assert mac_report.get('product') == 'MITV'
+assert mac_report.get('product') == 'MA TV OFFICIAL'
 assert mac_report.get('version') == version and str(mac_report.get('build')) == str(build)
 assert mac_report.get('dmg') == mac_dmg.name
 assert mac_report.get('sha256') == hashlib.sha256(mac_dmg.read_bytes()).hexdigest()
@@ -140,7 +140,7 @@ record(mac_dmg, 'macos-native', '/'.join(sorted(architectures)))
 verify_manifest(mac_dmg.parent / 'source-manifest.json', 'macos-native')
 
 
-web_zip = unique_file('MITV-Web.zip')
+web_zip = unique_file('MA-TV-Web.zip')
 with zipfile.ZipFile(web_zip) as archive:
     names = archive.namelist()
     assert 'index.html' in names and 'main.dart.js' in names
@@ -159,7 +159,7 @@ required_targets = {
 }
 assert set(targets) == required_targets, f'Incomplete target manifests: {sorted(targets)}'
 print(json.dumps({
-    'product': 'MITV',
+    'product': 'MA TV OFFICIAL',
     'version': version,
     'build': build,
     'source_commit': source_sha,

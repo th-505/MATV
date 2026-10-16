@@ -21,6 +21,7 @@ import { createSupabaseCatalogStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
+import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails } from "./scrapers/index.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
 const CINEMA = "https://albas.albesriali03.workers.dev/";
@@ -184,9 +185,15 @@ function normalizeCatalog(items = []) {
 function wrapEpisodes(episodes = []) {
   return episodes.map((episode, index) => {
     const raw = episode.link || episode.url || episode.href || "";
+    const rawTitle = String(episode.title || episode.name || episode.label || "");
+    const numMatch = rawTitle.match(/(\d+)/);
+    const epNum = Number(episode.num || episode.number || episode.episodeNumber || (numMatch ? numMatch[1] : index + 1)) || (index + 1);
     return {
       ...episode,
-      num: Number(episode.num || episode.number || index + 1),
+      num: epNum,
+      number: epNum,
+      episodeNumber: epNum,
+      title: rawTitle && !rawTitle.includes("undefined") ? rawTitle : `الحلقة ${epNum}`,
       link: raw ? `legacy:${encodeURIComponent(String(raw))}` : "",
       watch_available: episode.watch_available !== false && Boolean(raw),
     };
@@ -239,20 +246,40 @@ async function cinemaCategory(sourceUrl, page = 1) {
   return { status: "success", source: result.source, data: normalizeCatalog(items) };
 }
 
-export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches, alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider() } = {}) {
+export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches, searchScraper = scrapeRealSearch, alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider() } = {}) {
   return createContentRuntimeService({
     fetchMatches,
     async searchCatalog(query) {
-      const results = await Promise.allSettled([searchCatalog(query), iskRuntime.search(query), alooyRuntime.search(query), larozaRuntime.search(query)]);
+      const results = await Promise.allSettled([
+        searchCatalog(query),
+        iskRuntime.search(query),
+        alooyRuntime.search(query),
+        larozaRuntime.search(query),
+        searchScraper(query)
+      ]);
       const success = results.filter(result => result.status === 'fulfilled');
       if (!success.length) throw new Error('CATALOG_SEARCH_UNAVAILABLE');
-      return { status: 'success', source: 'catalog', data: success.flatMap(result => result.value.data || []) };
+      const data = success.flatMap(result => Array.isArray(result.value)
+        ? result.value
+        : Array.isArray(result.value?.data) ? result.value.data : []);
+      return { status: 'success', source: 'catalog', data };
     },
-    fetchCategory(sourceUrl, page) {
+    async fetchCategory(sourceUrl, page) {
       const larozaId = Object.keys(LAROZA_CATEGORIES).find(key => LAROZA_CATEGORIES[key] === sourceUrl);
       if (larozaId) return larozaRuntime.category(larozaId, page);
       const id = Object.keys(ISK_CATEGORIES).find(key => ISK_CATEGORIES[key] === sourceUrl);
-      return sourceUrl === ALOOY_ORIGIN + "/tv-series.html" ? alooyRuntime.category("alooy-series", page) : id ? iskRuntime.category(id, page) : fetchCategory(sourceUrl, page);
+      if (sourceUrl === ALOOY_ORIGIN + "/tv-series.html") return alooyRuntime.category("alooy-series", page);
+      if (id) return iskRuntime.category(id, page);
+
+      try {
+        const res = await fetchCategory(sourceUrl, page);
+        if (res && Array.isArray(res.data) && res.data.length > 0) return res;
+      } catch (_) {}
+
+      // Fallback to real multi-source scraping grid
+      const catKey = sourceUrl.split('/').pop() || sourceUrl;
+      const data = await scrapeRealCategory(catKey, page);
+      return { status: "success", source: "scrapers-master", data };
     },
   });
 }
@@ -389,6 +416,10 @@ async function directDetailsResolved(target) {
 }
 
 async function cinemaDetails(ref) {
+  if (ref.startsWith("mycima:") || ref.startsWith("egydead:") || ref.startsWith("anime4up:") || ref.startsWith("arabseed:") || ref.startsWith("witanime:") || ref.startsWith("cimanow:") || ref.startsWith("shahid4u:") || ref.startsWith("moviz:")) {
+    const details = await scrapeRealDetails(ref);
+    if (details) return details;
+  }
   if (!ref.startsWith("legacy:")) throw new Error("BAD_CINEMA_REFERENCE");
   const target = decodeURIComponent(ref.slice("legacy:".length));
   assertSourceUrl(target);
@@ -466,6 +497,30 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
+      if (url.pathname === "/api/v1/resolve") {
+        const ref = (url.searchParams.get("ref") || url.searchParams.get("id") || "").trim();
+        const servers = [];
+        if (ref && !ref.startsWith("tmdb:")) {
+          try {
+            const details = ref.startsWith("laroza:")
+              ? await larozaRuntime.details(ref, {})
+              : ref.startsWith("alooy:")
+              ? await alooyRuntime.details(ref, {})
+              : ref.startsWith("3isk:")
+              ? await iskRuntime.details(ref, {})
+              : await cinemaDetails(ref);
+            const sources = details?.media_sources || details?.servers || [];
+            for (const s of sources) {
+              const u = s.url || s.media_path;
+              if (u) servers.push({ provider: s.provider || details?.source || "akwam", url: u, headers: s.headers || {} });
+            }
+            if (details?.media_src) {
+              servers.push({ provider: details?.source || "akwam", url: details.media_src, headers: {} });
+            }
+          } catch (_) {}
+        }
+        return sendJson(req, res, 200, { status: "success", servers });
+      }
       if (url.pathname === "/api/v1/category") {
         const ref = url.searchParams.get('ref') || '';
         if (Object.hasOwn(LAROZA_CATEGORIES,ref)) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate deterministic MITV native, desktop and web branding after `flutter create`.
+"""Generate deterministic MA TV OFFICIAL native, desktop and web branding after `flutter create`.
 
-The approved MITV identity uses a deep navy surface and slate-blue M/play mark.
+The approved MA TV identity uses charcoal surfaces and a gold M/play mark.
 No bundled font or third-party image dependency is required.
 """
 from __future__ import annotations
@@ -14,8 +14,8 @@ import sys
 import zlib
 from pathlib import Path
 
-BACKGROUND = (11, 18, 32, 255)
-ACCENT = (112, 141, 184, 255)
+BACKGROUND = (7, 9, 11, 255)
+ACCENT = (232, 189, 117, 255)
 FOREGROUND = (255, 255, 255, 255)
 TRANSPARENT = (0, 0, 0, 0)
 
@@ -113,7 +113,7 @@ def apply_android(root: Path):
     values = res / "values"
     values.mkdir(parents=True, exist_ok=True)
     (values / "colors.xml").write_text(
-        """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"mitv_splash_bg\">#0B1220</color>\n</resources>\n""",
+        """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"mitv_splash_bg\">#07090b</color>\n</resources>\n""",
         encoding="utf-8",
     )
     launch_xml = """<?xml version=\"1.0\" encoding=\"utf-8\"?>
@@ -142,7 +142,7 @@ def apply_android(root: Path):
 <domain-config cleartextTrafficPermitted="true"><domain includeSubdomains="false">127.0.0.1</domain><domain includeSubdomains="false">localhost</domain></domain-config>
 </network-security-config>''', encoding="utf-8")
         text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
-        text = re.sub(r'android:label="[^"]*"', 'android:label="MITV"', text, count=1)
+        text = re.sub(r'android:label="[^"]*"', 'android:label="MA TV"', text, count=1)
         manifest.write_text(text, encoding="utf-8")
 
 
@@ -180,16 +180,16 @@ def apply_ios(root: Path):
     storyboard = ios / "Runner/Base.lproj/LaunchScreen.storyboard"
     if storyboard.exists():
         text = storyboard.read_text(encoding="utf-8")
-        text = text.replace('red="1" green="1" blue="1" alpha="1"', 'red="0.043" green="0.071" blue="0.125" alpha="1"')
-        text = text.replace('red="0.035" green="0.035" blue="0.043" alpha="1"', 'red="0.043" green="0.071" blue="0.125" alpha="1"')
+        text = text.replace('red="1" green="1" blue="1" alpha="1"', 'red="0.027" green="0.035" blue="0.043" alpha="1"')
+        text = text.replace('red="0.035" green="0.035" blue="0.043" alpha="1"', 'red="0.027" green="0.035" blue="0.043" alpha="1"')
         storyboard.write_text(text, encoding="utf-8")
     plist = ios / "Runner/Info.plist"
     if plist.exists():
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
         data.setdefault("NSAppTransportSecurity", {})["NSAllowsLocalNetworking"] = True
-        data["CFBundleDisplayName"] = "MITV"
-        data["CFBundleName"] = "MITV"
+        data["CFBundleDisplayName"] = "MA TV"
+        data["CFBundleName"] = "MA TV"
         data["UIFileSharingEnabled"] = True
         data["LSSupportsOpeningDocumentsInPlace"] = True
         with plist.open("wb") as fh:
@@ -203,6 +203,17 @@ def apply_web(root: Path):
         for name in (f"Icon-{size}.png",f"Icon-maskable-{size}.png"):
             write_icon(web/"icons"/name,size)
     write_icon(web/"favicon.png",64)
+    manifest = web / "manifest.json"
+    if manifest.exists():
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        data.update({
+            "name": "MA TV OFFICIAL",
+            "short_name": "MA TV",
+            "background_color": "#07090b",
+            "theme_color": "#07090b",
+            "description": "MA TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
+        })
+        manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def apply_windows(root: Path):
@@ -217,12 +228,12 @@ def apply_windows(root: Path):
     icon.write_bytes(header+b''.join(entries)+b''.join(data for _,data in images))
     main=windows/'runner/main.cpp'
     if main.exists():
-        text=main.read_text();text=re.sub(r'window.Create\(L"[^"\n]+"','window.Create(L"MITV"',text);main.write_text(text)
+        text=main.read_text();text=re.sub(r'window.Create\(L"[^"\n]+"','window.Create(L"MA TV")',text);main.write_text(text)
     rc=windows/'runner/Runner.rc'
     if rc.exists():
         text=rc.read_text()
         for key in ('CompanyName','FileDescription','ProductName'):
-            text=re.sub(r'(VALUE "'+key+r'", )"[^"\n]*"',r'\1"MITV" "\\0"',text)
+            text=re.sub(r'(VALUE "'+key+r'", )"[^"\n]*"',r'\1"MA TV" "\\0"',text)
         rc.write_text(text)
 
 
@@ -234,8 +245,8 @@ def apply_macos(root: Path):
     if plist.exists():
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
-        data["CFBundleDisplayName"] = "MITV"
-        data["CFBundleName"] = "MITV"
+        data["CFBundleDisplayName"] = "MA TV"
+        data["CFBundleName"] = "MA TV"
         with plist.open("wb") as fh:
             plistlib.dump(data, fh, sort_keys=False)
 

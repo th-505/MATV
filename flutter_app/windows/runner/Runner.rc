@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "MITV" "\0" "\0" "\0"
-            VALUE "FileDescription", "MITV" "\0" "\0" "\0"
+            VALUE "CompanyName", "MA TV" "\0" "\0" "\0" "\0" "\0"
+            VALUE "FileDescription", "MA TV" "\0" "\0" "\0" "\0" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "mitv" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.mitv. All rights reserved." "\0"
             VALUE "OriginalFilename", "mitv.exe" "\0"
-            VALUE "ProductName", "MITV" "\0" "\0" "\0"
+            VALUE "ProductName", "MA TV" "\0" "\0" "\0" "\0" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

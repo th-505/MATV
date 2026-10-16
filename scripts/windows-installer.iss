@@ -9,17 +9,17 @@
 #endif
 [Setup]
 AppId={{49F9B50D-B1EE-49BD-BEBE-EF6FF8B6DE5B}
-AppName=MITV
+AppName=MA TV
 AppVersion={#AppVersion}
-AppPublisher=MITV
-DefaultDirName={localappdata}\Programs\MITV
-DefaultGroupName=MITV
+AppPublisher=MA TV
+DefaultDirName={localappdata}\Programs\MA TV
+DefaultGroupName=MA TV
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputRoot}
-OutputBaseFilename=MITV-Windows-x64-Setup
+OutputBaseFilename=MA-TV-Windows-x64-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -30,7 +30,7 @@ Source: "{#SourceRoot}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Tasks]
 Name: desktopicon; Description: "Create a desktop shortcut"; Flags: unchecked
 [Icons]
-Name: "{autoprograms}\MITV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"
-Name: "{autodesktop}\MITV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\MA TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"
+Name: "{autodesktop}\MA TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 [Run]
-Filename: "{app}\mitv.exe"; Description: "Launch MITV"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\mitv.exe"; Description: "Launch MA TV"; Flags: nowait postinstall skipifsilent
