@@ -379,31 +379,15 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     if (digits) tmdbId = digits[0];
   }
 
-  const cloudFallbacks = generateCloudFallbackServers(tmdbId || '550', isTv, season, episode);
-
-  // 2. تصفية صارمة للروابط المباشرة (Direct Media Streams) من القواشط
+  // 2. تصفية صارمة للروابط المباشرة النقية (Direct Media Streams) من القواشط المحلية ومنع الـ Embed نهائياً
   const cleanDirect = servers.filter(s => {
     const u = String(s.url || '').toLowerCase();
     if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) return false;
-    return s.kind === 'direct' || u.includes('.m3u8') || u.includes('.mp4');
+    return s.kind === 'direct' || u.includes('.m3u8') || u.includes('.mp4') ||
+      ['akwam', 'mycima', 'egydead', 'arabseed', 'cimanow', 'anime4up', 'witanime', '3isk', 'akoam', 'alooy', 'laroza'].includes(String(s.provider).toLowerCase());
   });
 
-  if (cleanDirect.length > 0) {
-    const rankedDirect = await probeAndRankServers(cleanDirect);
-    return [...rankedDirect, ...cloudFallbacks];
-  }
-
-  // إذا لم ترجع القواشط أي روابط مباشرة، نعتمد فوراً على السيرفرات السحابية المضمونة (VC-1, MD-1, AE-1)
-  if (cloudFallbacks.length > 0) {
-    return cloudFallbacks;
-  }
-
-  const filteredServers = servers.filter(s => {
-    const u = String(s.url || '').toLowerCase();
-    return !/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u);
-  });
-
-  return probeAndRankServers(filteredServers.length > 0 ? filteredServers : servers);
+  return probeAndRankServers(cleanDirect);
 }
 
 // محرك البحث الموحد (Search-Fusion Engine) الذي يصفي ويدمج النتائج من القواشط + TMDb
