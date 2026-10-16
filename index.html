@@ -17,6 +17,30 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800;900&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script>
+// فلتر منع النوافذ المنبثقة والإعلانات المخفية برمجياً (Anti-Popup & Clickjack Interceptor)
+if (typeof window !== 'undefined') {
+  // إلغاء دالة فتح النوافذ الجديدة ومنع الإعلانات المنبثقة
+  const blockPopup = function() {
+    console.warn("تم حظر محاولة فتح إعلان منبثق بنجاح.");
+    return null;
+  };
+  try {
+    window.open = blockPopup;
+    Object.defineProperty(window, 'open', { value: blockPopup, writable: false, configurable: false });
+  } catch (_) {
+    window.open = blockPopup;
+  }
+
+  // حماية إضافية لمنع النقر الوهمي فوق شاشة المشغل
+  document.addEventListener('DOMContentLoaded', () => {
+    const playerWrapper = document.getElementById('playerContainer') || document.querySelector('.watch-video-box');
+    if (playerWrapper) {
+      playerWrapper.style.position = 'relative';
+    }
+  });
+}
+</script>
 <style>
 :root {
   color-scheme: dark;
@@ -1315,9 +1339,16 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       </div>
 
       <!-- شاشة العرض المزدوجة (HLS Direct Video + Sandboxed Embed) -->
-      <div class="watch-video-box">
+      <div class="watch-video-box" id="playerContainer">
         <video id="maVideoPlayer" controls playsinline webkit-playsinline></video>
-        <iframe id="maEmbedPlayer" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" style="display:none;"></iframe>
+        <iframe
+          id="maEmbedPlayer"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+          referrerpolicy="no-referrer"
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowfullscreen
+          style="display:none;">
+        </iframe>
       </div>
 
       <!-- شريط التنقل بالحلقات أسفل الفيديو مباشرة -->
