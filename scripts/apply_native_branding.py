@@ -226,11 +226,40 @@ def apply_windows(root: Path):
         rc.write_text(text)
 
 
+def apply_macos(root: Path):
+    macos = root / "macos"
+    if not macos.exists():
+        return
+    plist = macos / "Runner/Info.plist"
+    if plist.exists():
+        with plist.open("rb") as fh:
+            data = plistlib.load(fh)
+        data["CFBundleDisplayName"] = "MITV"
+        data["CFBundleName"] = "MITV"
+        with plist.open("wb") as fh:
+            plistlib.dump(data, fh, sort_keys=False)
+
+    # The app is sandboxed but needs direct HTTPS playback/API access, the
+    # device-local Alooy bridge, and user-selected subtitle files.
+    entitlements = {
+        "com.apple.security.app-sandbox": True,
+        "com.apple.security.network.client": True,
+        "com.apple.security.network.server": True,
+        "com.apple.security.files.user-selected.read-only": True,
+    }
+    for name in ("DebugProfile.entitlements", "Release.entitlements"):
+        path = macos / "Runner" / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as fh:
+            plistlib.dump(entitlements, fh, sort_keys=False)
+
+
 def main():
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "flutter_app").resolve()
     apply_android(root)
     apply_ios(root)
     apply_windows(root)
+    apply_macos(root)
     apply_web(root)
     print(f"native branding applied to {root}")
 

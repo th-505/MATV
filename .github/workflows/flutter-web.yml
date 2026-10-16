@@ -1,18 +1,24 @@
-name: MITV Flutter Web
+name: MITV Web build for unified release
+
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
   workflow_call:
+    inputs:
+      api_base:
+        description: Public metadata API URL, identical to the native builds
+        required: true
+        type: string
+
 permissions:
-  contents: write
-  pages: write
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: read
+
+env:
+  MITV_API_BASE: ${{ inputs.api_base }}
+  MITV_SOURCE_COMMIT: ${{ github.sha }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -20,19 +26,21 @@ jobs:
           flutter-version: '3.47.7'
           channel: stable
           cache: true
+      - name: Apply approved Web branding
+        run: python3 scripts/apply_native_branding.py flutter_app
       - name: Build and verify Flutter Web
         working-directory: flutter_app
         run: |
           flutter pub get --enforce-lockfile
           flutter analyze
-          flutter test
+          flutter test --dart-define=MITV_TARGET=web
           dart run tool/alooy_bridge_smoke.dart
-          flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MITV_API_BASE=https://matv.onrender.com
+          flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MITV_TARGET=web --dart-define="MITV_API_BASE=$MITV_API_BASE"
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
           cache: npm
-      - name: Verify Chromium MP4 and HLS playback
+      - name: Verify Chromium direct MP4 and HLS playback with offline Auth fixtures
         env:
           CHROMIUM_BIN: /usr/bin/google-chrome
         run: |
@@ -43,41 +51,24 @@ jobs:
           ffmpeg -hide_banner -loglevel error -i /tmp/matv-codec-fixtures/sample.mp4 -c copy -hls_time 1 -hls_segment_filename /tmp/matv-codec-fixtures/master%d.ts -y /tmp/matv-codec-fixtures/master.m3u8
           node scripts/flutter_web_smoke.mjs
           node scripts/flutter_web_smoke.mjs hls
-      - name: Stage both web surfaces
+      - name: Record immutable source identity and package Web bundle
         run: |
-          mkdir -p site/app
-          cp ./*.html site/
-          cp -R web site/web
-          cp -R flutter_app/build/web/. site/app/
+          set -euo pipefail
+          python3 scripts/write_source_manifest.py --target web --output flutter_app/build/web/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
+          mkdir -p trial
+          cp flutter_app/build/web/source-manifest.json trial/source-manifest.json
+          python3 - <<'PY'
+          import pathlib, zipfile
+          root = pathlib.Path('flutter_app/build/web')
+          with zipfile.ZipFile('trial/MITV-Web.zip', 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as package:
+              for path in sorted(root.rglob('*')):
+                  if path.is_file():
+                      package.write(path, path.relative_to(root))
+          PY
+          (cd trial && sha256sum MITV-Web.zip > MITV-Web.zip.sha256)
       - uses: actions/upload-artifact@v4
         with:
           name: MITV-Flutter-Web
-          path: site/
+          path: trial/
           retention-days: 14
-
-  publish:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: MITV-Flutter-Web
-          path: site
-      - name: Publish through the configured Pages source branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir -p app
-          cp -R site/app/. app/
-          touch .nojekyll
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app .nojekyll
-          if ! git diff --cached --quiet; then
-            git commit -m 'Publish Flutter Web bundle [skip ci] [skip render]'
-            git push origin HEAD:main
-          fi
-          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+          if-no-files-found: error

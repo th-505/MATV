@@ -1,4 +1,4 @@
-name: MITV device trials
+name: MITV unified six-target release
 
 on:
   push:
@@ -6,16 +6,26 @@ on:
   workflow_dispatch:
     inputs:
       api_base:
-        description: Verified public API URL (Render)
+        description: Verified public metadata API URL
         required: true
+        default: https://matv.onrender.com
         type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: mitv-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+  MITV_SOURCE_COMMIT: ${{ github.sha }}
 
 jobs:
   providers:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,10 +35,10 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: python3 scripts/native_network_config_test.py
+
   verify-api:
     runs-on: ubuntu-latest
-    env:
-      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+    timeout-minutes: 5
     steps:
       - name: Validate deployment URL and health
         run: |
@@ -44,7 +54,7 @@ jobs:
   android:
     needs: [verify-api, providers]
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -53,18 +63,27 @@ jobs:
             platform: android-arm64
             abi: arm64-v8a
             artifact: MITV-Android-Mobile-ARM64
+            manifest_target: android-mobile-arm64
+            version_offset: 2000
           - target: tv
             platform: android-arm
             abi: armeabi-v7a
             artifact: MITV-Android-TV-ARM32
+            manifest_target: android-tv-armv7
+            version_offset: 1000
     env:
-      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
       APP_TARGET: ${{ matrix.target }}
       TARGET_PLATFORM: ${{ matrix.platform }}
       EXPECTED_ABI: ${{ matrix.abi }}
       ARTIFACT_NAME: ${{ matrix.artifact }}
+      MANIFEST_TARGET: ${{ matrix.manifest_target }}
+      VERSION_OFFSET: ${{ matrix.version_offset }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.7'
@@ -86,10 +105,10 @@ jobs:
           flutter analyze
           flutter test --dart-define="MITV_TARGET=$APP_TARGET"
           dart run tool/alooy_bridge_smoke.dart
-      - name: Build APK with deployed API and requested architecture
+      - name: Build architecture-specific APK with all codecs
         working-directory: flutter_app
         run: flutter build apk --release --split-per-abi --target-platform="$TARGET_PLATFORM" --dart-define="MITV_TARGET=$APP_TARGET" --dart-define="MITV_API_BASE=$MITV_API_BASE"
-      - name: Verify and stage APK
+      - name: Verify signature, version, size and native configuration
         run: |
           set -euo pipefail
           APK="flutter_app/build/app/outputs/flutter-apk/app-$EXPECTED_ABI-release.apk"
@@ -105,21 +124,31 @@ jobs:
           grep -q "application-label:'MITV'" /tmp/mitv-badging.txt
           grep -qx "native-code: '$EXPECTED_ABI'" /tmp/mitv-badging.txt || { cat /tmp/mitv-badging.txt; exit 1; }
           if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/mitv-badging.txt; fi
+          python3 - <<'PY'
+          import os, pathlib, re
+          version, build = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('flutter_app/pubspec.yaml').read_text(), re.M).groups()
+          badging = pathlib.Path('/tmp/mitv-badging.txt').read_text()
+          assert f"versionName='{version}'" in badging
+          assert f"versionCode='{int(os.environ['VERSION_OFFSET']) + int(build)}'" in badging
+          apk = pathlib.Path('flutter_app/build/app/outputs/flutter-apk') / f"app-{os.environ['EXPECTED_ABI']}-release.apk"
+          assert apk.stat().st_size <= 35 * 1024 * 1024, 'APK exceeds approved 35 MiB limit'
+          PY
           mkdir -p trial
           cp "$APK" "trial/$ARTIFACT_NAME.apk"
-          sha256sum "trial/$ARTIFACT_NAME.apk" > "trial/$ARTIFACT_NAME.apk.sha256"
+          (cd trial && sha256sum "$ARTIFACT_NAME.apk" > "$ARTIFACT_NAME.apk.sha256")
+      - name: Record immutable source identity
+        run: python3 scripts/write_source_manifest.py --target "$MANIFEST_TARGET" --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: trial/
           retention-days: 14
+          if-no-files-found: error
 
   ios-unsigned:
     needs: [verify-api, providers]
-    runs-on: macos-latest
-    timeout-minutes: 40
-    env:
-      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+    runs-on: macos-15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -135,7 +164,7 @@ jobs:
       - name: Resolve dependencies
         working-directory: flutter_app
         run: flutter pub get --enforce-lockfile
-      - name: Build unsigned iPhone app with deployed API
+      - name: Build unsigned iPhone app
         working-directory: flutter_app
         run: flutter build ios --release --no-codesign --dart-define=MITV_TARGET=ios --dart-define="MITV_API_BASE=$MITV_API_BASE"
       - name: Package unsigned IPA for external signing
@@ -148,23 +177,24 @@ jobs:
           rm -f trial/Payload/Runner.app/embedded.mobileprovision
           codesign --remove-signature trial/Payload/Runner.app 2>/dev/null || true
           if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
-          lipo -info trial/Payload/Runner.app/Runner | grep -q arm64
+          lipo -verify_arch arm64 trial/Payload/Runner.app/Runner
           cd trial
           ditto -c -k --keepParent Payload MITV-iPhone-Unsigned.ipa
           shasum -a 256 MITV-iPhone-Unsigned.ipa > MITV-iPhone-Unsigned.ipa.sha256
           rm -rf Payload
+      - name: Record immutable source identity
+        run: python3 scripts/write_source_manifest.py --target ios-unsigned-arm64 --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
           name: MITV-iPhone-Unsigned
           path: trial/
           retention-days: 14
+          if-no-files-found: error
 
   windows:
     needs: [verify-api, providers]
-    runs-on: windows-latest
-    timeout-minutes: 40
-    env:
-      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+    runs-on: windows-2025
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -218,18 +248,20 @@ jobs:
             $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower()
             "$hash  $($file.Name)" | Set-Content -Encoding ascii "$($file.FullName).sha256"
           }
+      - name: Record immutable source identity
+        shell: pwsh
+        run: python scripts/write_source_manifest.py --target windows-x64 --output trial/source-manifest.json --api "$env:MITV_API_BASE" --sha "$env:MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
           name: MITV-Windows-x64
           path: trial/
           retention-days: 14
+          if-no-files-found: error
 
   macos:
     needs: [verify-api, providers]
-    runs-on: macos-latest
-    timeout-minutes: 40
-    env:
-      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+    runs-on: macos-15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -240,63 +272,120 @@ jobs:
       - name: Create macOS scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=macos --org com.mitv --project-name mitv .
-      - name: Apply native branding
+      - name: Apply MITV identity and sandbox entitlements
         run: python3 scripts/apply_native_branding.py flutter_app
-      - name: Resolve dependencies
+      - name: Resolve dependencies and analyze
         working-directory: flutter_app
-        run: flutter pub get --enforce-lockfile
-      - name: Build macOS native app
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze
+      - name: Build native macOS app for the hosted runner architecture
         working-directory: flutter_app
         run: flutter build macos --release --dart-define=MITV_TARGET=desktop --dart-define="MITV_API_BASE=$MITV_API_BASE"
-      - name: Package macOS DMG and ZIP
+      - name: Package and verify DMG without Apple signing or notarization
         run: |
           set -euo pipefail
-          mkdir -p trial
-          APP_PATH="flutter_app/build/macos/Build/Products/Release/mitv.app"
-          test -d "$APP_PATH"
-          hdiutil create -volname "MITV" -srcfolder "$APP_PATH" -ov -format UDZO trial/MITV-macOS.dmg
-          ditto -c -k --keepParent "$APP_PATH" trial/MITV-macOS.zip
-          shasum -a 256 trial/MITV-macOS.dmg > trial/MITV-macOS.dmg.sha256
-          shasum -a 256 trial/MITV-macOS.zip > trial/MITV-macOS.zip.sha256
+          APP_PATH="$(find flutter_app/build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          bash scripts/package_macos_dmg.sh "$APP_PATH" trial flutter_app/macos/Runner/Release.entitlements
+      - name: Record immutable source identity
+        run: python3 scripts/write_source_manifest.py --target macos-native --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MITV-macOS
+          name: MITV-macOS-Unsigned
           path: trial/
           retention-days: 14
+          if-no-files-found: error
+
+  web:
+    needs: [verify-api, providers]
+    uses: ./.github/workflows/flutter-web.yml
+    with:
+      api_base: ${{ inputs.api_base || 'https://matv.onrender.com' }}
 
   verify-release:
-    needs: [android, ios-unsigned, windows, macos]
-    if: startsWith(github.ref, 'refs/heads/build/mitv-')
+    needs: [android, ios-unsigned, windows, macos, web]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: device-artifacts
-      - name: Verify all packages and publish
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BUILD_SHA: ${{ github.sha }}
+      - name: Verify the complete six-target release
         run: |
           set -euo pipefail
-          read VERSION BUILD < <(python3 - <<'PY_VERSION'
+          read VERSION BUILD < <(python3 - <<'PY'
           import pathlib, re
-          m=re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$',pathlib.Path('flutter_app/pubspec.yaml').read_text(),re.M)
-          assert m
-          print(*m.groups())
-          PY_VERSION
+          match = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('flutter_app/pubspec.yaml').read_text(), re.M)
+          assert match
+          print(*match.groups())
+          PY
           )
-          python3 scripts/verify_device_artifacts.py device-artifacts https://matv.onrender.com "$VERSION" "$BUILD" > device-verification.json
+          python3 scripts/verify_device_artifacts.py device-artifacts "$MITV_API_BASE" "$VERSION" "$BUILD" "$MITV_SOURCE_COMMIT" > device-verification.json
           cat device-verification.json
-          python3 - <<'PY_NOTES'
-          from pathlib import Path
-          report=Path('device-verification.json').read_text().replace('%','%25').replace('\n','%0A')
-          print('::notice title=Device artifact verification::'+report)
-          Path('/tmp/release-notes.md').write_text("MITV identity, Cloudflare direct live-match extraction, unified full-window cinema/live player, protected direct MP4 downloads, and native Windows x64 packaging. Match video bodies are never forwarded through Render. HLS download actions are hidden.\n\nAndroid Mobile ARM64, Android TV ARMv7, unsigned iOS ARM64, and Windows x64 installer/portable bundle. External signing is required for IPA installation.\n\nChecksums, architecture, libmpv and public API verification passed. Physical-device battery and thermal tests remain pending.\n\nFlutter Web: https://th-505.github.io/MATV/app/\n")
-          PY_NOTES
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "MITV $VERSION" --notes-file /tmp/release-notes.md device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.sha256 device-verification.json
       - uses: actions/upload-artifact@v4
         with:
           name: MITV-device-verification
           path: device-verification.json
           retention-days: 14
+          if-no-files-found: error
+      - name: Publish verified Web bundle through the existing Pages source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Publish only when this release was built from the current main
+          # ancestor, so a slow older run cannot replace a newer Web bundle.
+          git fetch origin main
+          git merge-base --is-ancestor origin/main "$MITV_SOURCE_COMMIT"
+          python3 - <<'PY'
+          import pathlib, zipfile
+          archive = pathlib.Path('device-artifacts/MITV-Flutter-Web/MITV-Web.zip')
+          destination = pathlib.Path('/tmp/mitv-verified-web')
+          with zipfile.ZipFile(archive) as package:
+              for name in package.namelist():
+                  path = pathlib.PurePosixPath(name)
+                  assert not path.is_absolute() and '..' not in path.parts
+              package.extractall(destination)
+          PY
+          git checkout -B mitv-pages-publish origin/main
+          rm -rf app
+          mkdir -p app
+          cp -R /tmp/mitv-verified-web/. app/
+          touch .nojekyll
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app .nojekyll
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish verified six-target MITV Web bundle [skip ci] [skip render]'
+            git push origin HEAD:main
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+      - name: Publish all verified packages together
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          version, build = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('flutter_app/pubspec.yaml').read_text(), re.M).groups()
+          report = json.loads(pathlib.Path('device-verification.json').read_text())
+          assert report
+          pathlib.Path('/tmp/release-notes.md').write_text(
+              f"MITV {version} (build {build}), Master Sprint v2.9.\n\n"
+              "Six targets verified from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
+              "Navy six-tab UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
+              "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
+              "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"
+              f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n\n"
+              "Web: https://th-505.github.io/MATV/app/\n", encoding='utf-8')
+          pathlib.Path('/tmp/mitv-release-version').write_text(version)
+          PY
+          VERSION="$(cat /tmp/mitv-release-version)"
+          shopt -s nullglob
+          ASSETS=(device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.dmg device-artifacts/*/*.sha256 device-artifacts/*/macOS-report.json device-verification.json)
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "MITV $VERSION" --notes-file /tmp/release-notes.md "${ASSETS[@]}"
