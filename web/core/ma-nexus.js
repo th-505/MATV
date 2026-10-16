@@ -221,57 +221,6 @@ export async function probeAndRankServers(rawServers = []) {
 
 const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
 
-// توليد السيرفرات السحابية الاحتياطية فائقة السرعة عند تعذر القواشط المباشرة
-export function generateCloudFallbackServers(tmdbId, isTv, season = 1, episode = 1) {
-  const safeId = String(tmdbId || '550').trim();
-  const s = Math.max(1, Number(season) || 1);
-  const ep = Math.max(1, Number(episode) || 1);
-  return [
-    {
-      provider: 'vidsrc',
-      code: 'VC-1',
-      kind: 'embed',
-      url: `https://vidsrc.cc/v2/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}?autoPlay=true`,
-      ms: 75,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '75ms فائق',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.20)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'multiembed',
-      code: 'MD-1',
-      kind: 'embed',
-      url: `https://multiembed.mov/?video_id=${safeId}&tmdb=1${isTv ? `&s=${s}&e=${ep}` : ''}`,
-      ms: 110,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '110ms ممتاز',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'autoembed',
-      code: 'AE-1',
-      kind: 'embed',
-      url: `https://player.autoembed.cc/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}`,
-      ms: 140,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '140ms سريع',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    }
-  ];
-}
-
 // بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة (القواشط الـ 18 + السيرفرات السحابية)
 export async function resolveUnifiedServersForItem(item, season = 1, episode = 1, apiBase = '') {
   const servers = [];
@@ -280,9 +229,6 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
   let tmdbId = item?.tmdbId || item?.tmdb_id || '';
   if (!tmdbId && String(item?.id || '').startsWith('tmdb:')) {
     tmdbId = String(item.id).split(':').pop();
-  }
-  if (!tmdbId && /^\d+$/.test(String(item?.id || ''))) {
-    tmdbId = String(item.id);
   }
 
   // إذا كان العمل يحتوي على روابط مباشرة في بياناته
@@ -370,14 +316,16 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     }
   }
 
-  if (!tmdbId) {
-    const digits = String(item?.id || '').match(/\d+/);
-    if (digits) tmdbId = digits[0];
-  }
+  // 2. تصفية صارمة للروابط المباشرة النقية (.m3u8 و .mp4) وتجهيز سيرفرات الطوارئ السحابية
+  const resolvedTmdbId = String(tmdbId || item?.tmdbId || item?.tmdb_id || item?.id || '').replace(/^tmdb:/, '').split(':').pop();
+  const validTmdbId = /^\d+$/.test(resolvedTmdbId) ? resolvedTmdbId : '';
 
-  const cloudFallbacks = generateCloudFallbackServers(tmdbId || '550', isTv, season, episode);
+  const fallbackCloudServers = validTmdbId ? [
+    { provider: 'vidsrc', code: 'VC-1', url: `https://vidsrc.cc/v2/embed/${isTv ? 'tv' : 'movie'}/${validTmdbId}${isTv ? `/${season}/${episode}` : ''}?autoPlay=true`, kind: 'embed', ms: 75, emoji: '🟢', label: '75ms فائق', bgColor: 'rgba(16,185,129,0.18)', borderColor: '#10b981', badgeColor: '#10b981' },
+    { provider: 'multiembed', code: 'MD-1', url: `https://multiembed.mov/?video_id=${validTmdbId}&tmdb=1${isTv ? `&s=${season}&e=${episode}` : ''}`, kind: 'embed', ms: 110, emoji: '🟢', label: '110ms ممتاز', bgColor: 'rgba(16,185,129,0.18)', borderColor: '#10b981', badgeColor: '#10b981' },
+    { provider: 'autoembed', code: 'AE-1', url: `https://player.autoembed.cc/embed/${isTv ? 'tv' : 'movie'}/${validTmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed', ms: 140, emoji: '🟢', label: '140ms سريع', bgColor: 'rgba(16,185,129,0.18)', borderColor: '#10b981', badgeColor: '#10b981' }
+  ] : [];
 
-  // 2. تصفية صارمة للروابط المباشرة (Direct Media Streams) من القواشط
   const cleanDirect = servers.filter(s => {
     const u = String(s.url || '').toLowerCase();
     if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) return false;
@@ -385,21 +333,22 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
   });
 
   if (cleanDirect.length > 0) {
-    const rankedDirect = await probeAndRankServers(cleanDirect);
-    return [...rankedDirect, ...cloudFallbacks];
+    const ranked = await probeAndRankServers(cleanDirect);
+    return [...ranked, ...fallbackCloudServers];
   }
 
-  // إذا لم ترجع القواشط أي روابط مباشرة، نعتمد فوراً على السيرفرات السحابية المضمونة (VC-1, MD-1, AE-1)
-  if (cloudFallbacks.length > 0) {
-    return cloudFallbacks;
-  }
-
+  // في حال تعذر القواشط المحلية، نفحص أي سيرفرات إضافية متوفرة
   const filteredServers = servers.filter(s => {
     const u = String(s.url || '').toLowerCase();
     return !/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u);
   });
 
-  return probeAndRankServers(filteredServers.length > 0 ? filteredServers : servers);
+  if (filteredServers.length > 0) {
+    const ranked = await probeAndRankServers(filteredServers);
+    return [...ranked, ...fallbackCloudServers];
+  }
+
+  return fallbackCloudServers;
 }
 
 // محرك البحث الموحد (Search-Fusion Engine) الذي يصفي ويدمج النتائج من القواشط + TMDb
