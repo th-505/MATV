@@ -228,12 +228,15 @@ def apply_windows(root: Path):
     icon.write_bytes(header+b''.join(entries)+b''.join(data for _,data in images))
     main=windows/'runner/main.cpp'
     if main.exists():
-        text=main.read_text();text=re.sub(r'window.Create\(L"[^"\n]+"','window.Create(L"MA TV")',text);main.write_text(text)
+        text=main.read_text()
+        text=re.sub(r'(?m)^([ \t]*if \(!window\.Create\().*?\)\)\s*\{',r'\1L"MA TV", origin, size)) {',text,count=1)
+        main.write_text(text)
     rc=windows/'runner/Runner.rc'
     if rc.exists():
         text=rc.read_text()
         for key in ('CompanyName','FileDescription','ProductName'):
-            text=re.sub(r'(VALUE "'+key+r'", )"[^"\n]*"',r'\1"MA TV" "\\0"',text)
+            pattern=r'(?m)^([ \t]*VALUE "'+re.escape(key)+r'", ).*$'
+            text=re.sub(pattern,lambda match: match.group(1)+'"MA TV" "\\0"',text)
         rc.write_text(text)
 
 

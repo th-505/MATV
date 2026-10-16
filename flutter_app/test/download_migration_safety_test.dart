@@ -17,7 +17,10 @@ void main() {
     () async {
       final documents = Directory('${root.path}/Documents');
       final destination = await migrateDownloadDirectory(documents);
-      expect(destination.path, '${documents.path}/MITV/Downloads');
+      expect(
+        destination.path,
+        '${documents.path}${Platform.pathSeparator}MITV${Platform.pathSeparator}Downloads',
+      );
       expect(await documents.exists(), isFalse);
     },
   );
@@ -37,7 +40,7 @@ void main() {
         '${legacy.path}/.qahtani-resume.part',
       ).writeAsString('partial');
       final destination = await migrateDownloadDirectory(root);
-      expect(destination.path, current.path);
+      expect(destination.path, await current.resolveSymbolicLinks());
       expect(await File('${legacy.path}/episode.mp4').readAsString(), 'old');
       expect(
         await File('${current.path}/episode.mp4').readAsString(),

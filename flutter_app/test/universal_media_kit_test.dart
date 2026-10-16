@@ -124,7 +124,10 @@ void main() {
         mediaKitPlayerFactory: () => mk.Player(platformPlayer: native),
         videoOutputFactory: (player, configuration) => const SizedBox());
     await player.initialize();
-    expect(native.opened.single.uri, anyOf(uri.toString(), uri.toFilePath()));
+    expect(
+      native.opened.single.uri,
+      anyOf(uri.toString(), uri.toFilePath(), uri.path),
+    );
     await player.dispose();
   });
 

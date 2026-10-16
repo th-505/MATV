@@ -40,7 +40,7 @@ export function decodeArabicBuffer(arrayBuffer) {
   let out = '';
   for (let i = 0; i < bytes.length; i++) {
     const b = bytes[i];
-    out += b < 0x80 ? String.fromCharCode(b) : String.fromCharCode(CP1256_MAP[b - 0x80] || 0x0020);
+    out += b < 0x80 ? String.fromCharCode(b) : String.fromCharCode(CP1256_MAP[b - 0x80] ?? 0xFFFD);
   }
   return out;
 }

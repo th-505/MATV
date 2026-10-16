@@ -177,7 +177,7 @@ jobs:
           rm -f trial/Payload/Runner.app/embedded.mobileprovision
           codesign --remove-signature trial/Payload/Runner.app 2>/dev/null || true
           if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
-          lipo -verify_arch arm64 trial/Payload/Runner.app/Runner
+          lipo trial/Payload/Runner.app/Runner -verify_arch arm64
           cd trial
           ditto -c -k --keepParent Payload MA-TV-iPhone-Unsigned.ipa
           shasum -a 256 MA-TV-iPhone-Unsigned.ipa > MA-TV-iPhone-Unsigned.ipa.sha256
