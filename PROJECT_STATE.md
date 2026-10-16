@@ -1,4 +1,4 @@
-# Al-Qahtani Autonomous Project State
+# MITV Autonomous Project State
 
 ## Authority and evidence hierarchy
 1. GitHub source, exact commit SHA, CI logs and release artifacts are authoritative for code/build facts.

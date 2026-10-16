@@ -20,8 +20,17 @@ class _FocusHighlightState extends State<FocusHighlight> {
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                  width: 2,
+                  width: 3,
                   color:
-                      _focused ? const Color(0xFF708DB8) : Colors.transparent)),
+                      _focused ? const Color(0xFF708DB8) : Colors.transparent),
+              boxShadow: _focused
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF708DB8).withAlpha(140),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      )
+                    ]
+                  : null),
           child: widget.child));
 }

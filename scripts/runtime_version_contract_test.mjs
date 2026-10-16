@@ -4,8 +4,10 @@ import { PRODUCT_VERSION } from "../server/content-runtime.mjs";
 
 const pubspec = await readFile(new URL("../flutter_app/pubspec.yaml", import.meta.url), "utf8");
 const pubspecVersion = pubspec.match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+(\d+)\s*$/m);
-assert.ok(pubspecVersion, "Flutter pubspec must contain semantic version+build");
 assert.equal(pubspecVersion[1], PRODUCT_VERSION, "Runtime PRODUCT_VERSION must match Flutter product version");
+assert.equal(PRODUCT_VERSION, "1.0.44", "Runtime PRODUCT_VERSION must be 1.0.44");
+assert.equal(pubspecVersion[1], "1.0.44", "Flutter pubspec version must be 1.0.44");
+assert.equal(pubspecVersion[2], "44", "Flutter pubspec build must be 44");
 
 const smoke = await readFile(new URL("./remote_runtime_v1_smoke.mjs", import.meta.url), "utf8");
 assert.match(smoke, /import\s*\{\s*PRODUCT_VERSION\s*\}/, "remote Runtime smoke must consume PRODUCT_VERSION from source");

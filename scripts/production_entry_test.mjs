@@ -51,26 +51,23 @@ async function get(path) {
 
 try {
   const list = await get("/api/v1/news");
-  assert.equal(list.status, 200);
-  assert.equal(list.data?.kind, "news");
-  assert.equal(list.data?.data?.[0]?.ref, opaqueRef);
-  assert.equal(JSON.stringify(list.data).includes("http"), false, "news list must not expose an upstream URL");
+  assert.equal(list.status, 410, "news endpoint must return 410 GONE");
+  assert.equal(list.data?.code, "NEWS_ENDPOINT_RETIRED");
   assert.equal(list.headers["access-control-allow-origin"], "https://theeb1230-dot.github.io");
 
   const article = await get(`/api/v1/news/article?ref=${encodeURIComponent(opaqueRef)}`);
-  assert.equal(article.status, 200);
-  assert.equal(article.data?.kind, "news-article");
-  assert.deepEqual(article.data?.data?.paragraphs, ["فقرة"]);
+  assert.equal(article.status, 410, "news article endpoint must return 410 GONE");
+  assert.equal(article.data?.code, "NEWS_ENDPOINT_RETIRED");
 
   const missing = await get("/api/v1/news/article");
-  assert.equal(missing.status, 400);
-  assert.equal(missing.data?.message, "MISSING_NEWS_REFERENCE");
+  assert.equal(missing.status, 410, "news article without ref must return 410 GONE");
+  assert.equal(missing.data?.code, "NEWS_ENDPOINT_RETIRED");
 
   const health = await get("/health");
   assert.equal(health.status, 200, "existing app routes must remain reachable through production entry");
   assert.equal(health.data?.status, "ok");
 
-  console.log("PASS canonical production entry: news + app routes");
+  console.log("PASS canonical production entry: retired news (410) + app routes");
 } finally {
   await new Promise((resolve) => server.close(resolve));
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate deterministic MITV native, desktop and web branding after `flutter create`.
 
-The MITV identity is a charcoal surface with a crimson M/play mark.
+The approved MITV identity uses a deep navy surface and slate-blue M/play mark.
 No bundled font or third-party image dependency is required.
 """
 from __future__ import annotations
@@ -14,8 +14,8 @@ import sys
 import zlib
 from pathlib import Path
 
-BACKGROUND = (9, 11, 18, 255)
-ACCENT = (229, 9, 20, 255)
+BACKGROUND = (11, 18, 32, 255)
+ACCENT = (112, 141, 184, 255)
 FOREGROUND = (255, 255, 255, 255)
 TRANSPARENT = (0, 0, 0, 0)
 
@@ -113,7 +113,7 @@ def apply_android(root: Path):
     values = res / "values"
     values.mkdir(parents=True, exist_ok=True)
     (values / "colors.xml").write_text(
-        """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"mitv_splash_bg\">#090B12</color>\n</resources>\n""",
+        """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"mitv_splash_bg\">#0B1220</color>\n</resources>\n""",
         encoding="utf-8",
     )
     launch_xml = """<?xml version=\"1.0\" encoding=\"utf-8\"?>
@@ -180,8 +180,8 @@ def apply_ios(root: Path):
     storyboard = ios / "Runner/Base.lproj/LaunchScreen.storyboard"
     if storyboard.exists():
         text = storyboard.read_text(encoding="utf-8")
-        text = text.replace('red="1" green="1" blue="1" alpha="1"', 'red="0.035" green="0.043" blue="0.071" alpha="1"')
-        text = text.replace('red="0.035" green="0.035" blue="0.043" alpha="1"', 'red="0.035" green="0.043" blue="0.071" alpha="1"')
+        text = text.replace('red="1" green="1" blue="1" alpha="1"', 'red="0.043" green="0.071" blue="0.125" alpha="1"')
+        text = text.replace('red="0.035" green="0.035" blue="0.043" alpha="1"', 'red="0.043" green="0.071" blue="0.125" alpha="1"')
         storyboard.write_text(text, encoding="utf-8")
     plist = ios / "Runner/Info.plist"
     if plist.exists():

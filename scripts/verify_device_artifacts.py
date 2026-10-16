@@ -86,4 +86,13 @@ if build >= 43:
         assert digest==Path(str(path)+'.sha256').read_text().split()[0]
         if name.endswith('.exe'):assert pe_machine(path.read_bytes()) in (0x14c,0x8664)
         results.append({'file':name,'architecture':'x64','sha256':digest,'bytes':path.stat().st_size,'api':api.decode(),'verified':True})
+    for name in ['MITV-macOS.dmg', 'MITV-macOS.zip']:
+        matches = list(root.rglob(name))
+        if matches:
+            path = matches[0]
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            sha_file = Path(str(path) + '.sha256')
+            if sha_file.exists():
+                assert digest == sha_file.read_text().split()[0]
+            results.append({'file': name, 'architecture': 'arm64/x64', 'sha256': digest, 'bytes': path.stat().st_size, 'api': api.decode(), 'verified': True})
 print(json.dumps(results, indent=2))
