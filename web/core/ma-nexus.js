@@ -303,7 +303,11 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
 
   if (candidateRefs.length > 0) {
     try {
-      const edgeRes = await fetch(`${EDGE_RESOLVER_BASE}/v1/resolve?ref=${encodeURIComponent(candidateRefs[0])}`);
+      const refVal = String(candidateRefs[0]).trim();
+      const refParam = refVal.includes(':')
+        ? `ref=${encodeURIComponent(refVal)}`
+        : `episode_id=${encodeURIComponent(refVal)}`;
+      const edgeRes = await fetch(`${EDGE_RESOLVER_BASE}/v1/resolve?${refParam}`);
       if (edgeRes.ok) {
         const edgeJson = await edgeRes.json();
         if (Array.isArray(edgeJson?.sources)) {
