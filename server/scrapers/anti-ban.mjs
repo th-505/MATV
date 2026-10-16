@@ -76,3 +76,16 @@ export async function fetchHtmlWithAntiBan(targetUrl, { referer = '', timeoutMs 
     clearTimeout(timer);
   }
 }
+
+export const generateAntiBanHeaders = buildAntiBanHeaders;
+
+export async function fetchWithAntiBan(targetUrl, opts = {}) {
+  try {
+    const options = typeof opts === 'string' ? { referer: opts } : opts;
+    const res = await fetchHtmlWithAntiBan(targetUrl, options);
+    return res.html || '';
+  } catch (_) {
+    return '';
+  }
+}
+
