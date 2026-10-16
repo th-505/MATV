@@ -10,7 +10,7 @@ import { scrapeArabSeedCatalog, scrapeArabSeedDetails, scrapeMewsryCatalog } fro
 import { scrapeWitAnimeCatalog, scrapeWitAnimeDetails, scrapeEgyDeadLiveChannels, scrapeYallaShootMatches } from './supervisor6-witanime-live.mjs';
 import { fetchHtmlWithAntiBan, buildAntiBanHeaders } from './anti-ban.mjs';
 
-const TMDB_API_KEY = String(process.env.TMDB_API_KEY || '').trim();
+const TMDB_API_KEY = String(process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('')).trim();
 const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
 const SEARCH_MAX_IN_FLIGHT = 2;

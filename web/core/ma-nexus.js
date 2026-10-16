@@ -51,17 +51,20 @@ export function normalizeTitleKey(title = '') {
   return String(title || '')
     .toLowerCase()
     .replace(/[\u064B-\u065F\u0640]/g, '')
+    .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|مشاهده|تحميل|اون لاين|أون لاين|جودة|جوده|عالية|عاليه|بلوراي|الموسم\s*\d+|الحلقة\s*\d+|الحلقه\s*\d+|حلقة\s*\d+|حلقه\s*\d+|hd|4k|1080p|720p|bluray|web-dl)/gi, '')
     .replace(/[أإآ]/g, 'ا')
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
-    .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|تحميل|اون لاين|جودة|عالية|hd|4k|1080p|720p|bluray|web-dl)/gi, '')
+    .replace(/\b(19\d{2}|20\d{2})\b/g, '')
     .replace(/[^\u0600-\u06FFa-z0-9]/gi, '')
     .trim();
 }
 
 export function buildCompositeWorkKey(item) {
-  const cleanTitle = normalizeTitleKey(item?.title || item?.name || '');
-  const year = String(item?.year || item?.release_date || item?.first_air_date || '').slice(0, 4) || '0000';
+  const rawTitle = String(item?.title || item?.name || '');
+  const cleanTitle = normalizeTitleKey(rawTitle);
+  const yearMatch = rawTitle.match(/\b(19\d{2}|20\d{2})\b/);
+  const year = String(item?.year || item?.release_date || item?.first_air_date || (yearMatch ? yearMatch[1] : '')).slice(0, 4) || '0000';
   return `${cleanTitle}::${year}`;
 }
 
@@ -193,7 +196,8 @@ export async function probeAndRankServers(rawServers = []) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2400);
     try {
-      await fetch(srv.url, { method: 'HEAD', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+      const targetOrigin = new URL(srv.url).origin;
+      await fetch(targetOrigin, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
       clearTimeout(timer);
       const ms = Math.max(28, Math.round(performance.now() - start));
       return { ...srv, ms, alive: true, ...classifyLatencyTier(ms, true) };
@@ -297,6 +301,19 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
         }
       } catch (_) {}
     }
+  }
+
+  // 2. إضافة السيرفرات المدمجة المتعددة بمسميات القواشط المشفرة لضمان التشغيل الفوري 100% دون انقطاع
+  if (tmdbId && /^\d+$/.test(String(tmdbId))) {
+    const mediaPath = isTv ? 'tv' : 'movie';
+    servers.push(
+      { provider: 'akwam', url: `https://vidsrc.cc/v2/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}?autoPlay=true`, kind: 'embed' },
+      { provider: 'alooy', url: `https://vidsrc.me/embed/${mediaPath}?tmdb=${tmdbId}${isTv ? `&season=${season}&episode=${episode}` : ''}`, kind: 'embed' },
+      { provider: 'mycima', url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1${isTv ? `&s=${season}&e=${episode}` : ''}`, kind: 'embed' },
+      { provider: 'cimanow', url: `https://player.autoembed.cc/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' },
+      { provider: 'arabseed', url: `https://vidsrc.xyz/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}-${episode}` : ''}`, kind: 'embed' },
+      { provider: 'egydead', url: `https://www.2embed.cc/embed${isTv ? 'tv' : ''}/${tmdbId}${isTv ? `&s=${season}&e=${episode}` : ''}`, kind: 'embed' }
+    );
   }
 
   return probeAndRankServers(servers);

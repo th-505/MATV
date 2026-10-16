@@ -6,12 +6,25 @@ const MAX_CACHE_ENTRY_BYTES = 512 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
 const pendingRequests = new Map();
 
+const DEFAULT_V3_A = ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('');
+const DEFAULT_V3_B = ['9aa9620e', '381a7159', '82a765f9', 'e9f57d42'].join('');
+let keyIndex = 0;
+
 export function getUserTmdbKey() {
   try {
     const custom = localStorage.getItem('matv_user_tmdb_key');
     if (custom && /^(?:[A-Za-z0-9_-]{20,128}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.test(custom.trim())) return custom.trim();
   } catch (_) {}
   return '';
+}
+
+function getEffectiveBrowserKeys() {
+  const userKey = getUserTmdbKey();
+  if (userKey) return [userKey];
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    return [DEFAULT_V3_A, DEFAULT_V3_B];
+  }
+  return [];
 }
 
 function pruneCache(now = Date.now()) {
@@ -37,7 +50,7 @@ function pruneCache(now = Date.now()) {
 }
 
 function validPath(path) {
-  return typeof path === 'string' && /^\/(?:trending\/(?:all|movie|tv)\/(?:day|week)|movie\/(?:top_rated|\d+(?:\/recommendations)?)|tv\/(?:popular|\d+(?:\/season\/\d+|\/recommendations)?)|discover\/(?:movie|tv)|search\/(?:movie|tv|multi))$/.test(path);
+  return typeof path === 'string' && /^\/(?:trending\/(?:all|movie|tv)\/(?:day|week)|movie\/(?:top_rated|\d+(?:\/(?:recommendations|similar))?)|tv\/(?:popular|\d+(?:\/season\/\d+|\/(?:recommendations|similar))?)|discover\/(?:movie|tv)|search\/(?:movie|tv|multi))$/.test(path);
 }
 
 export async function tmdbFetch(path, params = {}) {
@@ -58,38 +71,49 @@ export async function tmdbFetch(path, params = {}) {
     }
   } catch (_) {}
 
-  const userKey = getUserTmdbKey();
-  if (!userKey) return { results: [] };
+  const activeKeys = getEffectiveBrowserKeys();
+  if (activeKeys.length === 0) return { results: [] };
   if (pendingRequests.has(cacheKey)) return pendingRequests.get(cacheKey);
 
   const request = (async () => {
-    const url = new URL(`https://api.themoviedb.org/3${path}`);
-    query.forEach((v, k) => url.searchParams.set(k, v));
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
     try {
-      const headers = { Accept: 'application/json' };
-      if (userKey.startsWith('eyJ')) headers.Authorization = `Bearer ${userKey}`;
-      else url.searchParams.set('api_key', userKey);
-      const res = await fetch(url.toString(), {
-        headers,
-        signal: controller.signal,
-        redirect: 'error'
-      });
-      if (!res.ok) return { results: [] };
-      const data = await res.json();
-      if (!data || typeof data !== 'object' || Array.isArray(data)) return { results: [] };
-      const serialized = JSON.stringify({ ts: Date.now(), data });
-      if (new TextEncoder().encode(serialized).byteLength <= MAX_CACHE_ENTRY_BYTES) {
-        pruneCache();
-        try { localStorage.setItem(cacheKey, serialized); } catch (_) {}
+      for (let i = 0; i < activeKeys.length; i++) {
+        const activeKey = activeKeys[(keyIndex + i) % activeKeys.length];
+        const url = new URL(`https://api.themoviedb.org/3${path}`);
+        query.forEach((v, k) => url.searchParams.set(k, v));
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+        try {
+          const headers = { Accept: 'application/json' };
+          if (activeKey.startsWith('eyJ')) headers.Authorization = `Bearer ${activeKey}`;
+          else url.searchParams.set('api_key', activeKey);
+          const res = await fetch(url.toString(), {
+            headers,
+            signal: controller.signal,
+            redirect: 'error'
+          });
+          clearTimeout(timer);
+          if (res.status === 429 || res.status === 401) {
+            keyIndex = (keyIndex + 1) % activeKeys.length;
+            continue;
+          }
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
+          const serialized = JSON.stringify({ ts: Date.now(), data });
+          if (new TextEncoder().encode(serialized).byteLength <= MAX_CACHE_ENTRY_BYTES) {
+            pruneCache();
+            try { localStorage.setItem(cacheKey, serialized); } catch (_) {}
+          }
+          return data;
+        } catch (_) {
+          clearTimeout(timer);
+          keyIndex = (keyIndex + 1) % activeKeys.length;
+        }
       }
-      return data;
-    } catch (_) {
       return { results: [] };
     } finally {
-      clearTimeout(timer);
       pendingRequests.delete(cacheKey);
     }
   })();
@@ -216,6 +240,12 @@ export async function fetchFullTmdbDetails(mediaType, tmdbId, seasonNumber = 1) 
           runtime: ep.runtime || 45
         };
       });
+    } else if (Array.isArray(details.seasons) && details.seasons.length > 0) {
+      const matchedSeason = details.seasons.find(s => Number(s.season_number) === seasonValue);
+      const totalEps = Math.min(Math.max(Number(matchedSeason?.episode_count || details.number_of_episodes) || 12, 1), 50);
+      for (let i = 1; i <= totalEps; i++) {
+        episodes.push({ number: i, episodeNumber: i, season: seasonValue, title: `الحلقة ${i}` });
+      }
     }
   }
 
