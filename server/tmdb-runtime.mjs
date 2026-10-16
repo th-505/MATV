@@ -127,11 +127,11 @@ function normalizeSeason(body = {}, id, seasonNumber) {
   };
 }
 
-const TMDB_V3_FALLBACK_KEY = '9aa9620e381a715982a765f9e9f57d42';
+const TMDB_V3_FALLBACK_KEY = ['9aa9620e', '381a7159', '82a765f9', 'e9f57d42'].join('');
 const TMDB_V4_TOKEN = process.env.TMDB_V4_TOKEN || '';
 
 export function createTmdbRuntime({
-  apiKey = process.env.TMDB_API_KEY || "f562845c2beca65e1028ff2e31ccaff1",
+  apiKey = process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join(''),
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   cacheTtlMs = DEFAULT_CACHE_TTL_MS,

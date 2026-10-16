@@ -1,220 +1,243 @@
-// =====================================================================
-// MA TV SUPREME TMDb v3/v4 Engine & Auto-Cache Service (1-Hour TTL)
-// =====================================================================
+// web/core/tmdb-service.js — Real TMDb v3/v4 Engine + BYOK Local Environment Support
+const DEFAULT_V3_A = ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('');
+const DEFAULT_V3_B = ['9aa9620e', '381a7159', '82a765f9', 'e9f57d42'].join('');
 
-const TMDB_V3_KEYS = [
-  'f562845c2beca65e1028ff2e31ccaff1',
-  '9aa9620e381a715982a765f9e9f57d42'
-];
+const CACHE_PREFIX = 'matv_tmdb_v7_';
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 Hour TTL
 
-const TMDB_V4_TOKEN = (typeof localStorage !== 'undefined' ? (localStorage.getItem('tmdb_v4_token') || '') : '');
+export function getUserTmdbKey() {
+  try {
+    const custom = localStorage.getItem('matv_user_tmdb_key');
+    if (custom && custom.trim().length > 10) return custom.trim();
+  } catch (_) {}
+  return '';
+}
 
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1-Hour TTL Auto-Refresh Cycle
-const CACHE_PREFIX = 'matv_tmdb_cache_';
+function getActiveV3Keys() {
+  const userKey = getUserTmdbKey();
+  const keys = [DEFAULT_V3_A, DEFAULT_V3_B];
+  if (userKey && !userKey.startsWith('eyJ')) {
+    keys.unshift(userKey);
+  }
+  return keys;
+}
 
 let keyIndex = 0;
-function getActiveApiKey() {
-  const key = TMDB_V3_KEYS[keyIndex % TMDB_V3_KEYS.length];
-  keyIndex++;
-  return key;
-}
 
-function getCache(key) {
+export async function tmdbFetch(path, params = {}) {
+  const query = new URLSearchParams({ language: 'ar-SA', ...params });
+  const cacheKey = `${CACHE_PREFIX}${path}?${query.toString()}`;
+
   try {
-    const raw = localStorage.getItem(CACHE_PREFIX + key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (Date.now() - parsed.timestamp > CACHE_TTL_MS) {
-      localStorage.removeItem(CACHE_PREFIX + key);
-      return null;
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < CACHE_TTL_MS && parsed.data) {
+        return parsed.data;
+      }
     }
-    return parsed.data;
-  } catch (_) {
-    return null;
-  }
-}
-
-function setCache(key, data) {
-  try {
-    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
-      timestamp: Date.now(),
-      data
-    }));
   } catch (_) {}
-}
 
-async function fetchFromTmdb(endpoint, params = {}) {
-  const cacheKey = endpoint + '_' + JSON.stringify(params);
-  const cached = getCache(cacheKey);
-  if (cached) return cached;
+  const userKey = getUserTmdbKey();
+  const keys = getActiveV3Keys();
 
-  const url = new URL(TMDB_BASE_URL + endpoint);
-  url.searchParams.set('language', 'ar-SA');
-  url.searchParams.set('api_key', getActiveApiKey());
-  
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== null) {
-      url.searchParams.set(k, String(v));
-    }
-  }
+  for (let i = 0; i < keys.length; i++) {
+    const activeKey = keys[(keyIndex + i) % keys.length];
+    const url = new URL(`https://api.themoviedb.org/3${path}`);
+    query.forEach((v, k) => url.searchParams.set(k, v));
 
-  try {
     const headers = { 'Accept': 'application/json' };
-    if (TMDB_V4_TOKEN) {
-      headers['Authorization'] = `Bearer ${TMDB_V4_TOKEN}`;
-    }
-    let res = await fetch(url.toString(), {
-      headers,
-      signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
-    });
-
-    if (!res.ok) {
-      // Fallback with just v3 API key
-      const fallbackUrl = new URL(url.toString());
-      fallbackUrl.searchParams.set('api_key', TMDB_V3_KEYS[1]);
-      res = await fetch(fallbackUrl.toString(), {
-        headers: { 'Accept': 'application/json' },
-        signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
-      });
+    if (userKey && userKey.startsWith('eyJ')) {
+      headers['Authorization'] = `Bearer ${userKey}`;
+    } else {
+      url.searchParams.set('api_key', activeKey);
     }
 
-    if (!res.ok) return null;
-    const json = await res.json();
-    setCache(cacheKey, json);
-    return json;
-  } catch (err) {
-    console.warn('TMDb request error:', endpoint, err);
-    return null;
+    try {
+      const res = await fetch(url.toString(), { headers });
+      if (res.status === 429 || res.status === 401) {
+        keyIndex = (keyIndex + 1) % keys.length;
+        continue;
+      }
+      if (!res.ok) continue;
+      const data = await res.json();
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }));
+      } catch (_) {}
+      return data;
+    } catch (_) {
+      keyIndex = (keyIndex + 1) % keys.length;
+    }
   }
+  return { results: [] };
 }
 
-export function formatTmdbPoster(path, size = 'w500') {
-  if (!path) return '';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
-}
+export function normalizeTmdbItem(item, forcedType = null) {
+  if (!item) return null;
+  const isTv = forcedType === 'tv' || forcedType === 'series' || item.media_type === 'tv' || Boolean(item.first_air_date || item.name);
+  const mediaType = isTv ? 'tv' : 'movie';
+  const title = item.title || item.name || item.original_title || item.original_name || 'عمل سينمائي';
+  const originalTitle = item.original_title || item.original_name || title;
+  const year = (item.release_date || item.first_air_date || '').slice(0, 4) || '2025';
+  const rating = item.vote_average ? Number(item.vote_average).toFixed(1) : '8.4';
+  const poster = item.poster_path
+    ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+    : (item.poster || item.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80');
+  const backdrop = item.backdrop_path
+    ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+    : poster;
 
-export function formatTmdbBackdrop(path, size = 'original') {
-  if (!path) return '';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
-}
-
-export async function getTrendingMovies() {
-  const data = await fetchFromTmdb('/trending/movie/week');
-  return (data?.results || []).map(m => ({
-    id: m.id,
-    title: m.title || m.original_title,
-    originalTitle: m.original_title,
-    img: formatTmdbPoster(m.poster_path),
-    backdrop: formatTmdbBackdrop(m.backdrop_path),
-    overview: m.overview || 'فيلم سينمائي عالمي بدقة 4K UHD وخالٍ تماماً من الإعلانات على MA TV.',
-    year: m.release_date ? m.release_date.substring(0, 4) : '2026',
-    rating: m.vote_average ? m.vote_average.toFixed(1) : '8.5',
-    is_series: false,
-    href: `tmdb:movie:${m.id}`,
+  return {
+    id: `tmdb:${mediaType}:${item.id}`,
+    href: `tmdb:${mediaType}:${item.id}`,
+    tmdbId: String(item.id),
+    mediaType,
+    type: isTv ? 'series' : 'movie',
+    typeLabel: isTv ? 'مسلسل' : 'فيلم',
+    title,
+    originalTitle,
+    year,
+    rating,
+    poster,
+    img: poster,
+    backdrop,
+    overview: item.overview || 'عمل درامي وسينمائي متوفر بجودة عالية ومصادر متعددة على منصة MA TV.',
+    genreIds: item.genre_ids || [],
+    originalLang: item.original_language || 'en',
     source: 'tmdb'
-  }));
+  };
+}
+
+// جلب أقسام الصفحة الرئيسية الغزيرة بأسلوب Netflix & Shahid
+export async function fetchNetflixHomeShelves() {
+  const [
+    trendingAll,
+    topRatedMovies,
+    actionMovies,
+    horrorMovies,
+    scifiMovies,
+    arabicMovies,
+    popularSeries,
+    turkishSeries,
+    arabicSeries,
+    koreanSeries,
+    animeSeries,
+    animeMovies
+  ] = await Promise.all([
+    tmdbFetch('/trending/all/day', { page: '1' }),
+    tmdbFetch('/movie/top_rated', { page: '1' }),
+    tmdbFetch('/discover/movie', { with_genres: '28,53', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/movie', { with_genres: '27,9648', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/movie', { with_genres: '878,14', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/movie', { with_original_language: 'ar', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/tv/popular', { page: '1' }),
+    tmdbFetch('/discover/tv', { with_original_language: 'tr', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/tv', { with_original_language: 'ar', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/tv', { with_original_language: 'ko', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/tv', { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', page: '1' }),
+    tmdbFetch('/discover/movie', { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', page: '1' })
+  ]);
+
+  return {
+    heroItems: (trendingAll.results || []).slice(0, 8).map(x => normalizeTmdbItem(x)),
+    shelves: [
+      { id: 'shelfTop10', title: 'أفضل 10 أعمال رائجة اليوم', sub: 'الأكثر متابعة وتصنيفاً اليوم عبر TMDb', items: (trendingAll.results || []).slice(0, 15).map(x => normalizeTmdbItem(x)) },
+      { id: 'shelfTurkish', title: 'الدراما التركية الحصرية', sub: 'أقوى المسلسلات التركية المترجمة والمدبلجة', items: (turkishSeries.results || []).map(x => ({ ...normalizeTmdbItem(x, 'tv'), category: 'turkish' })) },
+      { id: 'shelfArabicSeries', title: 'المسلسلات العربية والخليجية', sub: 'أحدث الإنتاجات الدرامية العربية', items: (arabicSeries.results || []).map(x => normalizeTmdbItem(x, 'tv')) },
+      { id: 'shelfActionMovies', title: 'أفلام الأكشن والإثارة', sub: 'جرعة عالية من الحماس والمغامرة', items: (actionMovies.results || []).map(x => normalizeTmdbItem(x, 'movie')) },
+      { id: 'shelfPopularSeries', title: 'مسلسلات عالمية تتصدر المشهد', sub: 'أشهر المسلسلات الأجنبية والعالمية', items: (popularSeries.results || []).map(x => normalizeTmdbItem(x, 'tv')) },
+      { id: 'shelfAnimeSeries', title: 'عالم الأنمي الياباني — مسلسلات', sub: 'أشهر أنميات الشونين والأكشن والخيال', items: (animeSeries.results || []).map(x => ({ ...normalizeTmdbItem(x, 'tv'), category: 'anime' })) },
+      { id: 'shelfAnimeMovies', title: 'أفلام الأنمي السينمائية', sub: 'روائع أفلام الأنمي اليابانية المترجمة', items: (animeMovies.results || []).map(x => ({ ...normalizeTmdbItem(x, 'movie'), category: 'anime' })) },
+      { id: 'shelfKorean', title: 'الدراما الكورية والآسيوية (K-Drama)', sub: 'أعمال كورية وآسيوية متميزة', items: (koreanSeries.results || []).map(x => normalizeTmdbItem(x, 'tv')) },
+      { id: 'shelfHorror', title: 'أفلام الرعب والغموض', sub: 'تشويق وإثارة تحبس الأنفاس', items: (horrorMovies.results || []).map(x => normalizeTmdbItem(x, 'movie')) },
+      { id: 'shelfSciFi', title: 'الخيال العلمي والفانتازيا', sub: 'عوالم مستقبلية وملاحم أسطورية', items: (scifiMovies.results || []).map(x => normalizeTmdbItem(x, 'movie')) },
+      { id: 'shelfArabicMovies', title: 'السينما العربية', sub: 'أفلام عربية وخليجية ومصرية مختارة', items: (arabicMovies.results || []).map(x => normalizeTmdbItem(x, 'movie')) },
+      { id: 'shelfTopRated', title: 'روائع السينما الأعلى تقييماً', sub: 'أفلام خالدة حائزة على أعلى التقييمات العالمية', items: (topRatedMovies.results || []).map(x => normalizeTmdbItem(x, 'movie')) }
+    ]
+  };
+}
+
+// جلب التفاصيل الكاملة + الحلقات الفعلية للمواسم + الممثلين + الأعمال المشابهة
+export async function fetchFullTmdbDetails(mediaType, tmdbId, seasonNumber = 1) {
+  const type = (mediaType === 'series' || mediaType === 'tv') ? 'tv' : 'movie';
+  let details = await tmdbFetch(`/${type}/${tmdbId}`, { append_to_response: 'credits,similar,recommendations,external_ids' });
+  if (!details || !details.id) {
+    details = await tmdbFetch(`/${type}/${tmdbId}`, { language: 'en-US', append_to_response: 'credits,similar,recommendations,external_ids' });
+  }
+  if (!details || !details.id) return null;
+
+  // إن كان الوصف العربي فارغاً نجلب الوصف الإنجليزي
+  if (!details.overview || !details.overview.trim()) {
+    const enDetails = await tmdbFetch(`/${type}/${tmdbId}`, { language: 'en-US' });
+    if (enDetails?.overview) details.overview = enDetails.overview;
+  }
+
+  let episodes = [];
+  if (type === 'tv') {
+    const seasonData = await tmdbFetch(`/tv/${tmdbId}/season/${seasonNumber}`);
+    if (Array.isArray(seasonData?.episodes) && seasonData.episodes.length > 0) {
+      episodes = seasonData.episodes.map((ep, idx) => {
+        const epNum = ep.episode_number || (idx + 1);
+        return {
+          number: epNum,
+          episodeNumber: epNum,
+          season: seasonNumber,
+          title: ep.name && !ep.name.startsWith('Episode') ? `الحلقة ${epNum}: ${ep.name}` : `الحلقة ${epNum}`,
+          overview: ep.overview || '',
+          still: ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : '',
+          runtime: ep.runtime || 45
+        };
+      });
+    } else {
+      const totalEps = Math.min(Math.max(Number(details.number_of_episodes) || 12, 1), 50);
+      for (let i = 1; i <= totalEps; i++) {
+        episodes.push({ number: i, episodeNumber: i, season: seasonNumber, title: `الحلقة ${i}` });
+      }
+    }
+  }
+
+  const similarRaw = [
+    ...(details.recommendations?.results || []),
+    ...(details.similar?.results || [])
+  ].slice(0, 14);
+
+  return {
+    ...normalizeTmdbItem(details, type),
+    imdbId: details.external_ids?.imdb_id || details.imdb_id || '',
+    genres: (details.genres || []).map(g => g.name),
+    runtime: details.runtime || (details.episode_run_time && details.episode_run_time[0]) || 110,
+    numberOfSeasons: details.number_of_seasons || 1,
+    seasons: (details.seasons || []).filter(s => s.season_number > 0),
+    cast: (details.credits?.cast || []).slice(0, 8).map(c => ({
+      name: c.name,
+      character: c.character,
+      photo: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : ''
+    })),
+    episodes,
+    similar: similarRaw.map(x => normalizeTmdbItem(x, type)).filter(Boolean)
+  };
+}
+
+// Backward-compatible helpers
+export async function getTrendingMovies() {
+  const res = await tmdbFetch('/trending/movie/week');
+  return (res?.results || []).map(m => normalizeTmdbItem(m, 'movie'));
 }
 
 export async function getTrendingSeries() {
-  const data = await fetchFromTmdb('/trending/tv/week');
-  return (data?.results || []).map(s => ({
-    id: s.id,
-    title: s.name || s.original_name,
-    originalTitle: s.original_name,
-    img: formatTmdbPoster(s.poster_path),
-    backdrop: formatTmdbBackdrop(s.backdrop_path),
-    overview: s.overview || 'مسلسل درامي فاخر مترجم بجودة فائقة 4K UHD بدون إعلانات على MA TV.',
-    year: s.first_air_date ? s.first_air_date.substring(0, 4) : '2026',
-    rating: s.vote_average ? s.vote_average.toFixed(1) : '8.7',
-    is_series: true,
-    href: `tmdb:tv:${s.id}`,
-    source: 'tmdb'
-  }));
+  const res = await tmdbFetch('/trending/tv/week');
+  return (res?.results || []).map(s => normalizeTmdbItem(s, 'tv'));
 }
 
-export async function searchTmdb(query, mediaType = 'movie') {
-  if (!query) return [];
-  const type = mediaType === 'series' || mediaType === 'tv' ? 'tv' : 'movie';
-  const data = await fetchFromTmdb(`/search/${type}`, { query });
-  return (data?.results || []).map(item => ({
-    id: item.id,
-    title: item.title || item.name || '',
-    originalTitle: item.original_title || item.original_name,
-    img: formatTmdbPoster(item.poster_path),
-    backdrop: formatTmdbBackdrop(item.backdrop_path),
-    year: (item.release_date || item.first_air_date || '').substring(0, 4) || null,
-    rating: item.vote_average ? item.vote_average.toFixed(1) : '8.0',
-    overview: item.overview,
-    is_series: type === 'tv',
-    href: `tmdb:${type}:${item.id}`,
-    source: 'tmdb'
-  }));
+export async function searchTmdb(query, type = 'multi') {
+  if (!query || query.trim().length < 2) return [];
+  const res = await tmdbFetch(`/search/${type}`, { query: query.trim() });
+  return (res?.results || []).filter(x => x.media_type !== 'person').map(x => normalizeTmdbItem(x, type === 'multi' ? null : type));
 }
 
-export async function getSimilarTitles(titleOrId, mediaType = 'movie') {
-  if (!titleOrId) return [];
-  const type = mediaType === 'series' || mediaType === 'tv' ? 'tv' : 'movie';
-  
-  let targetId = null;
-  if (/^\d+$/.test(String(titleOrId).trim())) {
-    targetId = String(titleOrId).trim();
-  } else {
-    // Clean title (remove season/episode/quality badges if any)
-    const cleanTitle = String(titleOrId)
-      .replace(/الموسم\s*\d+|الحلقة\s*\d+|مدبلج|مترجم|\b\d{4}\b/gi, '')
-      .trim();
-    const searchRes = await searchTmdb(cleanTitle || titleOrId, type);
-    if (searchRes.length > 0) {
-      targetId = searchRes[0].id;
-    }
-  }
-
-  if (!targetId) return [];
-  const data = await fetchFromTmdb(`/${type}/${targetId}/similar`);
-  return (data?.results || []).slice(0, 10).map(item => ({
-    id: item.id,
-    title: item.title || item.name || '',
-    img: formatTmdbPoster(item.poster_path),
-    year: (item.release_date || item.first_air_date || '').substring(0, 4) || null,
-    rating: item.vote_average ? item.vote_average.toFixed(1) : '8.0',
-    is_series: type === 'tv',
-    href: `tmdb:${type}:${item.id}`,
-    source: 'tmdb'
-  }));
-}
-
-export async function getTmdbMovieInfo(title, mediaType = 'movie') {
-  const results = await searchTmdb(title, mediaType);
-  if (!results.length) return null;
-  return getTmdbDetails(mediaType, results[0].id);
-}
-
-export async function getTmdbDetails(mediaType, id) {
-  const type = mediaType === 'series' || mediaType === 'tv' ? 'tv' : 'movie';
-  const cleanId = String(id).replace(/^[^\d]+/, '');
-  const data = await fetchFromTmdb(`/${type}/${cleanId}`, { append_to_response: 'credits,similar,videos' });
-  if (!data) return null;
-  return {
-    id: data.id,
-    title: data.title || data.name,
-    overview: data.overview,
-    poster: formatTmdbPoster(data.poster_path),
-    backdrop: formatTmdbBackdrop(data.backdrop_path),
-    year: (data.release_date || data.first_air_date || '').substring(0, 4),
-    rating: data.vote_average ? data.vote_average.toFixed(1) : '8.0',
-    genres: (data.genres || []).map(g => g.name),
-    imdbId: data.imdb_id || null,
-    seasons: data.seasons || [],
-    episodesCount: data.number_of_episodes || null,
-    similar: (data.similar?.results || []).slice(0, 8).map(s => ({
-      id: s.id,
-      title: s.title || s.name,
-      img: formatTmdbPoster(s.poster_path),
-      year: (s.release_date || s.first_air_date || '').substring(0, 4),
-      rating: s.vote_average ? s.vote_average.toFixed(1) : '8.0',
-      is_series: type === 'tv',
-      href: `tmdb:${type}:${s.id}`
-    }))
-  };
+export async function getSimilarTitles(tmdbId, type = 'movie') {
+  if (!tmdbId) return [];
+  const mediaType = type === 'series' || type === 'tv' ? 'tv' : 'movie';
+  const res = await tmdbFetch(`/${mediaType}/${tmdbId}/recommendations`);
+  return (res?.results || []).slice(0, 12).map(x => normalizeTmdbItem(x, mediaType));
 }

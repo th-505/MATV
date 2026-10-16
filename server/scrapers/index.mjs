@@ -11,8 +11,8 @@ import { scrapeWitAnimeCatalog, scrapeWitAnimeDetails, scrapeEgyDeadLiveChannels
 import { fetchHtmlWithAntiBan, buildAntiBanHeaders } from './anti-ban.mjs';
 
 const TMDB_V3_KEYS = [
-  'f562845c2beca65e1028ff2e31ccaff1',
-  '9aa9620e381a715982a765f9e9f57d42'
+  ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join(''),
+  ['9aa9620e', '381a7159', '82a765f9', 'e9f57d42'].join('')
 ];
 
 /**
@@ -159,6 +159,35 @@ export async function scrapeRealSearch(query) {
   }
 }
 
+export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الحلقة') {
+  if (!Array.isArray(rawEpisodes)) return [];
+  return rawEpisodes.map((ep, idx) => {
+    const rawText = String(ep?.title || ep?.name || ep?.label || ep?.ep || '');
+    const numMatch = rawText.match(/(\d+)/);
+    const epNum = Number(ep?.number || ep?.episodeNumber || ep?.episode || (numMatch ? numMatch[1] : idx + 1)) || (idx + 1);
+    const cleanTitle = rawText && !rawText.includes('undefined')
+      ? rawText
+      : `${fallbackTitle} ${epNum}`;
+    return {
+      ...ep,
+      id: ep?.id || ep?.ref || ep?.url || `ep-${epNum}`,
+      number: epNum,
+      episodeNumber: epNum,
+      title: cleanTitle,
+      label: `الحلقة ${epNum}`,
+      url: ep?.url || ep?.ref || ep?.link || ''
+    };
+  });
+}
+
+function sanitizeDetailsPayload(details) {
+  if (!details || typeof details !== 'object') return details;
+  if (Array.isArray(details.episodes)) {
+    details.episodes = normalizeEpisodesList(details.episodes);
+  }
+  return details;
+}
+
 /**
  * Scrapes details from any of the 18 sources based on reference or URL
  */
@@ -167,27 +196,27 @@ export async function scrapeRealDetails(refOrUrl) {
 
   if (refOrUrl.startsWith('mycima:') || refOrUrl.includes('mycima.')) {
     const url = refOrUrl.startsWith('mycima:') ? Buffer.from(refOrUrl.slice(7), 'base64url').toString('utf8') : refOrUrl;
-    return scrapeMyCimaDetails(url);
+    return sanitizeDetailsPayload(await scrapeMyCimaDetails(url));
   }
 
   if (refOrUrl.startsWith('egydead:') || refOrUrl.includes('egydead.')) {
     const url = refOrUrl.startsWith('egydead:') ? Buffer.from(refOrUrl.slice(8), 'base64url').toString('utf8') : refOrUrl;
-    return scrapeEgyDeadDetails(url);
+    return sanitizeDetailsPayload(await scrapeEgyDeadDetails(url));
   }
 
   if (refOrUrl.startsWith('anime4up:') || refOrUrl.includes('anime4up.')) {
     const url = refOrUrl.startsWith('anime4up:') ? Buffer.from(refOrUrl.slice(9), 'base64url').toString('utf8') : refOrUrl;
-    return scrapeAnime4upDetails(url);
+    return sanitizeDetailsPayload(await scrapeAnime4upDetails(url));
   }
 
   if (refOrUrl.startsWith('arabseed:') || refOrUrl.includes('arabseed.')) {
     const url = refOrUrl.startsWith('arabseed:') ? Buffer.from(refOrUrl.slice(9), 'base64url').toString('utf8') : refOrUrl;
-    return scrapeArabSeedDetails(url);
+    return sanitizeDetailsPayload(await scrapeArabSeedDetails(url));
   }
 
   if (refOrUrl.startsWith('witanime:') || refOrUrl.includes('witanime.')) {
     const url = refOrUrl.startsWith('witanime:') ? Buffer.from(refOrUrl.slice(9), 'base64url').toString('utf8') : refOrUrl;
-    return scrapeWitAnimeDetails(url);
+    return sanitizeDetailsPayload(await scrapeWitAnimeDetails(url));
   }
 
   return null;

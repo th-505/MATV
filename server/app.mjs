@@ -182,9 +182,15 @@ function normalizeCatalog(items = []) {
 function wrapEpisodes(episodes = []) {
   return episodes.map((episode, index) => {
     const raw = episode.link || episode.url || episode.href || "";
+    const rawTitle = String(episode.title || episode.name || episode.label || "");
+    const numMatch = rawTitle.match(/(\d+)/);
+    const epNum = Number(episode.num || episode.number || episode.episodeNumber || (numMatch ? numMatch[1] : index + 1)) || (index + 1);
     return {
       ...episode,
-      num: Number(episode.num || episode.number || index + 1),
+      num: epNum,
+      number: epNum,
+      episodeNumber: epNum,
+      title: rawTitle && !rawTitle.includes("undefined") ? rawTitle : `الحلقة ${epNum}`,
       link: raw ? `legacy:${encodeURIComponent(String(raw))}` : "",
       watch_available: episode.watch_available !== false && Boolean(raw),
     };
@@ -460,6 +466,30 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
+      if (url.pathname === "/api/v1/resolve") {
+        const ref = (url.searchParams.get("ref") || url.searchParams.get("id") || "").trim();
+        const servers = [];
+        if (ref && !ref.startsWith("tmdb:")) {
+          try {
+            const details = ref.startsWith("laroza:")
+              ? await larozaRuntime.details(ref, {})
+              : ref.startsWith("alooy:")
+              ? await alooyRuntime.details(ref, {})
+              : ref.startsWith("3isk:")
+              ? await iskRuntime.details(ref, {})
+              : await cinemaDetails(ref);
+            const sources = details?.media_sources || details?.servers || [];
+            for (const s of sources) {
+              const u = s.url || s.media_path;
+              if (u) servers.push({ provider: s.provider || details?.source || "akwam", url: u, headers: s.headers || {} });
+            }
+            if (details?.media_src) {
+              servers.push({ provider: details?.source || "akwam", url: details.media_src, headers: {} });
+            }
+          } catch (_) {}
+        }
+        return sendJson(req, res, 200, { status: "success", servers });
+      }
       if (url.pathname === "/api/v1/category") {
         const ref = url.searchParams.get('ref') || '';
         if (Object.hasOwn(LAROZA_CATEGORIES,ref)) {

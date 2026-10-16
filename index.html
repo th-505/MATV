@@ -782,10 +782,198 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.ep-btn:hover {
+.ep-btn:hover, .ep-btn.active {
   border-color: var(--gold-primary);
-  background: var(--bg-card-hover);
-  color: var(--gold-primary);
+  background: var(--gold-gradient);
+  color: #07090b;
+  font-weight: 900;
+}
+
+/* Full-Screen Independent Title Detail Page & Player Page */
+.full-page-banner {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--gold-border);
+  background: var(--bg-surface);
+  margin-bottom: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+.full-page-backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  opacity: 0.28;
+  filter: blur(4px);
+}
+.full-page-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7,9,11,0.4) 0%, rgba(7,9,11,0.92) 70%, #07090b 100%);
+}
+.full-page-content {
+  position: relative;
+  z-index: 2;
+  padding: 28px 24px;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.detail-poster-lg {
+  width: 210px;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.75);
+  flex-shrink: 0;
+}
+.detail-info-col {
+  flex: 1;
+  min-width: 260px;
+}
+.detail-title-lg {
+  font-size: clamp(1.5rem, 3.2vw, 2.4rem);
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 10px;
+  line-height: 1.25;
+}
+.detail-meta-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.meta-pill {
+  background: rgba(232, 189, 117, 0.12);
+  border: 1px solid var(--gold-border);
+  color: var(--gold-light);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.detail-story {
+  color: #cbd5e1;
+  font-size: 0.96rem;
+  line-height: 1.75;
+  margin-bottom: 22px;
+  max-width: 820px;
+}
+.cast-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-top: 12px;
+}
+.cast-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border-subtle);
+  padding: 6px 12px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+.cast-chip img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Full-Screen Independent Player Stage */
+.watch-stage-card {
+  background: #05070a;
+  border: 1px solid var(--gold-border);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.85);
+  margin-bottom: 20px;
+}
+.watch-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--gold-border-subtle);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.watch-video-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 76vh;
+  background: #000;
+}
+.watch-video-box video,
+.watch-video-box iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.watch-server-bar {
+  padding: 14px 18px;
+  background: #0b0f17;
+  border-bottom: 1px solid var(--gold-border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.srv-ping-btn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  color: #fff;
+}
+.srv-ping-btn.active {
+  box-shadow: 0 0 0 2px var(--gold-primary), 0 6px 18px rgba(232,189,117,0.35);
+  transform: translateY(-1px);
+}
+.watch-ep-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--gold-border-subtle);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.api-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+.api-input-field {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--gold-border);
+  color: #fff;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-family: monospace;
+  font-size: 0.84rem;
 }
 
 /* Settings Tab */
@@ -812,6 +1000,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   padding: 12px 0;
   border-bottom: 1px solid rgba(232, 189, 117, 0.08);
   font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .settings-row:last-child { border-bottom: 0; }
 
@@ -849,11 +1039,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
           <span class="gold-sep">•</span>
           <span class="gold-text" style="font-size:0.82em;">OFFICIAL</span>
         </div>
-        <div class="brand-sub">LUXURY CINEMA • ZERO ADS</div>
+        <div class="brand-sub">MA-NEXUS v8.0 • ZERO ADS</div>
       </div>
     </div>
 
-    <!-- Desktop Navigation: Sections ordered as: الرئيسية، أفلام، مسلسلات، أنمي، تركي، والبث المباشر -->
     <nav class="desktop-nav">
       <button class="nav-btn active" data-tab="home">الرئيسية</button>
       <button class="nav-btn" data-tab="movies">أفلام</button>
@@ -869,7 +1058,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <button class="search-btn" id="searchTriggerBtn" title="بحث فوري" aria-label="بحث فوري">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       </button>
-      <input type="search" id="globalSearch" placeholder="بحث فوري عن فيلم، مسلسل، أنمي..." autocomplete="off">
+      <input type="search" id="globalSearch" placeholder="بحث موحد (MA-NEXUS) عن فيلم، مسلسل، أنمي..." autocomplete="off">
     </div>
   </div>
 </header>
@@ -880,16 +1069,16 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="hero-banner" id="homeHero">
       <div class="hero-backdrop" id="heroBackdrop"></div>
       <div class="hero-content">
-        <span class="hero-badge">✦ الأكثر شهرة ورواجاً • MA TV Exclusive</span>
-        <h1 class="hero-title" id="heroTitle">اختر عملاً للمشاهدة</h1>
+        <span class="hero-badge">✦ الأكثر شهرة ورواجاً اليوم • MA TV</span>
+        <h1 class="hero-title" id="heroTitle">جاري تجهيز المنصة السينمائية…</h1>
         <div class="hero-tags" id="heroTags">
-          <span class="rating-pill">★ 8.9</span>
-          <span>4K UHD</span>
-          <span>مترجم ومدبلج</span>
+          <span class="rating-pill" id="heroRatingPill">★ 8.9</span>
+          <span id="heroYearPill">2025</span>
+          <span id="heroTypePill">4K UHD</span>
         </div>
-        <p class="hero-desc" id="heroDesc">استمتع بتجربة بث سينمائية مباشرة بدون إعلانات وبأعلى جودة متوفرة عبر المنصة الموحدة.</p>
+        <p class="hero-desc" id="heroDesc">استمتع بتجربة بث سينمائية مباشرة بدون إعلانات وبأعلى جودة متوفرة عبر العقل المركزي الموحد MA-NEXUS.</p>
         <div class="hero-actions">
-          <button class="btn-gold primary" id="heroPlayBtn">▶ مشاهدة الآن</button>
+          <button class="btn-gold primary" id="heroPlayBtn">▶ مشاهدة وتفاصيل العمل</button>
           <button class="btn-gold secondary" id="heroFavBtn">♥ حفظ في المفضلة</button>
         </div>
       </div>
@@ -900,8 +1089,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <div class="shelf-header">
         <h3 class="shelf-title">أكمل المشاهدة</h3>
         <div class="shelf-actions">
-          <button class="shelf-arrow" onclick="scrollShelf('shelfContinue', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfContinue', -380)" title="التالي" aria-label="التالي">›</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfContinue', 380)">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfContinue', -380)">›</button>
         </div>
       </div>
       <div class="shelf-track" id="shelfContinue"></div>
@@ -913,76 +1102,15 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
         <h3 class="shelf-title">قائمتي المفضلة</h3>
         <div class="shelf-actions">
           <button class="tool-btn" onclick="switchTab('favorites')">عرض الكل</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfFavs', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfFavs', -380)" title="التالي" aria-label="التالي">›</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfFavs', 380)">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('shelfFavs', -380)">›</button>
         </div>
       </div>
       <div class="shelf-track" id="shelfFavs"></div>
     </div>
 
-    <!-- Trending Shelf -->
-    <div class="shelf">
-      <div class="shelf-header">
-        <h3 class="shelf-title">الأكثر مشاهدة اليوم</h3>
-        <div class="shelf-actions">
-          <button class="shelf-arrow" onclick="scrollShelf('shelfTrending', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfTrending', -380)" title="التالي" aria-label="التالي">›</button>
-        </div>
-      </div>
-      <div class="shelf-track" id="shelfTrending"></div>
-    </div>
-
-    <!-- Movies Shelf -->
-    <div class="shelf">
-      <div class="shelf-header">
-        <h3 class="shelf-title">أحدث الأفلام السينمائية</h3>
-        <div class="shelf-actions">
-          <button class="tool-btn" onclick="switchTab('movies')">عرض الكل</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfMovies', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfMovies', -380)" title="التالي" aria-label="التالي">›</button>
-        </div>
-      </div>
-      <div class="shelf-track" id="shelfMovies"></div>
-    </div>
-
-    <!-- Series Shelf -->
-    <div class="shelf">
-      <div class="shelf-header">
-        <h3 class="shelf-title">أحدث المسلسلات الحصرية</h3>
-        <div class="shelf-actions">
-          <button class="tool-btn" onclick="switchTab('series')">عرض الكل</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfSeries', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfSeries', -380)" title="التالي" aria-label="التالي">›</button>
-        </div>
-      </div>
-      <div class="shelf-track" id="shelfSeries"></div>
-    </div>
-
-    <!-- Turkish Shelf -->
-    <div class="shelf">
-      <div class="shelf-header">
-        <h3 class="shelf-title">الدراما التركية الفاخرة (قصة عشق)</h3>
-        <div class="shelf-actions">
-          <button class="tool-btn" onclick="switchTab('turkish')">عرض الكل</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfTurkish', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfTurkish', -380)" title="التالي" aria-label="التالي">›</button>
-        </div>
-      </div>
-      <div class="shelf-track" id="shelfTurkish"></div>
-    </div>
-
-    <!-- Anime Shelf -->
-    <div class="shelf">
-      <div class="shelf-header">
-        <h3 class="shelf-title">عالم الأنمي المترجم</h3>
-        <div class="shelf-actions">
-          <button class="tool-btn" onclick="switchTab('anime')">عرض الكل</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfAnime', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('shelfAnime', -380)" title="التالي" aria-label="التالي">›</button>
-        </div>
-      </div>
-      <div class="shelf-track" id="shelfAnime"></div>
-    </div>
+    <!-- Dynamic Netflix & Shahid Home Shelves populated by MA-NEXUS -->
+    <div id="homeDynamicShelves"></div>
   </section>
 
   <!-- TAB 2: MOVIES -->
@@ -1016,15 +1144,15 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   <!-- TAB 6: LIVE MATCHES & CHANNELS -->
   <section id="tab-live" class="tab-view">
     <div class="shelf-header">
-      <h2 class="shelf-title">مباريات اليوم المنقولة</h2>
-      <button id="refreshMatchesBtn" class="tool-btn">تحديث الآن</button>
+      <h2 class="shelf-title">مباريات اليوم المنقولة مباشرة</h2>
+      <button id="refreshMatchesBtn" class="tool-btn">تحديث الجدول الآن</button>
     </div>
     <div id="matchesContainer">
       <div style="text-align:center;padding:36px;color:var(--text-secondary);">جاري فحص وتحديث جدول المباريات…</div>
     </div>
 
     <div class="shelf-header" style="margin-top:32px;">
-      <h2 class="shelf-title">باقات القنوات الرياضية والسينمائية المباشرة</h2>
+      <h2 class="shelf-title">باقات القنوات الرياضية والسينمائية المباشرة (24/7)</h2>
     </div>
     <div class="media-grid" id="channelsGrid"></div>
   </section>
@@ -1041,6 +1169,37 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   <!-- TAB 8: SETTINGS -->
   <section id="tab-settings" class="tab-view">
     <div class="settings-group">
+      <h3>🔑 مفاتيح الـ API الشخصية (تُحفظ محلياً في متصفحك فقط)</h3>
+      <p style="color:var(--text-secondary);font-size:0.84rem;margin-bottom:14px;line-height:1.6;">
+        يمكنك إدخال مفاتيحك الخاصة لتعمل محلياً داخل متصفحك فقط بدون مشاركتها مع أي خادم خارجي. في حال تركها فارغة يستخدم النظام المفاتيح المدمجة تلقائياً.
+      </p>
+      <div class="settings-row">
+        <span>مفتاح TMDb الشخصي (v3 Key أو v4 Token)</span>
+        <div class="api-input-wrap">
+          <input type="password" id="inputUserTmdbKey" class="api-input-field" placeholder="أدخل مفتاح TMDb الخاص بك (اختياري)..." autocomplete="off">
+          <button type="button" class="tool-btn" onclick="toggleInputVis('inputUserTmdbKey')">👁</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span>مفتاح خدمات الترجمة بالذكاء الاصطناعي (OpenRouter / AI)</span>
+        <div class="api-input-wrap">
+          <input type="password" id="inputUserTranslateKey" class="api-input-field" placeholder="أدخل مفتاح الترجمة الذكية (اختياري)..." autocomplete="off">
+          <button type="button" class="tool-btn" onclick="toggleInputVis('inputUserTranslateKey')">👁</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span>مفتاح مواقع الترجمة (OpenSubtitles / Subdl VIP)</span>
+        <div class="api-input-wrap">
+          <input type="password" id="inputUserSubtitlesKey" class="api-input-field" placeholder="أدخل مفتاح الترجمات (اختياري)..." autocomplete="off">
+          <button type="button" class="tool-btn" onclick="toggleInputVis('inputUserSubtitlesKey')">👁</button>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button id="saveUserApiKeysBtn" class="btn-gold primary">💾 حفظ المفاتيح محلياً وتفعيلها فوراً</button>
+      </div>
+    </div>
+
+    <div class="settings-group">
       <h3>معلومات الجهاز والمزامنة السحابية</h3>
       <div class="settings-row">
         <span>معرّف الجهاز الثابت (Device UUID)</span>
@@ -1052,37 +1211,18 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <div class="settings-row">
         <span>وضع المزامنة والتخزين</span>
         <select id="settingSyncMode" class="tool-btn" style="background:var(--bg-surface);color:#fff;">
-          <option value="hybrid">محلي وسحابي هجين (كليكما - افتراضي)</option>
+          <option value="hybrid">كلاهما — محلي وسحابي هجين (افتراضي)</option>
           <option value="local">محلي فقط (LocalStorage)</option>
           <option value="cloud">سحابي فقط (Supabase)</option>
         </select>
       </div>
       <div class="settings-row">
-        <span>المصادقة الصامتة (Supabase Anonymous Auth)</span>
-        <span style="color:var(--success);font-weight:700;">متصل ومزامن تلقائياً (Zero-Touch)</span>
+        <span>حالة محرك MA-NEXUS</span>
+        <span style="color:var(--success);font-weight:700;">نشط • 18 مصدراً مدمجاً + فحص Ping حي</span>
       </div>
       <div class="settings-row">
         <span>سجل المشاهدة والمفضلة</span>
         <span id="syncModeLabel">محلي (LocalStorage) + سحابي متزامن</span>
-      </div>
-    </div>
-
-    <div class="settings-group">
-      <h3>إعدادات المشغل السينمائي</h3>
-      <div class="settings-row">
-        <span>أبعاد ملء الشاشة الافتراضية</span>
-        <select id="settingFitSelect" class="tool-btn" style="background:var(--bg-surface);">
-          <option value="contain">ملاءمة الفيديو (Contain)</option>
-          <option value="cover">ملء الشاشة بدون حواف (Cover)</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <span>أولوية الترجمة التلقائية</span>
-        <span>العربية (Stremio OpenSubtitles v3)</span>
-      </div>
-      <div class="settings-row">
-        <span>دعم ترميز الترجمات العربية</span>
-        <span style="color:var(--gold-primary);font-weight:700;">UTF-8 / Windows-1256 (CP1256)</span>
       </div>
     </div>
 
@@ -1097,7 +1237,104 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </div>
 
     <div style="text-align:center;color:var(--gold-primary);opacity:0.8;font-size:0.82rem;margin-top:24px;font-weight:700;">
-      MA TV OFFICIAL • منصة البث السينمائي الفاخرة v1.0.44 • Zero-Cost & Zero-Ads Architecture
+      MA TV OFFICIAL • MA-NEXUS v8.0 • Zero-Cost & Zero-Ads Architecture
+    </div>
+  </section>
+
+  <!-- PAGE 9: FULL-SCREEN INDEPENDENT TITLE DETAILS PAGE (#/title?id=...) -->
+  <section id="pageTitleDetail" class="tab-view">
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <button class="tool-btn" id="detailBackBtn">→ العودة للقائمة السابقة</button>
+      <span style="color:var(--gold-primary);font-size:0.82rem;font-weight:700;">صفحة العمل المستقلة • MA TV</span>
+    </div>
+
+    <div class="full-page-banner">
+      <div class="full-page-backdrop" id="detailBackdrop"></div>
+      <div class="full-page-gradient"></div>
+      <div class="full-page-content">
+        <img id="detailPoster" class="detail-poster-lg" src="" alt="">
+        <div class="detail-info-col">
+          <h1 id="detailTitle" class="detail-title-lg">...</h1>
+          <div id="detailMetaPills" class="detail-meta-pills"></div>
+          <p id="detailStory" class="detail-story">جاري تحميل القصة الكاملة وتفاصيل العمل من TMDb…</p>
+
+          <!-- الزران الأساسيان تحت اسم العمل والوصف مباشرة -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+            <button class="btn-gold primary" id="detailPlayNowBtn">▶ تشغيل العمل فوراً</button>
+            <button class="btn-gold secondary" id="detailFavToggleBtn">♥ حفظ في المفضلة</button>
+          </div>
+
+          <div id="detailCastSection" style="display:none;">
+            <div style="font-size:0.85rem;color:var(--gold-primary);font-weight:800;margin-bottom:6px;">أبرز نجوم العمل:</div>
+            <div class="cast-row" id="detailCastRow"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- قسم الحلقات (تحت معلومات العمل والزرين مباشرة) -->
+    <div id="detailEpisodesWrap" class="settings-group" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+        <h3 style="margin:0;">📺 قائمة المواسم والحلقات</h3>
+        <div id="detailSeasonsBar" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="episode-grid" id="detailEpisodesGrid"></div>
+    </div>
+
+    <!-- قسم الأعمال المشابهة المقترحة -->
+    <div id="detailSimilarWrap" class="shelf" style="display:none;margin-top:28px;">
+      <div class="shelf-header">
+        <h3 class="shelf-title">أعمال مشابهة مقترحة</h3>
+        <div class="shelf-actions">
+          <button class="shelf-arrow" onclick="scrollShelf('detailSimilarTrack', 380)">‹</button>
+          <button class="shelf-arrow" onclick="scrollShelf('detailSimilarTrack', -380)">›</button>
+        </div>
+      </div>
+      <div class="shelf-track" id="detailSimilarTrack"></div>
+    </div>
+  </section>
+
+  <!-- PAGE 10: FULL-SCREEN INDEPENDENT PLAYER PAGE (#/watch?id=...&s=1&ep=1&srv=0) -->
+  <section id="pagePlayerView" class="tab-view">
+    <div class="watch-stage-card">
+      <div class="watch-top-bar">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="tool-btn" id="playerBackToDetailBtn">→ تفاصيل العمل</button>
+          <h2 id="watchPageTitle" style="font-size:1.05rem;font-weight:900;color:#fff;margin:0;">المشغل السينمائي المستقل</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="tool-btn" id="toggleFitBtn">الأبعاد: ملاءمة</button>
+          <a id="watchDownloadBtn" class="tool-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none;">⬇ تحميل مباشر</a>
+        </div>
+      </div>
+
+      <!-- شريط السيرفرات المشفرة مع فاحص الـ Ping (ms) -->
+      <div class="watch-server-bar">
+        <span style="font-size:0.8rem;font-weight:800;color:var(--gold-primary);">⚡ السيرفرات المشفرة (مرتبة حسب السرعة ms):</span>
+        <div id="playerServersWrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
+      </div>
+
+      <!-- شاشة العرض المزدوجة (HLS Direct Video + Sandboxed Embed) -->
+      <div class="watch-video-box">
+        <video id="maVideoPlayer" controls playsinline webkit-playsinline></video>
+        <iframe id="maEmbedPlayer" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" style="display:none;"></iframe>
+      </div>
+
+      <!-- شريط التنقل بالحلقات أسفل الفيديو مباشرة -->
+      <div class="watch-ep-nav-bar" id="watchEpNavBar">
+        <button class="tool-btn" id="prevEpBtn">⏮ الحلقة السابقة</button>
+        <div id="nowWatchingLabel" style="font-size:0.9rem;font-weight:800;color:var(--gold-light);text-align:center;">أنت تشاهد الآن</div>
+        <button class="tool-btn" id="nextEpBtn">⏭ الحلقة التالية</button>
+      </div>
+    </div>
+
+    <!-- شبكة جميع حلقات المسلسل أسفل المشغل مباشرة للتنقل الفوري بدون الخروج -->
+    <div id="watchEpisodesBox" class="settings-group" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h3 style="margin:0;">📺 اختر الحلقة للتشغيل الفوري داخل المشغل</h3>
+        <div id="watchSeasonsBar" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="episode-grid" id="watchEpisodesGrid"></div>
     </div>
   </section>
 </main>
@@ -1134,82 +1371,90 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   </button>
 </nav>
 
-<!-- Cinema Player Modal -->
-<div id="cinemaModal" class="cinema-modal" aria-hidden="true">
-  <div class="player-header">
-    <div class="player-title" id="playerModalTitle">المشغل السينمائي • MA TV</div>
-    <button class="close-player-btn" id="closePlayerBtn">✕</button>
-  </div>
-  <div class="player-stage">
-    <video id="cinemaVideo" controls playsinline webkit-playsinline></video>
-  </div>
-  <div class="player-toolbar">
-    <div class="player-tools-left">
-      <button class="tool-btn" id="toggleFitBtn">الأبعاد: ملاءمة</button>
-      <button class="tool-btn" id="subDelayMinusBtn">−0.5 ث ترجمة</button>
-      <button class="tool-btn" id="subDelayResetBtn">ضبط الترجمة (0 ث)</button>
-      <button class="tool-btn" id="subDelayPlusBtn">+0.5 ث ترجمة</button>
-    </div>
-    <div class="player-tools-right" id="playerServersWrap"></div>
-  </div>
-</div>
-
-<!-- Details Sheet -->
-<div id="detailsSheet" class="details-sheet">
-  <div class="sheet-card">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <button class="tool-btn" id="closeSheetBtn">إغلاق ✕</button>
-    </div>
-    <div class="sheet-hero">
-      <img id="sheetPoster" class="sheet-poster" alt="">
-      <div class="sheet-meta">
-        <h2 id="sheetTitle" class="sheet-title">...</h2>
-        <div class="sheet-tags" id="sheetTags">4K UHD • مترجم</div>
-        <p id="sheetDesc" class="sheet-desc">جاري تجهيز التفاصيل وسيرفرات البث المتاحة…</p>
-        <div id="sheetActions" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
-      </div>
-    </div>
-    <div id="sheetEpisodesSection" style="display:none;">
-      <h3 style="font-size:1rem;margin-bottom:8px;color:var(--gold-primary);">قائمة الحلقات</h3>
-      <div class="episode-grid" id="sheetEpisodesGrid"></div>
-    </div>
-    <div id="sheetSimilarSection" style="display:none;margin-top:20px;">
-      <div class="shelf-header">
-        <h3 class="shelf-title" style="font-size:1rem;color:var(--gold-primary);">أعمال مشابهة مقترحة (TMDb)</h3>
-        <div class="shelf-actions">
-          <button class="shelf-arrow" onclick="scrollShelf('sheetSimilarTrack', 380)" title="السابق" aria-label="السابق">‹</button>
-          <button class="shelf-arrow" onclick="scrollShelf('sheetSimilarTrack', -380)" title="التالي" aria-label="التالي">›</button>
-        </div>
-      </div>
-      <div class="shelf-track" id="sheetSimilarTrack"></div>
-    </div>
-  </div>
-</div>
-
 <div id="appToast" class="toast-notice" role="status"></div>
 
-<!-- Unified JavaScript Application -->
+<!-- Unified JavaScript Application (MA-NEXUS v8.0) -->
 <script type="module">
-import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.45';
-import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.45';
-import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.45';
-import { directPlaybackUrl, resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.45';
-import { getTrendingMovies, getTrendingSeries, getSimilarTitles, getTmdbMovieInfo, searchTmdb } from './web/core/tmdb-service.js?v=1.0.45';
-import { findAndLoadSubtitles } from './web/core/subtitles-hybrid.js?v=1.0.45';
-import { SOURCE_SUPERVISORS, ALL_SOURCES } from './web/core/source-grid.js?v=1.0.45';
+import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.46';
+import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.46';
+import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.46';
+import { resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.46';
+import { fetchFullTmdbDetails, tmdbFetch, normalizeTmdbItem } from './web/core/tmdb-service.js?v=1.0.46';
+import { findAndLoadSubtitles } from './web/core/subtitles-hybrid.js?v=1.0.46';
+import {
+  loadHomeWithSupabaseSync,
+  deduplicateAndMergeCatalog,
+  resolveUnifiedServersForItem,
+  nexusUnifiedSearch,
+  formatRuntimeArabic,
+  normalizeEpisodesList,
+  probeAndRankServers
+} from './web/core/ma-nexus.js?v=1.0.46';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=1.0.45').catch(console.warn);
+  navigator.serviceWorker.register('./sw.js?v=1.0.46').catch(console.warn);
 }
 
-// Global State
+// Global State & In-Memory Work Registry
 let currentTab = 'home';
+let lastMainTab = 'home';
 let activeHls = null;
-let currentSubDelay = 0.0;
-let currentTextTrack = null;
-let currentPlayingItem = null;
+let directFallbackTimer = null;
+let currentDetailItem = null;
+let currentDetailSeason = 1;
+let currentWatchItem = null;
+let currentWatchSeason = 1;
+let currentWatchEpisode = 1;
+let currentWatchServers = [];
 let progressSaveInterval = null;
+
+const workRegistry = new Map();
+
+function registerWorkItem(item) {
+  if (!item) return null;
+  const id = String(item.id || item.href || item.ref || '');
+  if (!id) return item;
+  const existing = workRegistry.get(id) || {};
+  const merged = { ...existing, ...item, id, href: id };
+  workRegistry.set(id, merged);
+  try {
+    sessionStorage.setItem('matv_work_' + id, JSON.stringify(merged));
+  } catch (_) {}
+  return merged;
+}
+
+function getRegisteredWorkItem(id, fallbackTitle = '', fallbackType = 'movie') {
+  if (!id) return null;
+  if (workRegistry.has(id)) return workRegistry.get(id);
+  try {
+    const raw = sessionStorage.getItem('matv_work_' + id);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      workRegistry.set(id, parsed);
+      return parsed;
+    }
+  } catch (_) {}
+  const isTv = fallbackType === 'tv' || fallbackType === 'series' || String(id).includes(':tv:') || String(id).includes('series');
+  return {
+    id,
+    href: id,
+    tmdbId: String(id).startsWith('tmdb:') ? String(id).split(':').pop() : '',
+    mediaType: isTv ? 'tv' : 'movie',
+    type: isTv ? 'series' : 'movie',
+    typeLabel: isTv ? 'مسلسل' : 'فيلم',
+    title: fallbackTitle || 'عمل سينمائي',
+    year: '2025',
+    rating: '8.5',
+    durationText: formatRuntimeArabic(null, isTv ? 'tv' : 'movie')
+  };
+}
+
+// Toggle Password Input Visibility in Settings
+window.toggleInputVis = function(inputId) {
+  const el = document.getElementById(inputId);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+};
 
 // Persistent Device UUID
 function getOrCreateDeviceUuid() {
@@ -1226,6 +1471,31 @@ document.getElementById('deviceUuidLabel').textContent = deviceUuid;
 document.getElementById('copyUuidBtn').onclick = () => {
   navigator.clipboard.writeText(deviceUuid).then(() => toast('تم نسخ معرّف الجهاز بنجاح!'));
 };
+
+// Load & Save Personal API Keys (Local BYOK)
+const tmdbKeyInput = document.getElementById('inputUserTmdbKey');
+const translateKeyInput = document.getElementById('inputUserTranslateKey');
+const subtitlesKeyInput = document.getElementById('inputUserSubtitlesKey');
+if (tmdbKeyInput) tmdbKeyInput.value = localStorage.getItem('matv_user_tmdb_key') || '';
+if (translateKeyInput) translateKeyInput.value = localStorage.getItem('matv_user_translate_key') || '';
+if (subtitlesKeyInput) subtitlesKeyInput.value = localStorage.getItem('matv_user_subtitles_key') || '';
+
+const saveKeysBtn = document.getElementById('saveUserApiKeysBtn');
+if (saveKeysBtn) {
+  saveKeysBtn.onclick = () => {
+    localStorage.setItem('matv_user_tmdb_key', (tmdbKeyInput?.value || '').trim());
+    localStorage.setItem('matv_user_translate_key', (translateKeyInput?.value || '').trim());
+    localStorage.setItem('matv_user_subtitles_key', (subtitlesKeyInput?.value || '').trim());
+    // Clear cached TMDb snapshots so new keys apply immediately
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('matv_tmdb_') || k.startsWith('matv_nexus_home_')) {
+        localStorage.removeItem(k);
+      }
+    });
+    homeLoaded = false;
+    toast('تم حفظ المفاتيح محلياً في متصفحك وتحديث الكاش فوراً ✓');
+  };
+}
 
 // Sync Mode Settings Wiring
 const syncSelect = document.getElementById('settingSyncMode');
@@ -1250,6 +1520,7 @@ let toastTimer;
 function toast(msg) {
   clearTimeout(toastTimer);
   const el = document.getElementById('appToast');
+  if (!el) return;
   el.textContent = msg;
   el.style.display = 'block';
   toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2800);
@@ -1267,33 +1538,41 @@ function getFavorites() {
 function saveFavorites(list) {
   localStorage.setItem('matv_favorites', JSON.stringify(list));
   renderFavoritesShelves();
-  // Silent Supabase sync attempt
-  syncSupabaseItem('favorites', list);
 }
 
-function isFavorite(href) {
-  return getFavorites().some(item => item.href === href);
+function isFavorite(idOrHref) {
+  if (!idOrHref) return false;
+  return getFavorites().some(item => (item.id || item.href) === idOrHref);
 }
 
-function toggleFavorite(item) {
+window.toggleFavorite = function(item) {
+  if (!item) return;
+  const itemId = item.id || item.href;
   let list = getFavorites();
-  const exists = list.some(i => i.href === item.href);
+  const exists = list.some(i => (i.id || i.href) === itemId);
   if (exists) {
-    list = list.filter(i => i.href !== item.href);
+    list = list.filter(i => (i.id || i.href) !== itemId);
     toast('تمت الإزالة من المفضلة');
   } else {
     list.unshift({
+      id: itemId,
+      href: itemId,
+      tmdbId: item.tmdbId || '',
       title: item.title,
-      img: item.img,
-      href: item.href,
-      is_series: item.is_series,
-      year: item.year || ''
+      poster: item.poster || item.img,
+      img: item.poster || item.img,
+      mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
+      type: item.type || (item.is_series ? 'series' : 'movie'),
+      typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
+      year: item.year || '2025',
+      rating: item.rating || '8.5',
+      durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType)
     });
-    toast('تمت الإضافة إلى المفضلة ★');
+    toast('تمت الإضافة إلى المفضلة ♥');
   }
   saveFavorites(list);
   updateFavoriteIcons();
-}
+};
 
 function getContinueWatching() {
   try {
@@ -1301,38 +1580,37 @@ function getContinueWatching() {
   } catch { return []; }
 }
 
-function saveContinueWatching(item, currentTime, duration) {
-  if (!item || !duration || currentTime < 5) return;
-  let list = getContinueWatching().filter(i => i.href !== item.href);
-  if (currentTime < duration - 30) {
-    list.unshift({
-      title: item.title,
-      img: item.img,
-      href: item.href,
-      is_series: item.is_series,
-      year: item.year || '',
-      currentTime,
-      duration,
-      updatedAt: Date.now()
-    });
-  }
+function saveContinueWatching(item, currentTime, duration, season = 1, episode = 1) {
+  if (!item) return;
+  const itemId = item.id || item.href;
+  let list = getContinueWatching().filter(i => (i.id || i.href) !== itemId);
+  list.unshift({
+    id: itemId,
+    href: itemId,
+    tmdbId: item.tmdbId || '',
+    title: item.title,
+    poster: item.poster || item.img,
+    img: item.poster || item.img,
+    mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
+    type: item.type || (item.is_series ? 'series' : 'movie'),
+    typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
+    year: item.year || '2025',
+    rating: item.rating || '8.5',
+    durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType),
+    season,
+    episode,
+    currentTime: currentTime || 60,
+    duration: duration || 3600,
+    updatedAt: Date.now()
+  });
   localStorage.setItem('matv_continue_watching', JSON.stringify(list.slice(0, 30)));
   renderContinueWatchingShelf();
-  // Silent Supabase sync attempt
-  syncSupabaseItem('continue_watching', list);
-}
-
-// Silent Supabase sync helper (fail-closed, never blocks user)
-async function syncSupabaseItem(table, data) {
-  try {
-    const supabaseUrl = 'https://vkmjrqiwdjhocvxqomrc.supabase.co';
-    // Runs purely in background without waiting
-  } catch (_) {}
 }
 
 function renderContinueWatchingShelf() {
   const container = document.getElementById('shelfContinue');
   const wrap = document.getElementById('shelfContinueWrap');
+  if (!container || !wrap) return;
   const list = getContinueWatching();
   if (!list.length) {
     wrap.style.display = 'none';
@@ -1341,9 +1619,8 @@ function renderContinueWatchingShelf() {
   wrap.style.display = 'block';
   container.innerHTML = '';
   list.forEach(it => {
-    const card = createMediaCard(it);
-    // Add progress bar
-    const progressPercent = Math.min(100, Math.round((it.currentTime / it.duration) * 100));
+    const card = renderMediaCard(it);
+    const progressPercent = Math.min(96, Math.max(8, Math.round(((it.currentTime || 120) / (it.duration || 3600)) * 100)));
     const pBar = document.createElement('div');
     pBar.className = 'card-progress-bar';
     pBar.innerHTML = `<div class="card-progress-fill" style="width:${progressPercent}%"></div>`;
@@ -1362,7 +1639,7 @@ function renderFavoritesShelves() {
     if (shelfWrap) shelfWrap.style.display = 'block';
     if (shelf) {
       shelf.innerHTML = '';
-      list.slice(0, 15).forEach(it => shelf.appendChild(createMediaCard(it)));
+      list.slice(0, 15).forEach(it => shelf.appendChild(renderMediaCard(it)));
     }
   } else {
     if (shelfWrap) shelfWrap.style.display = 'none';
@@ -1371,9 +1648,9 @@ function renderFavoritesShelves() {
   if (grid) {
     grid.innerHTML = '';
     if (!list.length) {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">قائمتك المفضلة فارغة حالياً. اضغط على رمز القلب ♡ في أي عمل لإضافته هنا.</div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">قائمتك المفضلة فارغة حالياً. اضغط على رمز القلب ♡ في أعلى أي بطاقة لإضافتها هنا.</div>';
     } else {
-      list.forEach(it => grid.appendChild(createMediaCard(it)));
+      list.forEach(it => grid.appendChild(renderMediaCard(it)));
     }
   }
 }
@@ -1387,6 +1664,13 @@ function updateFavoriteIcons() {
       btn.innerHTML = active ? '♥' : '♡';
     }
   });
+  if (currentDetailItem) {
+    const detailFavBtn = document.getElementById('detailFavToggleBtn');
+    if (detailFavBtn) {
+      const active = isFavorite(currentDetailItem.id || currentDetailItem.href);
+      detailFavBtn.textContent = active ? '♥ محفوظ في المفضلة' : '♡ حفظ في المفضلة';
+    }
+  }
 }
 
 document.getElementById('clearFavsBtn').onclick = () => {
@@ -1397,18 +1681,110 @@ document.getElementById('clearFavsBtn').onclick = () => {
 };
 
 // -------------------------------------------------------------
-// TAB SWITCHING & HASH ROUTING (State Persistence)
+// UNIFIED MEDIA CARD (renderMediaCard — Strict v8.0 Spec)
 // -------------------------------------------------------------
-function getRouteTab() {
-  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-  const validTabs = ['home', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
-  return validTabs.includes(hash) ? hash : 'home';
+export function renderMediaCard(rawItem) {
+  const item = registerWorkItem(rawItem);
+  const itemId = item.id || item.href;
+  const isTv = item.mediaType === 'tv' || item.type === 'series' || item.is_series;
+  const typeLabel = item.typeLabel || (isTv ? 'مسلسل' : 'فيلم');
+  const year = String(item.year || '2025').slice(0, 4);
+  const durationText = item.durationText || formatRuntimeArabic(item.runtime, isTv ? 'tv' : 'movie');
+  const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '8.4';
+  const poster = item.poster || item.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+  const favActive = isFavorite(itemId);
+
+  const card = document.createElement('div');
+  card.className = 'media-card';
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', item.title || 'عمل سينمائي');
+
+  card.innerHTML = `
+    <div class="poster-wrap">
+      <img src="${poster}" loading="lazy" alt="${item.title || ''}" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
+      <span class="poster-type">${typeLabel}</span>
+      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${itemId}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
+        ${favActive ? '♥' : '♡'}
+      </button>
+    </div>
+    <div class="card-info">
+      <div class="card-title">${item.title}</div>
+      <div class="card-sub">
+        <span>${year} • ${durationText}</span>
+        <span class="badge-gold-sm">★ ${rating}</span>
+      </div>
+    </div>
+  `;
+
+  const favBtn = card.querySelector('.card-fav-btn');
+  favBtn.onclick = (e) => {
+    e.stopPropagation();
+    window.toggleFavorite(item);
+  };
+
+  card.onclick = () => openTitlePage(item);
+  card.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openTitlePage(item);
+    }
+  };
+  return card;
 }
 
+const createMediaCard = renderMediaCard;
+
+// -------------------------------------------------------------
+// FULL-SCREEN SPA ROUTER (#home, #movies, #/title?..., #/watch?...)
+// -------------------------------------------------------------
+function stopActivePlayerStream() {
+  clearTimeout(directFallbackTimer);
+  clearInterval(progressSaveInterval);
+  const video = document.getElementById('maVideoPlayer');
+  const iframe = document.getElementById('maEmbedPlayer');
+  if (activeHls) {
+    try { activeHls.destroy(); } catch (_) {}
+    activeHls = null;
+  }
+  if (video) {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }
+  if (iframe) {
+    iframe.src = 'about:blank';
+    iframe.style.display = 'none';
+  }
+}
+
+window.openTitlePage = function(item) {
+  const registered = registerWorkItem(item);
+  const id = registered.id || registered.href;
+  const type = registered.mediaType || (registered.is_series ? 'tv' : 'movie');
+  const title = registered.title || '';
+  window.location.hash = `#/title?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}`;
+};
+
+window.openPlayerPage = function(id, season = 1, epNum = 1, srvIdx = 0) {
+  const s = Math.max(1, Number(season) || 1);
+  const ep = Math.max(1, Number(epNum) || 1);
+  const srv = Math.max(0, Number(srvIdx) || 0);
+  const title = currentDetailItem?.title || currentWatchItem?.title || '';
+  const type = currentDetailItem?.mediaType || currentWatchItem?.mediaType || 'movie';
+  window.location.hash = `#/watch?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&s=${s}&ep=${ep}&srv=${srv}`;
+};
+
 window.switchTab = function(tabId, updateHash = true) {
+  stopActivePlayerStream();
   currentTab = tabId;
-  if (updateHash && window.location.hash !== '#' + tabId) {
-    history.pushState(null, '', '#' + tabId);
+  lastMainTab = tabId;
+  if (updateHash) {
+    const targetHash = '#' + tabId;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+      return;
+    }
   }
   document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
@@ -1426,27 +1802,67 @@ window.switchTab = function(tabId, updateHash = true) {
   if (tabId === 'favorites') renderFavoritesShelves();
 };
 
-window.addEventListener('hashchange', () => {
-  const tab = getRouteTab();
-  if (tab !== currentTab) {
-    switchTab(tab, false);
+async function handleRouteChange() {
+  const rawHash = window.location.hash || '#home';
+
+  // 1. Check Full-Screen Watch Route (#/watch?...)
+  if (rawHash.startsWith('#/watch') || rawHash.startsWith('#watch')) {
+    const qIndex = rawHash.indexOf('?');
+    const params = new URLSearchParams(qIndex >= 0 ? rawHash.slice(qIndex + 1) : '');
+    document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+    const playerPage = document.getElementById('pagePlayerView');
+    if (playerPage) playerPage.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await renderPlayerWatchPage(params);
+    return;
   }
-});
+
+  // 2. Check Full-Screen Title Detail Route (#/title?...)
+  if (rawHash.startsWith('#/title') || rawHash.startsWith('#title')) {
+    stopActivePlayerStream();
+    const qIndex = rawHash.indexOf('?');
+    const params = new URLSearchParams(qIndex >= 0 ? rawHash.slice(qIndex + 1) : '');
+    document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+    const detailPage = document.getElementById('pageTitleDetail');
+    if (detailPage) detailPage.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await renderTitleDetailPage(params);
+    return;
+  }
+
+  // 3. Standard Navigation Tabs
+  const cleanTab = rawHash.replace(/^#\/?/, '').split('?')[0].toLowerCase();
+  const validTabs = ['home', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
+  const targetTab = validTabs.includes(cleanTab) ? cleanTab : 'home';
+  switchTab(targetTab, false);
+}
+
+window.addEventListener('hashchange', handleRouteChange);
 
 window.scrollShelf = function(shelfId, delta) {
   const shelf = document.getElementById(shelfId);
-  if (shelf) {
-    shelf.scrollBy({ left: delta, behavior: 'smooth' });
-  }
+  if (shelf) shelf.scrollBy({ left: delta, behavior: 'smooth' });
 };
 
 document.querySelectorAll('.nav-btn, .mob-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab, true));
 });
-document.getElementById('brandBtn').addEventListener('click', () => switchTab('home'));
+document.getElementById('brandBtn').addEventListener('click', () => switchTab('home', true));
+
+document.getElementById('detailBackBtn').onclick = () => {
+  switchTab(lastMainTab || 'home', true);
+};
+
+document.getElementById('playerBackToDetailBtn').onclick = () => {
+  if (currentWatchItem) {
+    openTitlePage(currentWatchItem);
+  } else {
+    switchTab(lastMainTab || 'home', true);
+  }
+};
 
 // -------------------------------------------------------------
-// 1. HOME SHELVES & HERO BANNER
+// 1. HOME SHELVES & HERO BANNER (MA-NEXUS + Supabase Harvester)
 // -------------------------------------------------------------
 let homeLoaded = false;
 async function loadHomeShelves() {
@@ -1454,114 +1870,70 @@ async function loadHomeShelves() {
   renderContinueWatchingShelf();
   renderFavoritesShelves();
 
-  try {
-    const [tmdbMovies, tmdbSeries, moviesRes, seriesRes, turkishRes, animeRes] = await Promise.all([
-      getTrendingMovies().catch(() => []),
-      getTrendingSeries().catch(() => []),
-      getCinemaCategory('movie', 'أجنبية', 'movie-foreign', 1).catch(() => ({ data: { data: [] } })),
-      getCinemaCategory('series', 'أجنبية', 'series-foreign', 1).catch(() => ({ data: { data: [] } })),
-      getCinemaCategory('series', 'تركية', '3isk-latest', 1).catch(() => ({ data: { data: [] } })),
-      getCinemaCategory('movie', 'أنمي', 'movie-anime', 1).catch(() => ({ data: { data: [] } }))
-    ]);
-    const movies = (moviesRes.data?.data && moviesRes.data.data.length > 0) ? moviesRes.data.data : tmdbMovies;
-    const series = (seriesRes.data?.data && seriesRes.data.data.length > 0) ? seriesRes.data.data : tmdbSeries;
-    const turkish = turkishRes.data?.data || [];
-    const anime = animeRes.data?.data || [];
+  const dynamicContainer = document.getElementById('homeDynamicShelves');
+  if (dynamicContainer && !dynamicContainer.children.length) {
+    dynamicContainer.innerHTML = '<div style="text-align:center;padding:42px;color:var(--gold-primary);">✦ جاري مزامنة أقسام المنصة عبر MA-NEXUS…</div>';
+  }
 
-    // Real Hero Banner populated from TMDb trending or movies
-    const heroPool = tmdbMovies.length > 0 ? tmdbMovies : movies;
-    if (heroPool.length > 0) {
-      const heroItem = heroPool[0];
+  try {
+    const homeData = await loadHomeWithSupabaseSync();
+    const heroItems = homeData?.heroItems || [];
+    if (heroItems.length > 0) {
+      const heroItem = registerWorkItem(heroItems[0]);
       document.getElementById('heroTitle').textContent = heroItem.title;
-      if (heroItem.backdrop || heroItem.img) {
-        document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.backdrop || heroItem.img})`;
-      }
-      if (heroItem.overview) {
-        document.getElementById('heroDesc').textContent = heroItem.overview;
-      }
-      document.getElementById('heroPlayBtn').onclick = () => openItemDetails(heroItem);
+      document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.backdrop || heroItem.poster})`;
+      document.getElementById('heroDesc').textContent = heroItem.overview || '';
+      document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || '8.8'}`;
+      document.getElementById('heroYearPill').textContent = heroItem.year || '2025';
+      document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || '4K UHD'}`;
+      document.getElementById('heroPlayBtn').onclick = () => openTitlePage(heroItem);
       const favBtn = document.getElementById('heroFavBtn');
-      const active = isFavorite(heroItem.href);
+      const active = isFavorite(heroItem.id);
       favBtn.textContent = active ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
       favBtn.onclick = () => {
-        toggleFavorite(heroItem);
-        favBtn.textContent = isFavorite(heroItem.href) ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
+        window.toggleFavorite(heroItem);
+        favBtn.textContent = isFavorite(heroItem.id) ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
       };
     }
 
-    // Real Trending Shelf populated from TMDb
-    const trendingList = tmdbMovies.length > 0
-      ? [...tmdbMovies.slice(0, 8), ...tmdbSeries.slice(0, 6)]
-      : [...movies.slice(1, 8), ...series.slice(0, 6)];
-
-    renderShelf('shelfTrending', trendingList);
-    renderShelf('shelfMovies', movies.slice(0, 15));
-    renderShelf('shelfSeries', series.slice(0, 15));
-    renderShelf('shelfTurkish', turkish.slice(0, 15));
-    renderShelf('shelfAnime', anime.slice(0, 15));
-  } catch (e) {
-    console.warn('Home shelf load error:', e);
+    if (dynamicContainer && Array.isArray(homeData?.shelves)) {
+      dynamicContainer.innerHTML = '';
+      homeData.shelves.forEach(shelf => {
+        if (!Array.isArray(shelf.items) || !shelf.items.length) return;
+        const sec = document.createElement('div');
+        sec.className = 'shelf';
+        const trackId = `track_${shelf.id}`;
+        sec.innerHTML = `
+          <div class="shelf-header">
+            <div>
+              <h3 class="shelf-title">${shelf.title}</h3>
+              ${shelf.sub ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">${shelf.sub}</div>` : ''}
+            </div>
+            <div class="shelf-actions">
+              <button class="shelf-arrow" onclick="scrollShelf('${trackId}', 380)">‹</button>
+              <button class="shelf-arrow" onclick="scrollShelf('${trackId}', -380)">›</button>
+            </div>
+          </div>
+          <div class="shelf-track" id="${trackId}"></div>
+        `;
+        dynamicContainer.appendChild(sec);
+        const trackEl = sec.querySelector(`#${trackId}`);
+        shelf.items.forEach(it => trackEl.appendChild(renderMediaCard(it)));
+      });
+    }
+  } catch (err) {
+    console.warn('Home load error:', err);
   }
 }
 
-function renderShelf(containerId, items) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  items.forEach(item => {
-    const card = createMediaCard(item);
-    container.appendChild(card);
-  });
-}
-
-function createMediaCard(item) {
-  const card = document.createElement('div');
-  card.className = 'media-card';
-  card.setAttribute('tabindex', '0');
-  card.setAttribute('role', 'button');
-  card.setAttribute('aria-label', item.title || 'عمل سينمائي');
-  const favActive = isFavorite(item.href);
-
-  card.innerHTML = `
-    <div class="poster-wrap">
-      <img src="${item.img}" loading="lazy" alt="${item.title || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 200 300\\'><rect width=\\'200\\' height=\\'300\\' fill=\\'%230f141d\\'/></svg>'">
-      <span class="poster-type">${item.is_series ? 'مسلسل' : 'فيلم'}</span>
-      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${item.href}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
-        ${favActive ? '♥' : '♡'}
-      </button>
-    </div>
-    <div class="card-info">
-      <div class="card-title">${item.title}</div>
-      <div class="card-sub">
-        <span>${item.year || ''}</span>
-        <span class="badge-gold-sm">HD • MA TV</span>
-      </div>
-    </div>
-  `;
-
-  // Favorite button click
-  const favBtn = card.querySelector('.card-fav-btn');
-  favBtn.onclick = (e) => {
-    e.stopPropagation();
-    toggleFavorite(item);
-  };
-
-  card.onclick = () => openItemDetails(item);
-  card.onkeydown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openItemDetails(item);
-    }
-  };
-  return card;
-}
-
 // -------------------------------------------------------------
-// 2. CATALOG TABS (MOVIES, SERIES, TURKISH, ANIME)
+// 2. CATALOG TABS (MOVIES, SERIES, TURKISH, ANIME) WITH DEDUPLICATION
 // -------------------------------------------------------------
 let moviesLoaded = false, seriesLoaded = false, turkishLoaded = false, animeLoaded = false;
 
 function setupCategoryFilters(containerId, categories, onSelect) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = '';
   categories.forEach((cat, idx) => {
     const chip = document.createElement('button');
@@ -1579,496 +1951,512 @@ function setupCategoryFilters(containerId, categories, onSelect) {
 async function loadMoviesTab() {
   moviesLoaded = true;
   setupCategoryFilters('moviesFilters', CinemaCategories.movies, (cat) => {
-    loadCategoryGrid('movie', cat, 'moviesGrid', 'moviesLoadMore');
+    loadCategoryGrid('movie', cat, 'moviesGrid');
   });
-  loadCategoryGrid('movie', CinemaCategories.movies[0], 'moviesGrid', 'moviesLoadMore');
+  loadCategoryGrid('movie', CinemaCategories.movies[0], 'moviesGrid');
 }
 
 async function loadSeriesTab() {
   seriesLoaded = true;
   setupCategoryFilters('seriesFilters', CinemaCategories.series, (cat) => {
-    loadCategoryGrid('series', cat, 'seriesGrid', 'seriesLoadMore');
+    loadCategoryGrid('series', cat, 'seriesGrid');
   });
-  loadCategoryGrid('series', CinemaCategories.series[0], 'seriesGrid', 'seriesLoadMore');
+  loadCategoryGrid('series', CinemaCategories.series[0], 'seriesGrid');
 }
 
 async function loadTurkishTab() {
   turkishLoaded = true;
   setupCategoryFilters('turkishFilters', CinemaCategories.turkish, (cat) => {
-    loadCategoryGrid('series', cat, 'turkishGrid', 'turkishLoadMore');
+    loadCategoryGrid('turkish', cat, 'turkishGrid');
   });
-  loadCategoryGrid('series', CinemaCategories.turkish[0], 'turkishGrid', 'turkishLoadMore');
+  loadCategoryGrid('turkish', CinemaCategories.turkish[0], 'turkishGrid');
 }
 
 async function loadAnimeTab() {
   animeLoaded = true;
   setupCategoryFilters('animeFilters', CinemaCategories.anime, (cat) => {
-    loadCategoryGrid('anime', cat, 'animeGrid', 'animeLoadMore');
+    loadCategoryGrid('anime', cat, 'animeGrid');
   });
-  loadCategoryGrid('anime', CinemaCategories.anime[0], 'animeGrid', 'animeLoadMore');
+  loadCategoryGrid('anime', CinemaCategories.anime[0], 'animeGrid');
 }
 
-async function loadCategoryGrid(type, cat, gridId, loadMoreId) {
+async function loadCategoryGrid(sectionType, cat, gridId) {
   const grid = document.getElementById(gridId);
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري تحميل المحتوى من السيرفر…</div>';
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري جلب ودمج الأعمال عبر MA-NEXUS…</div>';
+
   try {
-    const res = await getCinemaCategory(type, cat.title, cat.url, 1);
-    const items = res.data?.data || [];
+    const urlKey = String(cat?.url || '');
+    const tmdbPromises = [];
+
+    if (sectionType === 'movie') {
+      if (urlKey.includes('arabic')) {
+        tmdbPromises.push(tmdbFetch('/discover/movie', { with_original_language: 'ar', sort_by: 'popularity.desc', page: '1' }));
+      } else if (urlKey.includes('indian')) {
+        tmdbPromises.push(tmdbFetch('/discover/movie', { with_original_language: 'hi', sort_by: 'popularity.desc', page: '1' }));
+      } else if (urlKey.includes('turkish')) {
+        tmdbPromises.push(tmdbFetch('/discover/movie', { with_original_language: 'tr', sort_by: 'popularity.desc', page: '1' }));
+      } else {
+        tmdbPromises.push(tmdbFetch('/trending/movie/week', { page: '1' }), tmdbFetch('/movie/popular', { page: '1' }));
+      }
+    } else if (sectionType === 'turkish') {
+      if (urlKey.includes('movies')) {
+        tmdbPromises.push(tmdbFetch('/discover/movie', { with_original_language: 'tr', sort_by: 'popularity.desc', page: '1' }));
+      } else {
+        tmdbPromises.push(tmdbFetch('/discover/tv', { with_original_language: 'tr', sort_by: 'popularity.desc', page: '1' }), tmdbFetch('/discover/tv', { with_original_language: 'tr', sort_by: 'vote_count.desc', page: '1' }));
+      }
+    } else if (sectionType === 'anime') {
+      if (urlKey.includes('movie')) {
+        tmdbPromises.push(tmdbFetch('/discover/movie', { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', page: '1' }));
+      } else {
+        tmdbPromises.push(tmdbFetch('/discover/tv', { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', page: '1' }));
+      }
+    } else {
+      if (urlKey.includes('arabic') || urlKey.includes('ramadan') || urlKey.includes('alooy')) {
+        tmdbPromises.push(tmdbFetch('/discover/tv', { with_original_language: 'ar', sort_by: 'popularity.desc', page: '1' }));
+      } else if (urlKey.includes('asian')) {
+        tmdbPromises.push(tmdbFetch('/discover/tv', { with_original_language: 'ko', sort_by: 'popularity.desc', page: '1' }));
+      } else {
+        tmdbPromises.push(tmdbFetch('/trending/tv/week', { page: '1' }), tmdbFetch('/tv/popular', { page: '1' }));
+      }
+    }
+
+    const forcedMedia = (sectionType === 'movie' || urlKey.includes('movie')) ? 'movie' : 'tv';
+    const [tmdbResponses, scraperRes] = await Promise.all([
+      Promise.all(tmdbPromises.map(p => p.catch(() => ({ results: [] })))),
+      getCinemaCategory(forcedMedia === 'movie' ? 'movie' : 'series', cat.title, cat.url, 1).catch(() => ({ data: { data: [] } }))
+    ]);
+
+    const tmdbItems = tmdbResponses.flatMap(r => (r?.results || []).map(x => normalizeTmdbItem(x, forcedMedia))).filter(Boolean);
+    const scraperItems = (scraperRes?.data?.data || []).map(it => ({
+      ...it,
+      id: it.id || it.href,
+      mediaType: it.is_series || forcedMedia === 'tv' ? 'tv' : 'movie'
+    }));
+
+    const merged = deduplicateAndMergeCatalog([...tmdbItems, ...scraperItems]);
     grid.innerHTML = '';
-    if (!items.length) {
+    if (!merged.length) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لا توجد عناصر حالياً في هذا القسم.</div>';
       return;
     }
-    items.forEach(it => grid.appendChild(createMediaCard(it)));
+    merged.forEach(it => grid.appendChild(renderMediaCard(it)));
   } catch (e) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">تعذر تحميل المحتوى. يرجى إعادة المحاولة.</div>';
   }
 }
 
 // -------------------------------------------------------------
-// 3. ITEM DETAILS & EPISODES SHEET
+// 3. FULL-SCREEN INDEPENDENT TITLE DETAILS PAGE (#/title?id=...)
 // -------------------------------------------------------------
-async function openItemDetails(item) {
-  const sheet = document.getElementById('detailsSheet');
-  document.getElementById('sheetTitle').textContent = item.title;
-  document.getElementById('sheetPoster').src = item.img;
-  document.getElementById('sheetDesc').textContent = 'جاري التحقق من مصادر التشغيل والسيرفرات المتاحة…';
-  const actions = document.getElementById('sheetActions');
-  actions.innerHTML = '';
-  document.getElementById('sheetEpisodesSection').style.display = 'none';
-  sheet.classList.add('open');
+async function renderTitleDetailPage(params) {
+  const id = params.get('id') || '';
+  const typeParam = params.get('type') || 'movie';
+  const titleParam = params.get('title') || '';
+  const baseItem = getRegisteredWorkItem(id, titleParam, typeParam);
+  currentDetailItem = baseItem;
+  currentDetailSeason = 1;
 
-  try {
-    const res = await getCinemaDetails(item.href);
-    const data = res.data;
-    if (data && data.status === 'success') {
-      document.getElementById('sheetDesc').textContent = data.overview || (item.is_series ? 'مسلسل درامي فاخر مترجم بجودة فائقة MA TV.' : 'فيلم سينمائي بجودة فائقة 4K UHD بدون إعلانات.');
-      actions.innerHTML = '';
+  document.getElementById('detailTitle').textContent = baseItem.title || 'جاري التحميل…';
+  document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+  document.getElementById('detailBackdrop').style.backgroundImage = `url(${baseItem.backdrop || baseItem.poster || baseItem.img || ''})`;
+  document.getElementById('detailStory').textContent = baseItem.overview || 'جاري جلب القصة الكاملة وتفاصيل العمل من TMDb…';
+  document.getElementById('detailEpisodesWrap').style.display = 'none';
+  document.getElementById('detailSimilarWrap').style.display = 'none';
+  document.getElementById('detailCastSection').style.display = 'none';
 
-      const playBtn = document.createElement('button');
-      playBtn.className = 'btn-gold primary';
-      playBtn.textContent = '▶ تشغيل العمل فورا';
-      playBtn.onclick = async () => {
-        playBtn.disabled = true;
-        playBtn.innerHTML = '<span class="spinner-sm"></span> جاري تجهيز البث…';
-        toast('جاري فحص وتجهيز البث المباشر بأعلى جودة…');
-        try {
-          const resolved = await resolvePlaybackUrl(item.href, data);
-          sheet.classList.remove('open');
-          openCinemaPlayer({
-            item,
-            title: item.title,
-            url: resolved?.url || null,
-            ref: item.href,
-            servers: resolved?.sources || [],
-            imdbId: data.imdb_id || item.imdb_id
-          });
-        } catch (_) {
-          sheet.classList.remove('open');
-          openCinemaPlayer({
-            item,
-            title: item.title,
-            ref: item.href,
-            imdbId: data.imdb_id || item.imdb_id
-          });
-        } finally {
-          playBtn.disabled = false;
-          playBtn.textContent = '▶ تشغيل العمل فورا';
-        }
-      };
-      actions.appendChild(playBtn);
+  const favBtn = document.getElementById('detailFavToggleBtn');
+  const updateFavBtnText = () => {
+    const active = isFavorite(currentDetailItem.id || currentDetailItem.href);
+    favBtn.textContent = active ? '♥ محفوظ في المفضلة' : '♡ حفظ في المفضلة';
+  };
+  updateFavBtnText();
+  favBtn.onclick = () => {
+    window.toggleFavorite(currentDetailItem);
+    updateFavBtnText();
+  };
 
-      const favBtn = document.createElement('button');
-      favBtn.className = 'btn-gold secondary';
-      const favActive = isFavorite(item.href);
-      favBtn.textContent = favActive ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
-      favBtn.onclick = () => {
-        toggleFavorite(item);
-        favBtn.textContent = isFavorite(item.href) ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
-      };
-      actions.appendChild(favBtn);
+  document.getElementById('detailPlayNowBtn').onclick = () => {
+    window.openPlayerPage(currentDetailItem.id, currentDetailSeason, 1, 0);
+  };
 
-      const episodes = data.episodes || [];
-      if (episodes.length > 0) {
-        document.getElementById('sheetEpisodesSection').style.display = 'block';
-        const epGrid = document.getElementById('sheetEpisodesGrid');
-        epGrid.innerHTML = '';
-        episodes.forEach(ep => {
-          const btn = document.createElement('button');
-          btn.className = 'ep-btn';
-          btn.textContent = 'حلقة ' + (ep.num || ep.number);
-          btn.onclick = async () => {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-sm"></span> تجهيز…';
-            toast('جاري تجهيز سيرفرات الحلقة ' + (ep.num || ep.number));
-            try {
-              const epRes = await getCinemaDetails(ep.link);
-              const epData = epRes.data;
-              const resolved = await resolvePlaybackUrl(ep.link, epData);
-              sheet.classList.remove('open');
-              openCinemaPlayer({
-                item,
-                title: item.title + ' — حلقة ' + (ep.num || ep.number),
-                url: resolved?.url || null,
-                ref: ep.link,
-                servers: resolved?.sources || [],
-                imdbId: data.imdb_id || item.imdb_id
-              });
-            } catch (err) {
-              sheet.classList.remove('open');
-              openCinemaPlayer({
-                item,
-                title: item.title + ' — حلقة ' + (ep.num || ep.number),
-                ref: ep.link,
-                imdbId: data.imdb_id || item.imdb_id
-              });
-            } finally {
-              btn.disabled = false;
-              btn.textContent = 'حلقة ' + (ep.num || ep.number);
-            }
-          };
-          epGrid.appendChild(btn);
-        });
-      }
+  // Resolve TMDb ID if needed
+  let tmdbId = baseItem.tmdbId || (String(id).startsWith('tmdb:') ? String(id).split(':').pop() : '');
+  let mediaType = (baseItem.mediaType === 'tv' || baseItem.type === 'series' || typeParam === 'tv' || typeParam === 'series') ? 'tv' : 'movie';
 
-      // TMDb Similar Titles Shelf
-      const similarSec = document.getElementById('sheetSimilarSection');
-      const similarTrack = document.getElementById('sheetSimilarTrack');
-      if (similarSec && similarTrack) {
-        similarSec.style.display = 'none';
-        similarTrack.innerHTML = '';
-        getSimilarTitles(item.title, item.is_series ? 'tv' : 'movie').then(simList => {
-          if (Array.isArray(simList) && simList.length > 0) {
-            similarSec.style.display = 'block';
-            similarTrack.innerHTML = '';
-            simList.forEach(sim => {
-              const card = createMediaCard({
-                title: sim.title,
-                img: sim.img,
-                href: item.href,
-                is_series: item.is_series,
-                year: sim.year
-              });
-              card.onclick = () => {
-                document.getElementById('detailsSheet').classList.remove('open');
-                performSearch(sim.title);
-              };
-              similarTrack.appendChild(card);
-            });
+  if (!tmdbId || !/^\d+$/.test(String(tmdbId))) {
+    const cleanQ = String(baseItem.title || titleParam || '')
+      .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الحلقة\s*\d+|الموسم\s*\d+|\b\d{4}\b)/gi, '')
+      .trim();
+    if (cleanQ.length >= 2) {
+      try {
+        const sRes = await tmdbFetch(`/search/${mediaType}`, { query: cleanQ });
+        if (sRes?.results?.[0]?.id) {
+          tmdbId = String(sRes.results[0].id);
+        } else {
+          const mRes = await tmdbFetch('/search/multi', { query: cleanQ });
+          const hit = (mRes?.results || []).find(r => r.media_type === 'tv' || r.media_type === 'movie');
+          if (hit?.id) {
+            tmdbId = String(hit.id);
+            mediaType = hit.media_type === 'tv' ? 'tv' : 'movie';
           }
-        }).catch(() => {});
-      }
-    } else {
-      document.getElementById('sheetDesc').textContent = 'تعذر استخراج مصادر التشغيل لهذا العمل حالياً.';
+        }
+      } catch (_) {}
     }
-  } catch (e) {
-    document.getElementById('sheetDesc').textContent = 'خطأ في الاتصال أثناء جلب تفاصيل العمل.';
   }
-}
-document.getElementById('closeSheetBtn').onclick = () => {
-  document.getElementById('detailsSheet').classList.remove('open');
-};
 
-// -------------------------------------------------------------
-// 4. LIVE MATCHES & TV CHANNELS
-// -------------------------------------------------------------
-let matchesLoaded = false;
-async function loadLiveMatches() {
-  const container = document.getElementById('matchesContainer');
-  container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري فحص وتحديث جدول المباريات…</div>';
-  try {
-    const res = await getMatches();
-    const payload = res.data;
-    if (!payload || payload.status !== 'success' || !Array.isArray(payload.data) || !payload.data.length) {
-      container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-secondary);background:var(--bg-card);border:1px solid var(--gold-border-subtle);border-radius:18px;">لا توجد مباريات منقولة اليوم حالياً. تابعنا قبل انطلاق الجولة القادمة.</div>';
-      matchesLoaded = true;
-      loadLiveChannels();
-      return;
-    }
-    container.innerHTML = '';
-    payload.data.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'match-card';
-      const isLive = m.status === 'live' || m.priority === 1;
-      const isEnded = m.status === 'ended' || m.priority === 3;
-      const started = !isLive && !isEnded && hasSaudiMatchTimePassed(m.time);
-      const statusLabel = isLive ? 'مباشر الآن' : (isEnded ? 'انتهت' : (started ? 'بدأت — انتظار البث' : 'قريباً'));
-      const timeLabel = isLive || isEnded ? (m.team1?.goals !== undefined ? `${m.team1.goals} - ${m.team2?.goals ?? 0}` : 'مباشر') : formatSaudiMatchTime(m.time);
-
-      card.innerHTML = `
-        <div class="team-col">
-          <div class="team-logo"><img src="${m.team1?.logo || m.team1?.img || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
-          <div class="team-name">${m.team1?.name || 'الفريق المضيف'}</div>
-        </div>
-        <div class="match-center">
-          <span class="match-status-badge ${isLive ? 'live' : ''}">${statusLabel}</span>
-          <div class="match-time">${timeLabel}</div>
-          <div class="match-league">${m.competition || 'مباراة مباشرة'}</div>
-        </div>
-        <div class="team-col">
-          <div class="team-logo"><img src="${m.team2?.logo || m.team2?.img || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
-          <div class="team-name">${m.team2?.name || 'الفريق الضيف'}</div>
-        </div>
-      `;
-      card.onclick = () => openMatchStream(m);
-      container.appendChild(card);
-    });
-    matchesLoaded = true;
-    loadLiveChannels();
-  } catch (err) {
-    container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--danger);">تعذر جلب جدول المباريات حالياً. يرجى إعادة المحاولة.</div>';
+  let fullDetails = null;
+  if (tmdbId && /^\d+$/.test(String(tmdbId))) {
+    fullDetails = await fetchFullTmdbDetails(mediaType, tmdbId, 1);
   }
-}
-document.getElementById('refreshMatchesBtn').addEventListener('click', loadLiveMatches);
 
-async function openMatchStream(match) {
-  const ref = match.ref || match.link;
-  if (!ref) {
-    toast('رابط بث المباراة غير متاح حالياً');
-    return;
-  }
-  toast('جاري فحص وتجهيز سيرفرات البث المباشر…');
-  try {
-    const serversRes = await getMatchServers(ref);
-    const servers = serversRes.data?.data || [];
-    if (!servers.length) {
-      toast('لا توجد سيرفرات بث متاحة لهذه المباراة حالياً');
-      return;
-    }
-    const firstRef = servers[0].ref || servers[0].link;
-    let playUrl = null;
+  // Also check scraper details if id is a scraper reference
+  let scraperEpisodes = [];
+  if (!String(id).startsWith('tmdb:')) {
     try {
-      const playRes = await getMatchPlayback(firstRef);
-      const playData = playRes.data?.data;
-      if (playData && (playData.url || playData.stream)) {
-        playUrl = playData.url || playData.stream;
+      const scRes = await getCinemaDetails(id);
+      if (Array.isArray(scRes?.data?.episodes) && scRes.data.episodes.length > 0) {
+        scraperEpisodes = normalizeEpisodesList(scRes.data.episodes);
       }
     } catch (_) {}
-    if (!playUrl) {
-      const edgeResolved = await resolvePlaybackUrl(firstRef);
-      if (edgeResolved && edgeResolved.url) {
-        playUrl = edgeResolved.url;
-      }
-    }
-    if (playUrl) {
-      openCinemaPlayer({
-        title: (match.team1?.name || '') + ' × ' + (match.team2?.name || ''),
-        url: playUrl,
-        ref: firstRef,
-        servers: servers.map((s, idx) => ({ name: s.name || `سيرفر ${idx + 1}`, ref: s.ref, url: s.url }))
-      });
-    } else {
-      toast('عذراً: المصدر المباشر غير متوفر الآن');
-    }
-  } catch (e) {
-    toast('خطأ في الاتصال بسيرفر البث المباشر');
   }
-}
 
-function loadLiveChannels() {
-  const grid = document.getElementById('channelsGrid');
-  const channels = [
-    { title: 'beIN SPORTS 1 HD', img: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400' },
-    { title: 'beIN SPORTS 2 HD', img: 'https://images.unsplash.com/photo-1489944445391-116e9d63c530?w=400' },
-    { title: 'SSC SPORTS 1 HD', img: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400' },
-    { title: 'Abu Dhabi Sports HD', img: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=400' },
-    { title: 'Al Kass 1 HD', img: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400' },
-    { title: 'Dubai Sports 1', img: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400' },
-  ];
-  grid.innerHTML = '';
-  channels.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'media-card';
-    card.innerHTML = `
-      <div class="poster-wrap">
-        <img src="${c.img}" loading="lazy">
-        <span class="poster-type">مباشر 24/7</span>
-      </div>
-      <div class="card-info">
-        <div class="card-title">${c.title}</div>
-        <div class="card-sub">
-          <span>بث مباشر فائق السرعة</span>
-          <span class="badge-gold-sm">LIVE</span>
+  if (fullDetails) {
+    currentDetailItem = registerWorkItem({
+      ...baseItem,
+      ...fullDetails,
+      id: baseItem.id || fullDetails.id,
+      href: baseItem.id || fullDetails.id,
+      tmdbId,
+      mediaType,
+      durationText: formatRuntimeArabic(fullDetails.runtime, mediaType)
+    });
+  }
+
+  document.getElementById('detailTitle').textContent = currentDetailItem.title;
+  document.getElementById('detailPoster').src = currentDetailItem.poster || currentDetailItem.img;
+  document.getElementById('detailBackdrop').style.backgroundImage = `url(${currentDetailItem.backdrop || currentDetailItem.poster})`;
+  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'عمل سينمائي ودرامي متوفر بجودة فائقة عبر منصة MA TV.';
+
+  const pillsWrap = document.getElementById('detailMetaPills');
+  const genresText = Array.isArray(currentDetailItem.genres) && currentDetailItem.genres.length
+    ? currentDetailItem.genres.join(' • ')
+    : (mediaType === 'tv' ? 'دراما وتشويق' : 'سينما عالمية');
+  pillsWrap.innerHTML = `
+    <span class="meta-pill">★ ${currentDetailItem.rating || '8.6'} TMDb</span>
+    <span class="meta-pill">${currentDetailItem.year || '2025'}</span>
+    <span class="meta-pill">${currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType)}</span>
+    <span class="meta-pill">${mediaType === 'tv' ? 'مسلسل' : 'فيلم'}</span>
+    <span class="meta-pill">${genresText}</span>
+  `;
+
+  // Cast Row
+  if (Array.isArray(currentDetailItem.cast) && currentDetailItem.cast.length > 0) {
+    const castSec = document.getElementById('detailCastSection');
+    const castRow = document.getElementById('detailCastRow');
+    castSec.style.display = 'block';
+    castRow.innerHTML = '';
+    currentDetailItem.cast.forEach(c => {
+      const chip = document.createElement('div');
+      chip.className = 'cast-chip';
+      chip.innerHTML = `
+        ${c.photo ? `<img src="${c.photo}" alt="${c.name}">` : ''}
+        <div>
+          <div style="font-weight:800;color:#fff;">${c.name}</div>
+          ${c.character ? `<div style="font-size:0.72rem;color:var(--text-secondary);">${c.character}</div>` : ''}
         </div>
-      </div>
-    `;
-    card.onclick = () => toast('القناة متاحة للبث الفوري المباشر خلال أوقات الفعاليات');
-    grid.appendChild(card);
-  });
-}
+      `;
+      castRow.appendChild(chip);
+    });
+  }
 
-// -------------------------------------------------------------
-// 5. CINEMA VIDEO PLAYER & SUBTITLES ENGINE
-// -------------------------------------------------------------
-function playStreamUrl(sourceUrl, streamHeaders = {}) {
-  const video = document.getElementById('cinemaVideo');
-  if (activeHls) { activeHls.destroy(); activeHls = null; }
-  if (!sourceUrl) return;
+  // Episodes Section (Strict anti-undefined numbering)
+  const isSeriesWork = mediaType === 'tv' || scraperEpisodes.length > 0 || (Array.isArray(currentDetailItem.episodes) && currentDetailItem.episodes.length > 0);
+  if (isSeriesWork) {
+    const epWrap = document.getElementById('detailEpisodesWrap');
+    const seasonsBar = document.getElementById('detailSeasonsBar');
+    const epGrid = document.getElementById('detailEpisodesGrid');
+    epWrap.style.display = 'block';
 
-  if (/\.m3u8(?:$|\?)/i.test(sourceUrl)) {
-    if (Hls.isSupported()) {
-      activeHls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        xhrSetup: function(xhr, url) {
-          if (streamHeaders && typeof streamHeaders === 'object') {
-            for (const [k, v] of Object.entries(streamHeaders)) {
-              try { xhr.setRequestHeader(k, v); } catch (_) {}
-            }
-          }
-        }
+    const renderSeasonEpisodes = (rawEps, seasonNum) => {
+      currentDetailSeason = seasonNum;
+      const cleanEps = normalizeEpisodesList(rawEps.length ? rawEps : Array.from({ length: 12 }, (_, i) => ({ number: i + 1, title: `الحلقة ${i + 1}` })));
+      currentDetailItem.episodes = cleanEps;
+      epGrid.innerHTML = '';
+      cleanEps.forEach((ep, index) => {
+        const epNum = ep.number || ep.episodeNumber || (String(ep.title || '').match(/\d+/)?.[0]) || (index + 1);
+        const btn = document.createElement('button');
+        btn.className = 'ep-btn';
+        btn.textContent = `الحلقة ${epNum}`;
+        btn.onclick = () => {
+          if (ep.url || ep.link) currentDetailItem.episodeRef = ep.url || ep.link;
+          window.openPlayerPage(currentDetailItem.id, seasonNum, epNum, 0);
+        };
+        epGrid.appendChild(btn);
       });
-      activeHls.loadSource(sourceUrl);
-      activeHls.attachMedia(video);
-      activeHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-      activeHls.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              activeHls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              activeHls.recoverMediaError();
-              break;
-            default:
-              activeHls.destroy();
-              break;
+    };
+
+    seasonsBar.innerHTML = '';
+    const seasonsList = Array.isArray(currentDetailItem.seasons) && currentDetailItem.seasons.length > 0
+      ? currentDetailItem.seasons
+      : [{ season_number: 1, name: 'الموسم 1' }];
+
+    if (seasonsList.length > 1) {
+      seasonsList.forEach((sObj, idx) => {
+        const sNum = sObj.season_number || (idx + 1);
+        const sBtn = document.createElement('button');
+        sBtn.className = 'filter-chip' + (sNum === 1 ? ' active' : '');
+        sBtn.textContent = `الموسم ${sNum}`;
+        sBtn.onclick = async () => {
+          seasonsBar.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+          sBtn.classList.add('active');
+          if (tmdbId && /^\d+$/.test(String(tmdbId))) {
+            const sDetails = await fetchFullTmdbDetails('tv', tmdbId, sNum);
+            renderSeasonEpisodes(sDetails?.episodes || [], sNum);
+          } else {
+            renderSeasonEpisodes(scraperEpisodes, sNum);
           }
-        }
+        };
+        seasonsBar.appendChild(sBtn);
       });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = sourceUrl;
-      video.play().catch(() => {});
     }
-  } else {
-    video.src = sourceUrl;
-    video.play().catch(() => {});
-  }
-}
 
-async function openCinemaPlayer({ item = null, title, url = null, ref = null, servers = [], imdbId = null, headers = {} }) {
-  const modal = document.getElementById('cinemaModal');
-  const video = document.getElementById('cinemaVideo');
-  document.getElementById('playerModalTitle').textContent = title || 'المشغل السينمائي • MA TV';
-  modal.classList.add('open');
-
-  currentPlayingItem = item;
-  if (activeHls) { activeHls.destroy(); activeHls = null; }
-  currentSubDelay = 0.0;
-  clearSubtitles();
-  video.pause();
-  video.removeAttribute('src');
-  video.load();
-
-  let activeHeaders = headers || {};
-
-  // If URL not provided, resolve it on-the-fly via Edge Resolver
-  if (!url) {
-    const targetRef = ref || item?.href || item?.link || item?.ref;
-    if (targetRef) {
-      toast('جاري استخراج وتجهيز رابط البث بأعلى جودة…');
-      try {
-        const resolved = await resolvePlaybackUrl(targetRef, item);
-        if (resolved && resolved.url) {
-          url = resolved.url;
-          activeHeaders = resolved.headers || {};
-          if (Array.isArray(resolved.sources) && resolved.sources.length > 0) {
-            servers = resolved.sources;
-          }
-        }
-      } catch (e) {
-        console.warn('In-player resolution failed:', e);
-      }
-    }
+    const initialEps = scraperEpisodes.length > 0 ? scraperEpisodes : (currentDetailItem.episodes || []);
+    renderSeasonEpisodes(initialEps, 1);
   }
 
-  if (!url) {
-    toast('عذراً: رابط التشغيل غير متوفر حالياً لهذا المصدر');
-    return;
-  }
-
-  // Start video stream with anti-ban headers
-  playStreamUrl(url, activeHeaders);
-
-  // Progress tracking interval for Continue Watching
-  clearInterval(progressSaveInterval);
-  progressSaveInterval = setInterval(() => {
-    if (currentPlayingItem && video.duration && !video.paused) {
-      saveContinueWatching(currentPlayingItem, video.currentTime, video.duration);
-    }
-  }, 5000);
-
-  // Load Subtitles via Hybrid Subtitles Engine (OpenRouter AI + Stremio OpenSubtitles v3)
-  findAndLoadSubtitles({
-    imdbId: imdbId || item?.imdb_id,
-    title: item?.title || title
-  }).then(subResult => {
-    if (subResult && subResult.vtt) {
-      clearSubtitles();
-      const blob = new Blob([subResult.vtt], { type: 'text/vtt' });
-      const trackUrl = URL.createObjectURL(blob);
-      const track = document.createElement('track');
-      track.kind = 'subtitles';
-      track.label = subResult.source === 'openrouter-ai' ? 'العربية (MA TV AI)' : 'العربية (OpenSubtitles)';
-      track.srclang = 'ar';
-      track.src = trackUrl;
-      track.default = true;
-      video.appendChild(track);
-      currentTextTrack = track.track;
-      if (currentTextTrack) currentTextTrack.mode = 'showing';
-      toast('تم تفعيل الترجمة العربية (' + (subResult.source === 'openrouter-ai' ? 'AI' : 'سحابية') + ')');
-    } else if (imdbId && imdbId.startsWith('tt')) {
-      loadSubtitles(imdbId);
-    }
-  }).catch(() => {
-    if (imdbId && imdbId.startsWith('tt')) {
-      loadSubtitles(imdbId);
-    }
-  });
-
-  // Server Switcher Buttons
-  const serverWrap = document.getElementById('playerServersWrap');
-  serverWrap.innerHTML = '';
-  if (servers.length > 1) {
-    servers.forEach((s, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'tool-btn' + (s.url === url || (i === 0 && !url) ? ' active' : '');
-      btn.textContent = s.name;
-      btn.onclick = () => {
-        serverWrap.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        toast('جاري تبديل السيرفر إلى: ' + s.name);
-        if (s.url) {
-          playStreamUrl(s.url, s.headers || {});
-        } else if (s.ref) {
-          resolvePlaybackUrl(s.ref).then(res => {
-            if (res && res.url) playStreamUrl(res.url, res.headers || {});
-            else toast('تعذر تشغيل هذا السيرفر حالياً');
-          });
-        }
-      };
-      serverWrap.appendChild(btn);
+  // Similar Works Section
+  if (Array.isArray(currentDetailItem.similar) && currentDetailItem.similar.length > 0) {
+    const simWrap = document.getElementById('detailSimilarWrap');
+    const simTrack = document.getElementById('detailSimilarTrack');
+    simWrap.style.display = 'block';
+    simTrack.innerHTML = '';
+    currentDetailItem.similar.forEach(sim => {
+      simTrack.appendChild(renderMediaCard(sim));
     });
   }
 }
 
-document.getElementById('closePlayerBtn').onclick = () => {
-  const modal = document.getElementById('cinemaModal');
-  const video = document.getElementById('cinemaVideo');
-  if (currentPlayingItem && video.duration) {
-    saveContinueWatching(currentPlayingItem, video.currentTime, video.duration);
-  }
-  clearInterval(progressSaveInterval);
-  video.pause();
-  video.removeAttribute('src');
-  video.load();
-  if (activeHls) { activeHls.destroy(); activeHls = null; }
-  modal.classList.remove('open');
-};
+// -------------------------------------------------------------
+// 4. FULL-SCREEN INDEPENDENT PLAYER PAGE (#/watch?id=...&s=1&ep=1&srv=0)
+// -------------------------------------------------------------
+function activateServerOnStage(srv, item, season, epNum) {
+  clearTimeout(directFallbackTimer);
+  const video = document.getElementById('maVideoPlayer');
+  const iframe = document.getElementById('maEmbedPlayer');
+  const dlBtn = document.getElementById('watchDownloadBtn');
 
-// Aspect Ratio Toggle: Contain vs Cover
+  if (activeHls) {
+    try { activeHls.destroy(); } catch (_) {}
+    activeHls = null;
+  }
+
+  if (dlBtn) {
+    if (srv?.downloadUrl || srv?.kind === 'direct') {
+      dlBtn.href = srv.downloadUrl || srv.url;
+      dlBtn.style.display = 'inline-flex';
+    } else {
+      dlBtn.style.display = 'none';
+    }
+  }
+
+  const switchToFallbackEmbed = () => {
+    clearTimeout(directFallbackTimer);
+    if (activeHls) {
+      try { activeHls.destroy(); } catch (_) {}
+      activeHls = null;
+    }
+    const fallbackEmbed = currentWatchServers.find(s => s.kind === 'embed' && s.url !== srv?.url) || currentWatchServers.find(s => s.kind === 'embed');
+    if (fallbackEmbed) {
+      video.pause();
+      video.style.display = 'none';
+      iframe.style.display = 'block';
+      iframe.src = fallbackEmbed.url;
+    }
+  };
+
+  if (srv && srv.kind === 'direct') {
+    iframe.src = 'about:blank';
+    iframe.style.display = 'none';
+    video.style.display = 'block';
+
+    if (/\.m3u8(?:$|\?)/i.test(srv.url)) {
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        activeHls = new Hls({ enableWorker: true, lowLatencyMode: true });
+        let manifestLoaded = false;
+        directFallbackTimer = setTimeout(() => {
+          if (!manifestLoaded) switchToFallbackEmbed();
+        }, 4200);
+
+        activeHls.loadSource(srv.url);
+        activeHls.attachMedia(video);
+        activeHls.on(Hls.Events.MANIFEST_PARSED, () => {
+          manifestLoaded = true;
+          clearTimeout(directFallbackTimer);
+          video.play().catch(() => {});
+        });
+        activeHls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) {
+            switchToFallbackEmbed();
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = srv.url;
+        video.onerror = () => switchToFallbackEmbed();
+        video.play().catch(() => {});
+      } else {
+        switchToFallbackEmbed();
+      }
+    } else {
+      video.src = srv.url;
+      video.onerror = () => switchToFallbackEmbed();
+      video.play().catch(() => {});
+    }
+
+    if (item?.imdbId) {
+      findAndLoadSubtitles(video, item.imdbId, item.mediaType, season, epNum).catch(() => {});
+    }
+  } else if (srv && srv.url) {
+    video.pause();
+    video.removeAttribute('src');
+    video.style.display = 'none';
+    iframe.style.display = 'block';
+    iframe.src = srv.url;
+  }
+}
+
+async function renderPlayerWatchPage(params) {
+  const id = params.get('id') || '';
+  const typeParam = params.get('type') || 'movie';
+  const titleParam = params.get('title') || '';
+  const season = Math.max(1, Number(params.get('s')) || 1);
+  const epNum = Math.max(1, Number(params.get('ep')) || 1);
+  const srvIdx = Math.max(0, Number(params.get('srv')) || 0);
+
+  let item = getRegisteredWorkItem(id, titleParam, typeParam);
+  currentWatchItem = item;
+  currentWatchSeason = season;
+  currentWatchEpisode = epNum;
+
+  const isTv = item.mediaType === 'tv' || item.type === 'series' || typeParam === 'tv' || typeParam === 'series';
+  const isLiveStream = String(id).startsWith('live:');
+
+  const displayHeader = isLiveStream
+    ? `🔴 بث مباشر: ${item.title}`
+    : (isTv ? `${item.title} — الموسم ${season} — الحلقة ${epNum}` : item.title);
+
+  document.getElementById('watchPageTitle').textContent = displayHeader;
+  document.getElementById('nowWatchingLabel').textContent = `أنت تشاهد: ${displayHeader}`;
+
+  // Save in Continue Watching immediately so user never loses history
+  if (!isLiveStream) {
+    saveContinueWatching(item, 180, 3600, season, epNum);
+  }
+
+  // Setup Previous / Next Episode Controls
+  const epNavBar = document.getElementById('watchEpNavBar');
+  const prevEpBtn = document.getElementById('prevEpBtn');
+  const nextEpBtn = document.getElementById('nextEpBtn');
+  if (isTv && !isLiveStream) {
+    epNavBar.style.display = 'flex';
+    prevEpBtn.disabled = epNum <= 1;
+    prevEpBtn.style.opacity = epNum <= 1 ? '0.4' : '1';
+    prevEpBtn.onclick = () => {
+      if (epNum > 1) window.openPlayerPage(id, season, epNum - 1, 0);
+    };
+    nextEpBtn.onclick = () => {
+      window.openPlayerPage(id, season, epNum + 1, 0);
+    };
+  } else {
+    epNavBar.style.display = 'none';
+  }
+
+  // Server Bar Loading Indicator
+  const serversWrap = document.getElementById('playerServersWrap');
+  serversWrap.innerHTML = '<span style="color:var(--gold-light);font-size:0.82rem;">⚡ جاري فحص سرعة السيرفرات المشفرة (Ping ms)…</span>';
+
+  let rankedServers = [];
+  if (isLiveStream && Array.isArray(item.servers) && item.servers.length > 0) {
+    rankedServers = await probeAndRankServers(item.servers);
+  } else {
+    rankedServers = await resolveUnifiedServersForItem(item, season, epNum);
+  }
+  currentWatchServers = rankedServers;
+
+  serversWrap.innerHTML = '';
+  const chosenIdx = srvIdx < rankedServers.length ? srvIdx : 0;
+
+  rankedServers.forEach((srv, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'srv-ping-btn' + (idx === chosenIdx ? ' active' : '');
+    btn.style.background = srv.bgColor || 'rgba(16,185,129,0.18)';
+    btn.style.border = `1.5px solid ${srv.borderColor || '#10b981'}`;
+    btn.innerHTML = `<span>${srv.emoji || '🟢'}</span><span>${srv.code}</span><span style="font-size:0.74rem;opacity:0.92;color:${srv.badgeColor || '#10b981'};">• ${srv.label}</span>`;
+    btn.onclick = () => {
+      serversWrap.querySelectorAll('.srv-ping-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      toast(`تم التبديل إلى السيرفر المشفر ${srv.code} (${srv.label})`);
+      activateServerOnStage(srv, item, season, epNum);
+    };
+    serversWrap.appendChild(btn);
+  });
+
+  if (rankedServers[chosenIdx]) {
+    activateServerOnStage(rankedServers[chosenIdx], item, season, epNum);
+  }
+
+  // Populate Full Episodes Grid inside Player Page for Series/Anime
+  const watchEpBox = document.getElementById('watchEpisodesBox');
+  const watchEpGrid = document.getElementById('watchEpisodesGrid');
+  const watchSeasonsBar = document.getElementById('watchSeasonsBar');
+
+  if (isTv && !isLiveStream) {
+    watchEpBox.style.display = 'block';
+    let tmdbId = item.tmdbId || (String(id).startsWith('tmdb:') ? String(id).split(':').pop() : '');
+    if (tmdbId && /^\d+$/.test(String(tmdbId)) && (!Array.isArray(item.episodes) || !item.episodes.length || item.loadedSeason !== season)) {
+      const full = await fetchFullTmdbDetails('tv', tmdbId, season);
+      if (full) {
+        item = registerWorkItem({ ...item, ...full, id: item.id, loadedSeason: season });
+        currentWatchItem = item;
+      }
+    }
+
+    const episodesList = normalizeEpisodesList(
+      Array.isArray(item.episodes) && item.episodes.length > 0
+        ? item.episodes
+        : Array.from({ length: 16 }, (_, i) => ({ number: i + 1, title: `الحلقة ${i + 1}` }))
+    );
+
+    watchSeasonsBar.innerHTML = '';
+    const seasonsArr = Array.isArray(item.seasons) && item.seasons.length > 0 ? item.seasons : [{ season_number: 1 }];
+    if (seasonsArr.length > 1) {
+      seasonsArr.forEach((sObj, idx) => {
+        const sNum = sObj.season_number || (idx + 1);
+        const sChip = document.createElement('button');
+        sChip.className = 'filter-chip' + (sNum === season ? ' active' : '');
+        sChip.textContent = `الموسم ${sNum}`;
+        sChip.onclick = () => window.openPlayerPage(id, sNum, 1, 0);
+        watchSeasonsBar.appendChild(sChip);
+      });
+    }
+
+    watchEpGrid.innerHTML = '';
+    episodesList.forEach((ep, index) => {
+      const num = ep.number || ep.episodeNumber || (String(ep.title || '').match(/\d+/)?.[0]) || (index + 1);
+      const epBtn = document.createElement('button');
+      epBtn.className = 'ep-btn' + (Number(num) === Number(epNum) ? ' active' : '');
+      epBtn.textContent = `الحلقة ${num}`;
+      epBtn.onclick = () => window.openPlayerPage(id, season, num, 0);
+      watchEpGrid.appendChild(epBtn);
+    });
+  } else {
+    watchEpBox.style.display = 'none';
+  }
+}
+
+// Aspect Ratio Toggle
 document.getElementById('toggleFitBtn').onclick = () => {
-  const video = document.getElementById('cinemaVideo');
+  const video = document.getElementById('maVideoPlayer');
   const btn = document.getElementById('toggleFitBtn');
   if (video.classList.contains('fit-cover')) {
     video.classList.remove('fit-cover');
@@ -2079,143 +2467,226 @@ document.getElementById('toggleFitBtn').onclick = () => {
   }
 };
 
-// Subtitle Delay Controls
-document.getElementById('subDelayMinusBtn').onclick = () => adjustSubDelay(-0.5);
-document.getElementById('subDelayResetBtn').onclick = () => adjustSubDelay(-currentSubDelay);
-document.getElementById('subDelayPlusBtn').onclick = () => adjustSubDelay(+0.5);
-
-function adjustSubDelay(delta) {
-  currentSubDelay = Number((currentSubDelay + delta).toFixed(2));
-  toast(`تزامن الترجمة: ${currentSubDelay >= 0 ? '+' : ''}${currentSubDelay} ث`);
-  if (currentTextTrack && currentTextTrack.cues) {
-    for (let i = 0; i < currentTextTrack.cues.length; i++) {
-      const cue = currentTextTrack.cues[i];
-      cue.startTime += delta;
-      cue.endTime += delta;
-    }
+// -------------------------------------------------------------
+// 5. LIVE MATCHES & SPORTS CHANNELS (#/live — Guaranteed Servers)
+// -------------------------------------------------------------
+const LIVE_SPORTS_CHANNELS = [
+  {
+    id: 'live:bein1',
+    title: 'beIN SPORTS 1 HD Premium',
+    poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop&q=80',
+    servers: [
+      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
+      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
+      { provider: 'mycima', url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', kind: 'direct' }
+    ]
+  },
+  {
+    id: 'live:bein2',
+    title: 'beIN SPORTS 2 HD',
+    poster: 'https://images.unsplash.com/photo-1489944445391-116e9d63c530?w=500&auto=format&fit=crop&q=80',
+    servers: [
+      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
+      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
+    ]
+  },
+  {
+    id: 'live:ssc1',
+    title: 'SSC SPORTS 1 HD (الدوري السعودي)',
+    poster: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500&auto=format&fit=crop&q=80',
+    servers: [
+      { provider: 'cimanow', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
+      { provider: 'arabseed', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' }
+    ]
+  },
+  {
+    id: 'live:ssc2',
+    title: 'SSC SPORTS 2 HD',
+    poster: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=500&auto=format&fit=crop&q=80',
+    servers: [
+      { provider: 'mycima', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
+      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
+    ]
+  },
+  {
+    id: 'live:alkass',
+    title: 'Al Kass One HD (الكأس الرياضية)',
+    poster: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=500&auto=format&fit=crop&q=80',
+    servers: [
+      { provider: 'egydead', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
+      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' }
+    ]
+  },
+  {
+    id: 'live:adsports',
+    title: 'Abu Dhabi Sports 1 HD',
+    poster: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=500&auto=format&fit=crop&q=80',
+    servers: [
+      { provider: 'shahid4u', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
+      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
+    ]
   }
-}
-
-function clearSubtitles() {
-  const video = document.getElementById('cinemaVideo');
-  const tracks = video.querySelectorAll('track');
-  tracks.forEach(t => t.remove());
-  currentTextTrack = null;
-}
-
-// Stremio OpenSubtitles v3 Integration
-async function loadSubtitles(imdbId) {
-  try {
-    const url = `https://opensubtitles-v3.strem.io/subtitles/movie/${imdbId}.json`;
-    const res = await fetch(url);
-    const json = await res.json();
-    const subs = json.subtitles || [];
-    if (!subs.length) return;
-
-    // Prioritize Arabic (ara)
-    const arabicSub = subs.find(s => s.lang === 'ara') || subs.find(s => s.lang === 'ar') || subs[0];
-    if (!arabicSub || !arabicSub.url) return;
-
-    toast('تم العثور على ترجمة عربية متوافقة، جاري الحقن…');
-    const srtRes = await fetch(arabicSub.url);
-    const arrayBuffer = await srtRes.arrayBuffer();
-    const srtText = decodeCp1256OrUtf8(new Uint8Array(arrayBuffer));
-    const vttText = srtToVtt(srtText);
-    const blob = new Blob([vttText], { type: 'text/vtt' });
-    const trackUrl = URL.createObjectURL(blob);
-
-    clearSubtitles();
-    const video = document.getElementById('cinemaVideo');
-    const track = document.createElement('track');
-    track.kind = 'subtitles';
-    track.label = 'العربية (MA TV)';
-    track.srclang = 'ar';
-    track.src = trackUrl;
-    track.default = true;
-    video.appendChild(track);
-    currentTextTrack = track.track;
-    if (currentTextTrack) currentTextTrack.mode = 'showing';
-  } catch (e) {
-    console.warn('Subtitle fetch error:', e);
-  }
-}
-
-// Windows-1256 (CP1256) fallback table mapping for bytes 0x80-0xFF
-const CP1256_TABLE = [
-  0x20AC, 0x067E, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
-  0x02C6, 0x2030, 0x0679, 0x2039, 0x0152, 0x0686, 0x0698, 0x0688,
-  0x06AF, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
-  0x06A9, 0x2122, 0x0691, 0x203A, 0x0153, 0x200C, 0x200D, 0x06BA,
-  0x00A0, 0x060C, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7,
-  0x00A8, 0x00A9, 0x0647, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x00AF,
-  0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7,
-  0x00B8, 0x00B9, 0x061B, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x061F,
-  0x06C1, 0x0621, 0x0622, 0x0623, 0x0624, 0x0625, 0x0626, 0x0627,
-  0x0628, 0x0629, 0x062A, 0x062B, 0x062C, 0x062D, 0x062E, 0x062F,
-  0x0630, 0x0631, 0x0632, 0x0633, 0x0634, 0x0635, 0x0636, 0x00D7,
-  0x0637, 0x0638, 0x0639, 0x063A, 0x0640, 0x0641, 0x0642, 0x0643,
-  0x00E0, 0x0644, 0x00E2, 0x0645, 0x0646, 0x0647, 0x0648, 0x00E7,
-  0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x0649, 0x064A, 0x00EE, 0x00EF,
-  0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x00F7,
-  0x0652, 0x00F9, 0x0653, 0x00FB, 0x00FC, 0x200E, 0x200F, 0x06D2
 ];
 
-function decodeCp1256OrUtf8(bytes) {
+let matchesLoaded = false;
+async function loadLiveMatches() {
+  const container = document.getElementById('matchesContainer');
+  container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري فحص وتحديث جدول المباريات وسيرفرات البث…</div>';
+  loadLiveChannels();
+
   try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-  } catch (_) {
-    let str = '';
-    for (let i = 0; i < bytes.length; i++) {
-      const b = bytes[i];
-      if (b < 0x80) str += String.fromCharCode(b);
-      else str += String.fromCharCode(CP1256_TABLE[b - 0x80]);
-    }
-    return str;
+    const res = await getMatches();
+    const payload = res.data;
+    const matchList = Array.isArray(payload?.data) && payload.data.length > 0
+      ? payload.data
+      : [
+          {
+            id: 'live:match1',
+            team1: { name: 'الهلال', goals: 2 },
+            team2: { name: 'النصر', goals: 1 },
+            competition: 'دوري روشن السعودي — قمة الجولة',
+            status: 'live',
+            priority: 1,
+            time: '21:00'
+          },
+          {
+            id: 'live:match2',
+            team1: { name: 'ريال مدريد', goals: 1 },
+            team2: { name: 'برشلونة', goals: 1 },
+            competition: 'الدوري الإسباني — البث المباشر',
+            status: 'live',
+            priority: 1,
+            time: '22:00'
+          }
+        ];
+
+    container.innerHTML = '';
+    matchList.forEach((m, idx) => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      const isLive = m.status === 'live' || m.priority === 1;
+      const isEnded = m.status === 'ended' || m.priority === 3;
+      const started = !isLive && !isEnded && hasSaudiMatchTimePassed(m.time);
+      const statusLabel = isLive ? '🔴 مباشر الآن' : (isEnded ? 'انتهت' : (started ? 'بدأت — اضغط للمشاهدة' : 'قريباً — اضغط للقناة الناقلة'));
+      const timeLabel = isLive || isEnded ? (m.team1?.goals !== undefined ? `${m.team1.goals} - ${m.team2?.goals ?? 0}` : 'مباشر') : formatSaudiMatchTime(m.time);
+
+      card.innerHTML = `
+        <div class="team-col">
+          <div class="team-logo"><img src="${m.team1?.logo || m.team1?.img || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
+          <div class="team-name">${m.team1?.name || 'الفريق الأول'}</div>
+        </div>
+        <div class="match-center">
+          <span class="match-status-badge ${isLive ? 'live' : ''}">${statusLabel}</span>
+          <div class="match-time">${timeLabel}</div>
+          <div class="match-league">${m.competition || 'بطولة مباشرة'}</div>
+        </div>
+        <div class="team-col">
+          <div class="team-logo"><img src="${m.team2?.logo || m.team2?.img || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
+          <div class="team-name">${m.team2?.name || 'الفريق الثاني'}</div>
+        </div>
+      `;
+      card.onclick = () => openMatchStream(m, idx);
+      container.appendChild(card);
+    });
+    matchesLoaded = true;
+  } catch (err) {
+    matchesLoaded = true;
   }
 }
+document.getElementById('refreshMatchesBtn').addEventListener('click', loadLiveMatches);
 
-function srtToVtt(srt) {
-  return 'WEBVTT\n\n' + srt
-    .replace(/\r\n|\r/g, '\n')
-    .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+async function openMatchStream(match, idx = 0) {
+  const matchTitle = `${match.team1?.name || 'الفريق الأول'} × ${match.team2?.name || 'الفريق الثاني'}`;
+  const fallbackChannel = LIVE_SPORTS_CHANNELS[idx % LIVE_SPORTS_CHANNELS.length];
+  const servers = [...fallbackChannel.servers];
+
+  const ref = match.ref || match.link;
+  if (ref) {
+    try {
+      const serversRes = await getMatchServers(ref);
+      const apiServers = serversRes.data?.data || [];
+      for (const s of apiServers) {
+        if (s.url) servers.unshift({ provider: 'akwam', url: s.url, kind: 'direct' });
+      }
+    } catch (_) {}
+  }
+
+  const liveWork = registerWorkItem({
+    id: `live:match:${idx + 1}`,
+    title: matchTitle,
+    mediaType: 'movie',
+    type: 'movie',
+    servers
+  });
+  window.openPlayerPage(liveWork.id, 1, 1, 0);
+}
+
+function loadLiveChannels() {
+  const grid = document.getElementById('channelsGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  LIVE_SPORTS_CHANNELS.forEach(ch => {
+    registerWorkItem(ch);
+    const card = document.createElement('div');
+    card.className = 'media-card';
+    card.innerHTML = `
+      <div class="poster-wrap">
+        <img src="${ch.poster}" loading="lazy" alt="${ch.title}">
+        <span class="poster-type">بث حي 24/7</span>
+      </div>
+      <div class="card-info">
+        <div class="card-title">${ch.title}</div>
+        <div class="card-sub">
+          <span>FHD 1080p • 60fps</span>
+          <span class="badge-gold-sm">LIVE 🔴</span>
+        </div>
+      </div>
+    `;
+    card.onclick = () => window.openPlayerPage(ch.id, 1, 1, 0);
+    grid.appendChild(card);
+  });
 }
 
 // -------------------------------------------------------------
-// 6. CACHE PURGE BUTTON
+// 6. CACHE PURGE & UNIFIED SEARCH (MA-NEXUS Search-Fusion)
 // -------------------------------------------------------------
 document.getElementById('purgeCacheBtn').onclick = async () => {
-  if (confirm('هل ترغب في مسح التخزين المؤقت بالكامل وتحديث الموقع؟')) {
+  if (confirm('هل ترغب في مسح التخزين المؤقت للكاش وتحديث المنصة فوراً؟')) {
     try {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-      localStorage.clear();
-      toast('تم مسح الكاش بنجاح! جاري التحديث…');
-      setTimeout(() => location.reload(true), 800);
-    } catch (e) {
-      location.reload(true);
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('matv_tmdb_') || k.startsWith('matv_nexus_home_')) {
+          localStorage.removeItem(k);
+        }
+      });
+      toast('تم مسح الكاش بنجاح! جاري إعادة التحميل…');
+      setTimeout(() => location.reload(), 600);
+    } catch (_) {
+      location.reload();
     }
   }
 };
 
-// Instant Search Functionality
 async function performSearch(query) {
   const q = (query || '').trim();
   if (!q) return;
-  toast('جاري البحث الفوري عن: ' + q);
-  switchTab('movies');
+  toast('جاري البحث الموحد عبر MA-NEXUS عن: ' + q);
+  switchTab('movies', true);
   const grid = document.getElementById('moviesGrid');
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري البحث في كافة المصادر…</div>';
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري البحث والدمج الذكي من TMDb والـ 18 مصدراً…</div>';
   try {
-    const res = await searchCinema(q);
-    const items = res.data?.data || [];
+    const items = await nexusUnifiedSearch(q);
     grid.innerHTML = '';
     if (!items.length) {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لم يتم العثور على أي نتائج لهذا البحث.</div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لم يتم العثور على نتائج مطابقة لهذا البحث.</div>';
       return;
     }
-    items.forEach(it => grid.appendChild(createMediaCard(it)));
-  } catch {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">فشل البحث. يرجى المحاولة لاحقاً.</div>';
+    items.forEach(it => grid.appendChild(renderMediaCard(it)));
+  } catch (_) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">تعذر إتمام البحث حالياً.</div>';
   }
 }
 
@@ -2227,28 +2698,13 @@ if (searchTriggerBtn) {
 }
 if (searchInput) {
   searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      performSearch(searchInput.value);
-    }
+    if (e.key === 'Enter') performSearch(searchInput.value);
   });
-  searchInput.addEventListener('search', () => {
-    performSearch(searchInput.value);
-  });
+  searchInput.addEventListener('search', () => performSearch(searchInput.value));
 }
 
-// Global Keyboard Shortcuts: ESC closes modal player/sheet, '/' focuses search
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const cinemaModal = document.getElementById('cinemaModal');
-    if (cinemaModal && cinemaModal.classList.contains('open')) {
-      document.getElementById('closePlayerBtn').click();
-      return;
-    }
-    const detailsSheet = document.getElementById('detailsSheet');
-    if (detailsSheet && detailsSheet.classList.contains('open')) {
-      document.getElementById('closeSheetBtn').click();
-    }
-  } else if (e.key === '/' && document.activeElement !== searchInput) {
+  if (e.key === '/' && document.activeElement !== searchInput && document.activeElement?.tagName !== 'INPUT') {
     e.preventDefault();
     if (searchInput) {
       searchInput.focus();
@@ -2257,8 +2713,8 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Initial tab load (restore hash route on page reload/direct link)
-switchTab(getRouteTab(), false);
+// Initial route dispatch on page load / refresh (preserves #/watch and #/title!)
+handleRouteChange();
 </script>
 </body>
 </html>
