@@ -174,7 +174,7 @@ export async function probeAndRankServers(rawServers = []) {
     const providerKey = srv.provider || srv.source || srv.name || srv.url || 'ma';
     const basePrefix = encodeProviderServerName(providerKey, 1).split('-')[0];
     counterByPrefix[basePrefix] = (counterByPrefix[basePrefix] || 0) + 1;
-    const code = `${basePrefix}-${counterByPrefix[basePrefix]}`;
+    const code = srv.code || `${basePrefix}-${counterByPrefix[basePrefix]}`;
     const urlStr = String(srv.url || srv.embedUrl || '');
     return {
       ...srv,
@@ -275,10 +275,10 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
       const data = await res.json();
       if (Array.isArray(data?.servers)) {
         for (const s of data.servers) {
-          if (s?.url) servers.push({ provider: s.provider || s.source || 'akwam', url: s.url, headers: s.headers || {}, downloadUrl: s.downloadUrl || s.url });
+          if (s?.url) servers.push({ provider: s.provider || s.source || 'akwam', code: s.code, kind: s.kind || 'direct', url: s.url, headers: s.headers || {}, downloadUrl: s.downloadUrl || s.url });
         }
       } else if (data?.url) {
-        servers.push({ provider: data.provider || 'akwam', url: data.url, headers: data.headers || {}, downloadUrl: data.downloadUrl || data.url });
+        servers.push({ provider: data.provider || 'akwam', code: data.code, kind: data.kind || 'direct', url: data.url, headers: data.headers || {}, downloadUrl: data.downloadUrl || data.url });
       }
     }
   } catch (_) {}

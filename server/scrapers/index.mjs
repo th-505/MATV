@@ -1,14 +1,21 @@
 // =====================================================================
-// MA TV SUPREME 18-SOURCE REAL SCRAPERS MASTER ENGINE
+// MA TV SUPREME REAL SCRAPERS MASTER ENGINE (ZERO IFRAMES DIRECT RESOLUTION)
 // =====================================================================
 
-import { scrapeMyCimaCatalog, scrapeMyCimaDetails, scrapeCimaNowCatalog } from './supervisor1-mycima.mjs';
-import { scrapeShahid4uCatalog, scrapeMovizTimeCatalog, scrapeShii4uCatalog } from './supervisor2-shahid-moviz.mjs';
-import { scrapeEgyDeadCatalog, scrapeEgyDeadDetails, scrapeIpaUniverseCatalog } from './supervisor3-egydead-ipa.mjs';
-import { scrapeAnime4upCatalog, scrapeAnime4upDetails, scrapeQfilmCatalog, scrapeRistoCatalog } from './supervisor4-anime4up.mjs';
-import { scrapeArabSeedCatalog, scrapeArabSeedDetails, scrapeMewsryCatalog } from './supervisor5-arabseed.mjs';
-import { scrapeWitAnimeCatalog, scrapeWitAnimeDetails, scrapeEgyDeadLiveChannels, scrapeYallaShootMatches } from './supervisor6-witanime-live.mjs';
-import { fetchHtmlWithAntiBan, buildAntiBanHeaders } from './anti-ban.mjs';
+import { scrapeMyCimaCategory, searchMyCima, extractMyCimaStreamsAndEpisodes } from './sites/mycima.mjs';
+import { scrapeAkwamCategory, searchAkwam, extractAkwamStreamsAndEpisodes } from './sites/akwam.mjs';
+import { scrapeCimaNowCategory, extractCimaNowStreamsAndEpisodes } from './sites/cimanow.mjs';
+import { scrapeEgyDeadCategory, extractEgyDeadStreamsAndEpisodes } from './sites/egydead.mjs';
+import { scrapeArabSeedCategory, extractArabSeedStreamsAndEpisodes } from './sites/arabseed.mjs';
+import { scrapeShahid4uCategory, extractShahid4uStreamsAndEpisodes } from './sites/shahid4u.mjs';
+import { scrapeMovizTimeCategory, extractMovizTimeStreamsAndEpisodes } from './sites/moviztime.mjs';
+import { scrape3cktvCategory, extract3cktvStreamsAndEpisodes } from './sites/3cktv.mjs';
+import { scrapeAnime4UpCategory, extractAnime4UpStreamsAndEpisodes } from './sites/anime4up.mjs';
+import { scrapeWitAnimeCategory, extractWitAnimeStreamsAndEpisodes } from './sites/witanime.mjs';
+import { extractRistoAnimeStreams, extractQFilmStreams, extractIpaUniverseStreams, extractMewsryStreams } from './sites/specialized-portals.mjs';
+import { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches } from './supervisor6-witanime-live.mjs';
+
+export { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches };
 
 const TMDB_API_KEY = String(process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('')).trim();
 const SEARCH_CACHE_TTL_MS = 60_000;
@@ -36,7 +43,7 @@ export async function enrichCatalogWithTmdb(items = []) {
     if (!cleanTitle) return item;
 
     try {
-      const type = item.is_series ? 'tv' : 'movie';
+      const type = (item.type === 'series' || item.is_series || item.category === 'series') ? 'tv' : 'movie';
       const searchUrl = new URL(`https://api.themoviedb.org/3/search/${type}`);
       searchUrl.searchParams.set('api_key', TMDB_API_KEY);
       searchUrl.searchParams.set('language', 'ar-SA');
@@ -70,65 +77,77 @@ export async function enrichCatalogWithTmdb(items = []) {
 }
 
 /**
- * Executes a real scraping query based on category across the 6 supervisor clusters
+ * Executes a real scraping query based on category across dedicated scrapers
  */
 async function scrapeRealCategoryUncached(category, p) {
   let results = [];
 
   switch (category) {
     case 'movie-foreign':
-      results = await scrapeMyCimaCatalog('movie', p);
-      if (results.length === 0) results = await scrapeShahid4uCatalog('movie', p);
-      if (results.length === 0) results = await scrapeArabSeedCatalog('movie', p);
+      results = await scrapeMyCimaCategory('movies', p);
+      if (results.length === 0) results = await scrapeAkwamCategory('movies', p);
+      if (results.length === 0) results = await scrapeShahid4uCategory('movies', p);
+      if (results.length === 0) results = await scrapeArabSeedCategory('movies', p);
       break;
 
     case 'movie-arabic':
-      results = await scrapeArabSeedCatalog('movie', p);
-      if (results.length === 0) results = await scrapeEgyDeadCatalog('movie', p);
+      results = await scrapeArabSeedCategory('movies', p);
+      if (results.length === 0) results = await scrapeAkwamCategory('movies', p);
+      if (results.length === 0) results = await scrapeEgyDeadCategory('movies', p);
+      if (results.length === 0) results = await scrapeCimaNowCategory('movies', p);
       break;
 
     case 'movie-indian':
     case 'movie-asian':
-      results = await scrapeShahid4uCatalog('movie', p);
-      if (results.length === 0) results = await scrapeMovizTimeCatalog('movie', p);
+      results = await scrapeShahid4uCategory('movies', p);
+      if (results.length === 0) results = await scrapeMovizTimeCategory('movies', p);
+      if (results.length === 0) results = await scrapeMyCimaCategory('movies', p);
       break;
 
     case '3isk-movies':
-      results = await scrapeMyCimaCatalog('movie', p);
+    case 'turkish-movies':
+      results = await scrape3cktvCategory('movies', p);
+      if (results.length === 0) results = await scrapeMyCimaCategory('movies', p);
+      if (results.length === 0) results = await scrapeArabSeedCategory('movies', p);
       break;
 
     case 'series-foreign':
-      results = await scrapeShahid4uCatalog('series', p);
-      if (results.length === 0) results = await scrapeEgyDeadCatalog('series', p);
-      if (results.length === 0) results = await scrapeMyCimaCatalog('series', p);
+      results = await scrapeShahid4uCategory('series', p);
+      if (results.length === 0) results = await scrapeEgyDeadCategory('series', p);
+      if (results.length === 0) results = await scrapeAkwamCategory('series', p);
+      if (results.length === 0) results = await scrapeMyCimaCategory('series', p);
       break;
 
     case 'series-arabic':
     case 'series-ramadan':
-      results = await scrapeArabSeedCatalog('series', p);
-      if (results.length === 0) results = await scrapeShahid4uCatalog('series', p);
+      results = await scrapeArabSeedCategory('series', p);
+      if (results.length === 0) results = await scrapeAkwamCategory('series', p);
+      if (results.length === 0) results = await scrapeShahid4uCategory('series', p);
+      if (results.length === 0) results = await scrapeCimaNowCategory('series', p);
       break;
 
     case 'series-turkish':
     case '3isk-latest':
     case '3isk-turkish':
     case '3isk-dubbed':
-      results = await scrapeMyCimaCatalog('series', p);
-      if (results.length === 0) results = await scrapeArabSeedCatalog('series', p);
+      results = await scrape3cktvCategory('series', p);
+      if (results.length === 0) results = await scrapeMyCimaCategory('series', p);
+      if (results.length === 0) results = await scrapeArabSeedCategory('series', p);
       break;
 
     case 'movie-anime':
-      results = await scrapeAnime4upCatalog('movie', p);
-      if (results.length === 0) results = await scrapeWitAnimeCatalog('movie', p);
+      results = await scrapeAnime4UpCategory('anime_movies', p);
+      if (results.length === 0) results = await scrapeWitAnimeCategory('anime_movies', p);
       break;
 
     case 'series-anime':
-      results = await scrapeAnime4upCatalog('series', p);
-      if (results.length === 0) results = await scrapeWitAnimeCatalog('series', p);
+      results = await scrapeAnime4UpCategory('anime_series', p);
+      if (results.length === 0) results = await scrapeWitAnimeCategory('anime_series', p);
       break;
 
     default:
-      results = await scrapeMyCimaCatalog('movie', p);
+      results = await scrapeMyCimaCategory('movies', p);
+      if (results.length === 0) results = await scrapeAkwamCategory('movies', p);
       break;
   }
 
@@ -165,16 +184,17 @@ export async function scrapeRealCategory(category, page = 1) {
  * Executes a real search query across top scraping engines concurrently
  */
 async function scrapeRealSearchUncached(q) {
-
   try {
-    const [mycimaRes, egydeadRes, animeRes] = await Promise.allSettled([
-      scrapeMyCimaCatalog('movie', 1),
-      scrapeEgyDeadCatalog('movie', 1),
-      scrapeAnime4upCatalog('series', 1)
+    const [mycimaRes, akwamRes, egydeadRes, animeRes] = await Promise.allSettled([
+      searchMyCima(q),
+      searchAkwam(q),
+      scrapeEgyDeadCategory('movies', 1),
+      scrapeAnime4UpCategory('anime_series', 1)
     ]);
 
     const combined = [
       ...(mycimaRes.status === 'fulfilled' ? mycimaRes.value : []),
+      ...(akwamRes.status === 'fulfilled' ? akwamRes.value : []),
       ...(egydeadRes.status === 'fulfilled' ? egydeadRes.value : []),
       ...(animeRes.status === 'fulfilled' ? animeRes.value : [])
     ];
@@ -239,43 +259,122 @@ export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الح�
   });
 }
 
-function sanitizeDetailsPayload(details) {
+function sanitizeDetailsPayload(details, source = '') {
   if (!details || typeof details !== 'object') return details;
+  const servers = Array.isArray(details.servers) ? details.servers : [];
   if (Array.isArray(details.episodes)) {
     details.episodes = normalizeEpisodesList(details.episodes);
   }
-  return details;
+  return {
+    ...details,
+    source: details.source || source,
+    servers,
+    media_sources: servers
+  };
+}
+
+function decodeRefUrl(ref, prefix) {
+  const raw = ref.startsWith(prefix) ? ref.slice(prefix.length) : ref;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  try {
+    const decoded = Buffer.from(raw, 'base64url').toString('utf8');
+    if (decoded.startsWith('http://') || decoded.startsWith('https://')) return decoded;
+  } catch (_) {}
+  try {
+    const decoded = Buffer.from(raw, 'base64').toString('utf8');
+    if (decoded.startsWith('http://') || decoded.startsWith('https://')) return decoded;
+  } catch (_) {}
+  return raw;
 }
 
 /**
- * Scrapes details from any of the 18 sources based on reference or URL
+ * Scrapes direct .m3u8 and .mp4 streams from dedicated scrapers based on reference or URL
  */
 export async function scrapeRealDetails(refOrUrl) {
-  if (!refOrUrl) return null;
+  if (!refOrUrl || typeof refOrUrl !== 'string') return null;
 
-  if (refOrUrl.startsWith('mycima:') || refOrUrl.includes('mycima.')) {
-    const url = refOrUrl.startsWith('mycima:') ? Buffer.from(refOrUrl.slice(7), 'base64url').toString('utf8') : refOrUrl;
-    return sanitizeDetailsPayload(await scrapeMyCimaDetails(url));
+  // 1. MyCima (MA)
+  if (refOrUrl.startsWith('mycima:') || refOrUrl.includes('mycima.') || refOrUrl.includes('wecima.')) {
+    const url = decodeRefUrl(refOrUrl, 'mycima:');
+    return sanitizeDetailsPayload(await extractMyCimaStreamsAndEpisodes(url), 'mycima');
   }
 
+  // 2. Akwam (AK)
+  if (refOrUrl.startsWith('akwam:') || refOrUrl.includes('akwam.') || refOrUrl.includes('akoam.')) {
+    const url = decodeRefUrl(refOrUrl, 'akwam:');
+    return sanitizeDetailsPayload(await extractAkwamStreamsAndEpisodes(url), 'akwam');
+  }
+
+  // 3. CimaNow (CW)
+  if (refOrUrl.startsWith('cimanow:') || refOrUrl.includes('cimanow.')) {
+    const url = decodeRefUrl(refOrUrl, 'cimanow:');
+    return sanitizeDetailsPayload(await extractCimaNowStreamsAndEpisodes(url), 'cimanow');
+  }
+
+  // 4. EgyDead (ED)
   if (refOrUrl.startsWith('egydead:') || refOrUrl.includes('egydead.')) {
-    const url = refOrUrl.startsWith('egydead:') ? Buffer.from(refOrUrl.slice(8), 'base64url').toString('utf8') : refOrUrl;
-    return sanitizeDetailsPayload(await scrapeEgyDeadDetails(url));
+    const url = decodeRefUrl(refOrUrl, 'egydead:');
+    return sanitizeDetailsPayload(await extractEgyDeadStreamsAndEpisodes(url), 'egydead');
   }
 
-  if (refOrUrl.startsWith('anime4up:') || refOrUrl.includes('anime4up.')) {
-    const url = refOrUrl.startsWith('anime4up:') ? Buffer.from(refOrUrl.slice(9), 'base64url').toString('utf8') : refOrUrl;
-    return sanitizeDetailsPayload(await scrapeAnime4upDetails(url));
-  }
-
+  // 5. ArabSeed (AD)
   if (refOrUrl.startsWith('arabseed:') || refOrUrl.includes('arabseed.')) {
-    const url = refOrUrl.startsWith('arabseed:') ? Buffer.from(refOrUrl.slice(9), 'base64url').toString('utf8') : refOrUrl;
-    return sanitizeDetailsPayload(await scrapeArabSeedDetails(url));
+    const url = decodeRefUrl(refOrUrl, 'arabseed:');
+    return sanitizeDetailsPayload(await extractArabSeedStreamsAndEpisodes(url), 'arabseed');
   }
 
+  // 6. Shahid4u (SU / SH)
+  if (refOrUrl.startsWith('shahid4u:') || refOrUrl.startsWith('shii4u:') || refOrUrl.includes('shahid4u.') || refOrUrl.includes('sh4u.')) {
+    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('shii4u:') ? 'shii4u:' : 'shahid4u:');
+    return sanitizeDetailsPayload(await extractShahid4uStreamsAndEpisodes(url), 'shahid4u');
+  }
+
+  // 7. MovizTime (ME)
+  if (refOrUrl.startsWith('moviztime:') || refOrUrl.startsWith('moviz:') || refOrUrl.includes('moviztime.')) {
+    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('moviz:') ? 'moviz:' : 'moviztime:');
+    return sanitizeDetailsPayload(await extractMovizTimeStreamsAndEpisodes(url), 'moviztime');
+  }
+
+  // 8. 3cktv (3V)
+  if (refOrUrl.startsWith('3cktv:') || refOrUrl.startsWith('3ck:') || refOrUrl.includes('3ck.')) {
+    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('3ck:') ? '3ck:' : '3cktv:');
+    return sanitizeDetailsPayload(await extract3cktvStreamsAndEpisodes(url), '3cktv');
+  }
+
+  // 9. Anime4Up (AP)
+  if (refOrUrl.startsWith('anime4up:') || refOrUrl.includes('anime4up.')) {
+    const url = decodeRefUrl(refOrUrl, 'anime4up:');
+    return sanitizeDetailsPayload(await extractAnime4UpStreamsAndEpisodes(url), 'anime4up');
+  }
+
+  // 10. WitAnime (WE)
   if (refOrUrl.startsWith('witanime:') || refOrUrl.includes('witanime.')) {
-    const url = refOrUrl.startsWith('witanime:') ? Buffer.from(refOrUrl.slice(9), 'base64url').toString('utf8') : refOrUrl;
-    return sanitizeDetailsPayload(await scrapeWitAnimeDetails(url));
+    const url = decodeRefUrl(refOrUrl, 'witanime:');
+    return sanitizeDetailsPayload(await extractWitAnimeStreamsAndEpisodes(url), 'witanime');
+  }
+
+  // 11. Specialized Portals: RistoAnime (RE)
+  if (refOrUrl.startsWith('ristoanime:') || refOrUrl.includes('ristoanime.')) {
+    const url = decodeRefUrl(refOrUrl, 'ristoanime:');
+    return sanitizeDetailsPayload(await extractRistoAnimeStreams(url), 'ristoanime');
+  }
+
+  // 12. Specialized Portals: QFilm (QM)
+  if (refOrUrl.startsWith('qfilm:') || refOrUrl.includes('qfilm.')) {
+    const url = decodeRefUrl(refOrUrl, 'qfilm:');
+    return sanitizeDetailsPayload(await extractQFilmStreams(url), 'qfilm');
+  }
+
+  // 13. Specialized Portals: IPAUniverse (IE)
+  if (refOrUrl.startsWith('ipauniverse:') || refOrUrl.includes('ipauniverse.')) {
+    const url = decodeRefUrl(refOrUrl, 'ipauniverse:');
+    return sanitizeDetailsPayload(await extractIpaUniverseStreams(url), 'ipauniverse');
+  }
+
+  // 14. Specialized Portals: Mewsry (MY)
+  if (refOrUrl.startsWith('mewsry:') || refOrUrl.includes('mewsry.')) {
+    const url = decodeRefUrl(refOrUrl, 'mewsry:');
+    return sanitizeDetailsPayload(await extractMewsryStreams(url), 'mewsry');
   }
 
   return null;

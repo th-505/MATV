@@ -416,11 +416,33 @@ async function directDetailsResolved(target) {
 }
 
 async function cinemaDetails(ref) {
-  if (ref.startsWith("mycima:") || ref.startsWith("egydead:") || ref.startsWith("anime4up:") || ref.startsWith("arabseed:") || ref.startsWith("witanime:") || ref.startsWith("cimanow:") || ref.startsWith("shahid4u:") || ref.startsWith("moviz:")) {
+  if (
+    ref.startsWith("mycima:") ||
+    ref.startsWith("egydead:") ||
+    ref.startsWith("anime4up:") ||
+    ref.startsWith("arabseed:") ||
+    ref.startsWith("witanime:") ||
+    ref.startsWith("cimanow:") ||
+    ref.startsWith("shahid4u:") ||
+    ref.startsWith("shii4u:") ||
+    ref.startsWith("moviz:") ||
+    ref.startsWith("moviztime:") ||
+    ref.startsWith("akwam:") ||
+    ref.startsWith("3cktv:") ||
+    ref.startsWith("3ck:") ||
+    ref.startsWith("ristoanime:") ||
+    ref.startsWith("qfilm:") ||
+    ref.startsWith("ipauniverse:") ||
+    ref.startsWith("mewsry:")
+  ) {
     const details = await scrapeRealDetails(ref);
     if (details) return details;
   }
-  if (!ref.startsWith("legacy:")) throw new Error("BAD_CINEMA_REFERENCE");
+  if (!ref.startsWith("legacy:")) {
+    const details = await scrapeRealDetails(ref);
+    if (details) return details;
+    throw new Error("BAD_CINEMA_REFERENCE");
+  }
   const target = decodeURIComponent(ref.slice("legacy:".length));
   assertSourceUrl(target);
   try { return await directDetailsResolved(target); }
@@ -512,10 +534,26 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
             const sources = details?.media_sources || details?.servers || [];
             for (const s of sources) {
               const u = s.url || s.media_path;
-              if (u) servers.push({ provider: s.provider || details?.source || "akwam", url: u, headers: s.headers || {} });
+              if (u) {
+                servers.push({
+                  provider: s.provider || details?.source || "akwam",
+                  code: s.code,
+                  kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
+                  url: u,
+                  headers: s.headers || {},
+                  streamType: s.streamType,
+                  quality: s.quality
+                });
+              }
             }
             if (details?.media_src) {
-              servers.push({ provider: details?.source || "akwam", url: details.media_src, headers: {} });
+              servers.push({
+                provider: details?.source || "akwam",
+                code: details?.code,
+                kind: "direct",
+                url: details.media_src,
+                headers: {}
+              });
             }
           } catch (_) {}
         }
