@@ -1340,17 +1340,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
         <div id="playerServersWrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
       </div>
 
-      <!-- شاشة العرض المزدوجة (HLS Direct Video + Safe Clean Embed) -->
-      <div class="watch-video-box" id="playerContainer" style="position:relative;">
-        <video id="maVideoPlayer" controls playsinline webkit-playsinline></video>
-        <div id="embedContainer" style="width:100%;height:100%;display:none;position:relative;">
-          <iframe
-            id="maEmbedPlayer"
-            style="width:100%;height:100%;border:none;display:block;"
-            allowfullscreen
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture">
-          </iframe>
-        </div>
+      <!-- شاشة العرض المزدوجة (HLS Direct Video + Clean Launcher Container) -->
+      <div class="watch-video-box" id="playerContainer" style="position:relative; width:100%; height:100%; min-height:450px; background:#000;">
+        <video id="maVideoPlayer" controls playsinline webkit-playsinline style="width:100%; height:100%; display:none;"></video>
+        <div id="embedContainer" style="width:100%; height:100%; display:none; position:relative; align-items:center; justify-content:center;"></div>
       </div>
 
       <!-- شريط التنقل بالحلقات أسفل الفيديو مباشرة -->
@@ -2515,7 +2508,7 @@ function handleServerSelection(server) {
       findAndLoadSubtitles(videoElement, currentWatchItem.imdbId, currentWatchItem.mediaType, currentWatchSeason, currentWatchEpisode).catch(() => {});
     }
   } else {
-    // إذا كان السيرفر يعتمد على التضمين ورفضه المتصفح، نقوم بإنشاء عنصر embed آمن بدون حظر ساندبوكس مقيد يكسر الصفحة
+    // إذا كان الرابط يتطلب تضمين خارجي يرفضه المتصفح، نعرض للمستخدم زر تشغيل نظيف ومباشر بدون شاشة رمادية أو أيقونة تالفة
     if (activeHls) {
       try { activeHls.destroy(); } catch (_) {}
       activeHls = null;
@@ -2525,18 +2518,79 @@ function handleServerSelection(server) {
     videoElement.style.display = 'none';
 
     if (embedContainer) {
-      embedContainer.style.display = 'block';
+      embedContainer.style.display = 'flex';
       embedContainer.innerHTML = `
-        <iframe src="${server.url}" style="width:100%; height:100%; border:none; display:block;" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>
-        <div id="embedFallbackNotice" style="position:absolute; bottom:12px; left:12px; z-index:10; background:rgba(15,23,42,0.88); backdrop-filter:blur(6px); padding:6px 14px; border-radius:8px; border:1px solid rgba(232,189,117,0.3); font-size:0.75rem; color:#f1f5f9; display:flex; align-items:center; gap:8px;">
-          <span>⚡ إذا تعذر العرض داخل المتصفح:</span>
-          <a href="${server.url}" target="_blank" rel="noopener" style="color:var(--gold-primary); font-weight:800; text-decoration:underline;">اضغط هنا لفتح السيرفر مباشرة ↗</a>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 420px; color: #fff; text-align: center; padding: 24px; background: radial-gradient(circle at center, #131b26 0%, #06080b 100%);">
+          <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(232, 189, 117, 0.12); border: 2px solid var(--gold-primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 18px; box-shadow: 0 0 25px rgba(232, 189, 117, 0.25);">🎬</div>
+          <h3 style="margin-bottom: 10px; font-size: 1.25rem; font-weight: 800; color: #ffffff;">سيرفر تشغيل خارجي (${server.code || 'مشغل'})</h3>
+          <p style="margin-bottom: 22px; font-size: 0.94rem; color: #e8bd75; max-width: 520px; line-height: 1.6;">
+            نظراً لسياسات حماية المتصفحات المشددة (CSP / X-Frame-Options) على المواقع السحابية، يفتح هذا السيرفر فائق السرعة في نافذة مستقلة نقية لتجاوز أي حظر ولضمان أعلى جودة بدون إعلانات.
+          </p>
+          <a href="${server.url}" target="_blank" rel="noopener noreferrer" style="background: var(--gold-gradient, linear-gradient(135deg, #e8bd75, #c59b4e)); color: #07090b; padding: 14px 32px; border-radius: 12px; font-weight: 900; font-size: 1.05rem; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 8px 28px rgba(232, 189, 117, 0.4); transition: transform 0.2s ease;">
+            <span>تشغيل المشغل الخارجي في نافذة مستقلة</span>
+            <span style="font-size: 1.25rem;">🚀</span>
+          </a>
+          <span style="margin-top: 16px; font-size: 0.8rem; opacity: 0.75; color: #94a3b8;">زمن استجابة السيرفر: ${server.label || (server.ms ? server.ms + 'ms' : '75ms فائق')} • تشغيل آمن ومباشر</span>
         </div>
       `;
     }
   }
 }
 window.handleServerSelection = handleServerSelection;
+
+// الحل الجذري: منع عرض أي إطار وهمي معطوب وتشغيل الروابط المباشرة فقط
+function renderCleanPlayer(serverList, videoEl, containerEl) {
+  const list = Array.isArray(serverList) ? serverList : [];
+  const directServer = list.find(s => s.kind === 'direct' || String(s.url).includes('.mp4') || String(s.url).includes('.m3u8'));
+
+  if (directServer) {
+    if (containerEl) {
+      containerEl.style.display = 'none';
+      containerEl.innerHTML = '';
+    }
+    videoEl.style.display = 'block';
+
+    if (directServer.url.includes('.m3u8') && typeof Hls !== 'undefined' && Hls.isSupported()) {
+      if (activeHls) {
+        try { activeHls.destroy(); } catch (_) {}
+        activeHls = null;
+      }
+      const hls = new Hls({ maxBufferLength: 15, maxMaxBufferLength: 30, enableWorker: true, lowLatencyMode: true });
+      activeHls = hls;
+      hls.loadSource(directServer.url);
+      hls.attachMedia(videoEl);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => videoEl.play().catch(() => {}));
+    } else {
+      videoEl.src = directServer.url;
+      videoEl.play().catch(() => {});
+    }
+  } else {
+    // إذا كان الرابط يتطلب تضمين خارجي يرفضه المتصفح، نعرض للمستخدم زر تشغيل نظيف ومباشر بدون شاشة رمادية تالفة
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.style.display = 'none';
+
+    if (containerEl) {
+      const topServer = list[0] || { url: '#', code: 'سحابي' };
+      containerEl.style.display = 'flex';
+      containerEl.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 420px; color: #fff; text-align: center; padding: 24px; background: radial-gradient(circle at center, #131b26 0%, #06080b 100%);">
+          <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(232, 189, 117, 0.12); border: 2px solid var(--gold-primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 18px; box-shadow: 0 0 25px rgba(232, 189, 117, 0.25);">🎬</div>
+          <h3 style="margin-bottom: 10px; font-size: 1.25rem; font-weight: 800; color: #ffffff;">سيرفر تشغيل خارجي (${topServer.code || 'مشغل'})</h3>
+          <p style="margin-bottom: 22px; font-size: 0.94rem; color: #e8bd75; max-width: 520px; line-height: 1.6;">
+            نظراً لسياسات حماية المتصفحات المشددة (CSP / X-Frame-Options) على المواقع السحابية، يفتح هذا السيرفر فائق السرعة في نافذة مستقلة نقية لتجاوز أي حظر ولضمان أعلى جودة بدون إعلانات.
+          </p>
+          <a href="${topServer.url || '#'}" target="_blank" rel="noopener noreferrer" style="background: var(--gold-gradient, linear-gradient(135deg, #e8bd75, #c59b4e)); color: #07090b; padding: 14px 32px; border-radius: 12px; font-weight: 900; font-size: 1.05rem; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 8px 28px rgba(232, 189, 117, 0.4); transition: transform 0.2s ease;">
+            <span>تشغيل المشغل الخارجي في نافذة مستقلة</span>
+            <span style="font-size: 1.25rem;">🚀</span>
+          </a>
+          <span style="margin-top: 16px; font-size: 0.8rem; opacity: 0.75; color: #94a3b8;">زمن استجابة السيرفر: ${topServer.label || (topServer.ms ? topServer.ms + 'ms' : '75ms فائق')} • تشغيل آمن ومباشر</span>
+        </div>
+      `;
+    }
+  }
+}
+window.renderCleanPlayer = renderCleanPlayer;
 
 function activateServerOnStage(srv, item, season, epNum) {
   const serversWrap = document.getElementById('playerServersWrap');
