@@ -3,7 +3,8 @@
 // =====================================================================
 
 import { load } from 'cheerio';
-import { fetchHtmlWithAntiBan } from './anti-ban.mjs';
+import { fetchHtmlWithAntiBan, generateAntiBanHeaders } from './anti-ban.mjs';
+import { extractRawStreamsFromText } from './stream-unwrapper.mjs';
 
 const WITANIME_BASE = 'https://witanime.you';
 const EGYDEAD_TV_BASE = 'https://tv10.egydead.live';
@@ -161,3 +162,23 @@ export async function scrapeYallaShootMatches() {
     return [];
   }
 }
+
+/**
+ * Scrapes Live Match or Channel direct M3U8 streams with Anti-Ban headers
+ */
+export async function scrapeLiveStreamServers(targetUrl) {
+  try {
+    const { html } = await fetchHtmlWithAntiBan(targetUrl, { referer: targetUrl });
+    const directStreams = extractRawStreamsFromText(html, targetUrl);
+    return directStreams.map(s => ({
+      provider: 'live-stream',
+      kind: 'direct',
+      url: s.url,
+      headers: s.headers || generateAntiBanHeaders(targetUrl)
+    }));
+  } catch (err) {
+    console.warn('Live stream scrape error:', err.message);
+    return [];
+  }
+}
+

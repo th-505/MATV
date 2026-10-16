@@ -257,14 +257,60 @@ async function inspectStream(url){
   return {contentType,mp4,matroska,mpegTs,hls,totalBytes,bytes};
 }
 
+// تحسين تشغيل البثوث المباشرة وقنوات الرياضة بدون تقطيع (Low-Latency Live HLS)
+function playLiveStream(streamUrl, videoElement) {
+  if (!streamUrl || !videoElement) return;
+  console.log("جاري تشغيل البث المباشر الحي:", streamUrl);
+  if (typeof Hls !== 'undefined' && Hls.isSupported() && streamUrl.includes('.m3u8')) {
+    if (window.activeLiveHls) {
+      try { window.activeLiveHls.destroy(); } catch (_) {}
+    }
+    const h = new Hls({
+      liveSyncDurationCount: 2,
+      liveMaxLatencyDurationCount: 5,
+      enableWorker: true,
+      lowLatencyMode: true
+    });
+    h.loadSource(streamUrl);
+    h.attachMedia(videoElement);
+    h.on(Hls.Events.MANIFEST_PARSED, () => {
+      videoElement.play().catch(() => {});
+    });
+    h.on(Hls.Events.ERROR, (event, data) => {
+      if (data.fatal) {
+        console.warn("إعادة محاولة الاتصال بالبث المباشر...");
+        try { h.startLoad(); } catch (_) {}
+      }
+    });
+    window.activeLiveHls = h;
+    hls = h;
+  } else {
+    videoElement.src = streamUrl;
+    videoElement.play().catch(() => {});
+  }
+}
+window.playLiveStream = playLiveStream;
+
 function playHls(source,onFail,onSuccess){
   const v=createVideo();
   bindVideoStatus(v,source,onFail,onSuccess);
   player.appendChild(v);
+  const isLive=Boolean(source.isLive||/live|bein|ssc|kass|stream/i.test(source.url)||/مباشر|حي/i.test(source.name));
   if(v.canPlayType('application/vnd.apple.mpegurl')){
     v.src=source.url;
   }else if(window.Hls&&Hls.isSupported()){
-    hls=new Hls({enableWorker:true,maxBufferLength:15,maxMaxBufferLength:30});
+    const hlsConfig = isLive ? {
+      liveSyncDurationCount: 2,
+      liveMaxLatencyDurationCount: 5,
+      enableWorker: true,
+      lowLatencyMode: true
+    } : {
+      enableWorker: true,
+      maxBufferLength: 15,
+      maxMaxBufferLength: 30
+    };
+    hls=new Hls(hlsConfig);
+    if(isLive) window.activeLiveHls=hls;
     hls.loadSource(source.url);
     hls.attachMedia(v);
     hls.on(Hls.Events.MANIFEST_PARSED,()=>{
@@ -273,8 +319,13 @@ function playHls(source,onFail,onSuccess){
     });
     hls.on(Hls.Events.ERROR,(_,d)=>{
       if(d.fatal){
-        statusEl.textContent='تعذر تشغيل البث عبر '+source.name;
-        if(onFail)onFail();
+        if(isLive){
+          console.warn("إعادة محاولة الاتصال بالبث المباشر...");
+          try{hls.startLoad();}catch(_){if(onFail)onFail();}
+        }else{
+          statusEl.textContent='تعذر تشغيل البث عبر '+source.name;
+          if(onFail)onFail();
+        }
       }
     });
   }else{
