@@ -210,8 +210,13 @@ export async function probeAndRankServers(rawServers = []) {
     }
   }));
 
-  // ترتيب السيرفرات بحيث الأسرع (الأخضر) يكون الأول دائماً
-  return probed.sort((a, b) => a.ms - b.ms);
+  // ترتيب السيرفرات بحيث التدفقات المباشرة أولاً ثم الأسرع (الأخضر)
+  return probed.sort((a, b) => {
+    const aDirect = (a.kind === 'direct' || String(a.url).includes('.m3u8') || String(a.url).includes('.mp4')) ? 0 : 1;
+    const bDirect = (b.kind === 'direct' || String(b.url).includes('.m3u8') || String(b.url).includes('.mp4')) ? 0 : 1;
+    if (aDirect !== bDirect) return aDirect - bDirect;
+    return a.ms - b.ms;
+  });
 }
 
 const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
@@ -266,21 +271,28 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
   try {
     const q = new URLSearchParams({
       id: item?.id || '',
-      title: item?.title || '',
+      title: item?.title || item?.name || item?.originalTitle || '',
       year: item?.year || '',
       season: String(season),
       episode: String(episode)
     });
-    const res = await fetch(`${backendBase}/api/v1/resolve?${q.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data?.servers)) {
-        for (const s of data.servers) {
-          if (s?.url) servers.push({ provider: s.provider || s.source || 'akwam', code: s.code, kind: s.kind || 'direct', url: s.url, headers: s.headers || {}, downloadUrl: s.downloadUrl || s.url });
+    const candidateBases = [backendBase, 'http://127.0.0.1:3000'].filter(Boolean);
+    for (const base of candidateBases) {
+      try {
+        const res = await fetch(`${base}/api/v1/resolve?${q.toString()}`, { signal: AbortSignal.timeout(6000) });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data?.servers) && data.servers.length > 0) {
+            for (const s of data.servers) {
+              if (s?.url) servers.push({ provider: s.provider || s.source || 'akwam', code: s.code, kind: s.kind || 'direct', url: s.url, headers: s.headers || {}, downloadUrl: s.downloadUrl || s.url });
+            }
+            break;
+          } else if (data?.url) {
+            servers.push({ provider: data.provider || 'akwam', code: data.code, kind: data.kind || 'direct', url: data.url, headers: data.headers || {}, downloadUrl: data.downloadUrl || data.url });
+            break;
+          }
         }
-      } else if (data?.url) {
-        servers.push({ provider: data.provider || 'akwam', code: data.code, kind: data.kind || 'direct', url: data.url, headers: data.headers || {}, downloadUrl: data.downloadUrl || data.url });
-      }
+      } catch (_) {}
     }
   } catch (_) {}
 

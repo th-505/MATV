@@ -361,8 +361,8 @@ function play(source,onFail,onSuccess){
   }else{
     const f=document.createElement('iframe');
     f.src=source.url;
-    f.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
-    f.allow='autoplay; fullscreen; picture-in-picture; encrypted-media';f.allowFullscreen=true;f.referrerPolicy='no-referrer';
+    f.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock');
+    f.allow='autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope';f.allowFullscreen=true;f.referrerPolicy='no-referrer';
     player.appendChild(f);
     if(onSuccess)onSuccess();
   }
