@@ -45,13 +45,10 @@ const TS_PACKET_SIZE=188;
 const TS_CLOCK=90000;
 const TS_PTS_MOD=8589934592;
 const TS_DURATION_SAMPLE_BYTES=262144;
-const EMBED_HOSTS=new Set(['ukrcdn.club','ukrcdn.com','miravd.com','mp5.okhd.site','mp4plus.org','vidspeed.org','vidmoly.net','vidmoly.biz']);
-
 function safeSource(source){
   try{
     const url=new URL(source.url);
-    if(url.protocol!=='https:'||url.username||url.password||url.port||url.hash)return false;
-    if(source.type==='embed')return EMBED_HOSTS.has(url.hostname);
+    if(url.protocol!=='https:'||url.username||url.password||url.port)return false;
     return true;
   }catch{return false}
 }
@@ -361,8 +358,11 @@ function play(source,onFail,onSuccess){
   }else{
     const f=document.createElement('iframe');
     f.src=source.url;
-    f.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock');
-    f.allow='autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope';f.allowFullscreen=true;f.referrerPolicy='no-referrer';
+    f.style.width='100%';
+    f.style.height='100%';
+    f.style.border='none';
+    f.allow='autoplay; fullscreen; picture-in-picture; encrypted-media';
+    f.allowFullscreen=true;
     player.appendChild(f);
     if(onSuccess)onSuccess();
   }
