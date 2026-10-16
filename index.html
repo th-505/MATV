@@ -2240,89 +2240,152 @@ async function renderTitleDetailPage(params) {
 // -------------------------------------------------------------
 // 4. FULL-SCREEN INDEPENDENT PLAYER PAGE (#/watch?id=...&s=1&ep=1&srv=0)
 // -------------------------------------------------------------
-function activateServerOnStage(srv, item, season, epNum) {
+// تحسين سرعة التشغيل والقفز التلقائي للسيرفر الأسرع عند البطء (Fast-Failover Engine)
+let fastStreamResolutionSession = 0;
+
+function forceFastStreamResolution(serversList, videoElement, embedElement, item = currentWatchItem, season = currentWatchSeason, epNum = currentWatchEpisode) {
+  if (!serversList || serversList.length === 0) return;
+
+  const session = ++fastStreamResolutionSession;
   clearTimeout(directFallbackTimer);
-  const video = document.getElementById('maVideoPlayer');
-  const iframe = document.getElementById('maEmbedPlayer');
-  const dlBtn = document.getElementById('watchDownloadBtn');
 
-  if (activeHls) {
-    try { activeHls.destroy(); } catch (_) {}
-    activeHls = null;
-  }
+  // نرتب السيرفرات حسب الأسرع (إجبار المباشر أولاً ثم الأقل ms والأخضر أولاً)
+  const sortedServers = [...serversList].sort((a, b) => {
+    const aDirect = (a.kind === 'direct' || String(a.url).includes('.m3u8') || String(a.url).includes('.mp4')) ? 0 : 1;
+    const bDirect = (b.kind === 'direct' || String(b.url).includes('.m3u8') || String(b.url).includes('.mp4')) ? 0 : 1;
+    if (aDirect !== bDirect) return aDirect - bDirect;
+    return (a.ms || 999) - (b.ms || 999);
+  });
 
-  if (dlBtn) {
-    if (srv?.downloadUrl || srv?.kind === 'direct') {
-      dlBtn.href = srv.downloadUrl || srv.url;
-      dlBtn.style.display = 'inline-flex';
-    } else {
-      dlBtn.style.display = 'none';
+  let currentIdx = 0;
+
+  function syncActiveServerUi(srv) {
+    if (!srv) return;
+    const serversWrap = document.getElementById('playerServersWrap');
+    if (serversWrap) {
+      const allBtns = serversWrap.querySelectorAll('.srv-ping-btn');
+      allBtns.forEach(btn => {
+        const isMatch = btn.dataset.url === srv.url || (srv.code && btn.dataset.code === srv.code);
+        btn.classList.toggle('active', isMatch);
+      });
+    }
+
+    const dlBtn = document.getElementById('watchDownloadBtn');
+    if (dlBtn) {
+      if (srv.downloadUrl || srv.kind === 'direct') {
+        dlBtn.href = srv.downloadUrl || srv.url;
+        dlBtn.style.display = 'inline-flex';
+      } else {
+        dlBtn.style.display = 'none';
+      }
     }
   }
 
-  const switchToFallbackEmbed = () => {
-    clearTimeout(directFallbackTimer);
+  function tryPlayNext() {
+    if (session !== fastStreamResolutionSession) return;
+
+    if (currentIdx >= sortedServers.length) {
+      console.error("عذراً، جميع السيرفرات بطيئة أو لا ترد حالياً.");
+      toast("تعذر تشغيل جميع السيرفرات المتوفرة، يرجى إعادة المحاولة لاحقاً");
+      return;
+    }
+
+    const srv = sortedServers[currentIdx++];
+    console.log(`جاري تجربة السيرفر الأسرع: ${srv.code || srv.name || 'SRV'} بزمن ${srv.ms || 'متعذر'}ms`);
+
+    syncActiveServerUi(srv);
+
     if (activeHls) {
       try { activeHls.destroy(); } catch (_) {}
       activeHls = null;
     }
-    const fallbackEmbed = currentWatchServers.find(s => s.kind === 'embed' && s.url !== srv?.url) || currentWatchServers.find(s => s.kind === 'embed');
-    if (fallbackEmbed) {
-      video.pause();
-      video.style.display = 'none';
-      iframe.style.display = 'block';
-      iframe.src = fallbackEmbed.url;
-    }
-  };
 
-  if (srv && srv.kind === 'direct') {
-    iframe.src = 'about:blank';
-    iframe.style.display = 'none';
-    video.style.display = 'block';
+    // مهلة 3 ثوانٍ فقط؛ إن لم يبدأ الفيديو، نتخلى عنه فوراً وننتقل للسيرفر الذي يليه
+    const timeout = setTimeout(() => {
+      if (session !== fastStreamResolutionSession) return;
+      console.warn(`السيرفر ${srv.code || srv.name} بطيء جداً، جاري التحويل للسيرفر التالي...`);
+      toast(`⚡ السيرفر ${srv.code || ''} استغرق وقتاً طويلاً، جاري القفز للأسرع...`);
+      tryPlayNext();
+    }, 3000);
+    directFallbackTimer = timeout;
 
-    if (/\.m3u8(?:$|\?)/i.test(srv.url)) {
-      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-        activeHls = new Hls({ enableWorker: true, lowLatencyMode: true });
-        let manifestLoaded = false;
-        directFallbackTimer = setTimeout(() => {
-          if (!manifestLoaded) switchToFallbackEmbed();
-        }, 4200);
+    const isDirect = srv.kind === 'direct' || String(srv.url).includes('.m3u8') || String(srv.url).includes('.mp4');
 
-        activeHls.loadSource(srv.url);
-        activeHls.attachMedia(video);
-        activeHls.on(Hls.Events.MANIFEST_PARSED, () => {
-          manifestLoaded = true;
-          clearTimeout(directFallbackTimer);
-          video.play().catch(() => {});
-        });
-        activeHls.on(Hls.Events.ERROR, (_, data) => {
-          if (data.fatal) {
-            switchToFallbackEmbed();
-          }
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = srv.url;
-        video.onerror = () => switchToFallbackEmbed();
-        video.play().catch(() => {});
+    if (isDirect) {
+      embedElement.style.display = 'none';
+      embedElement.src = 'about:blank';
+      videoElement.style.display = 'block';
+
+      if (String(srv.url).includes('.m3u8')) {
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+          const hls = new Hls({ maxBufferLength: 15, maxMaxBufferLength: 30, enableWorker: true, lowLatencyMode: true });
+          activeHls = hls;
+          hls.loadSource(srv.url);
+          hls.attachMedia(videoElement);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (session !== fastStreamResolutionSession) return;
+            clearTimeout(timeout);
+            videoElement.play().catch(() => {});
+          });
+          hls.on(Hls.Events.ERROR, (evt, data) => {
+            if (session !== fastStreamResolutionSession) return;
+            if (data.fatal) {
+              clearTimeout(timeout);
+              tryPlayNext();
+            }
+          });
+        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+          videoElement.src = srv.url;
+          videoElement.onloadeddata = () => {
+            if (session !== fastStreamResolutionSession) return;
+            clearTimeout(timeout);
+            videoElement.play().catch(() => {});
+          };
+          videoElement.onerror = () => {
+            if (session !== fastStreamResolutionSession) return;
+            clearTimeout(timeout);
+            tryPlayNext();
+          };
+        } else {
+          clearTimeout(timeout);
+          tryPlayNext();
+        }
       } else {
-        switchToFallbackEmbed();
+        videoElement.src = srv.url;
+        videoElement.onloadeddata = () => {
+          if (session !== fastStreamResolutionSession) return;
+          clearTimeout(timeout);
+          videoElement.play().catch(() => {});
+        };
+        videoElement.onerror = () => {
+          if (session !== fastStreamResolutionSession) return;
+          clearTimeout(timeout);
+          tryPlayNext();
+        };
+      }
+
+      if (item?.imdbId) {
+        findAndLoadSubtitles(videoElement, item.imdbId, item.mediaType, season, epNum).catch(() => {});
       }
     } else {
-      video.src = srv.url;
-      video.onerror = () => switchToFallbackEmbed();
-      video.play().catch(() => {});
+      // مشغل الإطار (Embed) السريع المعزول
+      videoElement.pause();
+      videoElement.removeAttribute('src');
+      videoElement.style.display = 'none';
+      embedElement.style.display = 'block';
+      embedElement.src = srv.url;
+      clearTimeout(timeout);
     }
-
-    if (item?.imdbId) {
-      findAndLoadSubtitles(video, item.imdbId, item.mediaType, season, epNum).catch(() => {});
-    }
-  } else if (srv && srv.url) {
-    video.pause();
-    video.removeAttribute('src');
-    video.style.display = 'none';
-    iframe.style.display = 'block';
-    iframe.src = srv.url;
   }
+
+  tryPlayNext();
+}
+
+function activateServerOnStage(srv, item, season, epNum) {
+  const video = document.getElementById('maVideoPlayer');
+  const iframe = document.getElementById('maEmbedPlayer');
+  const otherServers = currentWatchServers.filter(s => s.url !== srv.url);
+  forceFastStreamResolution([srv, ...otherServers], video, iframe, item, season, epNum);
 }
 
 async function renderPlayerWatchPage(params) {
@@ -2389,6 +2452,8 @@ async function renderPlayerWatchPage(params) {
   rankedServers.forEach((srv, idx) => {
     const btn = document.createElement('button');
     btn.className = 'srv-ping-btn' + (idx === chosenIdx ? ' active' : '');
+    btn.dataset.url = srv.url || '';
+    btn.dataset.code = srv.code || '';
     btn.style.background = srv.bgColor || 'rgba(16,185,129,0.18)';
     btn.style.border = `1.5px solid ${srv.borderColor || '#10b981'}`;
     btn.innerHTML = `<span>${srv.emoji || '🟢'}</span><span>${srv.code}</span><span style="font-size:0.74rem;opacity:0.92;color:${srv.badgeColor || '#10b981'};">• ${srv.label}</span>`;
@@ -2401,8 +2466,12 @@ async function renderPlayerWatchPage(params) {
     serversWrap.appendChild(btn);
   });
 
-  if (rankedServers[chosenIdx]) {
+  const video = document.getElementById('maVideoPlayer');
+  const iframe = document.getElementById('maEmbedPlayer');
+  if (chosenIdx > 0 && rankedServers[chosenIdx]) {
     activateServerOnStage(rankedServers[chosenIdx], item, season, epNum);
+  } else {
+    forceFastStreamResolution(rankedServers, video, iframe, item, season, epNum);
   }
 
   // Populate Full Episodes Grid inside Player Page for Series/Anime
