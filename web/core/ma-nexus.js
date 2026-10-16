@@ -304,19 +304,24 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     }
   }
 
-  // 2. إضافة السيرفرات المدمجة الاحتياطية المتعددة بمسميات القواشط المشفرة لضمان التشغيل الفوري
-  if (tmdbId && /^\d+$/.test(String(tmdbId))) {
-    const mediaPath = isTv ? 'tv' : 'movie';
-    servers.push(
-      { provider: 'akwam', url: `https://vidsrc.to/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' },
-      { provider: 'mycima', url: `https://vidlink.pro/${mediaPath}/${tmdbId}${isTv ? `?season=${season}&episode=${episode}` : ''}`, kind: 'embed' },
-      { provider: 'cimanow', url: `https://autoembed.co/${mediaPath}/tmdb/${tmdbId}${isTv ? `?s=${season}&e=${episode}` : ''}`, kind: 'embed' },
-      { provider: 'arabseed', url: `https://vidsrc.pm/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' },
-      { provider: 'egydead', url: `https://play2.123embed.net/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' }
-    );
+  // 2. تصفية صارمة لمنع إعلانات المشغلات الخارجية نهائياً (Zero-Ads / Zero-Iframe Filter)
+  const cleanDirect = servers.filter(s => {
+    const u = String(s.url || '').toLowerCase();
+    if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) return false;
+    return s.kind === 'direct' || u.includes('.m3u8') || u.includes('.mp4');
+  });
+
+  if (cleanDirect.length > 0) {
+    return probeAndRankServers(cleanDirect);
   }
 
-  return probeAndRankServers(servers);
+  // في حال كانت السيرفرات قيد الاستخراج، نصفيها ونمنع المشغلات الإعلانية العشوائية
+  const filteredServers = servers.filter(s => {
+    const u = String(s.url || '').toLowerCase();
+    return !/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u);
+  });
+
+  return probeAndRankServers(filteredServers);
 }
 
 // محرك البحث الموحد (Search-Fusion Engine) الذي يصفي ويدمج النتائج من القواشط + TMDb

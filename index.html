@@ -2280,8 +2280,15 @@ function forceFastStreamResolution(serversList, videoElement, embedElement, item
   const session = ++fastStreamResolutionSession;
   clearTimeout(directFallbackTimer);
 
+  // تصفية السيرفرات والتخلص الصارم من أي مشغل إعلاني خارجي
+  const cleanList = (serversList || []).filter(srv => {
+    const u = String(srv.url || '').toLowerCase();
+    return !/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u);
+  });
+  const activePool = cleanList.length > 0 ? cleanList : serversList;
+
   // نرتب السيرفرات حسب الأسرع (إجبار المباشر أولاً ثم الأقل ms والأخضر أولاً)
-  const sortedServers = [...serversList].sort((a, b) => {
+  const sortedServers = [...activePool].sort((a, b) => {
     const aDirect = (a.kind === 'direct' || String(a.url).includes('.m3u8') || String(a.url).includes('.mp4')) ? 0 : 1;
     const bDirect = (b.kind === 'direct' || String(b.url).includes('.m3u8') || String(b.url).includes('.mp4')) ? 0 : 1;
     if (aDirect !== bDirect) return aDirect - bDirect;
@@ -2474,6 +2481,14 @@ async function renderPlayerWatchPage(params) {
     rankedServers = await probeAndRankServers(item.servers);
   } else {
     rankedServers = await resolveUnifiedServersForItem(item, season, epNum);
+  }
+  // تصفية صارمة (Zero-Ads / Zero-Iframe Filter) لمنع ظهور أي مشغل إعلاني في أزرار السيرفرات
+  const cleanRankedServers = rankedServers.filter(srv => {
+    const u = String(srv.url || '').toLowerCase();
+    return !/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u);
+  });
+  if (cleanRankedServers.length > 0) {
+    rankedServers = cleanRankedServers;
   }
   currentWatchServers = rankedServers;
 

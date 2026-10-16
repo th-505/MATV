@@ -22,6 +22,7 @@ import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails } from "./scrapers/index.mjs";
+import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
 const CINEMA = "https://albas.albesriali03.workers.dev/";
@@ -524,10 +525,14 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         const title = (url.searchParams.get("title") || "").trim();
         const season = Math.max(1, Number(url.searchParams.get("season")) || 1);
         const episode = Math.max(1, Number(url.searchParams.get("episode")) || 1);
-        const servers = [];
+        const rawServers = [];
+
         if (ref && !ref.startsWith("tmdb:")) {
           try {
-            const details = ref.startsWith("laroza:")
+            const isScraperRef = /^(mycima|akwam|cimanow|egydead|arabseed|shahid4u|shii4u|moviztime|moviz|3cktv|3ck|anime4up|witanime|ristoanime|qfilm|ipauniverse|mewsry):/.test(ref);
+            const details = isScraperRef
+              ? await scrapeRealDetails(ref)
+              : ref.startsWith("laroza:")
               ? await larozaRuntime.details(ref, {})
               : ref.startsWith("alooy:")
               ? await alooyRuntime.details(ref, {})
@@ -538,7 +543,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
             for (const s of sources) {
               const u = s.url || s.media_path;
               if (u) {
-                servers.push({
+                rawServers.push({
                   provider: s.provider || details?.source || "akwam",
                   code: s.code,
                   kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
@@ -550,7 +555,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
               }
             }
             if (details?.media_src) {
-              servers.push({
+              rawServers.push({
                 provider: details?.source || "akwam",
                 code: details?.code,
                 kind: "direct",
@@ -559,39 +564,80 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
               });
             }
           } catch (_) {}
-        } else if (title) {
+        }
+
+        // إذا لم نجد مصادر بالـ ref أو كان المطلوب عبر title
+        if (rawServers.length === 0 && title) {
           try {
             const hits = await scrapeRealSearch(title);
             if (hits.length > 0) {
-              const bestHit = hits[0];
-              const details = await scrapeRealDetails(bestHit.id);
-              if (details) {
-                let targetEpisodeRef = bestHit.id;
-                if (Array.isArray(details.episodes) && details.episodes.length > 0) {
-                  const epMatch = details.episodes.find(e => Number(e.number) === episode) || details.episodes[0];
-                  if (epMatch?.url || epMatch?.id) targetEpisodeRef = epMatch.url || epMatch.id;
-                }
-                const epDetails = targetEpisodeRef !== bestHit.id ? (await scrapeRealDetails(targetEpisodeRef) || details) : details;
-                const sources = epDetails?.media_sources || epDetails?.servers || [];
-                for (const s of sources) {
-                  const u = s.url || s.media_path;
-                  if (u) {
-                    servers.push({
-                      provider: s.provider || epDetails?.source || "akwam",
-                      code: s.code,
-                      kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
-                      url: u,
-                      headers: s.headers || {},
-                      streamType: s.streamType,
-                      quality: s.quality
-                    });
+              for (const hit of hits.slice(0, 3)) {
+                const details = await scrapeRealDetails(hit.id);
+                if (details) {
+                  let targetEpisodeRef = hit.id;
+                  if (Array.isArray(details.episodes) && details.episodes.length > 0) {
+                    const epMatch = details.episodes.find(e => Number(e.number) === episode) || details.episodes[0];
+                    if (epMatch?.url || epMatch?.id) targetEpisodeRef = epMatch.url || epMatch.id;
                   }
+                  const epDetails = targetEpisodeRef !== hit.id ? (await scrapeRealDetails(targetEpisodeRef) || details) : details;
+                  const sources = epDetails?.media_sources || epDetails?.servers || [];
+                  for (const s of sources) {
+                    const u = s.url || s.media_path;
+                    if (u) {
+                      rawServers.push({
+                        provider: s.provider || epDetails?.source || hit.source || "akwam",
+                        code: s.code,
+                        kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
+                        url: u,
+                        headers: s.headers || {},
+                        streamType: s.streamType,
+                        quality: s.quality
+                      });
+                    }
+                  }
+                  if (rawServers.length > 0) break;
                 }
               }
             }
           } catch (_) {}
         }
-        return sendJson(req, res, 200, { status: "success", servers });
+
+        // 2. الفلترة الصارمة (Zero-Ads / Zero-Iframe Filter)
+        // منع أي رابط يحتوي على إطار مدمج أو إعلانات، والتركيز فقط على الروابط المباشرة الخام
+        let cleanServers = rawServers.filter(srv => {
+          const u = String(srv.url || srv.embedUrl || '').toLowerCase();
+          // استبعاد أي مشغل خارجي معروف بالإعلانات أو الـ Iframes العشوائية
+          if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) {
+            return false;
+          }
+          // السماح فقط بالروابط المباشرة أو سيرفرات السورسات الأصلية النقية
+          return u.includes('.m3u8') || u.includes('.mp4') || u.includes('wecima') || u.includes('akwam') || srv.kind === 'direct';
+        });
+
+        // 3. إذا لم نجد روابط مباشرة نقية، نقوم بفكها عميقاً عبر stream-unwrapper
+        if (cleanServers.length === 0 && rawServers.length > 0) {
+          for (const srv of rawServers) {
+            try {
+              const unwrapped = await unwrapEmbedToDirectStreams(srv.url, srv.url);
+              for (const direct of unwrapped) {
+                cleanServers.push({
+                  provider: srv.provider,
+                  code: srv.code,
+                  url: direct.url,
+                  kind: 'direct',
+                  quality: direct.quality,
+                  headers: direct.headers
+                });
+              }
+            } catch (_) {}
+          }
+        }
+
+        return sendJson(req, res, 200, {
+          status: "success",
+          success: true,
+          servers: cleanServers.length > 0 ? cleanServers : rawServers
+        });
       }
       if (url.pathname === "/api/v1/category") {
         const ref = url.searchParams.get('ref') || '';

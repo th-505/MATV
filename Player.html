@@ -376,7 +376,13 @@ function forceFastStreamResolution(sourcesList,startSource=null){
   if(!sourcesList||!sourcesList.length)return;
 
   // إجبار الروابط المباشرة وتخطي الـ Embed الثقيل
-  let sorted=[...sourcesList].sort((a,b)=>{
+  const cleanList=(sourcesList||[]).filter(s=>{
+    const u=String(s.url||'').toLowerCase();
+    return !/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u);
+  });
+  const activeSources = cleanList.length > 0 ? cleanList : sourcesList;
+
+  let sorted=[...activeSources].sort((a,b)=>{
     const aDirect=(a.type==='m3u8'||a.type==='mp4'||a.type==='stream'||/\.m3u8|\.mp4/i.test(a.url))?0:1;
     const bDirect=(b.type==='m3u8'||b.type==='mp4'||b.type==='stream'||/\.m3u8|\.mp4/i.test(b.url))?0:1;
     if(aDirect!==bDirect)return aDirect-bDirect;
