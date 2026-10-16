@@ -521,6 +521,9 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
       if (url.pathname === "/api/v1/resolve") {
         const ref = (url.searchParams.get("ref") || url.searchParams.get("id") || "").trim();
+        const title = (url.searchParams.get("title") || "").trim();
+        const season = Math.max(1, Number(url.searchParams.get("season")) || 1);
+        const episode = Math.max(1, Number(url.searchParams.get("episode")) || 1);
         const servers = [];
         if (ref && !ref.startsWith("tmdb:")) {
           try {
@@ -554,6 +557,37 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
                 url: details.media_src,
                 headers: {}
               });
+            }
+          } catch (_) {}
+        } else if (title) {
+          try {
+            const hits = await scrapeRealSearch(title);
+            if (hits.length > 0) {
+              const bestHit = hits[0];
+              const details = await scrapeRealDetails(bestHit.id);
+              if (details) {
+                let targetEpisodeRef = bestHit.id;
+                if (Array.isArray(details.episodes) && details.episodes.length > 0) {
+                  const epMatch = details.episodes.find(e => Number(e.number) === episode) || details.episodes[0];
+                  if (epMatch?.url || epMatch?.id) targetEpisodeRef = epMatch.url || epMatch.id;
+                }
+                const epDetails = targetEpisodeRef !== bestHit.id ? (await scrapeRealDetails(targetEpisodeRef) || details) : details;
+                const sources = epDetails?.media_sources || epDetails?.servers || [];
+                for (const s of sources) {
+                  const u = s.url || s.media_path;
+                  if (u) {
+                    servers.push({
+                      provider: s.provider || epDetails?.source || "akwam",
+                      code: s.code,
+                      kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
+                      url: u,
+                      headers: s.headers || {},
+                      streamType: s.streamType,
+                      quality: s.quality
+                    });
+                  }
+                }
+              }
             }
           } catch (_) {}
         }

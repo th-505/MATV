@@ -1,5 +1,5 @@
-// web/core/ma-nexus.js — MA-NEXUS Master Scraper Broker, Deduplicator, Server Encoder & Ping Probe
 import { fetchNetflixHomeShelves, fetchFullTmdbDetails, tmdbFetch, normalizeTmdbItem } from './tmdb-service.js';
+import { ProviderEndpoints } from './api-client.js';
 
 // قاموس التشفير الرمزي الصارم للسيرفرات (ممنوع إظهار اسم موقع القشط للمستخدم نهائياً)
 const PROVIDER_CODE_MAP = {
@@ -219,6 +219,7 @@ const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
 // بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة (القواشط الـ 18 + السيرفرات السحابية)
 export async function resolveUnifiedServersForItem(item, season = 1, episode = 1, apiBase = '') {
   const servers = [];
+  const backendBase = apiBase || (typeof ProviderEndpoints !== 'undefined' ? ProviderEndpoints?.backend : '') || '';
   const isTv = item?.mediaType === 'tv' || item?.type === 'series' || item?.is_series;
   let tmdbId = item?.tmdbId || item?.tmdb_id || '';
   if (!tmdbId && String(item?.id || '').startsWith('tmdb:')) {
@@ -270,7 +271,7 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
       season: String(season),
       episode: String(episode)
     });
-    const res = await fetch(`${apiBase}/api/v1/resolve?${q.toString()}`);
+    const res = await fetch(`${backendBase}/api/v1/resolve?${q.toString()}`);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data?.servers)) {
@@ -303,16 +304,15 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     }
   }
 
-  // 2. إضافة السيرفرات المدمجة المتعددة بمسميات القواشط المشفرة لضمان التشغيل الفوري 100% دون انقطاع
+  // 2. إضافة السيرفرات المدمجة الاحتياطية المتعددة بمسميات القواشط المشفرة لضمان التشغيل الفوري
   if (tmdbId && /^\d+$/.test(String(tmdbId))) {
     const mediaPath = isTv ? 'tv' : 'movie';
     servers.push(
-      { provider: 'akwam', url: `https://vidsrc.cc/v2/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}?autoPlay=true`, kind: 'embed' },
-      { provider: 'alooy', url: `https://vidsrc.me/embed/${mediaPath}?tmdb=${tmdbId}${isTv ? `&season=${season}&episode=${episode}` : ''}`, kind: 'embed' },
-      { provider: 'mycima', url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1${isTv ? `&s=${season}&e=${episode}` : ''}`, kind: 'embed' },
-      { provider: 'cimanow', url: `https://player.autoembed.cc/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' },
-      { provider: 'arabseed', url: `https://vidsrc.xyz/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}-${episode}` : ''}`, kind: 'embed' },
-      { provider: 'egydead', url: `https://www.2embed.cc/embed${isTv ? 'tv' : ''}/${tmdbId}${isTv ? `&s=${season}&e=${episode}` : ''}`, kind: 'embed' }
+      { provider: 'akwam', url: `https://vidsrc.to/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' },
+      { provider: 'mycima', url: `https://vidlink.pro/${mediaPath}/${tmdbId}${isTv ? `?season=${season}&episode=${episode}` : ''}`, kind: 'embed' },
+      { provider: 'cimanow', url: `https://autoembed.co/${mediaPath}/tmdb/${tmdbId}${isTv ? `?s=${season}&e=${episode}` : ''}`, kind: 'embed' },
+      { provider: 'arabseed', url: `https://vidsrc.pm/embed/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' },
+      { provider: 'egydead', url: `https://play2.123embed.net/${mediaPath}/${tmdbId}${isTv ? `/${season}/${episode}` : ''}`, kind: 'embed' }
     );
   }
 
