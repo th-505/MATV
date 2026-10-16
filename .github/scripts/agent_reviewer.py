@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Al-Qahtani zero-cost AI reviewer.
+"""MA TV zero-cost AI reviewer.
 
 Deterministic checks are authoritative. AI review is advisory and may only
 approve when deterministic gates are green. Gemini Free Tier is preferred;
@@ -92,7 +92,7 @@ def post_json(url: str, headers: dict[str,str], body: dict[str,Any], timeout: in
 def prompt_for(diff: str, files: list[str], deterministic: list[dict[str,str]]) -> str:
     state=STATE.read_text(encoding="utf-8")[:12000] if STATE.exists() else "PROJECT_STATE.md missing"
     safe_diff=diff[:MAX_DIFF_CHARS]
-    return f"""Independent verifier for Al-Qahtani TV. Review only supplied evidence. No hidden reasoning or preamble. Keep response under 700 words.
+    return f"""Independent verifier for MA TV. Review only supplied evidence. No hidden reasoning or preamble. Keep response under 700 words.
 Return EXACTLY these headings and one verdict token:
 ## AI Verdict
 [APPROVED] or [CHANGES_REQUIRED] or [NEEDS_HUMAN_OR_DEVICE_EVIDENCE]
@@ -141,7 +141,7 @@ def validate_review_text(text: str) -> str:
 def openrouter_review(prompt: str) -> tuple[str,str]:
     key=os.getenv("OPENROUTER_API_KEY","").strip()
     if not key: raise RuntimeError("OPENROUTER_API_KEY unavailable")
-    headers={"Authorization":f"Bearer {key}","HTTP-Referer":"https://github.com/theeb1230-dot/Al-Qahtani","X-Title":"Al-Qahtani CI Reviewer"}
+    headers={"Authorization":f"Bearer {key}","HTTP-Referer":"https://github.com/th-505/MATV","X-Title":"MA TV CI Reviewer"}
     variants=[
       {"model":OPENROUTER_MODEL,"temperature":0.1,"max_tokens":1800,"messages":[{"role":"user","content":prompt}]},
       {"model":OPENROUTER_MODEL,"temperature":0.1,"max_tokens":2400,"messages":[{"role":"system","content":"Return only the requested Markdown headings and verdict. INFO/MEDIUM findings are non-blocking; Samsung/Tizen NOT_CONFIGURED and DEVICE_REQUIRED_PENDING are not blockers for the requested software release targets."},{"role":"user","content":prompt}]},
