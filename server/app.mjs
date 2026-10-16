@@ -21,7 +21,7 @@ import { createSupabaseCatalogStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
-import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails } from "./scrapers/index.mjs";
+import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, activateAllScrapersForContent } from "./scrapers/index.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -568,40 +568,51 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           } catch (_) {}
         }
 
-        // إذا لم نجد مصادر بالـ ref أو كان المطلوب عبر title
+        // إذا لم نجد مصادر بالـ ref أو كان المطلوب عبر title، نقوم بتفعيل وتشغيل جميع القواشط المحلية
         if (rawServers.length === 0 && title) {
           try {
-            const hits = await scrapeRealSearch(title);
-            if (hits.length > 0) {
-              for (const hit of hits.slice(0, 3)) {
-                const details = await scrapeRealDetails(hit.id);
-                if (details) {
-                  let targetEpisodeRef = hit.id;
-                  if (Array.isArray(details.episodes) && details.episodes.length > 0) {
-                    const epMatch = details.episodes.find(e => Number(e.number) === episode) || details.episodes[0];
-                    if (epMatch?.url || epMatch?.id) targetEpisodeRef = epMatch.url || epMatch.id;
-                  }
-                  const epDetails = targetEpisodeRef !== hit.id ? (await scrapeRealDetails(targetEpisodeRef) || details) : details;
-                  const sources = epDetails?.media_sources || epDetails?.servers || [];
-                  for (const s of sources) {
-                    const u = s.url || s.media_path;
-                    if (u) {
-                      rawServers.push({
-                        provider: s.provider || epDetails?.source || hit.source || "akwam",
-                        code: s.code,
-                        kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
-                        url: u,
-                        headers: s.headers || {},
-                        streamType: s.streamType,
-                        quality: s.quality
-                      });
-                    }
-                  }
-                  if (rawServers.length > 0) break;
-                }
+            const activated = await activateAllScrapersForContent(title, season, episode);
+            if (Array.isArray(activated) && activated.length > 0) {
+              for (const s of activated) {
+                rawServers.push(s);
               }
             }
           } catch (_) {}
+
+          if (rawServers.length === 0) {
+            try {
+              const hits = await scrapeRealSearch(title);
+              if (hits.length > 0) {
+                for (const hit of hits.slice(0, 3)) {
+                  const details = await scrapeRealDetails(hit.id);
+                  if (details) {
+                    let targetEpisodeRef = hit.id;
+                    if (Array.isArray(details.episodes) && details.episodes.length > 0) {
+                      const epMatch = details.episodes.find(e => Number(e.number) === episode) || details.episodes[0];
+                      if (epMatch?.url || epMatch?.id) targetEpisodeRef = epMatch.url || epMatch.id;
+                    }
+                    const epDetails = targetEpisodeRef !== hit.id ? (await scrapeRealDetails(targetEpisodeRef) || details) : details;
+                    const sources = epDetails?.media_sources || epDetails?.servers || [];
+                    for (const s of sources) {
+                      const u = s.url || s.media_path;
+                      if (u) {
+                        rawServers.push({
+                          provider: s.provider || epDetails?.source || hit.source || "akwam",
+                          code: s.code,
+                          kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
+                          url: u,
+                          headers: s.headers || {},
+                          streamType: s.streamType,
+                          quality: s.quality
+                        });
+                      }
+                    }
+                    if (rawServers.length > 0) break;
+                  }
+                }
+              }
+            } catch (_) {}
+          }
         }
 
         // 2. الفلترة الصارمة (Zero-Ads / Zero-Iframe Filter)

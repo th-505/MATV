@@ -379,3 +379,172 @@ export async function scrapeRealDetails(refOrUrl) {
 
   return null;
 }
+
+// ---------------------------------------------------------------------
+// Unified Scraper Runners for activateAllScrapersForContent
+// ---------------------------------------------------------------------
+
+export async function runMyCimaScraper(title, season = 1, episode = 1) {
+  if (!title) return [];
+  try {
+    const hits = await searchMyCima(title);
+    if (!Array.isArray(hits) || hits.length === 0) return [];
+    const hit = hits[0];
+    const details = await extractMyCimaStreamsAndEpisodes(hit.url);
+    let targetUrl = hit.url;
+    if (Array.isArray(details?.episodes) && details.episodes.length > 0) {
+      const epMatch = details.episodes.find(e => Number(e.number) === Number(episode)) || details.episodes[0];
+      if (epMatch?.url) targetUrl = epMatch.url;
+    }
+    const streams = targetUrl !== hit.url ? (await extractMyCimaStreamsAndEpisodes(targetUrl)) : details;
+    return (streams?.servers || []).map((s, idx) => ({
+      provider: 'mycima',
+      code: `MA-${idx + 1}`,
+      kind: 'direct',
+      url: s.url,
+      quality: s.quality || 'HD',
+      headers: s.headers || {}
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function runAkwamScraper(title, season = 1, episode = 1) {
+  if (!title) return [];
+  try {
+    const hits = await searchAkwam(title);
+    if (!Array.isArray(hits) || hits.length === 0) return [];
+    const hit = hits[0];
+    const details = await extractAkwamStreamsAndEpisodes(hit.url);
+    let targetUrl = hit.url;
+    if (Array.isArray(details?.episodes) && details.episodes.length > 0) {
+      const epMatch = details.episodes.find(e => Number(e.number) === Number(episode)) || details.episodes[0];
+      if (epMatch?.url) targetUrl = epMatch.url;
+    }
+    const streams = targetUrl !== hit.url ? (await extractAkwamStreamsAndEpisodes(targetUrl)) : details;
+    return (streams?.servers || []).map((s, idx) => ({
+      provider: 'akwam',
+      code: `AK-${idx + 1}`,
+      kind: 'direct',
+      url: s.url,
+      quality: s.quality || 'HD',
+      headers: s.headers || {}
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function runEgyDeadScraper(title, season = 1, episode = 1) {
+  if (!title) return [];
+  try {
+    const movies = await scrapeEgyDeadCategory('movies_foreign', 1);
+    const hit = movies.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || movies[0];
+    if (!hit) return [];
+    const details = await extractEgyDeadStreamsAndEpisodes(hit.url);
+    return (details?.servers || []).map((s, idx) => ({
+      provider: 'egydead',
+      code: `ED-${idx + 1}`,
+      kind: s.kind || 'direct',
+      url: s.url,
+      quality: s.quality || 'HD',
+      headers: s.headers || {}
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function runArabSeedScraper(title, season = 1, episode = 1) {
+  if (!title) return [];
+  try {
+    const movies = await scrapeArabSeedCategory('movies_foreign', 1);
+    const hit = movies.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || movies[0];
+    if (!hit) return [];
+    const details = await extractArabSeedStreamsAndEpisodes(hit.url);
+    return (details?.servers || []).map((s, idx) => ({
+      provider: 'arabseed',
+      code: `AD-${idx + 1}`,
+      kind: s.kind || 'direct',
+      url: s.url,
+      quality: s.quality || 'HD',
+      headers: s.headers || {}
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function runCimanowScraper(title, season = 1, episode = 1) {
+  if (!title) return [];
+  try {
+    const movies = await scrapeCimaNowCategory('movies_foreign', 1);
+    const hit = movies.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || movies[0];
+    if (!hit) return [];
+    const details = await extractCimaNowStreamsAndEpisodes(hit.url);
+    return (details?.servers || []).map((s, idx) => ({
+      provider: 'cimanow',
+      code: `CW-${idx + 1}`,
+      kind: s.kind || 'direct',
+      url: s.url,
+      quality: s.quality || 'HD',
+      headers: s.headers || {}
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function runAnime4upScraper(title, season = 1, episode = 1) {
+  if (!title) return [];
+  try {
+    const anime = await scrapeAnime4UpCategory('anime_series', 1);
+    const hit = anime.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || anime[0];
+    if (!hit) return [];
+    const details = await extractAnime4UpStreamsAndEpisodes(hit.url);
+    return (details?.servers || []).map((s, idx) => ({
+      provider: 'anime4up',
+      code: `AP-${idx + 1}`,
+      kind: s.kind || 'direct',
+      url: s.url,
+      quality: s.quality || 'HD',
+      headers: s.headers || {}
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+// تفعيل وتشغيل جميع القواشط المحلية لجلب الروابط المباشرة النقية (0 إعلانات، 0 تكلفة)
+export async function activateAllScrapersForContent(title, season = 1, episode = 1) {
+  console.log("جاري تشغيل قواشط MA-NEXUS المجاورة لجلب روابط البث المباشر...");
+  
+  const scrapers = [
+    runMyCimaScraper,
+    runAkwamScraper,
+    runEgyDeadScraper,
+    runArabSeedScraper,
+    runCimanowScraper,
+    runAnime4upScraper
+  ];
+
+  let directStreams = [];
+
+  for (const scraper of scrapers) {
+    try {
+      const results = await scraper(title, season, episode);
+      if (results && results.length > 0) {
+        for (const res of results) {
+          if (res.url && (res.url.includes('.mp4') || res.url.includes('.m3u8') || res.kind === 'direct')) {
+            directStreams.push(res);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("تخطى قاشط معين بسبب خطأ مؤقت، جاري متابعة البقية...", err.message);
+    }
+  }
+
+  return directStreams;
+}
