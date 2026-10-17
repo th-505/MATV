@@ -22,7 +22,7 @@ import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, searchProviderCatalog, activateAllScrapersForContent } from "./scrapers/index.mjs";
-import { sourceDisplayName } from "./source-display.mjs";
+import { sourceDisplayName, sourceDisplayNames } from "./source-display.mjs";
 import { listProviders, PROVIDER_ALIASES, getProvider, resolveProviderReference } from "./scrapers/registry.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
@@ -608,6 +608,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === '/api/v1/search/providers') return sendJson(req, res, 200, {
         status: 'success', data: listProviders().map(meta => ({
           id: meta.id, displayName: sourceDisplayName(meta.name || meta.id),
+          displayNames: sourceDisplayNames(meta.name || meta.id),
           aliases: Object.entries(PROVIDER_ALIASES).filter(([, id]) => id === meta.id).map(([alias]) => alias),
           domains: meta.domains || [], supportsSearch: Boolean(meta.capabilities?.search && typeof getProvider(meta.id)?.module.scrapeSearch === 'function')
         }))

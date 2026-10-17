@@ -1,7 +1,7 @@
 # Explore search integration
 
 This change is stacked on PR #1 (`fix/provider-integration`), commit
-`3aeab5db1a64e0057ce7c54645711666198b7160`. Merge PR #1 first, then retarget
+`c7b65da` (synchronized from the repair branch during review). Merge PR #1 first, then retarget
 this PR to main. No commits were pushed to the repair branch, and no scraper,
 provider implementation, reference encoder, server code mapping, storage key or
 license notice was changed.
@@ -25,6 +25,10 @@ providers and does not describe the full registry's search capabilities.
 trims whitespace, removes one Unicode code point, and prefixes Arabic names with
 ذ or English names with th. Numerically prefixed names follow the script of the
 first letter (numeric-only Arabic/ASCII names follow their first digit's script).
+Compound registry names are parsed into a primary name and parenthesized
+alternatives, each transformed separately (including slash-separated aliases).
+The endpoint also provides these as `displayNames.primary` and
+`displayNames.alternatives`, separate from internal identity.
 All clients use the resulting displayName directly; they do not transform it
 again. A newly registered source therefore appears without per-screen name maps.
 Aliases, domains and IDs are read only for identity matching, never renamed.
@@ -56,7 +60,7 @@ unrelated movie-category load when the main web UI switches tabs.
 - `node scripts/ma_nexus_v8_test.mjs` and `git diff --check`: passed after final edits.
 - Added `flutter_app/test/explore_search_test.dart`; Flutter/Dart SDKs are absent
   from this environment, so native tests, analysis and formatting could not run.
-  Run `flutter analyze` and `flutter test test/explore_search_test.dart` before
+  Run `flutter analyze` and `flutter test` (including the API and widget tests) before
   shipping the native client.
 - Production file-layout import check: passed after the Docker COPY fix. Before
   that fix the copied runtime failed with `ERR_MODULE_NOT_FOUND` for

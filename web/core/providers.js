@@ -41,7 +41,7 @@ export async function fetchJsonWithHealth(url, {
     const response = await fetch(url, {
       ...init,
       cache: "no-store",
-      signal: controller.signal,
+      signal: init.signal ? AbortSignal.any([controller.signal, init.signal]) : controller.signal,
       headers,
     });
 

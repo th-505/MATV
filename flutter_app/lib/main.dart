@@ -1422,6 +1422,7 @@ class _SearchPageState extends State<SearchPage> {
   String providerId = '';
   List<Map<String, dynamic>> providers = const [];
   String? providersError;
+  bool providersLoading = false;
   int generation = 0;
 
   @override
@@ -1431,6 +1432,11 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> loadProviders() async {
+    if (providersLoading) return;
+    setState(() {
+      providersLoading = true;
+      providersError = null;
+    });
     try {
       final result = await widget.api.searchProviders();
       if (mounted) {
@@ -1443,6 +1449,8 @@ class _SearchPageState extends State<SearchPage> {
       if (mounted) {
         setState(() => providersError = 'تعذر تحميل المصادر');
       }
+    } finally {
+      if (mounted) setState(() => providersLoading = false);
     }
   }
 
@@ -1479,6 +1487,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> run([String? requested]) async {
+    debounce?.cancel();
     final q = (requested ?? query.text).trim();
     if (q.isEmpty) return;
     final request = ++generation;
@@ -1535,7 +1544,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         if (providersError != null)
           TextButton(
-            onPressed: loadProviders,
+            onPressed: providersLoading ? null : loadProviders,
             child: Text('$providersError — إعادة المحاولة'),
           ),
         TextField(

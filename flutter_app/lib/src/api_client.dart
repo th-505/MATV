@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
@@ -307,10 +308,39 @@ class MitvApi implements MediaRepository {
   }
 
   final List<Map<String, dynamic>> _searchProviders = [];
-  Future<List<Map<String, dynamic>>> searchProviders() async {
-    final json = await _getJson('/api/v1/search/providers');
-    _searchProviders..clear()..addAll(_list(json['data']));
-    return List.unmodifiable(_searchProviders);
+  final sourceMetadataChanges = ChangeNotifier();
+  Future<List<Map<String, dynamic>>>? _searchProvidersPending;
+  bool _searchProvidersLoaded = false;
+  bool sourceMetadataLoading = false;
+  String? sourceMetadataError;
+
+  // Shared by all entry points. Successful metadata is cached, in-flight calls
+  // coalesce, and failure clears the pending slot so an explicit retry can run.
+  Future<List<Map<String, dynamic>>> searchProviders() {
+    if (_searchProvidersLoaded) return Future.value(List.unmodifiable(_searchProviders));
+    if (_searchProvidersPending != null) return _searchProvidersPending!;
+    sourceMetadataLoading = true;
+    sourceMetadataError = null;
+    final pending = _loadSearchProviders();
+    _searchProvidersPending = pending;
+    sourceMetadataChanges.notifyListeners();
+    return pending;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSearchProviders() async {
+    try {
+      final json = await _getJson('/api/v1/search/providers');
+      _searchProviders..clear()..addAll(_list(json['data']));
+      _searchProvidersLoaded = true;
+      return List.unmodifiable(_searchProviders);
+    } catch (_) {
+      sourceMetadataError = 'تعذر تحميل المصادر';
+      rethrow;
+    } finally {
+      _searchProvidersPending = null;
+      sourceMetadataLoading = false;
+      if (!_closed) sourceMetadataChanges.notifyListeners();
+    }
   }
 
   String sourceDisplayLabel(CatalogItem item) {
@@ -890,6 +920,7 @@ class MitvApi implements MediaRepository {
     _closed = true;
     _cacheGeneration++;
     _client.close();
+    sourceMetadataChanges.dispose();
   }
 }
 

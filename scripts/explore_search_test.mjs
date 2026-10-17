@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
-import { sourceDisplayName } from '../server/source-display.mjs';
+import { sourceDisplayName, sourceDisplayNames } from '../server/source-display.mjs';
 import { searchStateMessage } from '../web/core/source-display.js';
 import { createServer } from '../server/app.mjs';
 import { listProviders, PROVIDERS_MAP } from '../server/scrapers/registry.mjs';
-globalThis.location = {hostname: 'localhost'};
-const { searchCinema, getSearchProviders, sourceLabel } = await import('../web/core/api-client.js');
-for (const [original, expected] of [[' أكوام ', 'ذكوام'], [' Akoam ', 'thkoam'], ['123Movies', 'th23Movies'], ['١٢٣عربي', 'ذ٢٣عربي'], ['😀Movie', 'thMovie'], ['', '']]) assert.equal(sourceDisplayName(original), expected);
+for (const [original, expected] of [[' أكوام ', 'ذكوام'], [' Akoam ', 'thkoam'], ['123Movies', 'th23Movies'], ['١٢٣عربي', 'ذ٢٣عربي'], ['😀Movie', 'thMovie'], ['', ''], ['أكوام (Akwam)', 'ذكوام (thkwam)'], ['ماي سيما (MyCima / WeCima)', 'ذاي سيما (thyCima / theCima)'], ['123 (456Movies)', 'th23 (th56Movies)'], ['𐐀Name', 'thName']]) assert.equal(sourceDisplayName(original), expected);
+assert.deepEqual(sourceDisplayNames('ماي سيما (MyCima / WeCima)'), {primary: 'ذاي سيما', alternatives: ['thyCima', 'theCima']});
 const newMeta = { id: 'new-provider', name: 'NewProvider', domains: [], capabilities: { search: true } };
 // The registry list is the single source of metadata; no client-side source registry.
 const known = listProviders();
@@ -15,13 +14,21 @@ const server = createServer({ catalogStore: null, providerSearch: async (id, q) 
   calls.push([id, q]);
   return { status: q, provider_id: id, data: q === 'success' ? [{title: 'Fixture', ref: 'akoam:fixture', providerId: id, source: id}] : [], error: null };
 }});
-await new Promise(resolve => server.listen(3000, '127.0.0.1', resolve));
 try {
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  // Use the same backend configuration mechanism as the browser, scoped to this test.
+  globalThis.document = {
+    querySelector: selector => selector === 'meta[name="matv-api-base"]' ? {content: `http://127.0.0.1:${server.address().port}`} : null,
+    documentElement: {style:{}}, getElementById: () => ({}),
+    createElement: () => ({}), head: {appendChild() {}}
+  };
+  const { searchCinema, getSearchProviders, sourceLabel } = await import('../web/core/api-client.js');
   const providers = await getSearchProviders();
   assert.equal(providers.length, known.length);
   for (const meta of known) {
     const row = providers.find(p => p.id === meta.id);
     assert.equal(row.displayName, sourceDisplayName(meta.name || meta.id));
+    assert.deepEqual(row.displayNames, sourceDisplayNames(meta.name || meta.id));
     assert.equal(row.supportsSearch, Boolean(meta.capabilities?.search && typeof PROVIDERS_MAP.get(meta.id).module.scrapeSearch === 'function'));
   }
   for (const status of ['success', 'no_results', 'unsupported', 'error']) {
@@ -40,4 +47,4 @@ try {
   }
   assert.deepEqual(calls, ['success', 'no_results', 'unsupported', 'error'].map(q => ['akoam', q]));
   console.log('Explore policy, registry metadata, HTTP error states, query and reference preservation passed');
-} finally { await new Promise(resolve => server.close(resolve)); }
+} finally { delete globalThis.document; await new Promise(resolve => server.close(resolve)); }
