@@ -115,11 +115,11 @@ export function extractEpisodeNumber(text = '', url = '', fallbackNumber = null)
 
 export function inferContentType(title = '', url = '', defaultType = 'movie') {
   const combined = `${title} ${url}`.toLowerCase();
-  if (/انمي|أنمي|anime|ona|ova/.test(combined)) return 'anime';
-  if (/مسلسل|حلقة|الحلقة|موسم|الموسم|series|season|episode|ep-|/i.test(combined) && !/فيلم|movie|film/i.test(title)) {
+  if (/(?:انمي|أنمي|\b(?:anime|ona|ova)\b)/iu.test(combined)) return 'anime';
+  if (/(?:مسلسل|حلقة|الحلقة|موسم|الموسم|\bseries\b|\bseason\b|\bepisode\b|\bep-)/iu.test(combined) && !/(?:فيلم|\bmovie\b|\bfilm\b)/iu.test(title)) {
     return 'series';
   }
-  if (/فيلم|movie|film/i.test(combined)) return 'movie';
+  if (/(?:فيلم|\bmovie\b|\bfilm\b)/iu.test(combined)) return 'movie';
   return defaultType;
 }
 
