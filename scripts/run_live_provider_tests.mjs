@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listProviders } from '../server/scrapers/registry.mjs';
@@ -31,40 +31,23 @@ function inferClassification(output, status, timedOut) {
   return 'scraper_or_assertion_error';
 }
 
-function inferLastStage(output) {
-  const stages = [
-    ['search', /search(?:\s|\(|:| probe| capability| results)/ig],
-    ['catalog', /catalog(?:\s|\(|:| probe| page| returned)/ig],
-    ['details', /details(?:\s|\(|:| probe| loaded)/ig],
-    ['episode', /episodes?(?:\s|\(|:| probe| extracted| loaded)/ig],
-    ['server_extraction', /servers?(?:\s|\(|:| probe| extraction| extracted)/ig],
-    ['stream_resolution', /resolve(?:stream|d)?(?:\s|\(|:| probe)|stream resolved/ig],
-    ['manifest', /manifest|master playlist/ig],
-    ['segment', /segment|video bytes/ig]
-  ];
-  let found = { index: -1, stage: 'none' };
-  for (const [stage, pattern] of stages) {
-    for (const match of output.matchAll(pattern)) {
-      if (match.index > found.index) found = { index: match.index, stage };
-    }
-  }
-  return found.stage;
+function structuredEvents(output) {
+  return output.split(/\r?\n/).flatMap((line) => {
+    const marker = 'LIVE_EVENT_JSON ';
+    const index = line.indexOf(marker);
+    if (index < 0) return [];
+    try { return [JSON.parse(line.slice(index + marker.length))]; } catch { return []; }
+  });
+}
+
+function lastSuccessfulStage(events) {
+  const success = new Set(['success', 'selected', 'not_applicable', 'head_reachable']);
+  return [...events].reverse().find((event) => success.has(event.result))?.stage || 'unknown (no structured success event)';
 }
 
 function actualHosts(output, fallbackDomains) {
   const hosts = [...output.matchAll(/\[LIVE_HTTP\]\s+\S+\s+\S+\s+([^\s/]+)(?:\s|$)/g)].map((m) => m[1]);
   return [...new Set(hosts)].join(', ') || fallbackDomains.join(', ') || 'unknown';
-}
-
-function importedFunctions(testPath) {
-  const source = readFileSync(testPath, 'utf8');
-  const names = new Set();
-  for (const match of source.matchAll(/import\s*\{([\s\S]*?)\}\s*from\s*['"][^'"]+sites\/[^'"]+['"]/g)) {
-    for (const name of match[1].split(',').map((part) => part.trim().split(/\s+as\s+/)[0])) {
-      if (/^(scrape|resolve)/.test(name)) names.add(name);
-    }
-  }
-  return [...names].join(', ') || 'reachability probe';
 }
 
 async function pauseBetweenSuites() {
@@ -91,15 +74,16 @@ for (const suite of suites) {
   process.stdout.write(output);
   const timedOut = result.error?.code === 'ETIMEDOUT' || result.error?.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER';
   const status = result.status;
+  const events = structuredEvents(output);
   records.push({
     provider: providerId,
     checked_at: new Date().toISOString(),
     configured_domains: (provider?.domains || []).join(', '),
     requested_domains: actualHosts(output, provider?.domains || []),
-    functions_tested: importedFunctions(testPath),
+    functions_tested: events.map((event) => event.operation).filter(Boolean).join('; ') || 'not reported by structured events',
     classification: inferClassification(output, status, timedOut),
     exit_code: status,
-    last_successful_stage: inferLastStage(output),
+    last_successful_stage: lastSuccessfulStage(events),
     evidence_tail: output.trim().split('\n').slice(-8).join(' ').slice(0, 700)
   });
 }
@@ -133,10 +117,10 @@ for (const providerId of ['anime4up_rest', 'egydead_live', 'shii4u']) {
     checked_at: new Date().toISOString(),
     configured_domains: (provider.domains || []).join(', '),
     requested_domains: actualHosts(output, provider.domains || []),
-    functions_tested: 'scrapeSearch or scrapeCatalog (primary supported operation)',
+    functions_tested: events.map((event) => event.operation).filter(Boolean).join('; ') || 'not reported by structured events',
     classification: inferClassification(output, status, result.error?.code === 'ETIMEDOUT'),
     exit_code: status,
-    last_successful_stage: inferLastStage(output),
+    last_successful_stage: lastSuccessfulStage(events),
     evidence_tail: output.trim().split('\n').slice(-8).join(' ').slice(0, 700)
   });
 }
@@ -162,3 +146,4 @@ writeFileSync(reportPath, lines.join('\n'));
 const failed = records.filter((row) => !['live_check_passed', 'unsupported_or_partial'].includes(row.classification));
 console.log(`\nLive provider checks: ${records.length - failed.length}/${records.length} non-failing; report: ${reportPath}`);
 if (failed.length) process.exitCode = 1;
+  const events = structuredEvents(output);

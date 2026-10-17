@@ -54,9 +54,11 @@ await new Promise((resolve, reject) => {
 const base = `http://127.0.0.1:${server.address().port}`;
 const record = { provider: providerId, query, checked_at: new Date().toISOString(), stages: [] };
 const stage = (name, result, extra = {}) => {
-  const entry = { stage: name, result, ...extra };
+  const operation = ({ search: 'GET /api/v1/search', details: 'GET /api/cinema/details', episode: 'select details.episodes[0]', server: 'GET /api/v1/resolve', resource: 'HEAD/range probe returned direct resource' })[name] || name;
+  const entry = { provider: providerId, operation, stage: name, result, checked_at: new Date().toISOString(), ...extra };
   record.stages.push(entry);
   console.log(`[JOURNEY_STAGE] ${name}: ${result}${extra.note ? ` — ${extra.note}` : ''}`);
+  console.log(`LIVE_EVENT_JSON ${JSON.stringify(entry)}`);
   return entry;
 };
 
