@@ -46,6 +46,9 @@ async function api(path) {
 }
 
 const classify = (x) => {
+  const code = String(x.data?.error?.code || '').toUpperCase();
+  if (/ACCESS|NETWORK|DNS|TIMEOUT|SUSPENDED|WAF|BLOCKED/.test(code)) return 'access_obstacle';
+  if (/UNSUPPORTED|NOT_IMPLEMENTED|CAPABILITY/.test(code)) return 'unsupported';
   if (x.error || [401, 403, 407, 429, 502, 503, 504].includes(x.response?.status)) return 'access_obstacle';
   if (x.response?.status === 422 || x.data?.status === 'unsupported') return 'unsupported';
   if (x.data?.status === 'no_results' || x.data?.status === 'success' && Array.isArray(x.data.data) && x.data.data.length === 0) return 'no_search_result';
@@ -59,7 +62,7 @@ const sameIdentity = (a, b) => {
   return Boolean(clean(a) && clean(a) === clean(b));
 };
 const mediaType = (s) => {
-  if (/m3u8/i.test(s)) return 'hls';
+  if (/m3u8|master\.txt/i.test(s)) return 'hls';
   if (/\.mp4(?:\?|$)/i.test(s)) return 'mp4';
   if (/embed|iframe/i.test(s)) return 'embed';
   try { if (/^https?:\/\//i.test(s)) return 'embed'; } catch {}
@@ -70,6 +73,16 @@ const workQuery = (title = '') => String(title).replace(/^(?:مشاهدة\s+)?(?
   .replace(/\s*(?:الحلقة|الحلقه|episode|ep)\s*\d+.*$/i, '')
   .replace(/\s*(?:مترجمة|مترجم|مدبلجة|مدبلج|اون لاين|أون لاين|اونلاين|كامل)\s*$/gi, '').trim();
 const titleKey = (title = '') => workQuery(title).toLocaleLowerCase('ar').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const contentKind = (item = {}) => {
+  if (item.is_series === true || item.is_movie === false) return 'series';
+  const value = String(item.type || item.mediaType || item.media_type || '').toLowerCase();
+  if (/movie|film|فيلم/.test(value)) return 'movie';
+  if (/series|anime|tv|مسلسل|انمي|أنمي/.test(value)) return 'series';
+  const title = String(item.title || item.movie_title || '');
+  if (/فيلم|\bmovie\b|\bfilm\b/i.test(title)) return 'movie';
+  if (/مسلسل|انمي|أنمي|\bseries\b|\banime\b/i.test(title)) return 'series';
+  return '';
+};
 
 async function boundedExternal(url, headers, range) {
   let parsed; try { parsed = new URL(url); } catch { return { result: 'scraper_error', error: 'invalid_media_url' }; }
@@ -128,7 +141,7 @@ async function verifyMedia(serverEntry) {
 
 async function runProvider(provider) {
   const providerStarted = now();
-  const providerResult = { provider: provider.id, name: provider.name, domains: provider.domains, started_at: providerStarted, samples: [], result: 'incomplete' };
+  const providerResult = { provider: provider.id, name: provider.name, domains: provider.domains, checked_domains: [], started_at: providerStarted, samples: [], result: 'incomplete' };
   if (provider.capabilities?.live) {
     const liveCall = await api('/api/v1/matches');
     const raw = liveCall.data?.data || liveCall.data?.matches || (Array.isArray(liveCall.data) ? liveCall.data : []);
@@ -153,8 +166,17 @@ async function runProvider(provider) {
   if (!provider.capabilities?.catalog) { providerResult.result = 'unsupported'; providerResult.ended_at = now(); return providerResult; }
   const categoryCall = await api(`/api/v1/provider/category?provider=${encodeURIComponent(provider.id)}&category=latest&page=1`);
   const categoryData = categoryCall.data?.data || [];
-  providerResult.category = stage('latest_additions', categoryCall.started, classify(categoryCall), { http_status: categoryCall.response?.status || null, source_url: categoryCall.data?.source_url || provider.domains?.[0], items_found: categoryData.length, error: categoryCall.data?.error || categoryCall.error || null });
-  if (!categoryCall.data || classify(categoryCall) !== 'ok' || !categoryData.length) { providerResult.result = categoryCall.data?.status === 'unsupported' ? 'unsupported' : classify(categoryCall) === 'ok' ? 'no_search_result' : classify(categoryCall); providerResult.ended_at = now(); return providerResult; }
+  const categoryCode = String(categoryCall.data?.error?.code || '').toUpperCase();
+  const categoryOutcome = categoryCall.data?.status === 'unsupported' || /NOT_IMPLEMENTED|UNSUPPORTED/.test(categoryCode) ? 'unsupported'
+    : /ACCESS|NETWORK|DNS|TIMEOUT|SUSPENDED|WAF|BLOCKED/.test(categoryCode) || /\/(?:login|signin)\/?$/i.test(categoryCall.data?.source_url || '') ? 'access_obstacle'
+      : categoryCall.data?.status === 'error' ? 'scraper_error'
+        : categoryData.length ? 'success' : 'no_catalog_results';
+  providerResult.category = stage('latest_additions', categoryCall.started, categoryOutcome, { http_status: categoryCall.response?.status || null, source_url: categoryCall.data?.source_url || provider.domains?.[0], items_found: categoryData.length, error: categoryCall.data?.error || categoryCall.error || null });
+  if (!categoryCall.data || classify(categoryCall) !== 'ok' || !categoryData.length) {
+    providerResult.result = categoryOutcome;
+    if (categoryCall.response?.ok) { try { providerResult.checked_domains.push(new URL(categoryCall.data?.source_url).hostname); } catch {} }
+    providerResult.ended_at = now(); return providerResult;
+  }
   const unique = [...new Map(categoryData.filter((x) => identity(x)).map((x) => [titleKey(x.title || x.name) || identity(x), x])).values()];
   const chosen = unique.slice(0, latestCount).map((item, i) => ({ item, selected_by: 'latest_additions', rank: i + 1, page: 1 }));
   if (randomCount) {
@@ -199,17 +221,24 @@ async function runProvider(provider) {
     const detailsIdentity = identity(details || {});
     const detailEpisodes = Array.isArray(details?.episodes) ? details.episodes : [];
     const linkedEpisode = detailEpisodes.find((ep) => sameIdentity(identity(ep), ref) || sameIdentity(ep.url || ep.href, item.url || item.href));
+    const expectedKind = contentKind(item);
+    const actualKind = contentKind(details || {});
+    const typeMatches = !expectedKind || !actualKind || expectedKind === actualKind;
     const detailsOk = detailsCall.response?.ok && details && (sameIdentity(detailsIdentity, sample.work_reference) || sameIdentity(details.url || details.sourceUrl, found.url || found.href))
-      && (sameIdentity(sample.work_reference, ref) || Boolean(linkedEpisode));
+      && (sameIdentity(sample.work_reference, ref) || Boolean(linkedEpisode)) && typeMatches;
     const searchStage = sample.stages.find((x) => x.name === 'search_identity');
     if (searchStage && detailsOk) { searchStage.result = 'success'; searchStage.identity_match = true; searchStage.identity_evidence = linkedEpisode ? `selected card URL is an episode in ${sample.work_reference}` : 'exact stable reference'; }
-    sample.stages.push(stage('details', detailsCall.started, detailsOk ? 'success' : detailsCall.data?.status === 'unsupported' ? 'unsupported' : classify(detailsCall), { http_status: detailsCall.response?.status || null, identity_match: Boolean(detailsOk), linked_episode_ref: linkedEpisode ? identity(linkedEpisode) || linkedEpisode.url : null, title: details?.title || details?.movie_title || '', type: details?.type || details?.mediaType || '', error: detailsCall.data?.message || detailsCall.error || null }));
+    sample.stages.push(stage('details', detailsCall.started, detailsOk ? 'success' : detailsCall.data?.status === 'unsupported' ? 'unsupported' : detailsCall.response?.ok && !typeMatches ? 'scraper_error' : classify(detailsCall), { http_status: detailsCall.response?.status || null, identity_match: Boolean(detailsOk), type_matches: typeMatches, expected_kind: expectedKind, actual_kind: actualKind, linked_episode_ref: linkedEpisode ? identity(linkedEpisode) || linkedEpisode.url : null, title: details?.title || details?.movie_title || '', type: details?.type || details?.mediaType || '', error: detailsCall.data?.message || detailsCall.error || null }));
     if (!detailsOk) { sample.result = classify(detailsCall) === 'ok' ? 'scraper_error' : classify(detailsCall); sample.ended_at = now(); providerResult.samples.push(sample); continue; }
     let episodes = detailEpisodes;
     if (/series|anime|tv/i.test(`${sample.type} ${details.type || ''}`)) {
       const episodeCall = await api(`/api/v1/provider/episodes?ref=${encodeURIComponent(ref)}`);
       if (episodeCall.data?.status === 'success' && episodeCall.data.data?.length) episodes = episodeCall.data.data;
-      sample.stages.push(stage('episode_list', episodeCall.started, episodeCall.data?.status === 'success' ? 'success' : episodeCall.data?.status === 'unsupported' ? 'unsupported' : classify(episodeCall), { http_status: episodeCall.response?.status || null, episode_count: episodes.length, ordered_numbers: episodes.map((e) => e.number ?? e.episodeNumber ?? null), error: episodeCall.data?.error || episodeCall.error || null }));
+      const originalOrder = episodes.map((e) => ({ season: Number(e.season) || 1, number: Number(e.number ?? e.episodeNumber) || 0 }));
+      episodes = [...episodes].sort((a, b) => (Number(a.season) || 1) - (Number(b.season) || 1) || (Number(a.number ?? a.episodeNumber) || 0) - (Number(b.number ?? b.episodeNumber) || 0));
+      const episodeCode = String(episodeCall.data?.error?.code || '').toUpperCase();
+      const episodeOutcome = episodeCall.data?.status === 'success' && episodeCall.data.data?.length ? 'success' : episodeCall.data?.status === 'unsupported' || /NOT_IMPLEMENTED|UNSUPPORTED/.test(episodeCode) ? 'unsupported' : /ACCESS|NETWORK|DNS|TIMEOUT|SUSPENDED|WAF|BLOCKED/.test(episodeCode) ? 'access_obstacle' : 'scraper_error';
+      sample.stages.push(stage('episode_list', episodeCall.started, episodeOutcome, { http_status: episodeCall.response?.status || null, episode_count: episodes.length, observed_order: originalOrder, tested_order: episodes.map((e) => ({ season: Number(e.season) || 1, number: Number(e.number ?? e.episodeNumber) || null })), order_normalized_ascending: true, error: episodeCall.data?.error || episodeCall.error || null }));
     }
     const checks = episodes.length ? [episodes[0], ...(episodes.length > 1 ? [episodes.at(-1)] : [])] : [null];
     let allMediaResults = [];
@@ -240,6 +269,14 @@ async function runProvider(provider) {
       : results.some((x) => x === 'resource_verified') ? 'partial_resource_checks'
         : results.length ? 'tested_with_failures_or_unverified' : 'no_search_result';
   providerResult.result_counts = Object.fromEntries([...new Set(results)].map((x) => [x, results.filter((y) => y === x).length]));
+  const checkedHosts = new Set();
+  const recordHost = (value) => { try { const raw = String(value || '').replace(/^[a-z0-9_-]+:(?=https?:\/\/)/i, ''); const host = new URL(raw).hostname; if (host && !['127.0.0.1', 'localhost'].includes(host)) checkedHosts.add(host); } catch {} };
+  recordHost(providerResult.category?.source_url);
+  for (const sample of providerResult.samples) {
+    recordHost(sample.reference); recordHost(sample.work_reference);
+    for (const group of sample.stages.filter((x) => Array.isArray(x.media_checks))) for (const check of group.media_checks) recordHost(check.final_url || check.url);
+  }
+  providerResult.checked_domains = [...checkedHosts];
   return providerResult;
 }
 
@@ -265,6 +302,6 @@ for (const p of run.providers) for (const s of p.samples) {
   if (episodeStages.length) for (const e of episodeStages) rows.push(`| ${p.provider} | ${s.selected_by} (page ${s.page ?? '—'}) | ${s.title.replaceAll('|', '\\|')} — ${e.episode.replaceAll('|', '\\|')} | ${s.type || 'unknown'} | ${e.resolve_stage.started_at} – ${e.resolve_stage.ended_at} | ${e.result} | ${e.resolve_stage.result}; ${e.media_checks.map((m) => `${m.kind}:${m.result}`).join(', ') || 'no candidate'} |`);
   else rows.push(`| ${p.provider} | ${s.selected_by} (page ${s.page ?? '—'}) | ${s.title.replaceAll('|', '\\|')} | ${s.type || 'unknown'} | ${s.started_at} – ${s.ended_at} | ${s.result} | ${s.stages.map((x) => `${x.name}:${x.result}`).join('<br>')} |`);
 }
-const md = [`# Live acceptance — ${date}`, '', `Run: ${run.started_at} – ${run.ended_at} UTC. Seed: ${seed}. Serialized app HTTP requests, minimum spacing ${intervalMs} ms, per-request timeout ${timeoutMs} ms.`, '', '| Provider | Selection | Work / episode | Type | Test time (UTC) | Outcome | Stage evidence |', '|---|---|---|---|---|---|---|', ...rows, '', '## Provider summary', '', '| Provider | Result | Domain(s) | Samples | Outcome counts |', '|---|---|---|---:|---|', ...run.providers.map((p) => `| ${p.provider} | ${p.result} | ${(p.domains || []).join(', ')} | ${p.samples.length} | ${JSON.stringify(p.result_counts || {})} |`), '', 'An `embed_unverified` result is not playback success. Resource checks read only bounded manifest/Range samples. Flutter playback was not tested by this harness.', ''].join('\n');
+const md = [`# Live acceptance — ${date}`, '', `Run: ${run.started_at} – ${run.ended_at} UTC. Seed: ${seed}. Serialized app HTTP requests, minimum spacing ${intervalMs} ms, per-request timeout ${timeoutMs} ms.`, '', '| Provider | Selection | Work / episode | Type | Test time (UTC) | Outcome | Stage evidence |', '|---|---|---|---|---|---|---|', ...rows, '', '## Provider summary', '', '| Provider | Result | Configured domains | Domains actually checked | Samples | Outcome counts |', '|---|---|---|---|---:|---|', ...run.providers.map((p) => `| ${p.provider} | ${p.result} | ${(p.domains || []).join(', ')} | ${(p.checked_domains || []).join(', ') || 'none reached'} | ${p.samples.length} | ${JSON.stringify(p.result_counts || {})} |`), '', 'An `embed_unverified` result is not playback success. Resource checks read only bounded manifest/Range samples. Flutter playback was not tested by this harness.', ''].join('\n');
 writeFileSync(mdPath, md);
 console.log(`Reports: ${jsonPath} ; ${mdPath}`);

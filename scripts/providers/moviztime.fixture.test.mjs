@@ -47,6 +47,7 @@ assert.ok(Array.isArray(catalog));
 assert.ok(catalog.length > 0);
 assert.ok(catalog[0].title);
 assert.ok(catalog[0].url);
+assert.equal(catalog[0].type, 'movie', 'Movie names containing “ona” (e.g. MacDonald) must not be inferred as anime');
 
 // 4. Search scraping with fixture
 console.log('4. Testing Search Fixture Scraping...');
