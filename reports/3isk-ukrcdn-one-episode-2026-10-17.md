@@ -1,4 +1,4 @@
-# 3isk access diagnosis — 2026-10-17
+# 3isk access diagnosis and ukrcdn PoC — 2026-10-17
 
 Reproduction for the Teskilat season 1 episode 187 page. No application refactor or extractor change was made.
 
@@ -34,4 +34,23 @@ An HTTP 302 observed through the proxy pointed from `3iskk.xyz` to `ww4.3ick.clu
 
 No token, cookie value, or session data was logged, and no video bytes were proxied. The exact episode URL above is ready for an independent check from the user's network.
 
-An earlier live run recorded in [live-provider-results-2026-10-17.md](live-provider-results-2026-10-17.md) reached an HLS master, sub-playlist, and first segment. That is separate, time-specific evidence; it does not change the outcome or transport diagnosis of this run.
+An earlier live run recorded in [live-provider-results-2026-10-17.md](live-provider-results-2026-10-17.md) reached an HLS master, sub-playlist, and first segment. The follow-up below independently repeated the same path with an explicit proxy agent.
+
+## Follow-up: explicit-proxy PoC
+
+At 17:43:48–17:44:12 UTC, the one-episode resolver was run with an explicit `ProxyAgent` using the environment's configured HTTP CONNECT proxy. This dispatcher existed only in the test process; no global networking setting or application code was changed. Tokens and cookie values were omitted from logs and this report.
+
+| Stage | Host and sanitized path | HTTP | Duration | Validation |
+|---|---|---:|---:|---|
+| Episode page | `3iskk.xyz/watch/episodes/serie-teskilat-season-1-episode-187/` | 200 | 530 ms | HTML title matched “مسلسل المنظمة الحلقة 187 مترجمة قصة عشق” |
+| Watch page | `3iskk.xyz/watch/episodes/serie-teskilat-season-1-episode-187/see/` | 200 | 1,031 ms | Same episode title; page contained one iframe |
+| Wrapper/embed | `3iskk.xyz/embed/1/266404/2/` | 200 | 281 ms | Embed page contained one iframe |
+| UKRCDN player | `ukrcdn.club/e/[redacted]` | 200 | 309 ms | Player page exposed the playback JSON request |
+| Playback JSON | `ukrcdn.club/api/videos/[redacted]/playback` | 200 | 451 ms | JSON returned a direct HLS URL; token values redacted |
+| Master playlist | `s3.ukrcdn.xyz/hls/[media-id]/master.m3u8?[redacted]` | 200 | 857 ms | `application/vnd.apple.mpegurl`; valid `#EXTM3U`, 186 bytes |
+| 720p sub-playlist | `s3.ukrcdn.xyz/hls/[media-id]/720p/720p.m3u8?[redacted]` | 200 | 349 ms | Valid `#EXTM3U`, 256,508 bytes |
+| First segment | `s3.ukrcdn.xyz/hls/[media-id]/720p/720p_000.ts?[redacted]` | 206 | 239 ms | Requested `Range: bytes=0-1023`; received exactly 1,024 bytes, `video/mp2t`, valid MPEG-TS sync byte |
+
+The extracted final URL shape was `https://s3.ukrcdn.xyz/hls/[media-id]/master.m3u8?[token-and-expiry-redacted]`. The returned playback headers were `Referer: https://s3.ukrcdn.xyz/` and the iPhone Safari User-Agent shown by the PoC. The response contained both `token` and `expires` query parameters; their values are deliberately not recorded.
+
+**Result:** the ukrcdn extraction and bounded HLS-resource checks passed through the explicit environment proxy. This confirms this proxy path only. The application's normal Node `fetch` still attempts direct egress in this environment and gets `ECONNREFUSED`; no global proxy setting was changed. This does not establish playback from Render/another deployment, a Flutter device, or a second network. Same-token cross-network/IP-binding validation remains pending. No PR was merged.
