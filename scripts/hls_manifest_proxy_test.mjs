@@ -1,4 +1,5 @@
 // Historical CI filename retained: its contract now enforces proxy retirement.
+process.env.NODE_ENV = 'test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import https from 'node:https';

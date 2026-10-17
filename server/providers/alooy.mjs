@@ -147,14 +147,15 @@ export function parseAlooyDetails(html, pageUrl) {
 export function createAlooyProvider({ fetchImpl = globalThis.fetch } = {}) {
   const cache = new TtlCache({ maxEntries: 96 }),
     pending = new Map();
-  async function page(u, refresh = false) {
+  async function page(u, refresh = false, { signal = null } = {}) {
     const key = u.href;
     if (!refresh && cache.get(key)) return cache.get(key);
     if (pending.has(key)) return pending.get(key);
     const job = (async () => {
+      const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000);
       const res = await fetchImpl(key, {
         redirect: "error",
-        signal: AbortSignal.timeout(20000),
+        signal: requestSignal,
         headers: { "User-Agent": ALOOY_UA, Referer: ALOOY_ORIGIN + "/" },
       });
       if (!res.ok) {
@@ -198,14 +199,14 @@ export function createAlooyProvider({ fetchImpl = globalThis.fetch } = {}) {
       const u = decodeAlooyRef(ref);
       return parseAlooyDetails(await page(u, refresh), u);
     },
-    async search(query) {
+    async search(query, { signal = null } = {}) {
       const q = String(query || "")
         .trim()
         .slice(0, 120);
       if (q.length < 2) return { status: "success", source: "alooy", data: [] };
       const u = new URL("/home/autocompleteajax", ALOOY_ORIGIN);
       u.searchParams.set("term", q);
-      const json = JSON.parse(await page(u));
+      const json = JSON.parse(await page(u, false, { signal }));
       const rows = [];
       for (const row of Array.isArray(json) ? json : []) {
         try {

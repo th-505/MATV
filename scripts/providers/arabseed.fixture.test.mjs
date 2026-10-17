@@ -112,6 +112,17 @@ const emptyResults = await scrapeSearch('nonexistent', 1, {
 assert.equal(emptyResults.length, 0);
 assert.equal(emptyResults._meta?.errorCode, SCRAPER_ERROR_CODES.EMPTY_RESULT);
 
+// Suspended hosting must be reported as source unavailable, never as an empty catalog.
+const suspendedHtml = '<html><head><title>Account Suspended</title></head><body><h1>This account has been suspended</h1><p>/cgi-sys/suspendedpage.cgi</p></body></html>';
+const suspendedCatalog = await scrapeCatalog('movies_foreign', 1, { fixtureHtml: suspendedHtml });
+assert.equal(suspendedCatalog._meta?.errorCode, SCRAPER_ERROR_CODES.ACCESS_BLOCKED);
+assert.equal(suspendedCatalog._meta?.reason, 'ACCOUNT_SUSPENDED');
+assert.match(suspendedCatalog._meta?.errorMessage || '', /SOURCE_UNAVAILABLE/);
+const suspendedSearch = await scrapeSearch('test', 1, { fixtureHtml: suspendedHtml });
+assert.equal(suspendedSearch._meta?.errorCode, SCRAPER_ERROR_CODES.ACCESS_BLOCKED);
+assert.equal(suspendedSearch._meta?.reason, 'ACCOUNT_SUSPENDED');
+await assert.rejects(() => scrapeDetails(FIXTURE_META.urls.seriesDetails, { fixtureHtml: suspendedHtml }), /account is suspended/i);
+
 // 5. DETAILS FIXTURE SCRAPING
 console.log('5. Testing Series Details Scraping...');
 const details = await scrapeDetails('https://www.arabseed.wine/series/al-muassis-osman-season-6/', {

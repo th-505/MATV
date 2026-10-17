@@ -13,6 +13,7 @@ import {
 import {
   PROVIDER_META,
   YALLASHOOT_SITE_CONFIG,
+  parseMatchesFromHtml,
   rewriteToActiveYallaShootDomain,
   resolveYallaShootTargetUrl,
   scrapeCatalog,
@@ -87,6 +88,17 @@ assert.equal(m1.commentator, 'خليل البلوشي');
 assert.equal(m1.tournament, 'الدوري الإنجليزي');
 assert.ok(m1.poster.includes('Everton2018'));
 assert.ok(todayMatches._meta?.ok, 'Catalog _meta.ok must be true');
+
+const mixedLinksHtml = `
+  <div class="match-container"><h3 class="team-1"><span class="team-name">فريق أ</span></h3><h3 class="team-2"><span class="team-name">فريق ب</span></h3>
+    <a class="ahmed" href="https://ads.invalid/redirect/">البث</a></div>
+  <div class="match-container"><h3 class="team-1"><span class="team-name">فريق ج</span></h3><h3 class="team-2"><span class="team-name">فريق د</span></h3>
+    <a class="ahmed" href="https://ads.invalid/out/">إعلان</a>
+    <a href="https://yalla-shootz.cc/matches/team-c-vs-team-d/" title="فريق ج ضد فريق د">تفاصيل المباراة</a></div>`;
+const trustedLinkRows = parseMatchesFromHtml(mixedLinksHtml, YALLASHOOT_SITE_CONFIG.baseUrl);
+assert.equal(trustedLinkRows.length, 1, 'cards without a source-owned match URL must be excluded');
+assert.equal(trustedLinkRows[0].url, 'https://yalla-shootz.cc/matches/team-c-vs-team-d/');
+assert.equal(trustedLinkRows[0].title, 'فريق ج ضد فريق د');
 
 // 4. YESTERDAY'S CATALOG FIXTURE SCRAPING
 console.log("4. Testing Yesterday's Catalog Fixture Scraping...");

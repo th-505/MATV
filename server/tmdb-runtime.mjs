@@ -139,7 +139,7 @@ function normalizeSeason(body = {}, id, seasonNumber) {
 }
 
 export function createTmdbRuntime({
-  apiKey = process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join(''),
+  apiKey = process.env.TMDB_API_KEY || '',
   bearerToken = process.env.TMDB_V4_TOKEN || '',
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,

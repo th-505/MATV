@@ -806,8 +806,8 @@ export async function scrapeLive(options = {}) {
 
     const channels = parseLiveChannelsFromHtml(res.html, targetUrl);
     if (channels.length === 0) {
-      return createEmptyArrayResult(LIVE_PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'NO_LIVE_CHANNELS_FOUND', {
-        url: targetUrl
+      return createEmptyArrayResult(LIVE_PROVIDER_ID, SCRAPER_ERROR_CODES.UNSUPPORTED_CAPABILITY, 'LIVE_CHANNEL_SOURCE_UNAVAILABLE: no verified channel entries were found; VOD results are not substituted', {
+        url: targetUrl, reason: 'NO_VERIFIED_LIVE_CHANNELS'
       });
     }
 

@@ -3,6 +3,28 @@
 // يسأل المشغل تلو المشغل حتى يجد رابط الفيديو الفعلي (.m3u8 / .mp4) الخالي من الإعلانات ومنع أطر الـ iframe نهائياً
 import * as cheerio from 'cheerio';
 import { generateAntiBanHeaders } from './anti-ban.mjs';
+import { assertSafeScraperUrl, fetchSafeResponse } from './shared/http.mjs';
+
+async function fetch(url, init = {}) {
+  const headers = init.headers || {};
+  const referer = headers.Referer || headers.referer || '';
+  const response = await fetchSafeResponse(String(url), {
+    method: init.method || 'GET',
+    headers,
+    referer,
+    timeoutMs: 6_000,
+    maxRedirects: 5,
+    maxRetries: 0,
+    onBeforeRequest: init.budget ? () => {
+      if (init.budget.requests >= init.budget.maxRequests || init.budget.signal?.aborted) return false;
+      init.budget.requests++;
+      return true;
+    } : undefined,
+    allowHttp: false,
+    signal: init.signal
+  });
+  return { ...response, text: async () => response.html };
+}
 
 const STREAM_REGEX_LIST = [
   /["'](https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?)["']/gi,
@@ -13,6 +35,19 @@ const STREAM_REGEX_LIST = [
   /hlsUrl\s*:\s*["'](https?:\/\/[^"'\s]+)["']/gi,
   /videoUrl\s*:\s*["'](https?:\/\/[^"'\s]+)["']/gi
 ];
+
+export function extractVidmolyStreamsFromHtml(html = '', playerUrl = '') {
+  const normalized = String(html || '')
+    .replace(/\\u0026/gi, '&')
+    .replace(/\\\//g, '/')
+    .replace(/&amp;/gi, '&');
+  return extractRawStreamsFromText(normalized, playerUrl)
+    .filter((stream) => stream.streamType === 'm3u8')
+    .map((stream) => ({
+      ...stream,
+      headers: { ...stream.headers, Referer: 'https://vidmoly.to/' }
+    }));
+}
 
 // 1. فك ضغط كود JavaScript المعالج بـ Dean Edwards Packer: eval(function(p,a,c,k,e,d)...)
 export function unpackDeanEdwards(packedHtml = '') {
@@ -73,11 +108,12 @@ export function unwrapBase64BridgeUrl(rawUrl = '') {
 // 3. التحقق من أن الرابط هو تدفق فيديو حقيقي (.m3u8 أو .mp4) وليس ملف أصول أو إعلانات
 export function isValidDirectMediaUrl(url = '') {
   if (!url || typeof url !== 'string' || !url.startsWith('http')) return false;
+  try { assertSafeScraperUrl(url); } catch { return false; }
   const lower = url.toLowerCase();
   if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.gif') || lower.endsWith('.svg') || lower.endsWith('.js') || lower.endsWith('.css') || lower.endsWith('.vtt')) {
     return false;
   }
-  if (/googleads|doubleclick|popads|adsterra|exoclick|juicyads|disqus|facebook|analytics/i.test(lower)) {
+  if (/googleads|doubleclick|popads|adsterra|exoclick|juicyads|a-ads|disqus|facebook|analytics/i.test(lower)) {
     return false;
   }
   return lower.includes('.m3u8') || lower.includes('.mp4') || lower.includes('/hls/') || lower.includes('master.txt');
@@ -110,13 +146,13 @@ export function extractRawStreamsFromText(text = '', refererUrl = '') {
 }
 
 // 5. معالجات خاصة لمستضيفات الفيديو الأكثر شيوعاً
-async function extractSpecialHostStreams(embedUrl, parentReferer) {
+async function extractSpecialHostStreams(embedUrl, parentReferer, budget = null) {
   const lower = embedUrl.toLowerCase();
 
   // أ) مشغل Ok.ru (استخراج HLS و MP4 من JSON data-options)
   if (lower.includes('ok.ru/videoembed')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const optsMatch = html.match(/data-options="([^"]+)"/);
@@ -141,7 +177,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ب) مشغل DoodStream / Dooood / Ds2play
   if (/dood|d000d|ds2play|doods/i.test(lower)) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const passMatch = html.match(/\$\.get\(['"](\/pass_md5\/[^'"]+)['"]/);
@@ -150,7 +186,8 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
         const passUrl = `${origin}${passMatch[1]}`;
         const passRes = await fetch(passUrl, {
           headers: { ...generateAntiBanHeaders(embedUrl), Referer: embedUrl },
-          signal: AbortSignal.timeout(6000)
+          signal: (budget?.signal || AbortSignal.timeout(6000)),
+          budget
         });
         if (passRes.ok) {
           const baseStream = await passRes.text();
@@ -165,7 +202,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ج) مشغل Sibnet (شائع في الأنمي)
   if (lower.includes('sibnet.ru')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const m = html.match(/player\.src\(\[\{src:\s*["']([^"']+)["']/);
@@ -179,20 +216,18 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // د) مشغل Vidmoly
   if (lower.includes('vidmoly')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
-      const m = html.match(/file\s*:\s*["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)["']/i);
-      if (m) {
-        return [{ url: m[1], streamType: 'm3u8', quality: 'AUTO-HLS', headers: { ...generateAntiBanHeaders(embedUrl), Referer: 'https://vidmoly.to/' } }];
-      }
+      const streams = extractVidmolyStreamsFromHtml(html, embedUrl);
+      if (streams.length) return streams;
     } catch (_) {}
   }
 
   // هـ) مشغل Uqload
   if (lower.includes('uqload')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const m = html.match(/sources\s*:\s*\[\s*["'](https?:\/\/[^"']+\.mp4[^"']*)["']/i);
@@ -205,7 +240,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // و) مشغل Streamwish / Awish / Flaswish
   if (/streamwish|awish|flaswish|embedwish|strwish/i.test(lower)) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
@@ -219,7 +254,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ز) مشغل Filemoon / Moonplayer
   if (/filemoon|moonplayer/i.test(lower)) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
@@ -233,7 +268,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ح) مشغل Mixdrop
   if (lower.includes('mixdrop')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: (budget?.signal || AbortSignal.timeout(6000)), budget });
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
@@ -249,7 +284,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
 }
 
 // 6. استخراج مرشحي المشغلات الفرعية (Child Embed Players) من صفحة HTML للسؤال المتسلسل
-function extractChildPlayerCandidates(html = '', currentUrl = '') {
+export function extractChildPlayerCandidates(html = '', currentUrl = '') {
   const candidates = [];
   const origin = currentUrl.startsWith('http') ? new URL(currentUrl).origin : '';
 
@@ -263,7 +298,7 @@ function extractChildPlayerCandidates(html = '', currentUrl = '') {
         let u = unwrapBase64BridgeUrl(raw.trim());
         if (u.startsWith('//')) u = 'https:' + u;
         else if (u.startsWith('/') && origin) u = origin + u;
-        if (u.startsWith('http') && u !== currentUrl && !candidates.includes(u)) {
+        if (u.startsWith('http') && u !== currentUrl && !isSocialOrShareUrl(u) && !candidates.includes(u)) {
           candidates.push(u);
         }
       }
@@ -276,7 +311,7 @@ function extractChildPlayerCandidates(html = '', currentUrl = '') {
         let u = unwrapBase64BridgeUrl(href.trim());
         if (u.startsWith('//')) u = 'https:' + u;
         else if (u.startsWith('/') && origin) u = origin + u;
-        if (u.startsWith('http') && u !== currentUrl && !candidates.includes(u)) {
+        if (u.startsWith('http') && u !== currentUrl && !isSocialOrShareUrl(u) && !candidates.includes(u)) {
           candidates.push(u);
         }
       }
@@ -286,7 +321,7 @@ function extractChildPlayerCandidates(html = '', currentUrl = '') {
     const scriptMatches = html.match(/['"](https?:\/\/[^"'\s<>]+\/(?:embed|player|e|watch|play|v)\/[^"'\s<>]+)['"]/gi) || [];
     for (const m of scriptMatches) {
       const clean = m.slice(1, -1);
-      if (clean !== currentUrl && !candidates.includes(clean)) {
+      if (clean !== currentUrl && !isSocialOrShareUrl(clean) && !candidates.includes(clean)) {
         candidates.push(clean);
       }
     }
@@ -298,7 +333,7 @@ function extractChildPlayerCandidates(html = '', currentUrl = '') {
       try {
         const dec = Buffer.from(tok, 'base64').toString('utf8').trim();
         if (dec.startsWith('http://') || dec.startsWith('https://')) {
-          if (!candidates.includes(dec)) candidates.push(dec);
+          if (!isSocialOrShareUrl(dec) && !candidates.includes(dec)) candidates.push(dec);
         }
       } catch (_) {}
     }
@@ -307,10 +342,20 @@ function extractChildPlayerCandidates(html = '', currentUrl = '') {
   return candidates.slice(0, 8); // فحص أول 8 مرشحين لسرعة الأداء
 }
 
+function isSocialOrShareUrl(raw = '') {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.toLowerCase().replace(/^www\./, '');
+    const domains = ['facebook.com', 'fb.watch', 'twitter.com', 'x.com', 'instagram.com', 'pinterest.com', 'reddit.com', 't.me', 'telegram.me'];
+    return domains.some((domain) => host === domain || host.endsWith(`.${domain}`)) || /(?:^|\/)share(?:\/|$)|intent\/|\/sharer\b/i.test(u.pathname);
+  } catch { return true; }
+}
+
 // 7. محرك الاستعلام المتسلسل العنقودي (Recursive Cascade Stream Resolver)
 // يسأل المشغل الحالي، وإن كان جسراً يسأل المشغل الداخلي حتى يجد البث الفعلي
-export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0, visited = new Set()) {
+export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0, visited = new Set(), budget = { maxRequests: 8, requests: 0, signal: undefined }) {
   if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.startsWith('http')) return [];
+  if (budget.requests >= budget.maxRequests || budget.signal?.aborted) return [];
   if (depth > 4) return []; // حد العمق الأقصى لمنع الحلقات اللانهائية
   if (visited.has(rawUrl)) return [];
   visited.add(rawUrl);
@@ -330,19 +375,22 @@ export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0
 
   // ب) فحص المشغلات الخاصة المعروفة (Ok.ru, Sibnet, Dood, Vidmoly, إلخ)
   try {
-    const special = await extractSpecialHostStreams(targetUrl, parentReferer);
+    if (budget.requests >= budget.maxRequests || budget.signal?.aborted) return [];
+    const special = await extractSpecialHostStreams(targetUrl, parentReferer, budget);
     if (special.length > 0) return special;
   } catch (_) {}
 
   // ج) جلب صفحة المشغل لاستخراج البث أو العثور على المشغل الداخلي التالي
   try {
+    if (budget.requests >= budget.maxRequests || budget.signal?.aborted) return [];
     const res = await fetch(targetUrl, {
       headers: {
         ...generateAntiBanHeaders(targetUrl),
         Referer: parentReferer || new URL(targetUrl).origin + '/'
       },
       redirect: 'follow',
-      signal: AbortSignal.timeout(6500)
+      signal: budget.signal || AbortSignal.timeout(6500),
+      budget
     });
 
     if (!res.ok) return [];
@@ -359,7 +407,7 @@ export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0
       const childCandidates = extractChildPlayerCandidates(html, targetUrl);
       for (const childUrl of childCandidates) {
         if (!visited.has(childUrl)) {
-          const childStreams = await cascadeResolveStream(childUrl, targetUrl, depth + 1, visited);
+          const childStreams = await cascadeResolveStream(childUrl, targetUrl, depth + 1, visited, budget);
           if (childStreams.length > 0) {
             return childStreams; // عثر على البث العامل، نرجعه فوراً
           }
@@ -372,6 +420,9 @@ export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0
 }
 
 // 8. الدالة الرئيسية المصدرة لبقية القواشط في المنظومة
-export async function unwrapEmbedToDirectStreams(rawCandidateUrl, parentReferer = '') {
-  return cascadeResolveStream(rawCandidateUrl, parentReferer, 0, new Set());
+export async function unwrapEmbedToDirectStreams(rawCandidateUrl, parentReferer = '', options = {}) {
+  const maxRequests = Math.max(1, Math.min(8, Number(options.maxRequests) || 8));
+  const maxDurationMs = Math.max(500, Math.min(10_000, Number(options.maxDurationMs) || 10_000));
+  const budget = { maxRequests, requests: 0, signal: AbortSignal.timeout(maxDurationMs) };
+  return cascadeResolveStream(rawCandidateUrl, parentReferer, 0, new Set(), budget);
 }

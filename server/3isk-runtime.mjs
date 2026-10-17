@@ -23,8 +23,8 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
         Date.parse(payload.expires_at) === tokenExpiry && expiry <= tokenExpiry - 60_000;
     } catch { return false; }
   }
-  async function execute(key, fetcher, ttl, { refresh = false } = {}) {
-    if (pending.has(key)) return pending.get(key);
+  async function execute(key, fetcher, ttl, { refresh = false, signal = null } = {}) {
+    if (!signal && pending.has(key)) return pending.get(key);
     const work = (async () => {
       if (!refresh) {
         const local = cache.peek(key, now());
@@ -40,7 +40,8 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
       if (refresh) await persisted(() => store.remove(key));
       const started = now();
       try {
-        const payload = await fetcher();
+        const payload = await fetcher({ signal });
+        if (signal?.aborted) throw signal.reason || new Error('REQUEST_ABORTED');
         if (payload.playback_mode === 'client_resolve') {
           await persisted(() => store.event(`${key}:client-metadata`, 'resolved', now() - started, now()));
           return { ...payload, cached: false };
@@ -59,12 +60,15 @@ export function create3iskRuntime({ provider = create3iskProvider(), store = cre
         throw error;
       }
     })();
-    pending.set(key, work);
-    try { return await work; } finally { pending.delete(key); }
+    if (!signal) pending.set(key, work);
+    try { return await work; } finally { if (!signal && pending.get(key) === work) pending.delete(key); }
   }
   return {
     category: (id, page = 1) => execute(`category:${id}:${page}`, () => provider.category(id, page), 5 * 60_000),
-    search: query => { const q = String(query).trim().slice(0, 120); return execute(`search:${q}`, () => provider.search(q), 60_000); },
+    search: (query, { signal = null } = {}) => {
+      const q = String(query).trim().slice(0, 120);
+      return execute(`search:${q}`, ({ signal: requestSignal }) => provider.search(q, { signal: requestSignal }), 60_000, { signal });
+    },
     metadata(ref) { decode3iskRef(ref); return execute(`metadata:${ref}`,()=>provider.metadata(ref),120_000); },
     details(ref, options = {}) {
       const url = decode3iskRef(ref);

@@ -682,11 +682,15 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     } catch (_) {}
   } catch (err) {
     // Edge fallback if live request blocked
-    if (!options.fixtureHtml && !options.skipEdgeFallback && String(urlOrRef).startsWith('laroza:')) {
+    if (!options.fixtureHtml && !options.skipEdgeFallback) {
       try {
-        const edgeData = await tryEdgeResolver('details', { ref: urlOrRef }, options);
+        const edgeRef = String(urlOrRef).startsWith('laroza:')
+          ? String(urlOrRef)
+          : buildLarozaRef(new URL(cleanUrl).pathname + new URL(cleanUrl).search);
+        const edgeData = await tryEdgeResolver('details', { ref: edgeRef }, options);
         if (edgeData.data) {
           const d = edgeData.data;
+          if (!d.title || /^(?:فيديو لاروزا|لاروزا|مشاهدة الفيديو)$/i.test(String(d.title).trim())) throw new Error('EDGE_DETAILS_INCOMPLETE');
           const episodes = (Array.isArray(d.episodes) ? d.episodes : []).map((ep, i) => ({
             id: ep.ref,
             episode_id: ep.ref,
@@ -701,8 +705,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
           const normalized = normalizeDetailsResult(
             {
-              id: urlOrRef,
-              ref: urlOrRef,
+              id: edgeRef,
+              ref: edgeRef,
               title: d.title,
               poster: d.poster,
               overview: d.description || '',
@@ -786,6 +790,45 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
   normalized.movie_title = normalized.title;
   normalized.imdb_id = imdbId;
+
+  const genericTitle = !title || /^(?:فيديو لاروزا|لاروزا|مشاهدة الفيديو)$/i.test(title.trim());
+  if (genericTitle || (isSeries && episodes.length === 0)) {
+    try {
+      if (!options.fixtureHtml && !options.skipEdgeFallback) {
+      const edgeRef = String(urlOrRef).startsWith('laroza:')
+        ? String(urlOrRef)
+        : buildLarozaRef(new URL(cleanUrl).pathname + new URL(cleanUrl).search);
+      const edgeData = await tryEdgeResolver('details', { ref: edgeRef }, options);
+      const d = edgeData.data;
+      const edgeEpisodes = (Array.isArray(d?.episodes) ? d.episodes : []).map((ep, i) => ({
+        id: ep.ref,
+        episode_id: ep.ref,
+        ref: ep.ref,
+        number: ep.episode_number || i + 1,
+        season: ep.season_number || 1,
+        title: ep.title || `الحلقة ${ep.episode_number || i + 1}`,
+        url: resolveLarozaTargetUrl(ep.ref),
+        source: PROVIDER_META.id,
+        watch_available: true
+      }));
+      if (d?.title && !/^(?:فيديو لاروزا|لاروزا|مشاهدة الفيديو)$/i.test(d.title.trim()) && (!isSeries || edgeEpisodes.length > 0)) {
+        const edgeNormalized = normalizeDetailsResult({
+          id: edgeRef, ref: edgeRef, title: d.title, poster: d.poster,
+          overview: d.description || '', year: d.year,
+          type: d.type || (edgeEpisodes.length ? 'series' : 'movie'), episodes: edgeEpisodes,
+          genres: Array.isArray(d.genres) ? d.genres : [], source: PROVIDER_META.id, sourceUrl: cleanUrl
+        }, { providerId: PROVIDER_META.id, baseUrl: LAROZA_SITE_CONFIG.baseUrl });
+        edgeNormalized.movie_title = edgeNormalized.title;
+        return attachResultMeta(edgeNormalized, { ok: true, providerId: PROVIDER_META.id, url: cleanUrl, resolvedVia: 'edge' });
+      }
+      }
+    } catch (_) {}
+    return attachResultMeta({ ...normalized, title: '', movie_title: '', episodes: [] }, {
+      ok: false, errorCode: SCRAPER_ERROR_CODES.STRUCTURE_CHANGED,
+      errorMessage: 'LAROZA_DETAILS_INCOMPLETE: detail page did not contain a work title and episode list',
+      providerId: PROVIDER_META.id, url: cleanUrl
+    });
+  }
 
   return attachResultMeta(normalized, {
     ok: Boolean(title),

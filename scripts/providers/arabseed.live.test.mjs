@@ -91,6 +91,11 @@ try {
   console.table(matrix);
 
   if (
+    /ACCOUNT_SUSPENDED|SOURCE_UNAVAILABLE/i.test(errMsg)
+  ) {
+    console.log('\n[ACCOUNT_SUSPENDED_CONFIRMED] ArabSeed is SOURCE_UNAVAILABLE, not an empty catalog.');
+    process.exitCode = 2;
+  } else if (
     /ACCESS_BLOCKED|Cloudflare|520|521|522|403|ENOTFOUND|EAI_AGAIN|ECONNREFUSED|MAX_RETRIES_EXCEEDED/i.test(errMsg)
   ) {
     console.log('\n[ACCESS_OBSTACLE CONFIRMED]');

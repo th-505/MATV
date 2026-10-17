@@ -196,8 +196,16 @@ export function parseMatchesFromHtml(html = '', baseUrl = YALLASHOOT_SITE_CONFIG
     const tournament = infoItems.eq(2).text().trim();
 
     // 4. Link & Title
-    const linkNode = node.find('a').first();
-    const rawHref = linkNode.attr('href') || node.attr('href') || '';
+    const linkNode = node.find('a[href]').toArray().map((anchor) => $(anchor)).find((anchor) => {
+      const candidate = resolveSafeUrl(anchor.attr('href') || '', baseUrl);
+      if (!candidate) return false;
+      try {
+        const parsed = new URL(candidate);
+        const trustedHost = ACTIVE_DOMAINS.some((domain) => new URL(domain).hostname === parsed.hostname);
+        return trustedHost && /^\/(?:match|matches)\//i.test(parsed.pathname);
+      } catch { return false; }
+    });
+    const rawHref = linkNode?.attr('href') || '';
     const resolvedUrl = resolveSafeUrl(rawHref, baseUrl);
 
     if (!resolvedUrl || seenUrls.has(resolvedUrl)) {
@@ -205,7 +213,7 @@ export function parseMatchesFromHtml(html = '', baseUrl = YALLASHOOT_SITE_CONFIG
     }
     seenUrls.add(resolvedUrl);
 
-    const cardTitle = linkNode.attr('title') || `${rightTeam} ضد ${leftTeam}`;
+    const cardTitle = linkNode?.attr('title') || `${rightTeam} ضد ${leftTeam}`;
     const cleanTitle = cleanTitleText(cardTitle) || `${rightTeam} ضد ${leftTeam}`;
     const ref = `yallashoot:${Buffer.from(resolvedUrl).toString('base64url')}`;
     const poster = rightLogo && !rightLogo.startsWith('data:') ? rightLogo : leftLogo && !leftLogo.startsWith('data:') ? leftLogo : '';
@@ -534,6 +542,15 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
     const $ = cheerio.load(fetchRes.html);
     const rawServers = [];
     const seenUrls = new Set();
+    const isAdvertisingUrl = (value) => {
+      try {
+        const parsed = new URL(value);
+        return /(^|\.)((doubleclick|googlesyndication|googleadservices|googleads|popads|popcash|propellerads|adsterra)\.)/i.test(parsed.hostname) ||
+          /\/(ads?|advert|banner|popunder)(\/|\?|$)/i.test(parsed.pathname);
+      } catch {
+        return true;
+      }
+    };
 
     // 1. Alba Live Matches plugin server tabs: .asp-server-name a
     $('.asp-server-name a').each((i, el) => {
@@ -554,6 +571,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       const resolved = resolveSafeUrl(trimmedUrl, targetUrl);
       if (
         !resolved ||
+        isAdvertisingUrl(resolved) ||
         seenUrls.has(resolved) ||
         resolved === targetUrl ||
         resolved.endsWith('#') ||
@@ -583,6 +601,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       const resolved = resolveSafeUrl(trimmedUrl, targetUrl);
       if (
         !resolved ||
+        isAdvertisingUrl(resolved) ||
         seenUrls.has(resolved) ||
         resolved === targetUrl ||
         resolved.endsWith('#') ||
@@ -611,6 +630,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       const resolved = resolveSafeUrl(trimmedSrc, targetUrl);
       if (
         resolved &&
+        !isAdvertisingUrl(resolved) &&
         !seenUrls.has(resolved) &&
         resolved !== targetUrl &&
         !resolved.endsWith('#') &&
@@ -632,7 +652,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       for (const streamItem of textStreams) {
         const streamUrl = streamItem?.url || '';
         const resolved = resolveSafeUrl(streamUrl, targetUrl);
-        if (resolved && !seenUrls.has(resolved)) {
+        if (resolved && !isAdvertisingUrl(resolved) && !seenUrls.has(resolved)) {
           seenUrls.add(resolved);
           rawServers.push({
             name: `بث مباشر ${(streamItem.streamType || 'm3u8').toUpperCase()}`,

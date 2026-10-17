@@ -16,6 +16,7 @@ import {
 } from '../../server/scrapers/sites/laroza.mjs';
 
 import { SCRAPER_ERROR_CODES } from '../../server/scrapers/shared/errors.mjs';
+import { fetchSafeResponse } from '../../server/scrapers/shared/http.mjs';
 
 console.log('================================================================');
 console.log('         LAROZA (LZ) LIVE CAPABILITY VERIFICATION AUDIT         ');
@@ -40,17 +41,19 @@ const MATRIX = {
 
 let exitCode = 0;
 let isBlocked = false;
+let sampleEpisodeRef = '';
 
 // 1. PROBE EDGE RESOLVER HEALTH
 console.log('1. Probing Cloudflare Edge Resolver health endpoint...');
 try {
-  const edgeRes = await fetch(`${LAROZA_SITE_CONFIG.edgeBase}/health`, {
-    signal: AbortSignal.timeout(6000),
-    headers: { 'User-Agent': LAROZA_UA }
+  const edgeRes = await fetchSafeResponse(`${LAROZA_SITE_CONFIG.edgeBase}/health`, {
+    timeoutMs: 6000,
+    headers: { 'User-Agent': LAROZA_UA },
+    providerId: PROVIDER_META.id
   });
   console.log(`   Edge Health HTTP Status: ${edgeRes.status}`);
   if (edgeRes.ok) {
-    const healthJson = await edgeRes.json();
+    const healthJson = JSON.parse(edgeRes.html || '{}');
     MATRIX.edgeHealth = {
       status: 'LIVE_VERIFIED',
       detail: `HTTP 200 OK (providers: ${healthJson.providers?.join(', ') || 'laroza'})`
@@ -188,15 +191,25 @@ try {
 }
 
 // 5. DETAILS & EPISODES CAPABILITY
-console.log('\n5. Testing Details & Episodes capability...');
-const sampleTarget = 'https://larooza.beer/view-serie1.php?ser=show2021';
+console.log('\n5. Testing Details & Episodes on a real catalog result...');
+const seriesRows = await scrapeCatalog('series', 1);
+const sampleTarget = seriesRows.find((item) => /view-serie1\.php/.test(item.url || ''));
+if (!sampleTarget) {
+  MATRIX.details = { status: 'UNAVAILABLE', detail: 'No series detail reference returned by live catalog' };
+  MATRIX.episodes = { status: 'UNAVAILABLE', detail: 'No real series reference available' };
+  isBlocked = true;
+} else {
+console.log(`   Real detail reference: ${sampleTarget.ref} (${sampleTarget.title})`);
 try {
-  const details = await scrapeDetails(sampleTarget);
-  if (details._meta?.ok && details.title) {
+  const details = await scrapeDetails(sampleTarget.ref);
+  if (details._meta?.ok && details.title && details.title !== 'فيديو لاروزا' && details.episodes?.length > 0) {
+    sampleEpisodeRef = details.episodes[0].ref;
     MATRIX.details = {
       status: 'LIVE_VERIFIED',
       detail: `Title: "${details.title}", Episodes: ${details.episodes?.length || 0}`
     };
+  } else {
+    MATRIX.details = { status: 'SCRAPER_FAILURE', detail: details._meta?.errorMessage || `Incomplete details (${details.title || 'no title'}, ${details.episodes?.length || 0} episodes)` };
   }
 } catch (err) {
   MATRIX.details = {
@@ -207,7 +220,7 @@ try {
 }
 
 try {
-  const episodes = await scrapeEpisodes(sampleTarget);
+  const episodes = await scrapeEpisodes(sampleTarget.ref);
   if (Array.isArray(episodes) && episodes.length > 0) {
     MATRIX.episodes = {
       status: 'LIVE_VERIFIED',
@@ -215,10 +228,9 @@ try {
     };
   } else {
     MATRIX.episodes = {
-      status: 'ACCESS_OBSTACLE',
+      status: /SOURCE_UNAVAILABLE|ACCESS_BLOCKED|NETWORK_TIMEOUT/.test(episodes._meta?.errorCode || '') ? 'ACCESS_OBSTACLE' : 'SCRAPER_FAILURE',
       detail: episodes._meta?.errorMessage || 'Origin unreachable'
     };
-    isBlocked = true;
   }
 } catch (err) {
   MATRIX.episodes = {
@@ -227,30 +239,33 @@ try {
   };
   isBlocked = true;
 }
+}
 
 // 6. SERVERS CAPABILITY
 console.log('\n6. Testing Servers capability...');
-const sampleWatchTarget = 'https://larooza.beer/play.php?vid=episode1';
+const sampleWatchTarget = sampleEpisodeRef;
+if (!sampleWatchTarget) {
+  MATRIX.servers = { status: 'UNAVAILABLE', detail: 'No real episode reference' };
+  MATRIX.resolve = { status: 'UNAVAILABLE', detail: 'No real episode reference' };
+} else {
 try {
   const servers = await scrapeServers(sampleWatchTarget);
-  if (Array.isArray(servers) && servers.length > 0) {
+  if (Array.isArray(servers) && servers.length > 0 && servers._meta?.ok) {
     MATRIX.servers = {
-      status: 'LIVE_VERIFIED',
+      status: 'LIVE_CANDIDATES_UNVERIFIED',
       detail: `${servers.length} servers extracted (First: ${servers[0].code})`
     };
   } else {
     MATRIX.servers = {
-      status: 'ACCESS_OBSTACLE',
-      detail: servers._meta?.errorMessage || 'Origin unreachable'
+      status: servers._meta?.errorCode === SCRAPER_ERROR_CODES.ACCESS_BLOCKED ? 'ACCESS_OBSTACLE' : 'SCRAPER_FAILURE',
+      detail: servers._meta?.errorMessage || 'No server candidates'
     };
-    isBlocked = true;
   }
 } catch (err) {
   MATRIX.servers = {
     status: 'ACCESS_OBSTACLE',
     detail: err.message
   };
-  isBlocked = true;
 }
 
 // 7. STREAM RESOLUTION CAPABILITY
@@ -259,8 +274,8 @@ try {
   const stream = await resolveStream(sampleWatchTarget);
   if (stream.ok) {
     MATRIX.resolve = {
-      status: 'LIVE_VERIFIED',
-      detail: `Resolved stream: ${stream.url}`
+      status: stream.type === 'embed' ? 'EMBED_UNVERIFIED' : 'DIRECT_CANDIDATE_UNVERIFIED',
+      detail: `Resolved URL candidate (${stream.type}), no player playback asserted: ${stream.url}`
     };
   }
 } catch (err) {
@@ -269,6 +284,7 @@ try {
     detail: err.message
   };
   isBlocked = true;
+}
 }
 
 // 8. LIVE BROADCAST CAPABILITY (GENUINELY UNSUPPORTED)
@@ -299,10 +315,9 @@ for (const [key, val] of Object.entries(MATRIX)) {
 console.log('================================================================\n');
 
 if (isBlocked) {
-  console.log('Notice: Upstream origin larooza.beer is currently blocked (ECONNRESET/DNS).');
-  console.log('Cloudflare edge worker is healthy (200 OK), but upstream resets TCP connections.');
-  console.log('All offline capabilities are 100% verified via real live fixture tests.');
-  console.log('Exiting with code 2 (ACCESS_OBSTACLE / Network Blocked) as per contract.\n');
+  console.log('Notice: direct origin probing encountered an access obstacle; edge-backed catalog/details may still have succeeded as shown in the matrix.');
+  console.log('Embedded player candidates and extracted URLs are not playback verification.');
+  console.log('Exiting with code 2 (ACCESS_OBSTACLE) while retaining successful capabilities in the matrix.\n');
   process.exit(2);
 }
 

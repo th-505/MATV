@@ -58,13 +58,14 @@ try {
   console.log('\n5. Testing Live Servers Extraction...');
   const servers = await scrapeServers(sampleTarget.url, { timeoutMs: 8000 });
   if (Array.isArray(servers)) {
-    matrix.servers = servers.length > 0 ? 'LIVE_VERIFIED' : 'FIXTURE_ONLY';
+    matrix.servers = servers.length > 0 ? 'LIVE_CANDIDATES_UNVERIFIED' : 'NO_SERVERS';
   }
 
   console.log('\n6. Testing Live Stream Resolution...');
   const resolved = await resolveStream(sampleTarget.url, { timeoutMs: 8000 });
   if (resolved && resolved.url) {
-    matrix.resolve = 'LIVE_VERIFIED';
+    matrix.resolve = resolved.type === 'embed' ? 'EMBED_UNVERIFIED' : 'DIRECT_CANDIDATE_UNVERIFIED';
+    console.log(`   Resolver returned ${matrix.resolve}: ${resolved.url}`);
   }
 
   console.log('\n=== CAPABILITY VERIFICATION MATRIX ===');

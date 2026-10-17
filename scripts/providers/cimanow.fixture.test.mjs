@@ -192,6 +192,29 @@ assert.equal(resolvedApiStream.url, 'https://earnvids.com/embed-hks8721k.html');
 assert.equal(resolvedApiStream.type, 'embed');
 assert.equal(resolvedApiStream.verified, false);
 
+// Regression: resolving a watch page must use its extracted server references,
+// not recursively fetch the whole HTML page as though it were an embed stream.
+const originalFetch = globalThis.fetch;
+let unexpectedFetchCount = 0;
+globalThis.fetch = async () => {
+  unexpectedFetchCount += 1;
+  throw new TypeError('simulated upstream TypeError from recursive page fetch');
+};
+let watchPageResolution;
+try {
+  watchPageResolution = await resolveStream(FIXTURE_META.urls.episodeWatch, {
+    fixtureHtml: WATCH_PAGE_HTML,
+    downloadFixtureHtml: DOWNLOAD_PAGE_HTML
+  });
+} finally {
+  globalThis.fetch = originalFetch;
+}
+assert.equal(unexpectedFetchCount, 0, 'watch-page resolution must not trigger recursive unbounded fetches');
+assert.equal(watchPageResolution.ok, true);
+assert.equal(watchPageResolution.type, 'embed');
+assert.equal(watchPageResolution.verified, false);
+assert.ok(watchPageResolution.url);
+
 // 9. SSRF AND SECURITY BOUNDARIES
 console.log('9. Testing SSRF and Unsafe URL rejection...');
 await assert.rejects(

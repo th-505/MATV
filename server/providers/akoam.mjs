@@ -61,9 +61,12 @@ function sourceAnchorMatches(html = "", allowedKinds = []) {
   return out;
 }
 
-export async function fetchSourceHtml(value, { referer = SOURCE_ORIGIN + "/", timeoutMs = 30_000 } = {}) {
+export async function fetchSourceHtml(value, { referer = SOURCE_ORIGIN + "/", timeoutMs = 30_000, signal = null } = {}) {
   const url = assertSourceUrl(value);
   const controller = new AbortController();
+  const abortCaller = () => controller.abort(signal?.reason || new Error('REQUEST_ABORTED'));
+  if (signal?.aborted) abortCaller();
+  else signal?.addEventListener('abort', abortCaller, { once: true });
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     let current = url;
@@ -94,6 +97,7 @@ export async function fetchSourceHtml(value, { referer = SOURCE_ORIGIN + "/", ti
     return { html: Buffer.concat(chunks).toString('utf8'), url: current.href };
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', abortCaller);
   }
 }
 
@@ -335,10 +339,10 @@ export async function directCategory(sourceUrl, page = 1) {
   return parseCatalog(html);
 }
 
-export async function directSearch(query) {
+export async function directSearch(query, { signal = null } = {}) {
   const url = new URL("/search", SOURCE_ORIGIN);
   url.searchParams.set("q", String(query || "").trim());
-  const { html } = await fetchSourceHtml(url.href);
+  const { html } = await fetchSourceHtml(url.href, { signal });
   return parseCatalog(html);
 }
 

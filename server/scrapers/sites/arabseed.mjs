@@ -99,6 +99,14 @@ const KNOWN_ARABSEED_HOSTS = new Set([
   'arabseed.bond'
 ]);
 
+function isSuspendedAccountPage(html = '', url = '') {
+  return /\/cgi-sys\/suspendedpage\.cgi|account\s+(?:has\s+been\s+)?suspended|website\s+account\s+suspended|this\s+account\s+has\s+been\s+suspended/i.test(`${url}\n${html}`);
+}
+
+function suspendedAccountResult(url) {
+  return createEmptyArrayResult(PROVIDER_META.id, SCRAPER_ERROR_CODES.ACCESS_BLOCKED, 'SOURCE_UNAVAILABLE: ArabSeed hosting account is suspended', { url, reason: 'ACCOUNT_SUSPENDED' });
+}
+
 /**
  * Rewrites known ArabSeed hostnames to the primary base URL
  */
@@ -319,6 +327,8 @@ export async function scrapeCatalog(category = 'movies', page = 1, options = {})
       );
     }
 
+    if (isSuspendedAccountPage(res.html, res.url || targetUrl)) return suspendedAccountResult(targetUrl);
+
     const $ = cheerio.load(res.html);
     const items = extractCardsFromDom($, ARABSEED_CONFIG.baseUrl);
 
@@ -374,6 +384,8 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
       );
     }
 
+    if (isSuspendedAccountPage(res.html, res.url || targetUrl)) return suspendedAccountResult(targetUrl);
+
     const $ = cheerio.load(res.html);
     const items = extractCardsFromDom($, ARABSEED_CONFIG.baseUrl);
 
@@ -418,6 +430,12 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         status: res.status
       }
     );
+  }
+
+  if (isSuspendedAccountPage(res.html, res.url || cleanUrl)) {
+    throw new ScraperError(SCRAPER_ERROR_CODES.ACCESS_BLOCKED, 'SOURCE_UNAVAILABLE: ArabSeed hosting account is suspended', {
+      providerId: PROVIDER_META.id, url: cleanUrl, status: res.status, reason: 'ACCOUNT_SUSPENDED'
+    });
   }
 
   const $ = cheerio.load(res.html);
@@ -561,6 +579,8 @@ export async function scrapeServers(urlOrRef, options = {}) {
         { url: targetUrl }
       );
     }
+
+    if (isSuspendedAccountPage(res.html, res.url || targetUrl)) return suspendedAccountResult(targetUrl);
 
     let $ = cheerio.load(res.html);
     let watchPageUrl = targetUrl;

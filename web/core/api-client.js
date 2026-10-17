@@ -16,7 +16,7 @@ function installBrandTheme(){
 }
 installBrandTheme();
 
-function isRuntimeList(value,kind){return Boolean(value&&value.status==="success"&&value.version&&value.kind===kind&&Array.isArray(value.data))}
+function isRuntimeList(value,kind){return Boolean(value&&["success","no_results","unsupported","error"].includes(value.status)&&value.version&&value.kind===kind&&Array.isArray(value.data))}
 function isRuntimeObject(value,kind){return Boolean(value&&value.status==="success"&&value.version&&value.kind===kind&&value.data&&typeof value.data==="object"&&!Array.isArray(value.data))}
 
 export async function getMatches(){return fetchJsonWithHealth(ENDPOINTS.backend+"/api/v1/matches",{kind:ProviderKind.MATCHES,timeoutMs:MATCH_TIMEOUT_MS,validate:value=>isRuntimeList(value,"matches")})}
@@ -25,8 +25,8 @@ export async function getMatchPlayback(ref){if(!ref)return{health:"invalid_paylo
 export async function getNewsList(){return {health:"retired",data:{status:"error",code:"NEWS_RETIRED",data:[]}};}
 export async function getNewsArticle(url){return {health:"retired",data:{status:"error",code:"NEWS_RETIRED",data:null}};}
 function isRuntimeCatalogPayload(value){return Boolean(value&&value.status==="success"&&value.version&&value.kind==="category"&&Array.isArray(value.data))}
-function adaptRuntimeCatalogEnvelope(value){return{status:"success",source:value.source||"basri-original",version:value.version,kind:value.kind,cached:Boolean(value.cached),health:value.health||null,data:(value.data||[]).map(item=>({title:item.title||"بدون عنوان",img:item.poster||item.img||item.image||"",is_series:item.type!=="movie",href:item.ref||item.id||"",year:item.year??null})).filter(item=>item.href)}}
+function adaptRuntimeCatalogEnvelope(value){return{status:value.status||"success",source:value.source||"basri-original",version:value.version,kind:value.kind,cached:Boolean(value.cached),health:value.health||null,provider_id:value.provider_id||null,error:value.error||null,data:(value.data||[]).map(item=>({id:item.id||item.ref||"",title:item.title||"بدون عنوان",img:item.poster||item.img||item.image||"",is_series:item.type!=="movie",href:item.ref||item.id||"",year:item.year??null,source:item.source||item.providerId||null,providerId:item.providerId||item.source||null})).filter(item=>item.href)}}
 export async function getCinemaCategory(type,name,categoryId="",page=1){const p=Math.max(1,Number(page)||1);const result=await fetchJsonWithHealth(ENDPOINTS.backend+"/api/v1/category?ref="+encodeURIComponent(String(categoryId||"").trim())+"&p="+encodeURIComponent(String(p)),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:isRuntimeCatalogPayload});if(result?.data)result.data=adaptRuntimeCatalogEnvelope(result.data);return result}
-export async function searchCinema(query){const result=await fetchJsonWithHealth(ENDPOINTS.backend+"/api/v1/search?q="+encodeURIComponent(String(query||"").trim()),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:value=>isRuntimeList(value,"search")});if(result?.data)result.data=adaptRuntimeCatalogEnvelope(result.data);return result}
+export async function searchCinema(query,providerId=""){const params=new URLSearchParams({q:String(query||"").trim()});if(providerId)params.set("provider",String(providerId).trim());const result=await fetchJsonWithHealth(ENDPOINTS.backend+"/api/v1/search?"+params.toString(),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:value=>isRuntimeList(value,"search")});if(result?.data)result.data=adaptRuntimeCatalogEnvelope(result.data);return result}
 export async function getCinemaDetails(ref){return fetchJsonWithHealth(ENDPOINTS.backend+"/api/cinema/details?ref="+encodeURIComponent(ref),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:isCinemaPayload})}
 export const ProviderEndpoints=ENDPOINTS;

@@ -71,7 +71,7 @@ export function createContentRuntimeService({
   const maxStaleMs = Math.max(0, Number(staleIfErrorMs) || 0);
   const attempts = Math.max(1, Math.min(3, Math.trunc(Number(fetchAttempts) || DEFAULT_FETCH_ATTEMPTS)));
 
-  async function execute({ kind, key, ttlMs, fallbackProvider, fetcher, normalize }) {
+  async function execute({ kind, key, ttlMs, fallbackProvider, fetcher, normalize, signal = null }) {
     const stamp = now();
     const cachedEntry = typeof cache.peek === "function" ? cache.peek(key, stamp) : undefined;
     if (cachedEntry && !cachedEntry.expired) {
@@ -81,6 +81,7 @@ export function createContentRuntimeService({
         data: cached.data,
         source: cached.source,
         health: health.snapshot(cached.source, stamp),
+        diagnostics: cached.diagnostics,
         cached: true,
         stale: false,
         generatedAt: cached.generatedAt,
@@ -90,25 +91,29 @@ export function createContentRuntimeService({
     let source = fallbackProvider;
     let lastError = null;
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      if (signal?.aborted) throw signal.reason || new Error('REQUEST_ABORTED');
       const started = now();
       try {
-        const payload = await fetcher();
+        const payload = await fetcher({ signal });
         source = providerName(payload, fallbackProvider);
         const data = normalize(payload);
+        const diagnostics = payload?.diagnostics || null;
         const finished = now();
         health.recordSuccess(source, { latencyMs: Math.max(0, finished - started), now: finished });
-        cache.set(key, { data, source, generatedAt: finished }, ttlMs, finished);
+        cache.set(key, { data, source, diagnostics, generatedAt: finished }, ttlMs, finished);
         return buildRuntimeEnvelope({
           kind,
           data,
           source,
           health: health.snapshot(source, finished),
+          diagnostics,
           cached: false,
           stale: false,
           generatedAt: finished,
         });
       } catch (error) {
         lastError = error;
+        if (signal?.aborted) throw signal.reason || error;
         const failedAt = now();
         health.recordFailure(source || fallbackProvider, { now: failedAt });
       }
@@ -121,6 +126,7 @@ export function createContentRuntimeService({
         data: stale.data,
         source: stale.source,
         health: health.snapshot(stale.source, now()),
+        diagnostics: stale.diagnostics,
         cached: true,
         stale: true,
         generatedAt: stale.generatedAt,
@@ -146,7 +152,7 @@ export function createContentRuntimeService({
       });
     },
 
-    async search(query) {
+    async search(query, { signal = null } = {}) {
       const q = String(query || "").trim();
       if (!q) return buildRuntimeEnvelope({ kind: "search", data: [], source: "basri-original", health: null });
       return execute({
@@ -154,7 +160,8 @@ export function createContentRuntimeService({
         key: cacheKey("search", q),
         ttlMs: catalogTtlMs,
         fallbackProvider: "basri-cinema",
-        fetcher: () => searchCatalog(q),
+        fetcher: ({ signal: requestSignal }) => searchCatalog(q, { signal: requestSignal }),
+        signal,
         normalize: (payload) => unwrapList(payload).map(normalizeCatalogItem).filter((item) => item.ref),
       });
     },

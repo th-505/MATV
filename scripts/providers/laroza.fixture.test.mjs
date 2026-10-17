@@ -135,6 +135,14 @@ assert.ok(movieDetails.title.includes('Example 2020'));
 assert.equal(movieDetails.type, 'movie');
 assert.equal(movieDetails.imdb_id, 'tt7654321');
 
+// A generic branded shell is not successful detail extraction, especially for a series.
+const incompleteDetails = await scrapeDetails('https://larooza.beer/view-serie1.php?ser=incomplete', {
+  fixtureHtml: '<html><head><title>فيديو لاروزا</title></head><body><main></main></body></html>'
+});
+assert.equal(incompleteDetails._meta?.ok, false);
+assert.equal(incompleteDetails._meta?.errorCode, SCRAPER_ERROR_CODES.STRUCTURE_CHANGED);
+assert.match(incompleteDetails._meta?.errorMessage || '', /LAROZA_DETAILS_INCOMPLETE/);
+
 // 6. EPISODES FIXTURE & STRICT ASCENDING ORDER AUDIT
 console.log('6. Testing Episodes Ordering & Deduplication...');
 const episodes = await scrapeEpisodes(FIXTURE_META.urls.seriesDetails, {

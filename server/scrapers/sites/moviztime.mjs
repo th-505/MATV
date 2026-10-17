@@ -893,6 +893,42 @@ export async function scrapeServers(urlOrRef, options = {}) {
   }
 }
 
+async function probeMediaResponse(candidate, options = {}) {
+  if (options.resourceProbeFixture) {
+    const status = Number(options.resourceProbeFixture.status) || 200;
+    const contentType = String(options.resourceProbeFixture.contentType || '');
+    const ok = (status === 200 || status === 206) &&
+      !/text\/html|application\/xhtml\+xml/i.test(contentType) &&
+      /(?:video\/|mpegurl|application\/octet-stream)/i.test(contentType);
+    return { ok, reason: ok ? '' : 'fixture_resource_not_media', contentType, status };
+  }
+  if (typeof options.fixtureHtml === 'string' || typeof options.ajaxFixtureResponse === 'string') {
+    return { ok: false, reason: 'fixture_not_live_verified' };
+  }
+  try {
+    const response = await fetchSafeResponse(candidate.url, {
+      method: 'HEAD',
+      headers: candidate.headers || {},
+      referer: candidate.headers?.Referer || '',
+      timeoutMs: Math.min(Number(options.probeTimeoutMs) || 5000, 5000),
+      maxRedirects: 3,
+      maxRetries: 0,
+      providerId: PROVIDER_META.id
+    });
+    const contentType = response.headers?.get?.('content-type') || '';
+    if (!response.ok) return { ok: false, reason: `HTTP_${response.status}`, contentType };
+    if (/text\/html|application\/xhtml\+xml/i.test(contentType)) {
+      return { ok: false, reason: 'html_response', contentType };
+    }
+    if (!/(?:video\/|mpegurl|application\/octet-stream)/i.test(contentType)) {
+      return { ok: false, reason: 'unrecognized_content_type', contentType };
+    }
+    return { ok: true, contentType };
+  } catch (error) {
+    return { ok: false, reason: error.code || error.message || 'resource_probe_failed' };
+  }
+}
+
 export async function resolveStream(urlOrRef, options = {}) {
   const cleanUrl = resolveSafeUrl(stripProviderPrefix(urlOrRef), MOVIZTIME_CONFIG.baseUrl);
   if (!cleanUrl) {
@@ -922,12 +958,17 @@ export async function resolveStream(urlOrRef, options = {}) {
 
   if (isEmbedPlayerHost(cleanUrl)) {
     const fireStreams = await resolveFirePlayerEmbed(cleanUrl, `${MOVIZTIME_CONFIG.baseUrl}/`, options);
-    if (fireStreams.length > 0) {
-      return {
-        ok: true,
-        providerId: PROVIDER_META.id,
-        ...fireStreams[0]
-      };
+    for (const candidate of fireStreams.slice(0, 2)) {
+      if (!isValidDirectMediaUrl(candidate.url)) continue;
+      const probe = await probeMediaResponse(candidate, options);
+      if (probe.ok) {
+        return {
+          ok: true,
+          providerId: PROVIDER_META.id,
+          ...candidate,
+          verified: true
+        };
+      }
     }
     return {
       ok: true,
@@ -936,6 +977,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       type: 'embed',
       streamType: 'embed',
       quality: 'HD',
+      verified: false,
       headers: { Referer: `${MOVIZTIME_CONFIG.baseUrl}/` }
     };
   }
@@ -943,16 +985,33 @@ export async function resolveStream(urlOrRef, options = {}) {
   // If a MovizTime watch/details page URL was passed, extract servers and pick best
   if (cleanUrl.includes('moviz-time.')) {
     const servers = await scrapeServers(cleanUrl, options);
-    if (servers.length > 0) {
-      const direct = servers.find((s) => s.type === 'm3u8' || s.type === 'mp4') || servers[0];
+    const directCandidates = servers.filter((server) => isValidDirectMediaUrl(server.url));
+    for (const candidate of directCandidates.slice(0, 2)) {
+      const probe = await probeMediaResponse(candidate, options);
+      if (!probe.ok) continue;
       return {
         ok: true,
         providerId: PROVIDER_META.id,
-        url: direct.url,
-        type: direct.type,
-        streamType: direct.streamType,
-        quality: direct.quality,
-        headers: direct.headers || { Referer: cleanUrl }
+        url: candidate.url,
+        type: candidate.type,
+        streamType: candidate.streamType || candidate.type,
+        quality: candidate.quality,
+        verified: true,
+        headers: candidate.headers || { Referer: cleanUrl }
+      };
+    }
+    const embed = servers.find((server) => server.type === 'embed') || servers[0];
+    if (embed) {
+      return {
+        ok: true,
+        providerId: PROVIDER_META.id,
+        url: embed.url,
+        type: 'embed',
+        streamType: 'embed',
+        quality: embed.quality || 'HD',
+        verified: false,
+        resolutionNote: directCandidates.length ? 'direct_candidate_not_verified_as_media' : 'embed_only',
+        headers: embed.headers || { Referer: cleanUrl }
       };
     }
   }

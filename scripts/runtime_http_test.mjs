@@ -21,9 +21,30 @@ const runtimeService = {
 };
 
 const server = createServer({ runtimeService });
+let slowProviderSignal;
+let slowAggregateSignal;
+const abortServer = createServer({
+  catalogStore: null,
+  searchTimeoutMs: 30,
+  providerSearch: (_provider, _query, { signal }) => {
+    slowProviderSignal = signal;
+    // Simulate an upstream which ignores AbortSignal forever. The HTTP request must
+    // still meet its budget, while the signal is delivered to the upstream call.
+    return new Promise(() => {});
+  },
+  runtimeService: {
+    version: 'abort-test',
+    async search(_query, { signal }) { slowAggregateSignal = signal; return new Promise(() => {}); },
+    status() { return {}; }, async matches() { return { data: [] }; }
+  }
+});
 await new Promise((resolve, reject) => {
   server.once("error", reject);
   server.listen(0, "127.0.0.1", resolve);
+});
+await new Promise((resolve, reject) => {
+  abortServer.once('error', reject);
+  abortServer.listen(0, '127.0.0.1', resolve);
 });
 
 try {
@@ -55,7 +76,18 @@ try {
   const oldRoute = await fetch(`${base}/api/not-a-route`);
   assert.equal(oldRoute.status, 404);
 
-  console.log("runtime HTTP route tests passed");
+  const abortBase = `http://127.0.0.1:${abortServer.address().port}`;
+  const abortResponse = await fetch(`${abortBase}/api/v1/search?provider=slow&q=test`);
+  assert.equal(abortResponse.status, 504, 'uncancelable upstream must not hold the HTTP request beyond its budget');
+  assert.equal((await abortResponse.json()).error.code, 'SEARCH_BUDGET_EXCEEDED');
+  assert.equal(slowProviderSignal?.aborted, true, 'request deadline must be propagated to upstream provider');
+  const aggregateAbortResponse = await fetch(`${abortBase}/api/v1/search?q=slow`);
+  assert.equal(aggregateAbortResponse.status, 504, 'aggregate search must honor the same HTTP deadline');
+  assert.equal((await aggregateAbortResponse.json()).error.code, 'SEARCH_BUDGET_EXCEEDED');
+  assert.equal(slowAggregateSignal?.aborted, true, 'request deadline must be propagated to aggregate runtime');
+
+  console.log("runtime HTTP route tests passed, including deadline propagation to an upstream that ignores cancellation");
 } finally {
   await new Promise((resolve) => server.close(resolve));
+  await new Promise((resolve) => abortServer.close(resolve));
 }

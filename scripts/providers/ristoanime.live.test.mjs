@@ -43,27 +43,48 @@ try {
   const sampleTarget = catItems[0];
   console.log(`\n3. Testing Live Details Scraping for: "${sampleTarget.title}"...`);
   const details = await scrapeDetails(sampleTarget.url, { timeoutMs: 8000 });
-  if (details && details.title) {
+  if (details?._meta?.ok && details.title) {
     console.log(`   Details loaded: "${details.title}"`);
     matrix.details = 'LIVE_VERIFIED';
   }
 
   console.log('\n4. Testing Live Episodes Extraction...');
   const episodes = await scrapeEpisodes(sampleTarget.url, { timeoutMs: 8000 });
-  if (Array.isArray(episodes)) {
+  if (Array.isArray(episodes) && episodes.length > 0) {
     matrix.episodes = 'LIVE_VERIFIED';
   }
 
   console.log('\n5. Testing Live Servers Extraction...');
   const servers = await scrapeServers(sampleTarget.url, { timeoutMs: 8000 });
   if (Array.isArray(servers)) {
-    matrix.servers = servers.length > 0 ? 'LIVE_VERIFIED' : 'FIXTURE_ONLY';
+    matrix.servers = servers.length > 0 ? 'LIVE_CANDIDATES_UNVERIFIED' : 'NO_SERVERS';
+    if (servers[0]) console.log(`   Candidate: ${servers[0].url} (${servers[0].type || servers[0].streamType})`);
   }
 
   console.log('\n6. Testing Live Stream Resolution...');
   const resolved = await resolveStream(sampleTarget.url, { timeoutMs: 8000 });
   if (resolved && resolved.url) {
-    matrix.resolve = 'LIVE_VERIFIED';
+    matrix.resolve = resolved.type === 'embed' ? 'EMBED_UNVERIFIED' : 'DIRECT_CANDIDATE_UNVERIFIED';
+    console.log(`   Resolver candidate (${resolved.type}): ${resolved.url}`);
+    if (resolved.type === 'm3u8') {
+      try {
+        const manifestRes = await fetch(resolved.url, { headers: resolved.headers || {}, signal: AbortSignal.timeout(6000) });
+        const manifest = await manifestRes.text();
+        if (!manifestRes.ok || !manifest.startsWith('#EXTM3U')) throw new Error(`Invalid manifest HTTP_${manifestRes.status}`);
+        const segmentRef = manifest.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
+        if (!segmentRef) throw new Error('Manifest contains no segment URI');
+        const segmentUrl = new URL(segmentRef.trim(), resolved.url).toString();
+        const segmentRes = await fetch(segmentUrl, { headers: { ...(resolved.headers || {}), Range: 'bytes=0-1023' }, signal: AbortSignal.timeout(6000) });
+        const reader = segmentRes.body?.getReader();
+        const firstChunk = reader ? await reader.read() : { done: true, value: undefined };
+        await reader?.cancel();
+        if (!segmentRes.ok || !firstChunk.value?.byteLength) throw new Error(`Segment fetch failed HTTP_${segmentRes.status}`);
+        matrix.resolve = 'MANIFEST_AND_SEGMENT_FETCHED';
+        console.log(`   HLS manifest valid; first segment responded HTTP ${segmentRes.status} with ${firstChunk.value.byteLength} bytes. Playback not tested.`);
+      } catch (probeError) {
+        console.log(`   Manifest/segment probe unavailable: ${probeError.message}`);
+      }
+    }
   }
 
   console.log('\n=== CAPABILITY VERIFICATION MATRIX ===');

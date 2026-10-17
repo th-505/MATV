@@ -80,6 +80,23 @@ export const QFILM_CONFIG = Object.freeze({
   })
 });
 
+const SOCIAL_OR_SHARE_HOSTS = new Set([
+  'facebook.com', 'www.facebook.com', 'fb.watch', 'twitter.com', 'www.twitter.com',
+  'x.com', 'www.x.com', 'instagram.com', 'www.instagram.com', 'pinterest.com',
+  'www.pinterest.com', 'reddit.com', 'www.reddit.com', 't.me', 'telegram.me'
+]);
+function isSocialOrShareUrl(raw = '') {
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    const socialHost = [...SOCIAL_OR_SHARE_HOSTS].some((domain) => {
+      const cleanDomain = domain.replace(/^www\./, '');
+      return host === cleanDomain || host.endsWith(`.${cleanDomain}`);
+    });
+    return socialHost || /(?:^|\/)share(?:\/|$)|intent\/|\/sharer\b/i.test(url.pathname);
+  } catch { return true; }
+}
+
 /**
  * Decodes a provider reference (`qfilm:...`, `qm:...`, base64url, or relative URL)
  * into a safe absolute URL on or referenced by QFilm.
@@ -122,13 +139,13 @@ export function decodeProviderRef(urlOrRef, baseUrl = PRIMARY_BASE_URL) {
 
 /**
  * Parses catalog/search cards from Cheerio DOM
- * Supports selectors from QFilm CMS themes (.item, .card, .movie-item, .film-item, article.post)
+ * Supports QFilm's .pm-video-thumb cards as well as common WordPress themes.
  */
 function parseCatalogCards($, baseUrl = PRIMARY_BASE_URL, defaultType = 'movie') {
   const items = [];
   const seenUrls = new Set();
 
-  const cardSelector = '.item, .card, .movie-item, .film-item, article.post, .type-post';
+  const cardSelector = '.pm-video-thumb, .item, .card, .movie-item, .film-item, article.post, .type-post';
 
   $(cardSelector).each((_, el) => {
     const node = $(el);
@@ -139,7 +156,7 @@ function parseCatalogCards($, baseUrl = PRIMARY_BASE_URL, defaultType = 'movie')
     seenUrls.add(url);
 
     const rawTitle =
-      node.find('.title, h2, h3, .film-name, .entry-title').first().text().trim() ||
+      node.find('.caption, .title, h2, h3, .film-name, .entry-title').first().text().trim() ||
       link.attr('title')?.trim() ||
       node.find('img').first().attr('alt')?.trim() ||
       '';
@@ -149,6 +166,7 @@ function parseCatalogCards($, baseUrl = PRIMARY_BASE_URL, defaultType = 'movie')
     const rawPoster =
       img.attr('data-src') ||
       img.attr('data-lazy-src') ||
+      img.attr('data-echo') ||
       img.attr('src') ||
       '';
     const poster = resolveSafeUrl(rawPoster, baseUrl, { allowHttp: true });
@@ -276,6 +294,18 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
 
   // 2. Video elements, source tags, embed iframes, and server buttons
   const candidateEmbedUrls = [];
+  // Melody's current theme stores its player iframe inside a textarea embed
+  // snippet and mirrors the same URL in twitter:player; neither is a DOM iframe.
+  $('meta[name="twitter:player"], meta[property="og:video"], meta[property="og:video:url"]').each((_, el) => {
+    const raw = $(el).attr('content') || '';
+    const resolved = resolveSafeUrl(raw, pageUrl, { allowHttp: true });
+    if (resolved && !seenUrls.has(resolved) && !isSocialOrShareUrl(resolved) && !candidateEmbedUrls.includes(resolved)) candidateEmbedUrls.push(resolved);
+  });
+  for (const match of String(html).matchAll(/<iframe\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/gi)) {
+    const raw = match[2].replace(/&amp;/g, '&');
+    const resolved = resolveSafeUrl(raw, pageUrl, { allowHttp: true });
+    if (resolved && !seenUrls.has(resolved) && !isSocialOrShareUrl(resolved) && !candidateEmbedUrls.includes(resolved)) candidateEmbedUrls.push(resolved);
+  }
   const streamElementsSelector =
     'video source, video[src], source[src], [data-stream], [data-url], [data-embed], iframe[src], ul.servers-list li, .watch-servers li, a[href*=".mp4"], a[href*=".m3u8"]';
 
@@ -290,7 +320,7 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
       '';
 
     const resolved = resolveSafeUrl(rawAttr, pageUrl, { allowHttp: true });
-    if (!resolved || seenUrls.has(resolved)) return;
+    if (!resolved || seenUrls.has(resolved) || isSocialOrShareUrl(resolved)) return;
 
     const lower = resolved.toLowerCase();
     // Filter out obvious trackers / ads / assets
@@ -327,7 +357,7 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
   // 3. Optional unwrapping of candidate embed URLs when explicitly requested
   if (options.unwrap === true && candidateEmbedUrls.length > 0) {
     const unwrappedGroups = await Promise.all(
-      candidateEmbedUrls.slice(0, 5).map((u) => unwrapEmbedToDirectStreams(u, pageUrl).catch(() => []))
+      candidateEmbedUrls.slice(0, 1).map((u) => unwrapEmbedToDirectStreams(u, pageUrl, { maxRequests: 6, maxDurationMs: 9000 }).catch(() => []))
     );
     for (const grp of unwrappedGroups) {
       for (const s of grp) {
@@ -486,8 +516,18 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
 
     const $ = cheerio.load(res.html || '');
     const items = parseCatalogCards($, res.url || targetUrl, 'movie');
+    // Some live mirrors silently redirect search requests to the homepage. Never
+    // return that catalog as if it matched the user's query.
+    // The site supports transliterated Arabic terms, so only enforce tokens
+    // written in Latin script locally; Arabic matching remains the site's job.
+    const queryTokens = cleanQuery.toLocaleLowerCase().split(/\s+/)
+      .filter((token) => token.length > 1 && /^[a-z0-9-]+$/i.test(token));
+    const matchingItems = items.filter((item) => {
+      const searchable = `${item.title || ''} ${item.originalTitle || ''}`.toLocaleLowerCase();
+      return queryTokens.every((token) => searchable.includes(token));
+    });
 
-    if (items.length === 0) {
+    if (matchingItems.length === 0) {
       return createEmptyArrayResult(
         PROVIDER_ID,
         SCRAPER_ERROR_CODES.EMPTY_RESULT,
@@ -496,7 +536,7 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
       );
     }
 
-    return attachResultMeta(items, {
+    return attachResultMeta(matchingItems, {
       ok: true,
       errorCode: null,
       providerId: PROVIDER_ID,

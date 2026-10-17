@@ -22,6 +22,10 @@ export const FIXTURE_META = Object.freeze({
   })
 });
 
+// Captured active theme card from the live a.qfilm.tv home page (2026-10-17).
+export const ACTIVE_THEME_CARD_HTML = `<div class="pm-video-thumb"><a href="https://a.qfilm.tv/watch.php?vid=8cb07e4b1" title="مشاهدة فيلم Hope 2026 مترجم HD اون لاين"><img src="https://a.qfilm.tv/uploads/thumbs/echo-lzld.png" data-echo="https://a.qfilm.tv/uploads/thumbs/hope-2026.jpg" alt="فيلم Hope 2026 مترجم"><h3 class="caption">فيلم Hope 2026 مترجم</h3></a></div>`;
+export const WATCH_META_EMBED_HTML = `<html><head><meta name="twitter:player" content="https://a.qfilm.tv/embed.php?vid=8cb07e4b1"></head><body><textarea name="pm-embed-code">&lt;iframe src="https://a.qfilm.tv/embed.php?vid=8cb07e4b1"&gt;&lt;/iframe&gt;</textarea></body></html>`;
+
 // Trimmed QFilm Catalog HTML
 export const CATALOG_HTML = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">

@@ -26,6 +26,8 @@ import {
   CATALOG_HTML,
   SEARCH_HTML,
   SEARCH_EMPTY_HTML,
+  ACTIVE_THEME_CARD_HTML,
+  WATCH_META_EMBED_HTML,
   MOVIE_DETAILS_HTML,
   SERIES_DETAILS_HTML,
   WATCH_EMBED_HTML,
@@ -86,6 +88,24 @@ assert.equal(item1.source, 'qfilm');
 assert.ok(item1.url.startsWith('https://a.qfilm.tv/movie/'));
 assert.ok(item1.ref.startsWith('qfilm:'));
 
+const activeThemeCatalog = await scrapeCatalog('movies', 1, { fixtureHtml: ACTIVE_THEME_CARD_HTML });
+assert.equal(activeThemeCatalog.length, 1, 'active .pm-video-thumb theme card should be parsed');
+assert.equal(activeThemeCatalog[0].title, 'فيلم Hope 2026 مترجم');
+assert.equal(activeThemeCatalog[0].url, 'https://a.qfilm.tv/watch.php?vid=8cb07e4b1');
+assert.equal(activeThemeCatalog[0].poster, 'https://a.qfilm.tv/uploads/thumbs/hope-2026.jpg');
+const activeThemeWatch = await scrapeServers('https://a.qfilm.tv/watch.php?vid=8cb07e4b1', { fixtureHtml: WATCH_META_EMBED_HTML });
+assert.equal(activeThemeWatch.length, 1, 'embedded player metadata must yield a server candidate');
+assert.equal(activeThemeWatch[0].url, 'https://a.qfilm.tv/embed.php?vid=8cb07e4b1');
+assert.equal(activeThemeWatch[0].type, 'embed');
+assert.equal(activeThemeWatch[0].verified, false);
+const socialLinksWatch = await scrapeServers('https://a.qfilm.tv/watch.php?vid=8cb07e4b1', {
+  fixtureHtml: '<html><head><meta name="twitter:player" content="https://a.qfilm.tv/embed.php?vid=8cb07e4b1"></head><body><iframe src="https://m.facebook.com/plugins/video.php?id=42"></iframe><a href="https://x.com/intent/post?url=watch">share</a><iframe src="https://www.instagram.com/reel/embed"></iframe></body></html>'
+});
+assert.equal(socialLinksWatch.length, 1, 'social/share dependencies must not be treated as player servers');
+assert.equal(socialLinksWatch[0].url, 'https://a.qfilm.tv/embed.php?vid=8cb07e4b1');
+assert.equal(socialLinksWatch[0].type, 'embed');
+assert.equal(socialLinksWatch[0].verified, false);
+
 const item3 = catalog[2];
 assert.ok(item3.title.includes('Breaking Bad'));
 assert.equal(item3.type, 'series');
@@ -106,6 +126,9 @@ const searchEmpty = await scrapeSearch('nonexistent', 1, { fixtureHtml: SEARCH_E
 assert.ok(Array.isArray(searchEmpty));
 assert.equal(searchEmpty.length, 0);
 assert.equal(searchEmpty._meta.errorCode, SCRAPER_ERROR_CODES.EMPTY_RESULT);
+const unrelatedSearch = await scrapeSearch('Hope', 1, { fixtureHtml: CATALOG_HTML });
+assert.equal(unrelatedSearch.length, 0, 'unrelated catalog cards must not masquerade as search matches');
+assert.equal(unrelatedSearch._meta.errorCode, SCRAPER_ERROR_CODES.EMPTY_RESULT);
 console.log('   ✓ Empty search correctly returned EMPTY_RESULT');
 
 const searchBlank = await scrapeSearch('', 1);

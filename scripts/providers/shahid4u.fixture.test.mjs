@@ -19,7 +19,8 @@ import {
   CATALOG_HTML,
   SEARCH_HTML,
   MOVIE_DETAILS_HTML,
-  SERIES_DETAILS_HTML
+  SERIES_DETAILS_HTML,
+  CURRENT_THEME_CARD_HTML
 } from '../fixtures/providers/shahid4u.fixture.mjs';
 import { SCRAPER_ERROR_CODES } from '../../server/scrapers/shared/errors.mjs';
 
@@ -51,6 +52,11 @@ assert.equal(catalog[0].title, 'فيلم The Batman 2022 مترجم');
 assert.equal(catalog[0].code, 'SU');
 assert.equal(catalog[0].type, 'movie');
 assert.equal(catalog[2].type, 'series');
+const currentThemeCatalog = await scrapeCatalog('movies_foreign', 1, { fixtureHtml: CURRENT_THEME_CARD_HTML });
+assert.equal(currentThemeCatalog.length, 1, 'current .br-card theme card should be parsed');
+assert.equal(currentThemeCatalog[0].title, 'فيلم Hope 2026 مترجم');
+assert.equal(currentThemeCatalog[0].url, 'https://shahidfu.cam/film/hope-2026');
+assert.equal(currentThemeCatalog[0].poster, 'https://shahidfu.cam/uploads/hope-2026.jpg');
 
 // 4. Search scraping with fixture
 console.log('4. Testing Search Fixture Scraping...');

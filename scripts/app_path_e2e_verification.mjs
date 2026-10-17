@@ -1,70 +1,104 @@
-// scripts/app_path_e2e_verification.mjs
-// Test full user application path: Custom Search -> Details -> Episodes (if any) -> Stream Resolution
-// Across 4 real samples: Movie, Series, Anime, Live Sports
+// HTTP API integration test for search -> details -> episode -> direct source resolution.
+// This validates application routing/contracts with deterministic provider fixtures; it does not claim native playback.
+import assert from 'node:assert/strict';
+import { createServer } from '../server/app.mjs';
 
-import { scrapeRealSearch, scrapeRealDetails } from '../server/scrapers/index.mjs';
-import * as moviztimeMod from '../server/scrapers/sites/moviztime.mjs';
-import * as alooyMod from '../server/scrapers/sites/alooy.mjs';
-import * as ristoanimeMod from '../server/scrapers/sites/ristoanime.mjs';
-import * as yallashootMod from '../server/scrapers/sites/yallashoot.mjs';
+const cases = [
+  { id: 'moviztime', query: 'batman', ref: 'moviztime:https://moviz-time.quest/film/the-batman-2022', type: 'movie' },
+  { id: 'akwam', query: 'المسلسل التجريبي', ref: 'akoam:https://akwam.ss/series/test-series', type: 'series' },
+  { id: 'anime4up_rest', query: 'one piece', ref: 'anime4up_rest:https://w1.anime4up.rest/anime/test-one-piece', type: 'anime' },
+  { id: 'yallashoot', query: 'live match', ref: 'sports_live:https://yalla-shoot.tv/match/test-match', type: 'live' }
+];
+const detailsCalls = [];
+const runtimeService = {
+  version: '1.0.44',
+  status: () => ({ status: 'ok', version: '1.0.44' }),
+  async search() { return { status: 'success', version: '1.0.44', kind: 'search', source: 'runtime', cached: false, health: null, data: [] }; },
+  async matches() { return { status: 'success', version: '1.0.44', kind: 'matches', data: [] }; },
+  async category() { return { status: 'success', version: '1.0.44', kind: 'category', data: [] }; }
+};
+const providerSearch = async (providerId, query) => {
+  if (query === 'no-result-query') return { status: 'no_results', provider_id: providerId, data: [], diagnostics: { result_count: 0 } };
+  if (query === 'failing-query') return { status: 'error', provider_id: providerId, data: [], error: { code: 'ACCESS_BLOCKED' } };
+  const item = cases.find((entry) => entry.id === providerId && entry.query === query);
+  if (!item) return { status: 'unsupported', provider_id: providerId, data: [], error: { code: 'SEARCH_UNSUPPORTED' } };
+  return { status: 'success', provider_id: providerId, provider_name: providerId, data: [{ id: item.ref, ref: item.ref, title: `Fixture ${item.type}`, source: providerId, providerId }] };
+};
+const providerDetails = async (ref) => {
+  detailsCalls.push(ref);
+  const item = cases.find((entry) => ref.startsWith(entry.ref.split(':')[0] + ':') || new URL(entry.ref.slice(entry.ref.indexOf(':') + 1)).hostname === (() => { try { return new URL(ref).hostname; } catch { return ''; } })());
+  if (!item) return null;
+  const episodes = item.type === 'series' ? [
+    { number: 1, title: 'الحلقة 1', ref: `${item.ref}:episode-1`, url: `${item.ref}:episode-1` },
+    { number: 2, title: 'الحلقة 2', ref: `${item.ref}:episode-2`, url: `${item.ref}:episode-2` }
+  ] : [];
+  return {
+    id: item.ref, ref: item.ref, source: item.id, providerId: item.id,
+    title: `Fixture ${item.type}`, type: item.type, episodes,
+    servers: [{ provider: item.id, code: 'T-1', kind: 'direct', type: 'm3u8', url: `https://media.example/${item.id}.m3u8`, headers: {} }],
+    media_sources: [{ provider: item.id, code: 'T-1', kind: 'direct', type: 'm3u8', url: `https://media.example/${item.id}.m3u8`, headers: {} }]
+  };
+};
 
-async function runE2E() {
-  console.log('=== STARTING APP-PATH E2E VERIFICATION (4 SAMPLES) ===');
-
-  // 1. SAMPLE 1: MOVIE (MovizTime - Foreign Movie)
-  console.log('\n[1. MOVIE SAMPLE - MovizTime]');
-  const movieSearch = await moviztimeMod.scrapeSearch('batman', 1, { timeoutMs: 4000 });
-  console.log(`  1.1 Search "batman": returned ${movieSearch.length} items.`);
-  const movieItem = movieSearch[0] || { url: 'https://moviz-time.quest/movies/the-batman-2022/' };
-  console.log(`  1.2 Selected item: "${movieItem.title}" (${movieItem.url})`);
-  const movieDetails = await moviztimeMod.scrapeDetails(movieItem.url, { timeoutMs: 4000 });
-  console.log(`  1.3 Details: Title="${movieDetails.title}", Year=${movieDetails.year}, Type=${movieDetails.type}`);
-  console.log(`  1.4 Episodes: ${movieDetails.episodes?.length || 0} (Movie properly has 0 episodes)`);
-  const movieServers = movieDetails.servers || (await moviztimeMod.scrapeServers(movieItem.url, { timeoutMs: 4000 }));
-  console.log(`  1.5 Servers: found ${movieServers.length} servers (e.g. ${movieServers[0]?.code} - ${movieServers[0]?.type})`);
-
-  // 2. SAMPLE 2: SERIES (Alooy TV - Arabic Series)
-  console.log('\n[2. SERIES SAMPLE - Alooy TV]');
-  const seriesSearch = await alooyMod.scrapeSearch('مسلسل', 1, { timeoutMs: 4000 });
-  console.log(`  2.1 Search "مسلسل": returned ${seriesSearch.length} items.`);
-  const seriesItem = seriesSearch[0] || { url: 'https://fa.alooytv16.xyz/watch/series-sample.html' };
-  console.log(`  2.2 Selected series: "${seriesItem.title}" (${seriesItem.url})`);
-  const seriesDetails = await alooyMod.scrapeDetails(seriesItem.url, { timeoutMs: 4000 });
-  console.log(`  2.3 Details: Title="${seriesDetails.title}", Type=${seriesDetails.type}`);
-  console.log(`  2.4 Episodes: found ${seriesDetails.episodes?.length || 0} episodes (Sorted & Normalized: Ep 1="${seriesDetails.episodes?.[0]?.title}")`);
-  const epTarget = seriesDetails.episodes?.[0]?.url || seriesItem.url;
-  const seriesServers = await alooyMod.scrapeServers(epTarget, { timeoutMs: 4000 });
-  console.log(`  2.5 Playback servers: found ${seriesServers.length} servers (e.g. ${seriesServers[0]?.code} - ${seriesServers[0]?.url ? 'URL present' : 'no URL'})`);
-
-  // 3. SAMPLE 3: ANIME (RistoAnime - Anime Series)
-  console.log('\n[3. ANIME SAMPLE - RistoAnime]');
-  const animeCatalog = await ristoanimeMod.scrapeCatalog('all', 1, { timeoutMs: 4000 });
-  console.log(`  3.1 Catalog/Search: retrieved ${animeCatalog.length} anime entries.`);
-  const animeItem = animeCatalog[0] || { url: 'https://ristoanime.com/anime/sample/' };
-  console.log(`  3.2 Selected anime: "${animeItem.title}" (${animeItem.url})`);
-  const animeDetails = await ristoanimeMod.scrapeDetails(animeItem.url, { timeoutMs: 4000 });
-  console.log(`  3.3 Details: Title="${animeDetails.title}", Type=${animeDetails.type}`);
-  console.log(`  3.4 Episodes: found ${animeDetails.episodes?.length || 0} episodes (Ascending sort verified: #${animeDetails.episodes?.[0]?.number})`);
-  const animeEpUrl = animeDetails.episodes?.[0]?.url || animeItem.url;
-  const animeServers = await ristoanimeMod.scrapeServers(animeEpUrl, { timeoutMs: 4000 });
-  console.log(`  3.5 Playback servers: found ${animeServers.length} servers (e.g. ${animeServers[0]?.code} - ${animeServers[0]?.name})`);
-
-  // 4. SAMPLE 4: LIVE SPORTS (YallaShoot - Today's Live Matches)
-  console.log('\n[4. LIVE SPORTS SAMPLE - YallaShoot]');
-  const matches = await yallashootMod.scrapeCatalog('today', 1, { timeoutMs: 4000 });
-  console.log(`  4.1 Live matches schedule: returned ${matches.length} matches today.`);
-  const matchItem = matches[0] || { url: 'https://yalla-shootz.cc/match-sample/' };
-  console.log(`  4.2 Selected match: "${matchItem.title}" (Score: "${matchItem.score || '-'}", Time: "${matchItem.time || 'N/A'}")`);
-  const matchDetails = await yallashootMod.scrapeDetails(matchItem.url, { timeoutMs: 4000 });
-  console.log(`  4.3 Match details: Tournament="${matchDetails.tournament}", Channel="${matchDetails.channel}", Commentator="${matchDetails.commentator}"`);
-  console.log(`  4.4 Episodes: ${matchDetails.episodes?.length || 0} (Sports events properly return 0 episodes / UNSUPPORTED)`);
-  const matchServers = matchDetails.servers || (await yallashootMod.scrapeServers(matchItem.url, { timeoutMs: 4000 }));
-  console.log(`  4.5 Playback servers: found ${matchServers.length} live stream servers (e.g. ${matchServers[0]?.code} - ${matchServers[0]?.name || 'Live Player'})`);
-
-  console.log('\n=== E2E APP PATH VERIFICATION FINISHED SUCCESSFULLY ===');
-}
-
-runE2E().catch(err => {
-  console.error('Fatal E2E error:', err);
-  process.exit(1);
+const server = createServer({ runtimeService, providerSearch, providerDetails });
+await new Promise((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', resolve);
 });
+
+try {
+  const base = `http://127.0.0.1:${server.address().port}`;
+  for (const item of cases) {
+    const searchResponse = await fetch(`${base}/api/v1/search?q=${encodeURIComponent(item.query)}&provider=${item.id}`);
+    assert.equal(searchResponse.status, 200, `${item.id} search HTTP status`);
+    const search = await searchResponse.json();
+    assert.equal(search.kind, 'search');
+    assert.equal(search.provider_id, item.id);
+    assert.equal(search.data.length, 1, `${item.id} search should return one fixture result`);
+    assert.equal(search.data[0].ref, item.ref);
+    assert.equal(search.data[0].source, item.id);
+
+    const detailsResponse = await fetch(`${base}/api/cinema/details?ref=${encodeURIComponent(item.ref)}`);
+    assert.equal(detailsResponse.status, 200, `${item.id} details HTTP status`);
+    const details = await detailsResponse.json();
+    assert.equal(details.providerId, item.id);
+    assert.equal(details.title, `Fixture ${item.type}`);
+
+    if (item.type === 'series') {
+      assert.deepEqual(details.episodes.map((episode) => episode.number), [1, 2], 'episode chronology must remain stable');
+      const epRef = details.episodes[0].ref;
+      const playbackResponse = await fetch(`${base}/api/v1/resolve?ref=${encodeURIComponent(epRef)}`);
+      assert.equal(playbackResponse.status, 200);
+      const playback = await playbackResponse.json();
+      assert.equal(playback.servers.length, 1);
+      assert.equal(playback.servers[0].provider, item.id);
+      assert.match(playback.servers[0].url, /\.m3u8$/);
+    }
+  }
+
+  const emptyResponse = await fetch(`${base}/api/v1/search?q=no-result-query&provider=moviztime`);
+  assert.equal(emptyResponse.status, 200);
+  const empty = await emptyResponse.json();
+  assert.equal(empty.status, 'no_results');
+  assert.deepEqual(empty.data, [], 'no result must stay empty; no catalog substitution is allowed');
+
+  const failedResponse = await fetch(`${base}/api/v1/search?q=failing-query&provider=moviztime`);
+  assert.equal(failedResponse.status, 503);
+  assert.equal((await failedResponse.json()).error.code, 'ACCESS_BLOCKED');
+
+  const unsupportedResponse = await fetch(`${base}/api/v1/search?q=one%20piece&provider=egydead_live`);
+  assert.equal(unsupportedResponse.status, 422);
+  assert.equal((await unsupportedResponse.json()).status, 'unsupported');
+
+  const unknownCategoryResponse = await fetch(`${base}/api/v1/provider/category?provider=not-a-provider&category=latest`);
+  assert.equal(unknownCategoryResponse.status, 422, 'provider catalog route must report unsupported providers explicitly');
+  assert.equal((await unknownCategoryResponse.json()).error.code, 'CATALOG_UNSUPPORTED');
+  const unknownEpisodesResponse = await fetch(`${base}/api/v1/provider/episodes?ref=not-a-provider%3Ahttps%3A%2F%2Fexample.invalid%2Fseries`);
+  assert.equal(unknownEpisodesResponse.status, 422, 'episode route must report unsupported provider references explicitly');
+  assert.equal((await unknownEpisodesResponse.json()).error.code, 'EPISODES_UNSUPPORTED');
+
+  assert.ok(detailsCalls.some((ref) => ref.startsWith('sports_live:')), 'the registered sports_live alias must reach provider details routing');
+  console.log('PASS: real HTTP route sequence covers provider search, details, episode ordering, direct server resolution, empty/error/unsupported outcomes. This is API integration only, not a device playback claim.');
+} finally {
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+}

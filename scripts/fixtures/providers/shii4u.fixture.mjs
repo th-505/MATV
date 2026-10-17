@@ -37,3 +37,18 @@ export const MOVIE_DETAILS_HTML = `<!DOCTYPE html>
 <div class="media-poster"><img src="https://shii4u.cam/uploads/batman.jpg" alt="The Batman"></div>
 <ul class="servers-list"><li data-embed="https://vidmoly.net/embed-batman.html">Vidmoly</li></ul>
 </body></html>`;
+
+export const SERIES_DETAILS_HTML = `<!DOCTYPE html>
+<html lang="ar"><head><meta charset="utf-8"><title>مسلسل الاختبار</title></head><body>
+<h1 class="title">مسلسل الاختبار</h1>
+<div class="media-poster"><img src="https://shii4u.cam/uploads/series.jpg"></div>
+<a href="https://shii4u.cam/episode/test-series-season-1-episode-1">الحلقة 1</a>
+<a href="https://shii4u.cam/episode/test-series-season-1-episode-2">الحلقة 2</a>
+</body></html>`;
+
+export const EPISODE_DETAILS_HTML = `<!DOCTYPE html>
+<html lang="ar"><head><meta charset="utf-8"><title>مسلسل الاختبار الحلقة 1</title></head><body>
+<h1 class="title">مسلسل الاختبار الحلقة 1</h1>
+<div class="media-poster"><img src="https://shii4u.cam/uploads/series.jpg"></div>
+<ul class="servers-list"><li data-embed="https://vidmoly.net/embed-test.html">Vidmoly</li></ul>
+</body></html>`;
