@@ -295,11 +295,40 @@ class MitvApi implements MediaRepository {
   }
 
   @override
-  Future<List<CatalogItem>> search(String query) async {
+  Future<List<CatalogItem>> search(String query, {String providerId = ''}) async {
     final generation = _cacheGeneration;
-    final json = await _getJson('/api/v1/search', {'q': query.trim()});
+    final json = await _getJson(
+      '/api/v1/search',
+      {'q': query.trim(), if (providerId.isNotEmpty) 'provider': providerId},
+      const Duration(seconds: 90),
+    );
     _ensureGeneration(generation);
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
+  }
+
+  final List<Map<String, dynamic>> _searchProviders = [];
+  Future<List<Map<String, dynamic>>> searchProviders() async {
+    final json = await _getJson('/api/v1/search/providers');
+    _searchProviders..clear()..addAll(_list(json['data']));
+    return List.unmodifiable(_searchProviders);
+  }
+
+  String sourceDisplayLabel(CatalogItem item) {
+    final id = item.source;
+    final prefix = item.ref.split(':').first;
+    for (final p in _searchProviders) {
+      final aliases = p['aliases'] is List ? p['aliases'] as List : const [];
+      final host = Uri.tryParse(item.ref)?.host;
+      final domains = p['domains'] is List ? p['domains'] as List : const [];
+      if (p['id'] == id ||
+          p['id'] == prefix ||
+          aliases.contains(id) ||
+          aliases.contains(prefix) ||
+          (host != null && host.isNotEmpty && domains.any((d) => Uri.tryParse('$d')?.host == host))) {
+        return '${p['displayName'] ?? ''}';
+      }
+    }
+    return '';
   }
 
   Future<bool> tmdbAvailable() async {
@@ -830,6 +859,9 @@ class MitvApi implements MediaRepository {
         .timeout(timeout);
     _ensureGeneration(generation);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (path == '/api/v1/search' && response.statusCode == 422) {
+        throw const ApiException('SEARCH_UNSUPPORTED');
+      }
       throw ApiException('HTTP ${response.statusCode}');
     }
     if (response.bodyBytes.length > 128 * 1024) {
@@ -839,6 +871,7 @@ class MitvApi implements MediaRepository {
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
     }
+    if (path == '/api/v1/search' && decoded['status'] == 'no_results') return decoded;
     if (decoded['status'] != 'success') {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
     }

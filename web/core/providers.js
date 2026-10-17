@@ -28,6 +28,7 @@ export async function fetchJsonWithHealth(url, {
   timeoutMs = DEFAULT_TIMEOUT_MS,
   init = {},
   validate = () => true,
+  acceptErrorResponse = false,
 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -44,7 +45,7 @@ export async function fetchJsonWithHealth(url, {
       headers,
     });
 
-    if (!response.ok) {
+    if (!response.ok && !acceptErrorResponse) {
       throw new ProviderError(`HTTP ${response.status}`, {
         kind,
         status: response.status,

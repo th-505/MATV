@@ -213,6 +213,10 @@ header.app-header {
   font-size: 0.84rem;
   width: 100%;
 }
+#searchProvider { max-width: 150px; min-width: 0; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--gold-border); border-radius: 8px; padding: 6px; }
+.search-box { flex-wrap: wrap; }
+.search-box input { min-width: 120px; }
+#searchProviderState { font-size: 12px; color: var(--text-secondary); }
 .search-box input::placeholder { color: var(--text-muted); }
 .search-btn {
   background: transparent;
@@ -1080,10 +1084,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </nav>
 
     <div class="search-box">
-      <button class="search-btn" id="searchTriggerBtn" title="بحث فوري" aria-label="بحث فوري">
+      <button class="search-btn" id="searchTriggerBtn" title="استكشاف" aria-label="استكشاف">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       </button>
-      <input type="search" id="globalSearch" placeholder="بحث موحد (MA-NEXUS) عن فيلم، مسلسل، أنمي..." autocomplete="off">
+      <label for="searchProvider">استكشاف</label><select id="searchProvider" aria-label="مصدر الاستكشاف"><option value="">جميع المصادر</option></select><span id="searchProviderState" role="status"></span><input type="search" id="globalSearch" placeholder="استكشاف: فيلم، مسلسل، أنمي..." autocomplete="off">
     </div>
   </div>
 </header>
@@ -1279,7 +1283,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <div class="full-page-content">
         <img id="detailPoster" class="detail-poster-lg" src="" alt="">
         <div class="detail-info-col">
-          <h1 id="detailTitle" class="detail-title-lg">...</h1>
+          <h1 id="detailTitle" class="detail-title-lg">...</h1><p id="detailSource"></p>
           <div id="detailMetaPills" class="detail-meta-pills"></div>
           <p id="detailStory" class="detail-story">جاري تحميل القصة الكاملة وتفاصيل العمل من TMDb…</p>
 
@@ -1400,7 +1404,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 
 <!-- Unified JavaScript Application (MA-NEXUS v8.0) -->
 <script type="module">
-import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.46';
+import { searchStateMessage } from './web/core/source-display.js';
+import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails, getSearchProviders, sourceLabel, ProviderEndpoints } from './web/core/api-client.js?v=1.0.46';
 import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.46';
 import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.46';
 import { resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.46';
@@ -1743,6 +1748,9 @@ export function renderMediaCard(rawItem) {
     </div>
   `;
 
+  const source = document.createElement('div');
+  source.textContent = sourceLabel(item);
+  card.querySelector('.card-info').appendChild(source);
   const favBtn = card.querySelector('.card-fav-btn');
   favBtn.onclick = (e) => {
     e.stopPropagation();
@@ -2083,6 +2091,7 @@ async function renderTitleDetailPage(params) {
   currentDetailItem = baseItem;
   currentDetailSeason = 1;
 
+  document.getElementById('detailSource').textContent = sourceLabel(baseItem);
   document.getElementById('detailTitle').textContent = baseItem.title || 'جاري التحميل…';
   document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
   document.getElementById('detailBackdrop').style.backgroundImage = `url(${baseItem.backdrop || baseItem.poster || baseItem.img || ''})`;
@@ -2944,15 +2953,38 @@ document.getElementById('purgeCacheBtn').onclick = async () => {
   }
 };
 
+let exploreGeneration = 0;
+const providerSelect = document.getElementById('searchProvider');
+getSearchProviders().then(providers => {
+  for (const p of providers) providerSelect.add(new Option(p.displayName, p.id));
+}).catch(() => { document.getElementById('searchProviderState').textContent = 'تعذر تحميل المصادر'; });
+providerSelect.onchange = () => {
+  ++exploreGeneration;
+  document.getElementById('moviesGrid').replaceChildren();
+  if (document.getElementById('globalSearch').value.trim()) performSearch(document.getElementById('globalSearch').value);
+};
 async function performSearch(query) {
   const q = (query || '').trim();
   if (!q) return;
-  toast('جاري البحث الموحد عبر MA-NEXUS عن: ' + q);
+  const request = ++exploreGeneration;
+  const provider = providerSelect.value;
+  document.title = 'استكشاف | MA TV';
+  moviesLoaded = true;
   switchTab('movies', true);
   const grid = document.getElementById('moviesGrid');
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري البحث والدمج الذكي من TMDb والـ 18 مصدراً…</div>';
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">جارٍ البحث…</div>';
   try {
-    const items = await nexusUnifiedSearch(q);
+    let items;
+    if (provider) {
+      const response = await searchCinema(q, provider);
+      if (request !== exploreGeneration) return;
+      const message = searchStateMessage(response.data);
+      if (message) { grid.replaceChildren(); const state = document.createElement('p'); state.setAttribute('role', 'status'); state.textContent = message; grid.appendChild(state); return; }
+      items = response.data.data;
+    } else {
+      items = await nexusUnifiedSearch(q, ProviderEndpoints.backend);
+    }
+    if (request !== exploreGeneration) return;
     grid.innerHTML = '';
     if (!items.length) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لم يتم العثور على نتائج مطابقة لهذا البحث.</div>';
@@ -2960,7 +2992,8 @@ async function performSearch(query) {
     }
     items.forEach(it => grid.appendChild(renderMediaCard(it)));
   } catch (_) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">تعذر إتمام البحث حالياً.</div>';
+    if (request !== exploreGeneration) return;
+    grid.innerHTML = '<div role="status" style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">المصدر غير متاح حاليًا.</div>';
   }
 }
 
@@ -2971,6 +3004,7 @@ if (searchTriggerBtn) {
   searchTriggerBtn.addEventListener('click', () => performSearch(searchInput.value));
 }
 if (searchInput) {
+  searchInput.addEventListener('input', () => { ++exploreGeneration; });
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') performSearch(searchInput.value);
   });

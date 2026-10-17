@@ -397,7 +397,7 @@ export async function nexusUnifiedSearch(queryText, apiBase = '') {
 
   const [tmdbRes, scraperRes] = await Promise.allSettled([
     tmdbFetch('/search/multi', { query: q, page: '1' }),
-    fetch(`${apiBase}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] }))
+    fetch(`${apiBase}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.json()).catch(() => ({ status: 'error', data: [] }))
   ]);
 
   const rawList = [];
@@ -409,6 +409,7 @@ export async function nexusUnifiedSearch(queryText, apiBase = '') {
     }
   }
   if (scraperRes.status === 'fulfilled') {
+    if (scraperRes.value?.status === 'error' && rawList.length === 0) throw new Error('SEARCH_UNAVAILABLE');
     const items = scraperRes.value?.items || scraperRes.value?.results || scraperRes.value?.data || [];
     if (Array.isArray(items)) rawList.push(...items);
   }

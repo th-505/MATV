@@ -267,7 +267,11 @@ class _DetailsPageState extends State<DetailsPage> {
       animation: widget.store,
       builder: (context, _) => Scaffold(
         appBar: AppBar(
-          title: Text(widget.item.title),
+          title: Text(
+            [widget.item.title, widget.api.sourceDisplayLabel(widget.item)]
+                .where((s) => s.isNotEmpty)
+                .join(' • '),
+          ),
           actions: [
             IconButton(
               tooltip: widget.store.isFavorite(widget.item.ref)
