@@ -354,8 +354,8 @@ export async function scrapeRealDetails(refOrUrl) {
   }
 
   // 11. Specialized Portals: RistoAnime (RE)
-  if (refOrUrl.startsWith('ristoanime:') || refOrUrl.includes('ristoanime.')) {
-    const url = decodeRefUrl(refOrUrl, 'ristoanime:');
+  if (refOrUrl.startsWith('ristoanime:') || refOrUrl.startsWith('risto:') || refOrUrl.includes('ristoanime.')) {
+    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('risto:') ? 'risto:' : 'ristoanime:');
     return sanitizeDetailsPayload(await extractRistoAnimeStreams(url), 'ristoanime');
   }
 
@@ -366,8 +366,8 @@ export async function scrapeRealDetails(refOrUrl) {
   }
 
   // 13. Specialized Portals: IPAUniverse (IE)
-  if (refOrUrl.startsWith('ipauniverse:') || refOrUrl.includes('ipauniverse.')) {
-    const url = decodeRefUrl(refOrUrl, 'ipauniverse:');
+  if (refOrUrl.startsWith('ipauniverse:') || refOrUrl.startsWith('ipa:') || refOrUrl.includes('ipauniverse.')) {
+    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('ipa:') ? 'ipa:' : 'ipauniverse:');
     return sanitizeDetailsPayload(await extractIpaUniverseStreams(url), 'ipauniverse');
   }
 
@@ -375,6 +375,27 @@ export async function scrapeRealDetails(refOrUrl) {
   if (refOrUrl.startsWith('mewsry:') || refOrUrl.includes('mewsry.')) {
     const url = decodeRefUrl(refOrUrl, 'mewsry:');
     return sanitizeDetailsPayload(await extractMewsryStreams(url), 'mewsry');
+  }
+
+  // 15. 3isk (3K)
+  if (refOrUrl.startsWith('3isk:') || refOrUrl.includes('3isk.') || refOrUrl.includes('3ick.')) {
+    const { extract3iskStreamsAndEpisodes } = await import('./sites/3isk.mjs');
+    const url = decodeRefUrl(refOrUrl, '3isk:');
+    return sanitizeDetailsPayload(await extract3iskStreamsAndEpisodes(url), '3isk');
+  }
+
+  // 16. Alooy (AY)
+  if (refOrUrl.startsWith('alooy:') || refOrUrl.includes('alooytv')) {
+    const { extractAlooyStreamsAndEpisodes } = await import('./sites/alooy.mjs');
+    const url = decodeRefUrl(refOrUrl, 'alooy:');
+    return sanitizeDetailsPayload(await extractAlooyStreamsAndEpisodes(url), 'alooy');
+  }
+
+  // 17. Laroza (LZ / LA)
+  if (refOrUrl.startsWith('laroza:') || refOrUrl.includes('laroza.') || refOrUrl.includes('larooza.')) {
+    const { extractLarozaStreamsAndEpisodes } = await import('./sites/laroza.mjs');
+    const url = decodeRefUrl(refOrUrl, 'laroza:');
+    return sanitizeDetailsPayload(await extractLarozaStreamsAndEpisodes(url), 'laroza');
   }
 
   return null;
