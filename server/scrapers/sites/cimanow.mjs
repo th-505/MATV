@@ -24,9 +24,7 @@ import {
   createEmptyArrayResult,
   classifyNetworkError
 } from '../shared/errors.mjs';
-import {
-  unwrapEmbedToDirectStreams
-} from '../stream-unwrapper.mjs';
+import { isValidDirectMediaUrl } from '../stream-unwrapper.mjs';
 import { buildAntiBanHeaders } from '../anti-ban.mjs';
 
 export const PROVIDER_META = Object.freeze({
@@ -924,7 +922,7 @@ export async function resolveStream(urlOrRef, options = {}) {
   assertSafeScraperUrl(rawUrl, { allowHttp: true });
 
   // 2. Direct HLS or MP4 stream URL
-  if (rawUrl.includes('.m3u8') || rawUrl.includes('.mp4')) {
+  if (isValidDirectMediaUrl(rawUrl)) {
     const isHls = rawUrl.includes('.m3u8');
     return {
       ok: true,
@@ -960,34 +958,45 @@ export async function resolveStream(urlOrRef, options = {}) {
     } catch (_) {}
   }
 
-  // 4. Handle CimaNow `/watch/resolve#...` or embed unwrapping
-  try {
-    const unwrapped = await unwrapEmbedToDirectStreams(rawUrl, `${CIMANOW_CONFIG.baseUrl}/`);
-    if (unwrapped && unwrapped.length > 0) {
-      const topStream = unwrapped[0];
-      return {
-        ok: true,
-        providerId: PROVIDER_META.id,
-        url: topStream.url,
-        type: topStream.streamType || topStream.type || 'mp4',
-        streamType: topStream.streamType || topStream.type || 'mp4',
-        quality: topStream.quality || 'HD',
-        verified: false,
-        headers: topStream.headers || { Referer: `${CIMANOW_CONFIG.baseUrl}/` }
-      };
-    }
-  } catch (_) {}
-
-  // 5. Fallback return embed object
+  // 4. Parse CimaNow's own server list first. Passing a whole watch page into the
+  // recursive third-party resolver probed unrelated assets and produced hidden
+  // TypeErrors, while also misclassifying HTML pages as playable sources.
+  const servers = await scrapeServers(rawUrl, options);
+  const direct = servers.find((server) => isValidDirectMediaUrl(server.url));
+  if (direct) {
+    return {
+      ok: true,
+      providerId: PROVIDER_META.id,
+      url: direct.url,
+      type: direct.type,
+      streamType: direct.streamType || direct.type,
+      quality: direct.quality || 'HD',
+      verified: direct.verified === true,
+      headers: direct.headers || { Referer: `${CIMANOW_CONFIG.baseUrl}/` }
+    };
+  }
+  const embed = servers[0];
+  if (embed) {
+    return {
+      ok: true,
+      providerId: PROVIDER_META.id,
+      url: embed.url,
+      type: 'embed',
+      streamType: 'embed',
+      quality: embed.quality || 'HD',
+      verified: false,
+      headers: embed.headers || { Referer: `${CIMANOW_CONFIG.baseUrl}/` }
+    };
+  }
   return {
-    ok: true,
+    ok: false,
     providerId: PROVIDER_META.id,
-    url: rawUrl,
-    type: 'embed',
-    streamType: 'embed',
-    quality: 'HD',
-    verified: false,
-    headers: { Referer: `${CIMANOW_CONFIG.baseUrl}/` }
+    url: null,
+    type: null,
+    streamType: null,
+    servers: [],
+    errorCode: servers._meta?.errorCode || SCRAPER_ERROR_CODES.SERVER_EXTRACTION_FAILED,
+    errorMessage: servers._meta?.errorMessage || 'No CimaNow playback server was extracted'
   };
 }
 
