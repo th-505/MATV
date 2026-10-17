@@ -149,3 +149,49 @@ export async function scrapeCimaNowCatalog(type = 'movie', page = 1) {
     return [];
   }
 }
+
+const AKOAM_BASE = 'https://akwam.ss';
+
+/**
+ * Scrapes Akoam Catalog (Movies & Series)
+ */
+export async function scrapeAkoamCatalog(type = 'movie', page = 1) {
+  const path = type === 'movie' ? `/movies?page=${page}` : `/series?page=${page}`;
+  const url = `${AKOAM_BASE}${path}`;
+
+  try {
+    const { html } = await fetchHtmlWithAntiBan(url, { referer: AKOAM_BASE });
+    const $ = load(html);
+    const items = [];
+
+    $('.entry-box, .widget-body .col-lg-auto, .movie-box').each((_, el) => {
+      const node = $(el);
+      const link = node.find('a.box, a').first();
+      const href = link.attr('href') || '';
+      const title = node.find('.entry-title, h3, .title').text().trim() || link.attr('title') || '';
+      const img = node.find('img').first();
+      const poster = img.attr('data-src') || img.attr('src') || '';
+      const year = node.find('.badge-secondary, .year').text().trim().match(/\d{4}/)?.[0] || '';
+
+      if (href && title) {
+        items.push({
+          id: `akoam:${Buffer.from(href).toString('base64url')}`,
+          ref: `akoam:${Buffer.from(href).toString('base64url')}`,
+          href,
+          title,
+          poster,
+          year: year ? Number(year) : null,
+          type: type === 'movie' ? 'movie' : 'series',
+          is_series: type !== 'movie',
+          source: 'akoam'
+        });
+      }
+    });
+
+    return items;
+  } catch (err) {
+    console.warn('Akoam catalog scrape error:', err.message);
+    return [];
+  }
+}
+

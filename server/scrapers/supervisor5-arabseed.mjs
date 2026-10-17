@@ -131,3 +131,47 @@ export async function scrapeMewsryCatalog(type = 'movie', page = 1) {
     return [];
   }
 }
+
+const ANIME4UP_REST_BASE = 'https://w1.anime4up.rest';
+
+/**
+ * Scrapes Anime4Up Rest Mirror Catalog
+ */
+export async function scrapeAnime4upRestCatalog(type = 'series', page = 1) {
+  const path = type === 'movie' ? `/anime-type/movie/page/${page}/` : `/anime-season/page/${page}/`;
+  const url = `${ANIME4UP_REST_BASE}${path}`;
+
+  try {
+    const { html } = await fetchHtmlWithAntiBan(url, { referer: ANIME4UP_REST_BASE });
+    const $ = load(html);
+    const items = [];
+
+    $('.anime-card-container, .anime-list-item, .item').each((_, el) => {
+      const node = $(el);
+      const link = node.find('a').first();
+      const href = link.attr('href') || '';
+      const title = node.find('.anime-card-title, .title, h3').text().trim() || link.attr('title') || '';
+      const img = node.find('img').first();
+      const poster = img.attr('data-src') || img.attr('src') || '';
+
+      if (href && title) {
+        items.push({
+          id: `anime4up_rest:${Buffer.from(href).toString('base64url')}`,
+          ref: `anime4up_rest:${Buffer.from(href).toString('base64url')}`,
+          href,
+          title,
+          poster,
+          type: type === 'movie' ? 'movie' : 'series',
+          is_series: type !== 'movie',
+          source: 'anime4up_rest'
+        });
+      }
+    });
+
+    return items;
+  } catch (err) {
+    console.warn('Anime4Up Rest scrape error:', err.message);
+    return [];
+  }
+}
+

@@ -134,3 +134,47 @@ export async function scrapeIpaUniverseCatalog(type = 'movie', page = 1) {
     return [];
   }
 }
+
+const THREE_CK_BASE = 'https://e.3cktv.com';
+
+/**
+ * Scrapes 3ck TV Turkish Drama Catalog
+ */
+export async function scrape3ckTvCatalog(type = 'series', page = 1) {
+  const path = `/page/${page}/`;
+  const url = `${THREE_CK_BASE}${path}`;
+
+  try {
+    const { html } = await fetchHtmlWithAntiBan(url, { referer: THREE_CK_BASE });
+    const $ = load(html);
+    const items = [];
+
+    $('article.post, .BlockItem, .item-box').each((_, el) => {
+      const node = $(el);
+      const link = node.find('a').first();
+      const href = link.attr('href') || '';
+      const title = node.find('.title, h2, h3').text().trim() || link.attr('title') || '';
+      const img = node.find('img').first();
+      const poster = img.attr('data-src') || img.attr('data-img') || img.attr('src') || '';
+
+      if (href && title) {
+        items.push({
+          id: `3cktv:${Buffer.from(href).toString('base64url')}`,
+          ref: `3cktv:${Buffer.from(href).toString('base64url')}`,
+          href,
+          title,
+          poster,
+          type: type === 'movie' ? 'movie' : 'series',
+          is_series: type !== 'movie',
+          source: '3cktv'
+        });
+      }
+    });
+
+    return items;
+  } catch (err) {
+    console.warn('3ckTV scrape error:', err.message);
+    return [];
+  }
+}
+
