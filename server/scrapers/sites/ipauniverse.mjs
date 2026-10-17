@@ -48,8 +48,7 @@ const BASE_URL = 'https://watch.ipauniverse.com';
 const TMDB_ORIGIN = 'https://api.themoviedb.org';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/';
 
-// Approved MATV project default TMDb key (from server/tmdb-runtime.mjs)
-const APPROVED_DEFAULT_TMDB_KEY = ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('');
+const TMDB_CONFIGURED = Boolean(String(process.env.TMDB_API_KEY || '').trim() || String(process.env.TMDB_V4_TOKEN || '').trim());
 
 export const PROVIDER_META = Object.freeze({
   id: PROVIDER_ID,
@@ -59,7 +58,7 @@ export const PROVIDER_META = Object.freeze({
   mirrorOf: null,
   capabilities: Object.freeze({
     catalog: true,
-    search: true,
+    search: TMDB_CONFIGURED,
     details: true,
     episodes: false,
     servers: true,
@@ -113,7 +112,7 @@ function getApprovedTmdbConfig(options = {}) {
     };
   }
 
-  const apiKey = optionsKey || envKey || APPROVED_DEFAULT_TMDB_KEY;
+  const apiKey = optionsKey || envKey;
   return {
     apiKey,
     bearerToken,

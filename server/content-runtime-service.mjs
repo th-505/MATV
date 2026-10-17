@@ -81,6 +81,7 @@ export function createContentRuntimeService({
         data: cached.data,
         source: cached.source,
         health: health.snapshot(cached.source, stamp),
+        diagnostics: cached.diagnostics,
         cached: true,
         stale: false,
         generatedAt: cached.generatedAt,
@@ -95,14 +96,16 @@ export function createContentRuntimeService({
         const payload = await fetcher();
         source = providerName(payload, fallbackProvider);
         const data = normalize(payload);
+        const diagnostics = payload?.diagnostics || null;
         const finished = now();
         health.recordSuccess(source, { latencyMs: Math.max(0, finished - started), now: finished });
-        cache.set(key, { data, source, generatedAt: finished }, ttlMs, finished);
+        cache.set(key, { data, source, diagnostics, generatedAt: finished }, ttlMs, finished);
         return buildRuntimeEnvelope({
           kind,
           data,
           source,
           health: health.snapshot(source, finished),
+          diagnostics,
           cached: false,
           stale: false,
           generatedAt: finished,
@@ -121,6 +124,7 @@ export function createContentRuntimeService({
         data: stale.data,
         source: stale.source,
         health: health.snapshot(stale.source, now()),
+        diagnostics: stale.diagnostics,
         cached: true,
         stale: true,
         generatedAt: stale.generatedAt,

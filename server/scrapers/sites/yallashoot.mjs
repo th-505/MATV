@@ -534,6 +534,15 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
     const $ = cheerio.load(fetchRes.html);
     const rawServers = [];
     const seenUrls = new Set();
+    const isAdvertisingUrl = (value) => {
+      try {
+        const parsed = new URL(value);
+        return /(^|\.)((doubleclick|googlesyndication|googleadservices|googleads|popads|popcash|propellerads|adsterra)\.)/i.test(parsed.hostname) ||
+          /\/(ads?|advert|banner|popunder)(\/|\?|$)/i.test(parsed.pathname);
+      } catch {
+        return true;
+      }
+    };
 
     // 1. Alba Live Matches plugin server tabs: .asp-server-name a
     $('.asp-server-name a').each((i, el) => {
@@ -554,6 +563,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       const resolved = resolveSafeUrl(trimmedUrl, targetUrl);
       if (
         !resolved ||
+        isAdvertisingUrl(resolved) ||
         seenUrls.has(resolved) ||
         resolved === targetUrl ||
         resolved.endsWith('#') ||
@@ -583,6 +593,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       const resolved = resolveSafeUrl(trimmedUrl, targetUrl);
       if (
         !resolved ||
+        isAdvertisingUrl(resolved) ||
         seenUrls.has(resolved) ||
         resolved === targetUrl ||
         resolved.endsWith('#') ||
@@ -611,6 +622,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       const resolved = resolveSafeUrl(trimmedSrc, targetUrl);
       if (
         resolved &&
+        !isAdvertisingUrl(resolved) &&
         !seenUrls.has(resolved) &&
         resolved !== targetUrl &&
         !resolved.endsWith('#') &&
@@ -632,7 +644,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       for (const streamItem of textStreams) {
         const streamUrl = streamItem?.url || '';
         const resolved = resolveSafeUrl(streamUrl, targetUrl);
-        if (resolved && !seenUrls.has(resolved)) {
+        if (resolved && !isAdvertisingUrl(resolved) && !seenUrls.has(resolved)) {
           seenUrls.add(resolved);
           rawServers.push({
             name: `بث مباشر ${(streamItem.streamType || 'm3u8').toUpperCase()}`,

@@ -14,13 +14,17 @@ import { scrapeAnime4UpCategory, extractAnime4UpStreamsAndEpisodes } from './sit
 import { scrapeWitAnimeCategory, extractWitAnimeStreamsAndEpisodes } from './sites/witanime.mjs';
 import { extractRistoAnimeStreams, extractQFilmStreams, extractIpaUniverseStreams, extractMewsryStreams } from './sites/specialized-portals.mjs';
 import { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches } from './supervisor6-witanime-live.mjs';
+import { getProvider, listProviders, resolveProviderReference } from './registry.mjs';
+import { attachResultMeta, SCRAPER_ERROR_CODES } from './shared/errors.mjs';
 
 export { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches };
 
-const TMDB_API_KEY = String(process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('')).trim();
+const TMDB_API_KEY = String(process.env.TMDB_API_KEY || '').trim();
 const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
 const SEARCH_MAX_IN_FLIGHT = 2;
+const SEARCH_PROVIDER_CONCURRENCY = 4;
+const SEARCH_PROVIDER_TIMEOUT_MS = 5_000;
 const searchCache = new Map();
 const searchInFlight = new Map();
 const categoryCache = new Map();
@@ -184,31 +188,105 @@ export async function scrapeRealCategory(category, page = 1) {
  * Executes a real search query across top scraping engines concurrently
  */
 async function scrapeRealSearchUncached(q) {
+  const entries = listProviders().map((meta) => getProvider(meta.id))
+    .filter((entry) => entry?.meta.capabilities?.search === true && typeof entry.module.scrapeSearch === 'function');
+  const outcomes = await runBounded(entries, SEARCH_PROVIDER_CONCURRENCY,
+    (entry) => runProviderSearch(entry, q));
+  const results = outcomes.flatMap((outcome) => outcome.items);
+  const failures = outcomes.filter((outcome) => outcome.state === 'failed');
+  const state = results.length > 0 ? (failures.length ? 'partial' : 'success')
+    : failures.length === outcomes.length ? 'failed' : 'no_results';
+  const enriched = await enrichCatalogWithTmdb(results);
+  return attachResultMeta(enriched, {
+    ok: state !== 'failed', state,
+    errorCode: state === 'failed' ? 'ALL_SEARCH_PROVIDERS_FAILED' : null,
+    providerResults: outcomes.map(({ items, ...diagnostic }) => diagnostic)
+  });
+}
+
+function providerSearchOutcome(entry, result, elapsedMs) {
+  const rows = Array.isArray(result) ? result : [];
+  const errorCode = result?._meta?.errorCode || null;
+  const valid = rows.filter((item) => item && typeof item.title === 'string' && item.title.trim() &&
+    typeof (item.ref || item.id || item.url || item.link) === 'string' &&
+    String(item.ref || item.id || item.url || item.link).trim());
+  const state = valid.length > 0 ? 'success'
+    : errorCode && errorCode !== SCRAPER_ERROR_CODES.EMPTY_RESULT ? 'failed' : 'no_results';
+  return {
+    state, providerId: entry.meta.id,
+    errorCode: state === 'failed' ? errorCode : null,
+    errorMessage: state === 'failed' ? String(result?._meta?.errorMessage || errorCode).slice(0, 180) : null,
+    count: valid.length, elapsedMs,
+    items: valid.map((item) => ({
+      ...item,
+      id: item.id || item.ref || item.url || item.link,
+      ref: item.ref || item.id || item.url || item.link,
+      source: entry.meta.id,
+      providerId: entry.meta.id,
+      providerName: entry.meta.name
+    }))
+  };
+}
+
+async function runProviderSearch(entry, q, timeoutMs = SEARCH_PROVIDER_TIMEOUT_MS) {
+  const startedAt = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error('PROVIDER_SEARCH_TIMEOUT')), timeoutMs);
   try {
-    const [mycimaRes, akwamRes, egydeadRes, animeRes] = await Promise.allSettled([
-      searchMyCima(q),
-      searchAkwam(q),
-      scrapeEgyDeadCategory('movies', 1),
-      scrapeAnime4UpCategory('anime_series', 1)
-    ]);
-
-    const combined = [
-      ...(mycimaRes.status === 'fulfilled' ? mycimaRes.value : []),
-      ...(akwamRes.status === 'fulfilled' ? akwamRes.value : []),
-      ...(egydeadRes.status === 'fulfilled' ? egydeadRes.value : []),
-      ...(animeRes.status === 'fulfilled' ? animeRes.value : [])
-    ];
-
-    const filtered = combined.filter(it => it.title && it.title.toLowerCase().includes(q.toLowerCase()));
-    return enrichCatalogWithTmdb(filtered.length > 0 ? filtered : combined.slice(0, 15));
-  } catch (err) {
-    console.warn('Scraping search error:', err);
-    return [];
+    const value = await entry.module.scrapeSearch(q, 1, {
+      timeoutMs, signal: controller.signal, strict: true
+    });
+    return providerSearchOutcome(entry, value, Date.now() - startedAt);
+  } catch (error) {
+    return {
+      state: 'failed', providerId: entry.meta.id,
+      errorCode: controller.signal.aborted ? 'NETWORK_TIMEOUT' : String(error?.code || 'PROVIDER_SEARCH_FAILED'),
+      errorMessage: String(error?.message || error).slice(0, 180),
+      count: 0, elapsedMs: Date.now() - startedAt, items: []
+    };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
+async function runBounded(entries, limit, worker) {
+  const output = new Array(entries.length);
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, entries.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= entries.length) return;
+      output[index] = await worker(entries[index]);
+    }
+  }));
+  return output;
+}
+
+/** Search one explicitly selected registered source and return JSON-serializable diagnostics. */
+export async function searchProviderCatalog(providerId, query, { timeoutMs = SEARCH_PROVIDER_TIMEOUT_MS } = {}) {
+  const q = typeof query === 'string' ? query.trim().replace(/\s+/g, ' ') : '';
+  const entry = getProvider(providerId);
+  if (!entry) return { status: 'unsupported', provider_id: String(providerId || ''), query: q, data: [], error: { code: 'PROVIDER_NOT_FOUND' } };
+  if (!entry.meta.capabilities?.search || typeof entry.module.scrapeSearch !== 'function') {
+    return { status: 'unsupported', provider_id: entry.meta.id, query: q, data: [], error: { code: 'SEARCH_UNSUPPORTED' } };
+  }
+  if (q.length < 2 || q.length > 120) {
+    return { status: 'error', provider_id: entry.meta.id, query: q, data: [], error: { code: 'INVALID_QUERY' } };
+  }
+  const outcome = await runProviderSearch(entry, q, Math.max(250, Math.min(15_000, Number(timeoutMs) || SEARCH_PROVIDER_TIMEOUT_MS)));
+  const data = await enrichCatalogWithTmdb(outcome.items);
+  return {
+    status: outcome.state === 'failed' ? 'error' : outcome.state === 'no_results' ? 'no_results' : 'success',
+    provider_id: entry.meta.id, provider_name: entry.meta.name, query: q, data,
+    error: outcome.state === 'failed' ? { code: outcome.errorCode, message: outcome.errorMessage } : null,
+    diagnostics: { elapsed_ms: outcome.elapsedMs, result_count: outcome.count }
+  };
+}
 function cloneItems(items) {
-  return Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
+  if (!Array.isArray(items)) return [];
+  const cloned = items.map((item) => ({ ...item }));
+  if (items._meta) attachResultMeta(cloned, { ...items._meta });
+  return cloned;
 }
 
 export async function scrapeRealSearch(query) {
@@ -261,7 +339,9 @@ export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الح�
 
 function sanitizeDetailsPayload(details, source = '') {
   if (!details || typeof details !== 'object') return details;
-  const servers = Array.isArray(details.servers) ? details.servers : [];
+  const servers = Array.isArray(details.servers)
+    ? details.servers
+    : Array.isArray(details.media_sources) ? details.media_sources : [];
   if (Array.isArray(details.episodes)) {
     details.episodes = normalizeEpisodesList(details.episodes);
   }
@@ -273,132 +353,46 @@ function sanitizeDetailsPayload(details, source = '') {
   };
 }
 
-function decodeRefUrl(ref, prefix) {
-  const raw = ref.startsWith(prefix) ? ref.slice(prefix.length) : ref;
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  try {
-    const decoded = Buffer.from(raw, 'base64url').toString('utf8');
-    if (decoded.startsWith('http://') || decoded.startsWith('https://')) return decoded;
-  } catch (_) {}
-  try {
-    const decoded = Buffer.from(raw, 'base64').toString('utf8');
-    if (decoded.startsWith('http://') || decoded.startsWith('https://')) return decoded;
-  } catch (_) {}
-  return raw;
-}
-
 /**
  * Scrapes direct .m3u8 and .mp4 streams from dedicated scrapers based on reference or URL
  */
-export async function scrapeRealDetails(refOrUrl) {
-  if (!refOrUrl || typeof refOrUrl !== 'string') return null;
+function canonicalizeProviderRef(refOrUrl, providerId) {
+  const ref = String(refOrUrl || '').trim();
+  const colon = ref.indexOf(':');
+  if (colon <= 0 || /^https?$/i.test(ref.slice(0, colon))) return ref;
+  const prefix = ref.slice(0, colon).toLowerCase();
+  const aliases = { akoam: 'akwam', moviz: 'moviztime', ipa: 'ipauniverse', risto: 'ristoanime', sports_live: 'yallashoot', '3ck': '3cktv' };
+  const canonical = aliases[prefix];
+  return canonical && canonical === providerId ? `${providerId}:${ref.slice(colon + 1)}` : ref;
+}
 
-  // 1. MyCima (MA)
-  if (refOrUrl.startsWith('mycima:') || refOrUrl.includes('mycima.') || refOrUrl.includes('wecima.')) {
-    const url = decodeRefUrl(refOrUrl, 'mycima:');
-    return sanitizeDetailsPayload(await extractMyCimaStreamsAndEpisodes(url), 'mycima');
+/** Routes provider refs and URLs through the central registry while preserving source identity. */
+export async function scrapeRealDetails(refOrUrl, options = {}) {
+  if (typeof refOrUrl !== 'string' || !refOrUrl.trim()) return null;
+  const entry = resolveProviderReference(refOrUrl);
+  if (!entry || !entry.meta.capabilities?.details || typeof entry.module.scrapeDetails !== 'function') return null;
+  const routedRef = canonicalizeProviderRef(refOrUrl, entry.meta.id);
+  const details = await entry.module.scrapeDetails(routedRef, options);
+  if (!details || typeof details !== 'object') return null;
+  const result = sanitizeDetailsPayload(details, entry.meta.id);
+  result.source = entry.meta.id;
+  result.providerId = entry.meta.id;
+  const originalHasServerArray = Array.isArray(details.servers) || Array.isArray(details.media_sources);
+  if (result.servers.length === 0 && typeof entry.module.scrapeServers === 'function') {
+    const extractedServers = await entry.module.scrapeServers(routedRef, options);
+    if (Array.isArray(extractedServers) && extractedServers.length > 0) {
+      result.servers = extractedServers;
+      result.media_sources = extractedServers;
+    } else if (!originalHasServerArray) {
+      result.servers = Array.isArray(extractedServers) ? extractedServers : [];
+      result.media_sources = result.servers;
+    }
   }
-
-  // 2. Akwam (AK)
-  if (refOrUrl.startsWith('akwam:') || refOrUrl.includes('akwam.') || refOrUrl.includes('akoam.')) {
-    const url = decodeRefUrl(refOrUrl, 'akwam:');
-    return sanitizeDetailsPayload(await extractAkwamStreamsAndEpisodes(url), 'akwam');
+  for (const key of ['episodes', 'servers', 'media_sources']) {
+    if (!Array.isArray(result[key])) continue;
+    result[key] = result[key].map((item) => ({ ...item, source: item.source || entry.meta.id, provider: item.provider || entry.meta.id }));
   }
-
-  // 3. CimaNow (CW)
-  if (refOrUrl.startsWith('cimanow:') || refOrUrl.includes('cimanow.')) {
-    const url = decodeRefUrl(refOrUrl, 'cimanow:');
-    return sanitizeDetailsPayload(await extractCimaNowStreamsAndEpisodes(url), 'cimanow');
-  }
-
-  // 4. EgyDead (ED)
-  if (refOrUrl.startsWith('egydead:') || refOrUrl.includes('egydead.')) {
-    const url = decodeRefUrl(refOrUrl, 'egydead:');
-    return sanitizeDetailsPayload(await extractEgyDeadStreamsAndEpisodes(url), 'egydead');
-  }
-
-  // 5. ArabSeed (AD)
-  if (refOrUrl.startsWith('arabseed:') || refOrUrl.includes('arabseed.')) {
-    const url = decodeRefUrl(refOrUrl, 'arabseed:');
-    return sanitizeDetailsPayload(await extractArabSeedStreamsAndEpisodes(url), 'arabseed');
-  }
-
-  // 6. Shahid4u (SU / SH)
-  if (refOrUrl.startsWith('shahid4u:') || refOrUrl.startsWith('shii4u:') || refOrUrl.includes('shahid4u.') || refOrUrl.includes('sh4u.')) {
-    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('shii4u:') ? 'shii4u:' : 'shahid4u:');
-    return sanitizeDetailsPayload(await extractShahid4uStreamsAndEpisodes(url), 'shahid4u');
-  }
-
-  // 7. MovizTime (ME)
-  if (refOrUrl.startsWith('moviztime:') || refOrUrl.startsWith('moviz:') || refOrUrl.includes('moviztime.')) {
-    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('moviz:') ? 'moviz:' : 'moviztime:');
-    return sanitizeDetailsPayload(await extractMovizTimeStreamsAndEpisodes(url), 'moviztime');
-  }
-
-  // 8. 3cktv (3V)
-  if (refOrUrl.startsWith('3cktv:') || refOrUrl.startsWith('3ck:') || refOrUrl.includes('3ck.')) {
-    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('3ck:') ? '3ck:' : '3cktv:');
-    return sanitizeDetailsPayload(await extract3cktvStreamsAndEpisodes(url), '3cktv');
-  }
-
-  // 9. Anime4Up (AP)
-  if (refOrUrl.startsWith('anime4up:') || refOrUrl.includes('anime4up.')) {
-    const url = decodeRefUrl(refOrUrl, 'anime4up:');
-    return sanitizeDetailsPayload(await extractAnime4UpStreamsAndEpisodes(url), 'anime4up');
-  }
-
-  // 10. WitAnime (WE)
-  if (refOrUrl.startsWith('witanime:') || refOrUrl.includes('witanime.')) {
-    const url = decodeRefUrl(refOrUrl, 'witanime:');
-    return sanitizeDetailsPayload(await extractWitAnimeStreamsAndEpisodes(url), 'witanime');
-  }
-
-  // 11. Specialized Portals: RistoAnime (RE)
-  if (refOrUrl.startsWith('ristoanime:') || refOrUrl.startsWith('risto:') || refOrUrl.includes('ristoanime.')) {
-    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('risto:') ? 'risto:' : 'ristoanime:');
-    return sanitizeDetailsPayload(await extractRistoAnimeStreams(url), 'ristoanime');
-  }
-
-  // 12. Specialized Portals: QFilm (QM)
-  if (refOrUrl.startsWith('qfilm:') || refOrUrl.includes('qfilm.')) {
-    const url = decodeRefUrl(refOrUrl, 'qfilm:');
-    return sanitizeDetailsPayload(await extractQFilmStreams(url), 'qfilm');
-  }
-
-  // 13. Specialized Portals: IPAUniverse (IE)
-  if (refOrUrl.startsWith('ipauniverse:') || refOrUrl.startsWith('ipa:') || refOrUrl.includes('ipauniverse.')) {
-    const url = decodeRefUrl(refOrUrl, refOrUrl.startsWith('ipa:') ? 'ipa:' : 'ipauniverse:');
-    return sanitizeDetailsPayload(await extractIpaUniverseStreams(url), 'ipauniverse');
-  }
-
-  // 14. Specialized Portals: Mewsry (MY)
-  if (refOrUrl.startsWith('mewsry:') || refOrUrl.includes('mewsry.')) {
-    const url = decodeRefUrl(refOrUrl, 'mewsry:');
-    return sanitizeDetailsPayload(await extractMewsryStreams(url), 'mewsry');
-  }
-
-  // 15. 3isk (3K)
-  if (refOrUrl.startsWith('3isk:') || refOrUrl.includes('3isk.') || refOrUrl.includes('3ick.')) {
-    const { extract3iskStreamsAndEpisodes } = await import('./sites/3isk.mjs');
-    const url = decodeRefUrl(refOrUrl, '3isk:');
-    return sanitizeDetailsPayload(await extract3iskStreamsAndEpisodes(url), '3isk');
-  }
-
-  // 16. Alooy (AY)
-  if (refOrUrl.startsWith('alooy:') || refOrUrl.includes('alooytv')) {
-    const { extractAlooyStreamsAndEpisodes } = await import('./sites/alooy.mjs');
-    const url = decodeRefUrl(refOrUrl, 'alooy:');
-    return sanitizeDetailsPayload(await extractAlooyStreamsAndEpisodes(url), 'alooy');
-  }
-
-  // 17. Laroza (LZ / LA)
-  if (refOrUrl.startsWith('laroza:') || refOrUrl.includes('laroza.') || refOrUrl.includes('larooza.')) {
-    const { extractLarozaStreamsAndEpisodes } = await import('./sites/laroza.mjs');
-    const url = decodeRefUrl(refOrUrl, 'laroza:');
-    return sanitizeDetailsPayload(await extractLarozaStreamsAndEpisodes(url), 'laroza');
-  }
-
-  return null;
+  return result;
 }
 
 // ---------------------------------------------------------------------

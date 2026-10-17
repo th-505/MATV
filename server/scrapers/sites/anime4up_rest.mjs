@@ -11,6 +11,7 @@ import {
   scrapeServers as scrapeCoreServers,
   resolveStream as resolveCoreStream
 } from './anime4up.mjs';
+import { attachResultMeta } from '../shared/errors.mjs';
 
 export const PROVIDER_ID = 'anime4up_rest';
 export const PROVIDER_NAME = 'أنمي فور اب ريست (Anime4Up Rest)';
@@ -42,6 +43,32 @@ export const PROVIDER_META = Object.freeze({
   notImplemented: Object.freeze({})
 });
 
+function preserveMeta(mapped, original) {
+  if (original?._meta) attachResultMeta(mapped, { ...original._meta, providerId: PROVIDER_ID });
+  return mapped;
+}
+
+function identifyAnime4upRestItem(item = {}) {
+  const toRestRef = (value) => typeof value === 'string'
+    ? value.replace(/^anime4up:/, 'anime4up_rest:') : value;
+  return {
+    ...item,
+    source: PROVIDER_ID,
+    providerId: PROVIDER_ID,
+    id: toRestRef(item.id),
+    ref: toRestRef(item.ref),
+    url: item.url,
+    episodes: Array.isArray(item.episodes) ? item.episodes.map((episode) => ({
+      ...episode,
+      source: PROVIDER_ID,
+      providerId: PROVIDER_ID,
+      id: toRestRef(episode.id),
+      ref: toRestRef(episode.ref),
+      url: toRestRef(episode.url)
+    })) : item.episodes
+  };
+}
+
 export const ANIME4UP_REST_CONFIG = Object.freeze({
   key: PROVIDER_ID,
   id: PROVIDER_ID,
@@ -56,12 +83,7 @@ export async function scrapeCatalog(category = 'anime_series', page = 1, options
     ...options,
     providerId: PROVIDER_ID
   });
-  return items.map((it) => ({
-    ...it,
-    source: PROVIDER_ID,
-    id: it.id?.replace('anime4up:', 'anime4up_rest:') || it.id,
-    ref: it.ref?.replace('anime4up:', 'anime4up_rest:') || it.ref
-  }));
+  return preserveMeta(items.map(identifyAnime4upRestItem), items);
 }
 
 export async function scrapeSearch(query, page = 1, options = {}) {
@@ -69,12 +91,7 @@ export async function scrapeSearch(query, page = 1, options = {}) {
     ...options,
     providerId: PROVIDER_ID
   });
-  return items.map((it) => ({
-    ...it,
-    source: PROVIDER_ID,
-    id: it.id?.replace('anime4up:', 'anime4up_rest:') || it.id,
-    ref: it.ref?.replace('anime4up:', 'anime4up_rest:') || it.ref
-  }));
+  return preserveMeta(items.map(identifyAnime4upRestItem), items);
 }
 
 export async function scrapeDetails(urlOrRef, options = {}) {
@@ -84,10 +101,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
   });
   if (!details) return null;
   return {
-    ...details,
-    source: PROVIDER_ID,
-    id: details.id?.replace('anime4up:', 'anime4up_rest:') || details.id,
-    ref: details.ref?.replace('anime4up:', 'anime4up_rest:') || details.ref,
+    ...identifyAnime4upRestItem(details),
     servers: (details.servers || []).map((s) => ({
       ...s,
       provider: PROVIDER_ID
@@ -96,10 +110,11 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 }
 
 export async function scrapeEpisodes(urlOrRef, options = {}) {
-  return scrapeCoreEpisodes(urlOrRef, {
+  const episodes = await scrapeCoreEpisodes(urlOrRef, {
     ...options,
     providerId: PROVIDER_ID
   });
+  return episodes.map((episode) => ({ ...identifyAnime4upRestItem(episode), number: episode.number }));
 }
 
 export async function scrapeServers(urlOrRef, options = {}) {

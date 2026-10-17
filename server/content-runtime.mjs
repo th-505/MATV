@@ -83,4 +83,4 @@ export function normalizeMatch(match={}){
   };
 }
 
-export function buildRuntimeEnvelope({kind,data,source,health,cached=false,stale=false,generatedAt=Date.now()}){return {status:"success",version:PRODUCT_VERSION,kind:asText(kind)||"unknown",source:asText(source)||"basri-original",cached:Boolean(cached),stale:Boolean(stale),generated_at:new Date(generatedAt).toISOString(),health:health||null,data};}
+export function buildRuntimeEnvelope({kind,data,source,health,diagnostics=null,cached=false,stale=false,generatedAt=Date.now()}){return {status:"success",version:PRODUCT_VERSION,kind:asText(kind)||"unknown",source:asText(source)||"basri-original",cached:Boolean(cached),stale:Boolean(stale),generated_at:new Date(generatedAt).toISOString(),health:health||null,...(diagnostics?{diagnostics}:{}),data};}

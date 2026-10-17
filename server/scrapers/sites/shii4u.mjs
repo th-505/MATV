@@ -1,10 +1,9 @@
 // server/scrapers/sites/shii4u.mjs
 // Standalone provider module for شي فور يو (Shii4U, code: SH)
-// Explicit mirror / sister variant of Shahid4U (shahid4u, code: SU)
+// Shares parser code with Shahid4U, but requests its own declared host and identity.
 
 import {
   PROVIDER_ID as SHAHID_ID,
-  PRIMARY_BASE_URL as SHAHID_BASE_URL,
   extractShahid4uCardsFromHtml,
   scrapeCatalog as scrapeShahidCatalog,
   scrapeSearch as scrapeShahidSearch,
@@ -24,8 +23,8 @@ export const PROVIDER_META = Object.freeze({
   id: PROVIDER_ID,
   name: PROVIDER_NAME,
   code: PROVIDER_CODE,
-  domains: Object.freeze([PRIMARY_BASE_URL, SHAHID_BASE_URL]),
-  mirrorOf: SHAHID_ID,
+  domains: Object.freeze([PRIMARY_BASE_URL]),
+  mirrorOf: null,
   capabilities: Object.freeze({
     catalog: true,
     search: true,
@@ -51,46 +50,48 @@ export const SHII4U_CONFIG = Object.freeze({
   name: PROVIDER_NAME,
   code: PROVIDER_CODE,
   baseUrl: PRIMARY_BASE_URL,
-  mirrorOf: SHAHID_ID
+  mirrorOf: null
 });
 
+const coreOptions = (options = {}) => ({ ...options, baseUrl: PRIMARY_BASE_URL, providerId: PROVIDER_ID });
+const toCoreRef = (value) => typeof value === 'string' && value.startsWith('shii4u:')
+  ? `shahid4u:${value.slice('shii4u:'.length)}` : value;
+function preserveMeta(mapped, original) {
+  if (original?._meta) attachResultMeta(mapped, { ...original._meta, providerId: PROVIDER_ID });
+  return mapped;
+}
+
 export async function scrapeCatalog(category = 'movies_foreign', page = 1, options = {}) {
-  const items = await scrapeShahidCatalog(category, page, {
-    ...options,
-    providerId: PROVIDER_ID
-  });
-  return items.map((it) => ({
+  const items = await scrapeShahidCatalog(category, page, coreOptions(options));
+  return preserveMeta(items.map((it) => ({
     ...it,
     source: PROVIDER_ID,
+    providerId: PROVIDER_ID,
     serverPrefix: PROVIDER_CODE,
     id: it.id?.replace('shahid4u:', 'shii4u:') || it.id,
     ref: it.ref?.replace('shahid4u:', 'shii4u:') || it.ref
-  }));
+  })), items);
 }
 
 export async function scrapeSearch(query, page = 1, options = {}) {
-  const items = await scrapeShahidSearch(query, page, {
-    ...options,
-    providerId: PROVIDER_ID
-  });
-  return items.map((it) => ({
+  const items = await scrapeShahidSearch(query, page, coreOptions(options));
+  return preserveMeta(items.map((it) => ({
     ...it,
     source: PROVIDER_ID,
+    providerId: PROVIDER_ID,
     serverPrefix: PROVIDER_CODE,
     id: it.id?.replace('shahid4u:', 'shii4u:') || it.id,
     ref: it.ref?.replace('shahid4u:', 'shii4u:') || it.ref
-  }));
+  })), items);
 }
 
 export async function scrapeDetails(urlOrRef, options = {}) {
-  const details = await scrapeShahidDetails(urlOrRef, {
-    ...options,
-    providerId: PROVIDER_ID
-  });
+  const details = await scrapeShahidDetails(toCoreRef(urlOrRef), coreOptions(options));
   if (!details) return null;
   return {
     ...details,
     source: PROVIDER_ID,
+    providerId: PROVIDER_ID,
     id: details.id?.replace('shahid4u:', 'shii4u:') || details.id,
     ref: details.ref?.replace('shahid4u:', 'shii4u:') || details.ref,
     servers: (details.servers || []).map((s, idx) => ({
@@ -103,17 +104,11 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 }
 
 export async function scrapeEpisodes(urlOrRef, options = {}) {
-  return scrapeShahidEpisodes(urlOrRef, {
-    ...options,
-    providerId: PROVIDER_ID
-  });
+  return scrapeShahidEpisodes(toCoreRef(urlOrRef), coreOptions(options));
 }
 
 export async function scrapeServers(urlOrRef, options = {}) {
-  const servers = await scrapeShahidServers(urlOrRef, {
-    ...options,
-    providerId: PROVIDER_ID
-  });
+  const servers = await scrapeShahidServers(toCoreRef(urlOrRef), coreOptions(options));
   return servers.map((s, idx) => ({
     ...s,
     provider: PROVIDER_ID,
@@ -123,10 +118,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
 }
 
 export async function resolveStream(urlOrRef, options = {}) {
-  const res = await resolveShahidStream(urlOrRef, {
-    ...options,
-    providerId: PROVIDER_ID
-  });
+  const res = await resolveShahidStream(toCoreRef(urlOrRef), coreOptions(options));
   if (!res) return null;
   return {
     ...res,

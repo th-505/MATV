@@ -2,6 +2,7 @@
 // SSRF-safe HTTP client with redirect validation, IPv6/IPv4 normalization, DNS rebinding protection, rate limiting, and anti-ban headers
 import net from 'node:net';
 import dns from 'node:dns';
+import { Agent } from 'undici';
 import { buildAntiBanHeaders } from '../anti-ban.mjs';
 import {
   SCRAPER_ERROR_CODES,
@@ -276,6 +277,23 @@ export async function assertSafeResolvedHost(hostname, options = {}) {
   return addresses;
 }
 
+export function createPinnedDnsLookup(hostname, address) {
+  const expectedHost = String(hostname || '').toLowerCase();
+  const pinnedAddress = String(address || '');
+  const family = net.isIP(pinnedAddress);
+  if (!expectedHost || !family || isUnsafeIpAddress(pinnedAddress)) {
+    throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL, 'INVALID_PINNED_DNS_ADDRESS');
+  }
+  return (requestedHost, options, callback) => {
+    if (String(requestedHost || '').toLowerCase() !== expectedHost) {
+      callback(new Error('PINNED_DNS_HOST_MISMATCH'));
+      return;
+    }
+    if (options?.all) callback(null, [{ address: pinnedAddress, family }]);
+    else callback(null, pinnedAddress, family);
+  };
+}
+
 export function resolveSafeUrl(href, baseUrl, options = {}) {
   if (!href || typeof href !== 'string') return '';
   const trimmed = href.trim();
@@ -334,6 +352,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
     allowedHosts = null,
     providerId = null,
     fetchImpl = globalThis.fetch,
+    signal: externalSignal = null,
     dnsLookupImpl = null,
     skipDnsResolution = false
   } = options;
@@ -349,14 +368,26 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
         const parsedHop = assertSafeScraperUrl(hopUrl, { allowHttp, allowedHosts });
         // Enforce DNS resolution SSRF check at initial request and every redirect hop
         // (unless a custom mock fetchImpl is injected without dnsLookupImpl in offline unit tests)
-        const shouldCheckDns = dnsLookupImpl !== null || (fetchImpl === globalThis.fetch && !skipDnsResolution);
-        if (shouldCheckDns) {
-          await assertSafeResolvedHost(parsedHop.hostname, { dnsLookupImpl, skipDnsResolution });
+        if (fetchImpl === globalThis.fetch && skipDnsResolution) {
+          throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL, 'DNS_VALIDATION_CANNOT_BE_SKIPPED_FOR_NETWORK_FETCH', { url: hopUrl });
         }
+        const shouldCheckDns = dnsLookupImpl !== null || (fetchImpl === globalThis.fetch && !skipDnsResolution);
+        let resolvedAddresses = [];
+        if (shouldCheckDns) {
+          resolvedAddresses = await assertSafeResolvedHost(parsedHop.hostname, { dnsLookupImpl, skipDnsResolution });
+        }
+        if (externalSignal?.aborted) throw externalSignal.reason || new Error('REQUEST_ABORTED');
 
         const releaseSlot = await acquireHostSlot(parsedHop.hostname);
+        const literalHost = parsedHop.hostname.replace(/^\[|\]$/g, '');
+        const dispatcher = fetchImpl === globalThis.fetch && net.isIP(literalHost) === 0
+          ? new Agent({ connect: { lookup: createPinnedDnsLookup(parsedHop.hostname, resolvedAddresses[0]) } })
+          : null;
 
         const controller = new AbortController();
+        const abortFromCaller = () => controller.abort(externalSignal?.reason || new Error('REQUEST_ABORTED'));
+        if (externalSignal?.aborted) abortFromCaller();
+        else externalSignal?.addEventListener('abort', abortFromCaller, { once: true });
         const timer = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
@@ -371,7 +402,8 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             headers: reqHeaders,
             body: redirects > 0 ? undefined : body,
             redirect: 'manual',
-            signal: controller.signal
+            signal: controller.signal,
+            ...(dispatcher ? { dispatcher } : {})
           });
 
           if ([301, 302, 303, 307, 308].includes(res.status)) {
@@ -385,6 +417,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             }
             const nextParsed = new URL(location, hopUrl);
             assertSafeScraperUrl(nextParsed.toString(), { allowHttp, allowedHosts });
+            try { await res.body?.cancel(); } catch {}
             hopUrl = nextParsed.toString();
             redirects += 1;
             continue;
@@ -422,7 +455,9 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           };
         } finally {
           clearTimeout(timer);
-          releaseSlot();
+          externalSignal?.removeEventListener('abort', abortFromCaller);
+          try { if (dispatcher) await dispatcher.close(); }
+          finally { releaseSlot(); }
         }
       }
 

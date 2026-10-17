@@ -35,7 +35,7 @@ assert.equal(PROVIDER_META.code, 'IE');
 assert.deepEqual(PROVIDER_META.domains, ['https://watch.ipauniverse.com']);
 assert.equal(PROVIDER_META.mirrorOf, null);
 assert.equal(PROVIDER_META.capabilities.catalog, true);
-assert.equal(PROVIDER_META.capabilities.search, true);
+assert.equal(PROVIDER_META.capabilities.search, Boolean(process.env.TMDB_API_KEY || process.env.TMDB_V4_TOKEN));
 assert.equal(PROVIDER_META.capabilities.details, true);
 assert.equal(PROVIDER_META.capabilities.episodes, false);
 assert.equal(PROVIDER_META.capabilities.servers, true);

@@ -154,19 +154,20 @@ export function extractShahid4uCardsFromHtml(html = '', baseUrl = PRIMARY_BASE_U
 }
 
 export async function scrapeCatalog(category = 'movies_foreign', page = 1, options = {}) {
+  const baseUrl = options.baseUrl || PRIMARY_BASE_URL;
   const p = Math.max(1, parseInt(page, 10) || 1);
   const subPath = SHAHID4U_CONFIG.categories[category] || SHAHID4U_CONFIG.categories.movies_foreign || '/category/افلام-اجنبي';
-  const url = p > 1 ? `${PRIMARY_BASE_URL}${encodeURI(subPath)}?page=${p}` : `${PRIMARY_BASE_URL}${encodeURI(subPath)}`;
+  const url = p > 1 ? `${baseUrl}${encodeURI(subPath)}?page=${p}` : `${baseUrl}${encodeURI(subPath)}`;
 
   try {
     const { html } = await fetchProviderHtml(url, {
       ...options,
       providerId: PROVIDER_ID,
-      referer: PRIMARY_BASE_URL
+      referer: baseUrl
     });
 
     const isSeriesCat = String(category).toLowerCase().includes('series');
-    const items = extractShahid4uCardsFromHtml(html, PRIMARY_BASE_URL, isSeriesCat ? 'series' : 'movie');
+    const items = extractShahid4uCardsFromHtml(html, baseUrl, isSeriesCat ? 'series' : 'movie');
     if (items.length === 0) {
       return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'No catalog items found', { url });
     }
@@ -179,20 +180,21 @@ export async function scrapeCatalog(category = 'movies_foreign', page = 1, optio
 }
 
 export async function scrapeSearch(query, page = 1, options = {}) {
+  const baseUrl = options.baseUrl || PRIMARY_BASE_URL;
   const q = String(query || '').trim();
   if (!q) {
     return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'Empty search query');
   }
 
-  const searchUrl = `${PRIMARY_BASE_URL}/search?s=${encodeURIComponent(q)}`;
+  const searchUrl = `${baseUrl}/search?s=${encodeURIComponent(q)}`;
   try {
     const { html } = await fetchProviderHtml(searchUrl, {
       ...options,
       providerId: PROVIDER_ID,
-      referer: PRIMARY_BASE_URL
+      referer: baseUrl
     });
 
-    const items = extractShahid4uCardsFromHtml(html, PRIMARY_BASE_URL, 'movie');
+    const items = extractShahid4uCardsFromHtml(html, baseUrl, 'movie');
     if (items.length === 0) {
       return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'No search results found', { url: searchUrl });
     }
@@ -205,7 +207,8 @@ export async function scrapeSearch(query, page = 1, options = {}) {
 }
 
 export async function scrapeDetails(urlOrRef, options = {}) {
-  const targetUrl = resolveShahid4uTargetUrl(urlOrRef, PRIMARY_BASE_URL);
+  const baseUrl = options.baseUrl || PRIMARY_BASE_URL;
+  const targetUrl = resolveShahid4uTargetUrl(urlOrRef, baseUrl);
   if (!targetUrl) {
     throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL, 'Invalid or unsafe Shahid4u URL', { url: urlOrRef });
   }
@@ -214,7 +217,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     const { html } = await fetchProviderHtml(targetUrl, {
       ...options,
       providerId: PROVIDER_ID,
-      referer: PRIMARY_BASE_URL
+      referer: baseUrl
     });
 
     const $ = cheerio.load(html);
@@ -277,7 +280,8 @@ export async function scrapeEpisodes(urlOrRef, options = {}) {
 }
 
 export async function scrapeServers(urlOrRef, options = {}) {
-  const targetUrl = resolveShahid4uTargetUrl(urlOrRef, PRIMARY_BASE_URL);
+  const baseUrl = options.baseUrl || PRIMARY_BASE_URL;
+  const targetUrl = resolveShahid4uTargetUrl(urlOrRef, baseUrl);
   if (!targetUrl) return [];
 
   const watchUrl = targetUrl.includes('/watch/')
@@ -288,7 +292,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
     const { html } = await fetchProviderHtml(watchUrl, {
       ...options,
       providerId: PROVIDER_ID,
-      referer: PRIMARY_BASE_URL
+      referer: baseUrl
     });
 
     const $ = cheerio.load(html);
@@ -365,7 +369,8 @@ export async function scrapeServers(urlOrRef, options = {}) {
 }
 
 export async function resolveStream(urlOrRef, options = {}) {
-  const targetUrl = resolveShahid4uTargetUrl(urlOrRef, PRIMARY_BASE_URL);
+  const baseUrl = options.baseUrl || PRIMARY_BASE_URL;
+  const targetUrl = resolveShahid4uTargetUrl(urlOrRef, baseUrl);
   if (!targetUrl) return null;
 
   if (isValidDirectMediaUrl(targetUrl)) {

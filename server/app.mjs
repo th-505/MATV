@@ -21,7 +21,8 @@ import { createSupabaseCatalogStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
-import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, activateAllScrapersForContent } from "./scrapers/index.mjs";
+import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, searchProviderCatalog, activateAllScrapersForContent } from "./scrapers/index.mjs";
+import { resolveProviderReference } from "./scrapers/registry.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -265,7 +266,30 @@ export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cin
       const data = success.flatMap(result => Array.isArray(result.value)
         ? result.value
         : Array.isArray(result.value?.data) ? result.value.data : []);
-      return { status: 'success', source: 'catalog', data };
+      const sourceNames = ['basri-original', '3isk', 'alooy', 'laroza', 'registered-scrapers'];
+      const sourceDiagnostics = results.map((result, index) => {
+        if (result.status === 'rejected') return { source: sourceNames[index], state: 'failed', error: String(result.reason?.code || result.reason?.message || 'UPSTREAM_FAILED').slice(0, 100) };
+        const payload = result.value;
+        const items = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+        if (index === 4 && payload?._meta?.providerResults) {
+          return {
+            source: sourceNames[index], state: payload._meta.state || 'no_results', item_count: items.length,
+            providers: payload._meta.providerResults.map(({ providerId, state, errorCode, errorMessage, count, elapsedMs }) => ({
+              provider_id: providerId, state, error_code: errorCode,
+              error: errorMessage ? String(errorMessage).replace(/https?:\/\/\S+/g, '[url]').slice(0, 150) : null,
+              result_count: count, elapsed_ms: elapsedMs
+            }))
+          };
+        }
+        return { source: sourceNames[index], state: items.length ? 'success' : 'no_results', item_count: items.length };
+      });
+      const failedSources = sourceDiagnostics.filter((source) => source.state === 'failed' || source.state === 'partial').length;
+      const state = data.length ? (failedSources ? 'partial' : 'success')
+        : sourceDiagnostics.every((source) => source.state === 'failed') ? 'failed' : failedSources ? 'partial' : 'no_results';
+      return {
+        status: 'success', source: 'catalog', data,
+        diagnostics: { state, sources: sourceDiagnostics }
+      };
     },
     async fetchCategory(sourceUrl, page) {
       const larozaId = Object.keys(LAROZA_CATEGORIES).find(key => LAROZA_CATEGORIES[key] === sourceUrl);
@@ -481,7 +505,7 @@ export function assertCatalogReference(ref) {
 }
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
-  catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now,
+  catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now, providerSearch = searchProviderCatalog, providerDetails = scrapeRealDetails,
   catalogLoader=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
@@ -521,7 +545,28 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         return sendJson(req, res, 404, { status: 'error', message: 'NOT_FOUND' });
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
-      if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
+      if (url.pathname === "/api/v1/search") {
+        if (req.method !== 'GET') return sendJson(req, res, 405, { status: 'error', message: 'METHOD_NOT_ALLOWED' });
+        const query = (url.searchParams.get("q") || "").trim();
+        const provider = (url.searchParams.get('provider') || '').trim();
+        if (provider) {
+          const result = await providerSearch(provider, query);
+          const statusCode = result.status === 'unsupported' ? 422
+            : result.error?.code === 'INVALID_QUERY' ? 400
+            : result.status === 'error' ? 503 : 200;
+          return sendJson(req, res, statusCode, {
+            status: result.status || 'success',
+            version: runtimeService.version || '1.0.44', kind: 'search', source: result.provider_id || provider,
+            cached: false, health: result.diagnostics || null, provider_id: result.provider_id || provider,
+            error: result.error || null, data: result.data || []
+          });
+        }
+        const result = await runtimeService.search(query);
+        if (result.diagnostics?.state === 'failed') {
+          return sendJson(req, res, 503, { ...result, status: 'error', error: { code: 'CATALOG_SEARCH_UNAVAILABLE' } });
+        }
+        return sendJson(req, res, 200, result);
+      }
       if (url.pathname === "/api/v1/resolve") {
         const ref = (url.searchParams.get("ref") || url.searchParams.get("id") || "").trim();
         const title = (url.searchParams.get("title") || "").trim();
@@ -531,15 +576,15 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
 
         if (ref && !ref.startsWith("tmdb:")) {
           try {
-            const isScraperRef = /^(mycima|akwam|cimanow|egydead|arabseed|shahid4u|shii4u|moviztime|moviz|3cktv|3ck|anime4up|witanime|ristoanime|qfilm|ipauniverse|mewsry):/.test(ref);
-            const details = isScraperRef
-              ? await scrapeRealDetails(ref)
-              : ref.startsWith("laroza:")
+            const registeredProvider = resolveProviderReference(ref);
+            const details = ref.startsWith("laroza:")
               ? await larozaRuntime.details(ref, {})
               : ref.startsWith("alooy:")
               ? await alooyRuntime.details(ref, {})
               : ref.startsWith("3isk:")
               ? await iskRuntime.details(ref, {})
+              : registeredProvider
+              ? await providerDetails(ref)
               : await cinemaDetails(ref);
             const sources = details?.media_sources || details?.servers || [];
             for (const s of sources) {
@@ -684,7 +729,9 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           ? await alooyRuntime.details(ref, { refresh:url.searchParams.get('refresh') === '1' })
           : ref.startsWith('3isk:')
             ? await iskRuntime.details(ref, { refresh:url.searchParams.get('refresh') === '1' })
-            : await cinemaDetails(ref);
+            : resolveProviderReference(ref)
+              ? await providerDetails(ref)
+              : await cinemaDetails(ref);
         return sendJson(req,res,200,publicDetails(data, url.searchParams.get('platform') === 'web'));
       }
       return sendJson(req, res, 404, { error: "NOT_FOUND" });

@@ -6,8 +6,6 @@ const MAX_CACHE_ENTRY_BYTES = 512 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
 const pendingRequests = new Map();
 
-const DEFAULT_V3_A = ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('');
-const DEFAULT_V3_B = ['9aa9620e', '381a7159', '82a765f9', 'e9f57d42'].join('');
 let keyIndex = 0;
 
 export function getUserTmdbKey() {
@@ -20,11 +18,7 @@ export function getUserTmdbKey() {
 
 function getEffectiveBrowserKeys() {
   const userKey = getUserTmdbKey();
-  if (userKey) return [userKey];
-  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    return [DEFAULT_V3_A, DEFAULT_V3_B];
-  }
-  return [];
+  return userKey ? [userKey] : [];
 }
 
 function pruneCache(now = Date.now()) {

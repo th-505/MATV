@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import {
   assertSafeScraperUrl,
   assertSafeResolvedHost,
+  createPinnedDnsLookup,
   fetchSafeResponse,
   isUnsafeHostname,
   isUnsafeIpAddress
@@ -110,6 +111,17 @@ async function runTests() {
     dnsLookupImpl: async () => [{ address: '93.184.216.34', family: 4 }]
   });
   assert.deepEqual(validResolved, ['93.184.216.34']);
+  const pinnedLookup = createPinnedDnsLookup('public.example.com', validResolved[0]);
+  const pinnedResult = await new Promise((resolve, reject) => pinnedLookup('public.example.com', {}, (error, address, family) => {
+    if (error) reject(error); else resolve({ address, family });
+  }));
+  assert.deepEqual(pinnedResult, { address: '93.184.216.34', family: 4 });
+  await new Promise((resolve) => pinnedLookup('public.example.com', { all: true }, (error, records) => {
+    assert.ifError(error);
+    assert.deepEqual(records, [{ address: '93.184.216.34', family: 4 }]);
+    resolve();
+  }));
+  assert.throws(() => createPinnedDnsLookup('public.example.com', '127.0.0.1'), (error) => error.code === 'UNSAFE_URL');
 
   // 5. Redirect Chain Validation (blocking redirect hop to private IPv6 OR redirect hop to DNS-rebound domain)
   await assert.rejects(

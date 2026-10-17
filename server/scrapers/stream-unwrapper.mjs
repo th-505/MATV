@@ -3,6 +3,23 @@
 // يسأل المشغل تلو المشغل حتى يجد رابط الفيديو الفعلي (.m3u8 / .mp4) الخالي من الإعلانات ومنع أطر الـ iframe نهائياً
 import * as cheerio from 'cheerio';
 import { generateAntiBanHeaders } from './anti-ban.mjs';
+import { assertSafeScraperUrl, fetchSafeResponse } from './shared/http.mjs';
+
+async function fetch(url, init = {}) {
+  const headers = init.headers || {};
+  const referer = headers.Referer || headers.referer || '';
+  const response = await fetchSafeResponse(String(url), {
+    method: init.method || 'GET',
+    headers,
+    referer,
+    timeoutMs: 6_000,
+    maxRedirects: 5,
+    maxRetries: 0,
+    allowHttp: false,
+    signal: init.signal
+  });
+  return { ...response, text: async () => response.html };
+}
 
 const STREAM_REGEX_LIST = [
   /["'](https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?)["']/gi,
@@ -73,6 +90,7 @@ export function unwrapBase64BridgeUrl(rawUrl = '') {
 // 3. التحقق من أن الرابط هو تدفق فيديو حقيقي (.m3u8 أو .mp4) وليس ملف أصول أو إعلانات
 export function isValidDirectMediaUrl(url = '') {
   if (!url || typeof url !== 'string' || !url.startsWith('http')) return false;
+  try { assertSafeScraperUrl(url); } catch { return false; }
   const lower = url.toLowerCase();
   if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.gif') || lower.endsWith('.svg') || lower.endsWith('.js') || lower.endsWith('.css') || lower.endsWith('.vtt')) {
     return false;
