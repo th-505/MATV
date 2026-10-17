@@ -51,3 +51,17 @@ These requests used the running Node application routes, not direct calls to pro
 - **Unsupported capability:** the source does not expose that operation (for example, episodes for a live match). This is not a network failure.
 - **Configuration blocker:** a required optional integration value, such as a TMDb API key, is not configured.
 - **Embed-only / unverified:** an embed URL was returned; this is neither a direct media resource nor proof of playback.
+
+## Targeted live reruns after provider fixes (2026-10-17 15:33 UTC)
+
+Only CimaNow, MovizTime, RistoAnime, Laroza, and ArabSeed were rechecked because their resolver/source behavior changed. Shahid4U and inactive YallaShoot were intentionally not probed again.
+
+| Provider | Time (UTC) | Host(s) | Journey / final probe | Classification | Last verified stage |
+|---|---|---|---|---|---|
+| CimaNow | 15:28 | `cimanow.me` | Catalog/search/details/episodes/servers/resolve for “Masterplan 2026” | TypeError fixed; content API stages live; embed unverified | Resolve returned an embed, no direct resource/playback proof. |
+| MovizTime | 15:31 | `moviz-time.quest`, `vidhls.com` | Catalog/search/details/servers/resolve for “Norm: The Tale of Norm MacDonald 2026”; prior HEAD on candidate was HTTP 200 `text/html` | HTML candidate rejected as direct media; resolver safely returns embed | Resolve returned `EMBED_UNVERIFIED`. |
+| RistoAnime | 15:25 | `ristoanime.me`, `vidmoly.net`, `prx-1562-ant-o.vmpx.online` | Catalog/search/details/episodes/servers/resolve; attempted manifest GET and first segment only if manifest valid | Parser extracted tokenized HLS candidate; external fetch failed before manifest validation | `.m3u8` candidate only; manifest and segment unverified due fetch failure. |
+| Laroza | 15:20 | `matv-edge-resolver.dada1000100.workers.dev`; direct origins `larooza.beer`, `q.laroza.cfd`, `laroza.net` | Live catalog and search → real series ref “Tulsa King مترجم” → details/episodes → server list → resolver | Edge-backed detail journey succeeded; direct origins had ECONNREFUSED/ENOTFOUND; server candidates were embeds | Title plus 2 episodes and 4 server candidates; resolver embed unverified. Edge `/health` through the shared safe HTTP client returned HTTP 200. |
+| ArabSeed | 15:29 | `www.arabseed.wine` and configured fallbacks | Live catalog probe | Account suspension identified from response body/URL; classified `SOURCE_UNAVAILABLE`, not parser-empty | No usable content stage; account suspended. |
+
+Resource checks distinguish player URLs from direct media. RistoAnime did not yield a fetched manifest/segment. CimaNow, MovizTime, and Laroza yielded no verified in-app playback. The QFilm bounded-resolver behavior is fixture-verified only in this rerun.
