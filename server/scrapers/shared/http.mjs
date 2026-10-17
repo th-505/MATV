@@ -354,6 +354,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
     providerId = null,
     fetchImpl = globalThis.fetch,
     signal: externalSignal = null,
+    onBeforeRequest = null,
     dnsLookupImpl = null,
     skipDnsResolution = false
   } = options;
@@ -402,6 +403,15 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             ...customHeaders
           };
           if (cookies) reqHeaders['Cookie'] = cookies;
+
+          if (typeof onBeforeRequest === 'function') {
+            const allowed = await onBeforeRequest({ url: hopUrl, redirect: redirects, attempt });
+            if (allowed === false) {
+              throw new ScraperError(SCRAPER_ERROR_CODES.NETWORK_TIMEOUT, 'REQUEST_BUDGET_EXCEEDED', {
+                providerId, url: hopUrl
+              });
+            }
+          }
 
           const res = await fetchImpl(hopUrl, {
             method: redirects > 0 && method === 'POST' ? 'GET' : method,

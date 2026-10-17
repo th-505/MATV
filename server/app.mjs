@@ -740,7 +740,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         });
 
         // 3. إذا لم نجد روابط مباشرة نقية، نقوم بفكها عميقاً عبر stream-unwrapper
-        if (cleanServers.length === 0 && rawServers.length > 0) {
+        const isQFilmReference = /^(?:qfilm|qm):/i.test(ref);
+        if (cleanServers.length === 0 && rawServers.length > 0 && !isQFilmReference) {
           for (const srv of rawServers) {
             try {
               const unwrapped = await unwrapEmbedToDirectStreams(srv.url, srv.url);

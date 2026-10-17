@@ -80,6 +80,23 @@ export const QFILM_CONFIG = Object.freeze({
   })
 });
 
+const SOCIAL_OR_SHARE_HOSTS = new Set([
+  'facebook.com', 'www.facebook.com', 'fb.watch', 'twitter.com', 'www.twitter.com',
+  'x.com', 'www.x.com', 'instagram.com', 'www.instagram.com', 'pinterest.com',
+  'www.pinterest.com', 'reddit.com', 'www.reddit.com', 't.me', 'telegram.me'
+]);
+function isSocialOrShareUrl(raw = '') {
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    const socialHost = [...SOCIAL_OR_SHARE_HOSTS].some((domain) => {
+      const cleanDomain = domain.replace(/^www\./, '');
+      return host === cleanDomain || host.endsWith(`.${cleanDomain}`);
+    });
+    return socialHost || /(?:^|\/)share(?:\/|$)|intent\/|\/sharer\b/i.test(url.pathname);
+  } catch { return true; }
+}
+
 /**
  * Decodes a provider reference (`qfilm:...`, `qm:...`, base64url, or relative URL)
  * into a safe absolute URL on or referenced by QFilm.
@@ -282,12 +299,12 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
   $('meta[name="twitter:player"], meta[property="og:video"], meta[property="og:video:url"]').each((_, el) => {
     const raw = $(el).attr('content') || '';
     const resolved = resolveSafeUrl(raw, pageUrl, { allowHttp: true });
-    if (resolved && !seenUrls.has(resolved)) candidateEmbedUrls.push(resolved);
+    if (resolved && !seenUrls.has(resolved) && !isSocialOrShareUrl(resolved) && !candidateEmbedUrls.includes(resolved)) candidateEmbedUrls.push(resolved);
   });
   for (const match of String(html).matchAll(/<iframe\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/gi)) {
     const raw = match[2].replace(/&amp;/g, '&');
     const resolved = resolveSafeUrl(raw, pageUrl, { allowHttp: true });
-    if (resolved && !seenUrls.has(resolved) && !candidateEmbedUrls.includes(resolved)) candidateEmbedUrls.push(resolved);
+    if (resolved && !seenUrls.has(resolved) && !isSocialOrShareUrl(resolved) && !candidateEmbedUrls.includes(resolved)) candidateEmbedUrls.push(resolved);
   }
   const streamElementsSelector =
     'video source, video[src], source[src], [data-stream], [data-url], [data-embed], iframe[src], ul.servers-list li, .watch-servers li, a[href*=".mp4"], a[href*=".m3u8"]';
@@ -303,7 +320,7 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
       '';
 
     const resolved = resolveSafeUrl(rawAttr, pageUrl, { allowHttp: true });
-    if (!resolved || seenUrls.has(resolved)) return;
+    if (!resolved || seenUrls.has(resolved) || isSocialOrShareUrl(resolved)) return;
 
     const lower = resolved.toLowerCase();
     // Filter out obvious trackers / ads / assets
@@ -340,7 +357,7 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
   // 3. Optional unwrapping of candidate embed URLs when explicitly requested
   if (options.unwrap === true && candidateEmbedUrls.length > 0) {
     const unwrappedGroups = await Promise.all(
-      candidateEmbedUrls.slice(0, 5).map((u) => unwrapEmbedToDirectStreams(u, pageUrl).catch(() => []))
+      candidateEmbedUrls.slice(0, 1).map((u) => unwrapEmbedToDirectStreams(u, pageUrl, { maxRequests: 6, maxDurationMs: 9000 }).catch(() => []))
     );
     for (const grp of unwrappedGroups) {
       for (const s of grp) {

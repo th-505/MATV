@@ -98,6 +98,13 @@ assert.equal(activeThemeWatch.length, 1, 'embedded player metadata must yield a 
 assert.equal(activeThemeWatch[0].url, 'https://a.qfilm.tv/embed.php?vid=8cb07e4b1');
 assert.equal(activeThemeWatch[0].type, 'embed');
 assert.equal(activeThemeWatch[0].verified, false);
+const socialLinksWatch = await scrapeServers('https://a.qfilm.tv/watch.php?vid=8cb07e4b1', {
+  fixtureHtml: '<html><head><meta name="twitter:player" content="https://a.qfilm.tv/embed.php?vid=8cb07e4b1"></head><body><iframe src="https://m.facebook.com/plugins/video.php?id=42"></iframe><a href="https://x.com/intent/post?url=watch">share</a><iframe src="https://www.instagram.com/reel/embed"></iframe></body></html>'
+});
+assert.equal(socialLinksWatch.length, 1, 'social/share dependencies must not be treated as player servers');
+assert.equal(socialLinksWatch[0].url, 'https://a.qfilm.tv/embed.php?vid=8cb07e4b1');
+assert.equal(socialLinksWatch[0].type, 'embed');
+assert.equal(socialLinksWatch[0].verified, false);
 
 const item3 = catalog[2];
 assert.ok(item3.title.includes('Breaking Bad'));

@@ -682,12 +682,19 @@ function extractServersFromRistoDoc($, pageUrl = RISTOANIME_CONFIG.baseUrl) {
       .replace(/\s+/g, ' ')
       .trim();
     const name = cleanLabel && hostLabel ? `${cleanLabel} (${hostLabel})` : cleanLabel || hostLabel || 'RistoAnime Server';
+    const pathname = (() => { try { return new URL(resolved).pathname.toLowerCase(); } catch { return ''; } })();
+    const streamType = extra.type || extra.streamType ||
+      (/\.m3u8$/i.test(pathname) || /\/hls(?:2)?\//i.test(pathname) || /master\.txt$/i.test(pathname)
+        ? 'm3u8'
+        : /\.mp4$/i.test(pathname) ? 'mp4' : 'embed');
 
     rawServers.push({
       url: resolved,
       name,
       label: cleanLabel || hostLabel || 'Server',
       quality: extra.quality || '1080p',
+      type: streamType,
+      streamType,
       source: PROVIDER_META.id,
       headers: {
         Referer: pageUrl
@@ -953,7 +960,9 @@ export async function resolveStream(urlOrRef, options = {}) {
         streamType: primary.streamType || 'm3u8',
         type: primary.streamType || 'm3u8',
         quality: primary.quality || 'AUTO-HLS',
-        verified: true,
+        // Parser extraction is not a resource or playback verification.
+        verified: false,
+        extracted: true,
         source: PROVIDER_META.id,
         headers: primary.headers || {},
         streams: resolvedDirect

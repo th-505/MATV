@@ -20,6 +20,7 @@ import {
   WATCH_HTML
 } from '../fixtures/providers/ristoanime.fixture.mjs';
 import { SCRAPER_ERROR_CODES } from '../../server/scrapers/shared/errors.mjs';
+import { extractVidmolyStreamsFromHtml, extractChildPlayerCandidates } from '../../server/scrapers/stream-unwrapper.mjs';
 
 console.log('=== Starting RistoAnime Fixture Test Suite ===');
 
@@ -83,6 +84,14 @@ const servers = await scrapeServers(FIXTURE_META.urls.watch, {
 });
 assert.ok(Array.isArray(servers));
 assert.ok(servers.length > 0);
+const mp4UploadCandidate = servers.find((server) => new URL(server.url).hostname.includes('mp4upload'));
+assert.equal(mp4UploadCandidate?.type, 'embed', 'mp4upload domain text does not make its HTML embed a direct MP4');
+const vidmolyJson = extractVidmolyStreamsFromHtml('<script>var player={"file":"https:\\/\\/cdn.example.net\\/hls\\/master.m3u8?token=a\\u0026x=1"};</script>', 'https://vidmoly.org/embed-x.html');
+assert.equal(vidmolyJson.length, 1, 'VidMoly JSON/escaped slash source should be extracted');
+assert.equal(vidmolyJson[0].url, 'https://cdn.example.net/hls/master.m3u8?token=a&x=1');
+assert.equal(vidmolyJson[0].headers.Referer, 'https://vidmoly.to/');
+const playerChildren = extractChildPlayerCandidates('<iframe src="https://www.facebook.com/plugins/video.php?id=1"></iframe><a href="https://x.com/intent/post">share</a><iframe src="https://vidmoly.org/embed-good.html"></iframe>', 'https://example.test/watch');
+assert.deepEqual(playerChildren, ['https://vidmoly.org/embed-good.html'], 'social/share dependencies must never be followed');
 
 // 8. Stream resolution
 console.log('8. Testing Stream Resolution...');
@@ -90,7 +99,7 @@ const resolved = await resolveStream('https://vidmoly.org/embed-bq9rmr4qfeoy.htm
 assert.ok(resolved);
 assert.ok(resolved.type === 'm3u8' || resolved.type === 'embed');
 if (resolved.type === 'm3u8') {
-  assert.equal(resolved.verified, true);
+  assert.equal(resolved.verified, false, 'an extracted playlist URL is not a verified manifest or playback resource');
 }
 
 console.log('=== All RistoAnime Fixture Tests Passed Successfully! ===');
