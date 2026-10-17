@@ -1,0 +1,4106 @@
+{
+  "started_at": "2026-10-17T15:51:56.428Z",
+  "seed": 505,
+  "latest_count": 3,
+  "random_count": 1,
+  "pacing_ms": 1200,
+  "request_timeout_ms": 12000,
+  "application_base": "in-process HTTP server",
+  "providers": [
+    {
+      "provider": "mycima",
+      "name": "ماي سيما (MyCima / WeCima)",
+      "domains": [
+        "https://mycima.gripe",
+        "https://wecima.show",
+        "https://mywecima.casa",
+        "https://wecima.tube",
+        "https://mycimanew.live"
+      ],
+      "started_at": "2026-10-17T15:51:56.430Z",
+      "samples": [],
+      "result": "access_obstacle",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:51:56.430Z",
+        "ended_at": "2026-10-17T15:52:08.433Z",
+        "result": "access_obstacle",
+        "http_status": null,
+        "source_url": "https://mycima.gripe",
+        "items_found": 0,
+        "error": "The operation was aborted due to timeout"
+      },
+      "ended_at": "2026-10-17T15:52:08.433Z"
+    },
+    {
+      "provider": "akwam",
+      "name": "أكوام (Akwam)",
+      "domains": [
+        "https://akwam.ss",
+        "https://ak.sv"
+      ],
+      "started_at": "2026-10-17T15:52:08.433Z",
+      "samples": [
+        {
+          "provider": "akwam",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTU0Mi8lRDglQUElRDglQTclRDglQUYtJUQ5JTg4JUQ4JUE3JUQ5JTg0JUQ5JTg1JUQ4JUI1JUQ4JUE4JUQ4JUE3JUQ4JUFELSVEOCVBNyVEOSU4NCVEOCVCMyVEOCVBRCVEOCVCMSVEOSU4QS0lRDklODUlRDglQUYlRDglQTglRDklODQlRDglQUM",
+          "title": "تاد والمصباح السحري مدبلج",
+          "poster": "https://img.downet.net/thumb/178x260/uploads/HI6AJ.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:52:12.006Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:52:12.036Z",
+              "ended_at": "2026-10-17T15:52:18.611Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "تاد والمصباح السحري",
+              "candidate_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTU0Mi8lRDglQUElRDglQTclRDglQUYtJUQ5JTg4JUQ4JUE3JUQ5JTg0JUQ5JTg1JUQ4JUI1JUQ4JUE4JUQ4JUE3JUQ4JUFELSVEOCVBNyVEOSU4NCVEOCVCMyVEOCVBRCVEOCVCMSVEOSU4QS0lRDklODUlRDglQUYlRDglQTglRDklODQlRDglQUM",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:52:18.611Z",
+              "ended_at": "2026-10-17T15:52:21.527Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "تاد والمصباح السحري مدبلج",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTU0Mi8lRDglQUElRDglQTclRDglQUYtJUQ5JTg4JUQ4JUE3JUQ5JTg0JUQ5JTg1JUQ4JUI1JUQ4JUE4JUQ4JUE3JUQ4JUFELSVEOCVBNyVEOSU4NCVEOCVCMyVEOCVBRCVEOCVCMSVEOSU4QS0lRDklODUlRDglQUYlRDglQTglRDklODQlRDglQUM",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:52:21.527Z",
+                "ended_at": "2026-10-17T15:52:29.135Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:52:29.135Z",
+                  "ended_at": "2026-10-17T15:52:29.256Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s201d1.downet.net/download/1792338748/6ad399bc61e9d/Tad.and.The.Magic.Lamp.Tadeo.Jones.y.La.Lampara.Maravillosa.2026.Arabic.mp4"
+                },
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:52:29.256Z",
+                  "ended_at": "2026-10-17T15:52:30.425Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s201d1.downet.net/download/1792338748/6ad399bceed28/Tad.and.The.Magic.Lamp.Tadeo.Jones.y.La.Lampara.Maravillosa.2026.Arabic.mp4"
+                }
+              ],
+              "result": "access_obstacle"
+            }
+          ],
+          "work_reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTU0Mi8lRDglQUElRDglQTclRDglQUYtJUQ5JTg4JUQ4JUE3JUQ5JTg0JUQ5JTg1JUQ4JUI1JUQ4JUE4JUQ4JUE3JUQ4JUFELSVEOCVBNyVEOSU4NCVEOCVCMyVEOCVBRCVEOCVCMSVEOSU4QS0lRDklODUlRDglQUYlRDglQTglRDklODQlRDglQUM",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:52:30.425Z"
+        },
+        {
+          "provider": "akwam",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOS93dXRoZXJpbmctaGVpZ2h0cy10aGUtaG91c2Utb2YtdGhlLWRhbW5lZA",
+          "title": "Wuthering Heights: The House of the Damned",
+          "poster": "https://img.downet.net/thumb/178x260/uploads/l924I.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:52:30.425Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:52:31.536Z",
+              "ended_at": "2026-10-17T15:52:32.043Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Wuthering Heights: The House of the Damned",
+              "candidate_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOS93dXRoZXJpbmctaGVpZ2h0cy10aGUtaG91c2Utb2YtdGhlLWRhbW5lZA",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:52:32.736Z",
+              "ended_at": "2026-10-17T15:52:34.497Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Wuthering Heights: The House of the Damned",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOS93dXRoZXJpbmctaGVpZ2h0cy10aGUtaG91c2Utb2YtdGhlLWRhbW5lZA",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:52:34.497Z",
+                "ended_at": "2026-10-17T15:52:37.264Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:52:37.264Z",
+                  "ended_at": "2026-10-17T15:52:37.373Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s203d1.downet.net/download/1792338756/6ad399c46b0ee/Wuthering.Heights.The.House.of.the.Damned.2026.WEB-DL.mp4"
+                },
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:52:37.373Z",
+                  "ended_at": "2026-10-17T15:52:38.557Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s203d1.downet.net/download/1792338757/6ad399c50f765/Wuthering.Heights.The.House.of.the.Damned.2026.WEB-DL.mp4"
+                }
+              ],
+              "result": "access_obstacle"
+            }
+          ],
+          "work_reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOS93dXRoZXJpbmctaGVpZ2h0cy10aGUtaG91c2Utb2YtdGhlLWRhbW5lZA",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:52:38.557Z"
+        },
+        {
+          "provider": "akwam",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOC90aGUtY3VyZQ",
+          "title": "The Cure",
+          "poster": "https://img.downet.net/thumb/178x260/uploads/ovSFL.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:52:38.557Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:52:39.665Z",
+              "ended_at": "2026-10-17T15:52:40.279Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "The Cure",
+              "candidate_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOC90aGUtY3VyZQ",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:52:40.865Z",
+              "ended_at": "2026-10-17T15:52:44.975Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "The Cure",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOC90aGUtY3VyZQ",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:52:44.975Z",
+                "ended_at": "2026-10-17T15:52:48.580Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 6,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:52:48.580Z",
+                  "ended_at": "2026-10-17T15:52:48.647Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s202d1.downet.net/download/1792338766/6ad399ce43b8f/The.Cure.2026.720.mp4.mp4"
+                },
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:52:48.647Z",
+                  "ended_at": "2026-10-17T15:52:49.830Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s201d1.downet.net/download/1792338766/6ad399ce0488d/The.Cure.2026.480.mp4"
+                }
+              ],
+              "result": "access_obstacle"
+            }
+          ],
+          "work_reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUzOC90aGUtY3VyZQ",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:52:49.830Z"
+        },
+        {
+          "provider": "akwam",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUwMi9hbmltYWxz",
+          "title": "Animals",
+          "poster": "https://img.downet.net/thumb/178x260/uploads/AQomy.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:52:49.830Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:52:50.981Z",
+              "ended_at": "2026-10-17T15:52:51.398Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Animals",
+              "candidate_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUwMi9hbmltYWxz",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:52:52.182Z",
+              "ended_at": "2026-10-17T15:52:56.590Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Animals",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUwMi9hbmltYWxz",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:52:56.590Z",
+                "ended_at": "2026-10-17T15:53:03.882Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 6,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:53:03.882Z",
+                  "ended_at": "2026-10-17T15:53:03.882Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://s202d1.downet.net/download/1792338777/6ad399d9db7bb/Animals.2026.HD-720.mkv"
+                },
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:53:03.882Z",
+                  "ended_at": "2026-10-17T15:53:03.882Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://s202d1.downet.net/download/1792338777/6ad399d99c3ea/Animals.2026.HD-360.mkv"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS8xMTUwMi9hbmltYWxz",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:53:03.882Z"
+        },
+        {
+          "provider": "akwam",
+          "selected_by": "type_completion",
+          "catalog_category": "series",
+          "page": 1,
+          "seed": null,
+          "reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9zZXJpZXMvNTgyOS8lRDglQjclRDglQTclRDklODQlRDglQjktJUQ5JTg2JUQ4JUE3JUQ4JUIyJUQ5JTg0",
+          "title": "طالع نازل",
+          "poster": "https://img.downet.net/thumb/178x260/uploads/2JGw9.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:53:03.882Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:03.882Z",
+              "ended_at": "2026-10-17T15:53:04.269Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "طالع نازل",
+              "candidate_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9zZXJpZXMvNTgyOS8lRDglQjclRDglQTclRDklODQlRDglQjktJUQ5JTg2JUQ4JUE3JUQ4JUIyJUQ5JTg0",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:53:05.083Z",
+              "ended_at": "2026-10-17T15:53:05.658Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "طالع نازل",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:53:06.284Z",
+              "ended_at": "2026-10-17T15:53:06.570Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 4,
+              "ordered_numbers": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "error": null
+            },
+            {
+              "episode": "حلقة 1 : مسلسل طالع نازل 1",
+              "episode_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9lcGlzb2RlLzEwMzI3NS8lRDglQjclRDglQTclRDklODQlRDglQjktJUQ5JTg2JUQ4JUE3JUQ4JUIyJUQ5JTg0LyVEOCVBNyVEOSU4NCVEOCVBRCVEOSU4NCVEOSU4MiVEOCVBOS0x",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:53:07.485Z",
+                "ended_at": "2026-10-17T15:53:09.234Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:53:09.234Z",
+                  "ended_at": "2026-10-17T15:53:09.271Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s201d1.downet.net/download/1792338788/6ad399e47747c/Tale.Nazel.El.Hob.Elli.Kan.S01E01.mp4"
+                },
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:53:09.271Z",
+                  "ended_at": "2026-10-17T15:53:10.473Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s201d1.downet.net/download/1792338789/6ad399e5133a6/Tale.Nazel.El.Hob.Elli.Kan.S01E01.mp4"
+                }
+              ],
+              "result": "access_obstacle"
+            },
+            {
+              "episode": "حلقة 4 : مسلسل طالع نازل 4",
+              "episode_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9lcGlzb2RlLzEwMzcxOS8lRDglQjclRDglQTclRDklODQlRDglQjktJUQ5JTg2JUQ4JUE3JUQ4JUIyJUQ5JTg0LyVEOCVBNyVEOSU4NCVEOCVBRCVEOSU4NCVEOSU4MiVEOCVBOS00",
+              "episode_number": 4,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:53:11.635Z",
+                "ended_at": "2026-10-17T15:53:13.589Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:53:13.589Z",
+                  "ended_at": "2026-10-17T15:53:13.596Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s202d1.downet.net/download/1792338792/6ad399e8aae51/Tale.Nazel.El.Hob.Elli.Kan.S01E04.mp4"
+                },
+                {
+                  "server": "akwam",
+                  "server_type": "mp4",
+                  "started_at": "2026-10-17T15:53:13.596Z",
+                  "ended_at": "2026-10-17T15:53:14.798Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://s202d1.downet.net/download/1792338793/6ad399e966ed1/Tale.Nazel.El.Hob.Elli.Kan.S01E04.mp4"
+                }
+              ],
+              "result": "access_obstacle"
+            }
+          ],
+          "work_reference": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9zZXJpZXMvNTgyOS8lRDglQjclRDglQTclRDklODQlRDglQjktJUQ5JTg2JUQ4JUE3JUQ4JUIyJUQ5JTg0",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:53:14.799Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:52:08.433Z",
+        "ended_at": "2026-10-17T15:52:09.142Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://akwam.ss/movies",
+        "items_found": 30,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:52:09.633Z",
+        "ended_at": "2026-10-17T15:52:10.836Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 30,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:52:10.836Z",
+        "ended_at": "2026-10-17T15:52:12.006Z",
+        "result": "success",
+        "category": "series",
+        "http_status": 200,
+        "selected_ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9zZXJpZXMvNTgyOS8lRDglQjclRDglQTclRDklODQlRDglQjktJUQ5JTg2JUQ4JUE3JUQ4JUIyJUQ5JTg0",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:53:14.799Z",
+      "result_counts": {
+        "access_obstacle": 4,
+        "scraper_error": 1
+      }
+    },
+    {
+      "provider": "cimanow",
+      "name": "سيما ناو (CimaNow)",
+      "domains": [
+        "https://cimanow.me",
+        "https://cimanow.name",
+        "https://vip.cimanowinc.com",
+        "https://cimanow.cc",
+        "https://cimanow.net",
+        "https://cimanow.cam"
+      ],
+      "started_at": "2026-10-17T15:53:14.799Z",
+      "samples": [
+        {
+          "provider": "cimanow",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LW1hc3RlcnBsYW4tMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODU",
+          "title": "فيلم Masterplan 2026 مترجم",
+          "poster": "https://cimanow.me/photos/shares/imdb/tt38672588.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:53:19.061Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:19.887Z",
+              "ended_at": "2026-10-17T15:53:20.991Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Masterplan 2026",
+              "candidate_ref": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LW1hc3RlcnBsYW4tMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODU",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:53:21.086Z",
+              "ended_at": "2026-10-17T15:53:23.806Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "فيلم Masterplan 2026 مترجم",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LW1hc3RlcnBsYW4tMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODU",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:53:23.806Z",
+                "ended_at": "2026-10-17T15:53:35.808Z",
+                "result": "access_obstacle",
+                "http_status": null,
+                "server_count": 0,
+                "error": "The operation was aborted due to timeout"
+              },
+              "media_checks": [],
+              "result": "scraper_error"
+            }
+          ],
+          "work_reference": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LW1hc3RlcnBsYW4tMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODU",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:53:35.808Z"
+        },
+        {
+          "provider": "cimanow",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LXRoZXJhcHktZG9uZS1yaWdodC0yMDI2LSVEOSU4NSVEOCVBQSVEOCVCMSVEOCVBQyVEOSU4NS0lRDglQTclRDklODglRDklODYtJUQ5JTg0JUQ4JUE3JUQ5JThBJUQ5JTg2",
+          "title": "فيلم Therapy Done Right 2026 مترجم اون لاين",
+          "poster": "https://cimanow.me/photos/shares/imdb/tt37027309.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:53:35.808Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:35.808Z",
+              "ended_at": "2026-10-17T15:53:38.523Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Therapy Done Right 2026 مترجم",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:53:38.523Z"
+        },
+        {
+          "provider": "cimanow",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LXNlcmlvdXNseS1zaW5nbGUtdG9vLTIwMjYtJUQ5JTg1JUQ4JUFBJUQ4JUIxJUQ4JUFDJUQ5JTg1LSVEOCVBNyVEOSU4OCVEOSU4Ni0lRDklODQlRDglQTclRDklOEElRDklODY",
+          "title": "فيلم Seriously Single Too 2026 مترجم اون لاين",
+          "poster": "https://cimanow.me/photos/shares/imdb/tt45858039.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:53:38.523Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:38.523Z",
+              "ended_at": "2026-10-17T15:53:40.142Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Seriously Single Too 2026 مترجم",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:53:40.142Z"
+        },
+        {
+          "provider": "cimanow",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2ZpbG0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LXdpdGhvdXQtYmxvb2QtMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODUtJUQ4JUE3JUQ5JTg4JUQ5JTg2LSVEOSU4NCVEOCVBNyVEOSU4QSVEOSU4Ng",
+          "title": "فيلم Without Blood 2026 مترجم اون لاين",
+          "poster": "https://cimanow.me/photos/uploads/1789931780_5a8428e8_MV5BMmUyZWY1OWUtNDBkZi00NGM3LThkZDEtNDVkMmZjYzA4ZTk3XkEyXkFqcGc-_V1_-439x650.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:53:40.142Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:40.142Z",
+              "ended_at": "2026-10-17T15:53:41.705Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Without Blood 2026 مترجم",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:53:41.705Z"
+        },
+        {
+          "provider": "cimanow",
+          "selected_by": "type_completion",
+          "catalog_category": "series",
+          "page": 1,
+          "seed": null,
+          "reference": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2VwaXNvZGUvJUQ5JTg1JUQ4JUIzJUQ5JTg0JUQ4JUIzJUQ5JTg0LXdhci0lRDglQTclRDklODQlRDklODUlRDklODglRDglQjMlRDklODUtJUQ4JUE3JUQ5JTg0JUQ4JUE3JUQ5JTg4JUQ5JTg0LSVEOCVBNyVEOSU4NCVEOCVBRCVEOSU4NCVEOSU4MiVEOCVBOS0zLSVEOSU4NSVEOCVBQSVEOCVCMSVEOCVBQyVEOSU4NSVEOCVBOQ",
+          "title": "مسلسل War الموسم الاول الحلقة 3 مترجمة",
+          "poster": "https://cimanow.me/photos/uploads/1790981065_e0b4be85_War.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:53:41.705Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:41.705Z",
+              "ended_at": "2026-10-17T15:53:43.652Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "War الموسم الاول",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:53:43.652Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:53:15.991Z",
+        "ended_at": "2026-10-17T15:53:16.979Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://cimanow.me/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "items_found": 50,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:53:17.192Z",
+        "ended_at": "2026-10-17T15:53:18.686Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 50,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:53:18.686Z",
+        "ended_at": "2026-10-17T15:53:19.061Z",
+        "result": "success",
+        "category": "series",
+        "http_status": 200,
+        "selected_ref": "cimanow:aHR0cHM6Ly9jaW1hbm93Lm1lL2VwaXNvZGUvJUQ5JTg1JUQ4JUIzJUQ5JTg0JUQ4JUIzJUQ5JTg0LXdhci0lRDglQTclRDklODQlRDklODUlRDklODglRDglQjMlRDklODUtJUQ4JUE3JUQ5JTg0JUQ4JUE3JUQ5JTg4JUQ5JTg0LSVEOCVBNyVEOSU4NCVEOCVBRCVEOSU4NCVEOSU4MiVEOCVBOS0zLSVEOSU4NSVEOCVBQSVEOCVCMSVEOCVBQyVEOSU4NSVEOCVBOQ",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:53:43.652Z",
+      "result_counts": {
+        "scraper_error": 1,
+        "no_search_result": 4
+      }
+    },
+    {
+      "provider": "shahid4u",
+      "name": "شاهد فور يو (Shahid4U)",
+      "domains": [
+        "https://shahidfu.cam",
+        "https://cdn.shahid4u.asia",
+        "https://sh4u.news",
+        "https://shahid4u.vip",
+        "https://shahid4u.energy"
+      ],
+      "started_at": "2026-10-17T15:53:43.652Z",
+      "samples": [
+        {
+          "provider": "shahid4u",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "shahid4u:aHR0cHM6Ly9zaGFoaWRmdS5jYW0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LWktd2FudC15b3VyLXNleC0yMDI2LSVEOSU4NSVEOCVBQSVEOCVCMSVEOCVBQyVEOSU4NS0lRDglQTclRDklODglRDklODYtJUQ5JTg0JUQ4JUE3JUQ5JThBJUQ5JTg2LTIv",
+          "title": "فيلم I Want Your Sex 2026",
+          "poster": "https://shahidfu.cam/uploads/posters/2026/10/%D9%81%D9%8A%D9%84%D9%85-i-want-your-sex-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85-%D8%A7%D9%88%D9%86-%D9%84%D8%A7%D9%8A%D9%86-2335.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:53:58.511Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:53:58.511Z",
+              "ended_at": "2026-10-17T15:54:05.011Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "I Want Your Sex 2026",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:54:05.011Z"
+        },
+        {
+          "provider": "shahid4u",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "shahid4u:aHR0cHM6Ly9zaGFoaWRmdS5jYW0vJUQ5JTg2JUQ4JUIzJUQ4JUFFJUQ4JUE5LTEwODBwLXdlYi0lRDklODElRDklOEElRDklODQlRDklODUtY2FtcC1yb2NrLTMtMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODUtJUQ4JUE3JUQ5JTg4JUQ5JTg2LSVEOSU4NCVEOCVBNyVEOSU4QSVEOSU4Ni8",
+          "title": "نسخة 1080p WEB | فيلم Camp Rock 3 2026",
+          "poster": "https://shahidfu.cam/uploads/posters/2026/10/%D9%86%D8%B3%D8%AE%D8%A9-1080p-web-%D9%81%D9%8A%D9%84%D9%85-camp-rock-3-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85-%D8%A7%D9%88%D9%86-%D9%84%D8%A7%D9%8A%D9%86-2328.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:54:05.011Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:05.011Z",
+              "ended_at": "2026-10-17T15:54:10.222Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "نسخة 1080p WEB | فيلم Camp Rock 3 2026",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:54:10.222Z"
+        },
+        {
+          "provider": "shahid4u",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "shahid4u:aHR0cHM6Ly9zaGFoaWRmdS5jYW0vJUQ5JTg2JUQ4JUIzJUQ4JUFFJUQ4JUE5LWNhbXJpcC0lRDklODElRDklOEElRDklODQlRDklODUtYmV3YXJlLWJvaSVDMyVCQW5hLTIwMjYtJUQ5JTg1JUQ4JUFBJUQ4JUIxJUQ4JUFDJUQ5JTg1LSVEOCVBNyVEOSU4OCVEOSU4Ni0lRDklODQlRDglQTclRDklOEElRDklODYv",
+          "title": "نسخة CAMRip | فيلم Beware Boiúna 2026",
+          "poster": "https://shahidfu.cam/uploads/posters/2026/10/%D9%86%D8%B3%D8%AE%D8%A9-camrip-%D9%81%D9%8A%D9%84%D9%85-beware-boi%C3%BAna-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85-%D8%A7%D9%88%D9%86-%D9%84%D8%A7%D9%8A%D9%86-2327.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:54:10.222Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:10.222Z",
+              "ended_at": "2026-10-17T15:54:16.492Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "نسخة CAMRip | فيلم Beware Boiúna 2026",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:54:16.492Z"
+        },
+        {
+          "provider": "shahid4u",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "shahid4u:aHR0cHM6Ly9zaGFoaWRmdS5jYW0vJUQ5JTgxJUQ5JThBJUQ5JTg0JUQ5JTg1LXJvc2VidXNoLXBydW5pbmctMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODUtJUQ4JUE3JUQ5JTg4JUQ5JTg2LSVEOSU4NCVEOCVBNyVEOSU4QSVEOSU4Ni8",
+          "title": "فيلم Rosebush Pruning 2026",
+          "poster": "https://shahidfu.cam/uploads/posters/2026/10/%D9%81%D9%8A%D9%84%D9%85-rosebush-pruning-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85-%D8%A7%D9%88%D9%86-%D9%84%D8%A7%D9%8A%D9%86-1983.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:54:16.492Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:16.492Z",
+              "ended_at": "2026-10-17T15:54:22.716Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Rosebush Pruning 2026",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:54:22.716Z"
+        },
+        {
+          "provider": "shahid4u",
+          "selected_by": "type_completion",
+          "catalog_category": "series",
+          "page": 1,
+          "seed": null,
+          "reference": "shahid4u:aHR0cHM6Ly9zaGFoaWRmdS5jYW0vJUQ5JTg2JUQ4JUIzJUQ4JUFFJUQ4JUE5LWNhbXJpcC0lRDklODElRDklOEElRDklODQlRDklODUtb3RoZXItbW9tbXktMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODUtJUQ4JUE3JUQ5JTg4JUQ5JTg2LSVEOSU4NCVEOCVBNyVEOSU4QSVEOSU4Ni8",
+          "title": "نسخة CAMRip | فيلم Other Mommy 2026",
+          "poster": "https://shahidfu.cam/uploads/posters/2026/10/%D9%86%D8%B3%D8%AE%D8%A9-camrip-%D9%81%D9%8A%D9%84%D9%85-other-mommy-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85-%D8%A7%D9%88%D9%86-%D9%84%D8%A7%D9%8A%D9%86-2326.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:54:22.716Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:22.716Z",
+              "ended_at": "2026-10-17T15:54:28.372Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "نسخة CAMRip | فيلم Other Mommy 2026",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:54:28.372Z"
+        }
+      ],
+      "result": "no_search_result",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:53:43.652Z",
+        "ended_at": "2026-10-17T15:53:49.900Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://shahidfu.cam/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "items_found": 20,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:53:49.900Z",
+        "ended_at": "2026-10-17T15:53:55.135Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 20,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:53:55.135Z",
+        "ended_at": "2026-10-17T15:53:58.511Z",
+        "result": "success",
+        "category": "series",
+        "http_status": 200,
+        "selected_ref": "shahid4u:aHR0cHM6Ly9zaGFoaWRmdS5jYW0vJUQ5JTg2JUQ4JUIzJUQ4JUFFJUQ4JUE5LWNhbXJpcC0lRDklODElRDklOEElRDklODQlRDklODUtb3RoZXItbW9tbXktMjAyNi0lRDklODUlRDglQUElRDglQjElRDglQUMlRDklODUtJUQ4JUE3JUQ5JTg4JUQ5JTg2LSVEOSU4NCVEOCVBNyVEOSU4QSVEOSU4Ni8",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:54:28.372Z",
+      "result_counts": {
+        "no_search_result": 5
+      }
+    },
+    {
+      "provider": "moviztime",
+      "name": "Moviz Time",
+      "domains": [
+        "https://moviz-time.quest"
+      ],
+      "started_at": "2026-10-17T15:54:28.372Z",
+      "samples": [
+        {
+          "provider": "moviztime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-norm-the-tale-of-norm-macdonald-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "title": "فيلم Norm: The Tale of Norm MacDonald 2026 مترجم",
+          "poster": "https://moviz-time.quest/wp-content/uploads/%D9%81%D9%8A%D9%84%D9%85-Norm-The-Tale-of-Norm-MacDonald-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85.jpg",
+          "type": "anime",
+          "started_at": "2026-10-17T15:54:32.495Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:32.495Z",
+              "ended_at": "2026-10-17T15:54:34.195Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Norm: The Tale of Norm MacDonald 2026",
+              "candidate_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-norm-the-tale-of-norm-macdonald-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:54:34.195Z",
+              "ended_at": "2026-10-17T15:54:35.846Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "فيلم Norm: The Tale of Norm MacDonald 2026 مترجم",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:54:35.846Z",
+              "ended_at": "2026-10-17T15:54:36.250Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "episode_count": 0,
+              "ordered_numbers": [],
+              "error": {
+                "code": "EMPTY_RESULT",
+                "message": ""
+              }
+            },
+            {
+              "episode": "item",
+              "episode_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-norm-the-tale-of-norm-macdonald-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:54:37.046Z",
+                "ended_at": "2026-10-17T15:54:42.174Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "moviztime",
+                  "server_type": "",
+                  "started_at": "2026-10-17T15:54:42.174Z",
+                  "ended_at": "2026-10-17T15:54:42.174Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://vidhls.com/cdn/hls/9af3901da3e9410a23fd7566238388d9/master.txt?s=17"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-norm-the-tale-of-norm-macdonald-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:54:42.174Z"
+        },
+        {
+          "provider": "moviztime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-the-code-2009-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "title": "فيلم The Code 2009 مترجم",
+          "poster": "https://moviz-time.quest/wp-content/uploads/%D9%81%D9%8A%D9%84%D9%85-The-Code-2009-%D9%85%D8%AA%D8%B1%D8%AC%D9%85.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:54:42.174Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:42.174Z",
+              "ended_at": "2026-10-17T15:54:43.180Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "The Code 2009",
+              "candidate_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-the-code-2009-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:54:43.374Z",
+              "ended_at": "2026-10-17T15:54:44.636Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "فيلم The Code 2009 مترجم",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-the-code-2009-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:54:44.636Z",
+                "ended_at": "2026-10-17T15:54:47.720Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "moviztime",
+                  "server_type": "",
+                  "started_at": "2026-10-17T15:54:47.720Z",
+                  "ended_at": "2026-10-17T15:54:47.720Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://vidhls.com/cdn/hls/4baf6901e8dc886a0507867aab50e36a/master.txt?s=17"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-the-code-2009-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:54:47.720Z"
+        },
+        {
+          "provider": "moviztime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-balan-the-boy-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "title": "فيلم Balan: The Boy 2026 مترجم",
+          "poster": "https://moviz-time.quest/wp-content/uploads/%D9%81%D9%8A%D9%84%D9%85-Balan-The-Boy-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85-1.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:54:47.720Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:47.720Z",
+              "ended_at": "2026-10-17T15:54:48.527Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Balan: The Boy 2026",
+              "candidate_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-balan-the-boy-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:54:48.920Z",
+              "ended_at": "2026-10-17T15:54:50.228Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "فيلم Balan: The Boy 2026 مترجم",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-balan-the-boy-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:54:50.228Z",
+                "ended_at": "2026-10-17T15:54:53.266Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "moviztime",
+                  "server_type": "",
+                  "started_at": "2026-10-17T15:54:53.266Z",
+                  "ended_at": "2026-10-17T15:54:53.266Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://vidhls.com/cdn/hls/121cfd7a8ff7c159e3d1df1b4eebe5e5/master.txt?s=17"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-balan-the-boy-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:54:53.266Z"
+        },
+        {
+          "provider": "moviztime",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-doing-life-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "title": "فيلم Doing Life 2026 مترجم",
+          "poster": "https://moviz-time.quest/wp-content/uploads/%D9%81%D9%8A%D9%84%D9%85-Doing-Life-2026-%D9%85%D8%AA%D8%B1%D8%AC%D9%85.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:54:53.266Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:53.266Z",
+              "ended_at": "2026-10-17T15:54:54.278Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Doing Life 2026",
+              "candidate_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-doing-life-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:54:54.467Z",
+              "ended_at": "2026-10-17T15:54:55.479Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "فيلم Doing Life 2026 مترجم",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-doing-life-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:54:55.667Z",
+                "ended_at": "2026-10-17T15:54:58.686Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "moviztime",
+                  "server_type": "",
+                  "started_at": "2026-10-17T15:54:58.686Z",
+                  "ended_at": "2026-10-17T15:54:58.686Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://vidhls.com/cdn/hls/962608e2f2981f0241683acfa4cbf064/master.txt?s=17"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "moviztime:https://moviz-time.quest/%d9%81%d9%8a%d9%84%d9%85-doing-life-2026-%d9%85%d8%aa%d8%b1%d8%ac%d9%85/",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:54:58.686Z"
+        },
+        {
+          "provider": "moviztime",
+          "selected_by": "type_completion",
+          "catalog_category": "series",
+          "page": 1,
+          "seed": null,
+          "reference": "moviztime:https://moviz-time.quest/series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-tulsa-king-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9/",
+          "title": "مسلسل Tulsa King مترجم الموسم الرابع",
+          "poster": "https://moviz-time.quest/wp-content/uploads/%D9%85%D8%B3%D9%84%D8%B3%D9%84_Tulsa_King_2022_%D9%85%D8%AA%D8%B1%D8%AC%D9%85-3.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:54:58.686Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:54:58.686Z",
+              "ended_at": "2026-10-17T15:54:59.720Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Tulsa King مترجم الموسم الرابع",
+              "candidate_ref": "moviztime:https://moviz-time.quest/series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-tulsa-king-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:54:59.886Z",
+              "ended_at": "2026-10-17T15:55:00.692Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "مسلسل Tulsa King مترجم الموسم الرابع",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:55:01.086Z",
+              "ended_at": "2026-10-17T15:55:01.364Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 1,
+              "ordered_numbers": [
+                1
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة 1",
+              "episode_ref": "moviztime:https://vidhls.com/player/index.php?data=ed01e572aa3ed64fe279b2d56b144e42",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:02.286Z",
+                "ended_at": "2026-10-17T15:55:03.978Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "moviztime",
+                  "server_type": "",
+                  "started_at": "2026-10-17T15:55:03.978Z",
+                  "ended_at": "2026-10-17T15:55:03.978Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://vidhls.com/cdn/hls/e2e91b3b9693b99f6a91dd9a6d33751d/master.txt?s=17"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "moviztime:https://moviz-time.quest/series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-tulsa-king-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9/",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:55:03.978Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:54:28.372Z",
+        "ended_at": "2026-10-17T15:54:29.990Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://moviz-time.quest/category/%d8%a3%d9%81%d9%84%d8%a7%d9%85-%d8%a3%d8%ac%d9%86%d8%a8%d9%8a%d8%a9/",
+        "items_found": 30,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:54:29.990Z",
+        "ended_at": "2026-10-17T15:54:30.759Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 30,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:54:31.190Z",
+        "ended_at": "2026-10-17T15:54:32.495Z",
+        "result": "success",
+        "category": "series",
+        "http_status": 200,
+        "selected_ref": "moviztime:https://moviz-time.quest/series/%d9%85%d8%b3%d9%84%d8%b3%d9%84-tulsa-king-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9/",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:55:03.978Z",
+      "result_counts": {
+        "scraper_error": 5
+      }
+    },
+    {
+      "provider": "shii4u",
+      "name": "شي فور يو (Shii4U)",
+      "domains": [
+        "https://shii4u.cam"
+      ],
+      "started_at": "2026-10-17T15:55:03.978Z",
+      "samples": [],
+      "result": "scraper_error",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:55:03.978Z",
+        "ended_at": "2026-10-17T15:55:04.167Z",
+        "result": "scraper_error",
+        "http_status": 200,
+        "source_url": "https://shii4u.cam/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "items_found": 0,
+        "error": {
+          "code": "ACCESS_BLOCKED",
+          "message": "getaddrinfo ENOTFOUND shii4u.cam"
+        }
+      },
+      "ended_at": "2026-10-17T15:55:04.167Z"
+    },
+    {
+      "provider": "egydead",
+      "name": "إيجي ديد (EgyDead)",
+      "domains": [
+        "https://w1.egydead.top",
+        "https://egydead.live",
+        "https://tv10.egydead.live"
+      ],
+      "started_at": "2026-10-17T15:55:04.167Z",
+      "samples": [],
+      "result": "access_obstacle",
+      "live_list": {
+        "name": "active_events",
+        "started_at": "2026-10-17T15:55:05.178Z",
+        "ended_at": "2026-10-17T15:55:05.401Z",
+        "result": "access_obstacle",
+        "http_status": 502,
+        "active_count": 0,
+        "error": "fetch failed"
+      },
+      "ended_at": "2026-10-17T15:55:05.401Z"
+    },
+    {
+      "provider": "ipauniverse",
+      "name": "IPA Universe",
+      "domains": [
+        "https://watch.ipauniverse.com"
+      ],
+      "started_at": "2026-10-17T15:55:05.401Z",
+      "samples": [],
+      "result": "scraper_error",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:55:06.379Z",
+        "ended_at": "2026-10-17T15:55:06.382Z",
+        "result": "scraper_error",
+        "http_status": 200,
+        "source_url": "https://watch.ipauniverse.com",
+        "items_found": 0,
+        "error": {
+          "code": "NOT_IMPLEMENTED",
+          "message": "TMDb API key is not configured; watch.ipauniverse.com client-side JS requires TMDb to serve catalog"
+        }
+      },
+      "ended_at": "2026-10-17T15:55:06.382Z"
+    },
+    {
+      "provider": "3cktv",
+      "name": "3ckTV",
+      "domains": [
+        "https://e.3cktv.com",
+        "https://3cktv.com",
+        "https://ei.3cktv.com"
+      ],
+      "started_at": "2026-10-17T15:55:06.382Z",
+      "samples": [],
+      "result": "scraper_error",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:55:07.580Z",
+        "ended_at": "2026-10-17T15:55:08.291Z",
+        "result": "scraper_error",
+        "http_status": 200,
+        "source_url": "https://e.3cktv.com/episodes/",
+        "items_found": 0,
+        "error": {
+          "code": "ACCESS_BLOCKED",
+          "message": "getaddrinfo ENOTFOUND ei.3cktv.com"
+        }
+      },
+      "ended_at": "2026-10-17T15:55:08.291Z"
+    },
+    {
+      "provider": "anime4up",
+      "name": "Anime4Up",
+      "domains": [
+        "https://www.anime4up.bond",
+        "https://4f.7grcy6t.shop",
+        "https://w1.anime4up.rest",
+        "https://4g.7jcsvwa.shop"
+      ],
+      "started_at": "2026-10-17T15:55:08.291Z",
+      "samples": [
+        {
+          "provider": "anime4up",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL21haG91LXNob3Vqby1pa3VzZWkta2Vpa2FrdS1yZXN0YXJ0Lw",
+          "title": "Mahou Shoujo Ikusei Keikaku Restart",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx160803-Rcr3IvhE7q9c.png",
+          "type": "series",
+          "started_at": "2026-10-17T15:55:18.902Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:55:18.902Z",
+              "ended_at": "2026-10-17T15:55:20.815Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Mahou Shoujo Ikusei Keikaku Restart",
+              "candidate_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL21haG91LXNob3Vqby1pa3VzZWkta2Vpa2FrdS1yZXN0YXJ0Lw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:55:20.815Z",
+              "ended_at": "2026-10-17T15:55:23.572Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Mahou Shoujo Ikusei Keikaku Restart",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:55:23.572Z",
+              "ended_at": "2026-10-17T15:55:24.539Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 2,
+              "ordered_numbers": [
+                1,
+                2
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة 1",
+              "episode_ref": "anime4up:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-mahou-shoujo-ikusei-keikaku-restart-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:24.772Z",
+                "ended_at": "2026-10-17T15:55:26.544Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:26.544Z",
+                  "ended_at": "2026-10-17T15:55:26.544Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/augz01w6hk3a"
+                },
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:26.544Z",
+                  "ended_at": "2026-10-17T15:55:26.544Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/e6h62yixc7v5"
+                }
+              ],
+              "result": "unsupported"
+            },
+            {
+              "episode": "الحلقة 2",
+              "episode_ref": "anime4up:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-mahou-shoujo-ikusei-keikaku-restart-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 2,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:26.544Z",
+                "ended_at": "2026-10-17T15:55:28.002Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:28.002Z",
+                  "ended_at": "2026-10-17T15:55:28.002Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/4abnm5e1cy94"
+                },
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:28.002Z",
+                  "ended_at": "2026-10-17T15:55:28.002Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/wkoht1ynafbt"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL21haG91LXNob3Vqby1pa3VzZWkta2Vpa2FrdS1yZXN0YXJ0Lw",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:55:28.002Z"
+        },
+        {
+          "provider": "anime4up",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+          "title": "Kyoukai no Kanata",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx18153-oDqA9zQzQPOq.png",
+          "type": "series",
+          "started_at": "2026-10-17T15:55:28.002Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:55:28.002Z",
+              "ended_at": "2026-10-17T15:55:29.590Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Kyoukai no Kanata",
+              "candidate_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:55:29.590Z",
+              "ended_at": "2026-10-17T15:55:31.390Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Kyoukai no Kanata",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:55:31.390Z",
+              "ended_at": "2026-10-17T15:55:32.331Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "episode_count": 0,
+              "ordered_numbers": [],
+              "error": {
+                "code": "EMPTY_RESULT",
+                "message": "No episodes found on page"
+              }
+            },
+            {
+              "episode": "item",
+              "episode_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:32.591Z",
+                "ended_at": "2026-10-17T15:55:34.857Z",
+                "result": "ok",
+                "http_status": 200,
+                "server_count": 0,
+                "error": null
+              },
+              "media_checks": [],
+              "result": "scraper_error"
+            }
+          ],
+          "work_reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:55:34.857Z"
+        },
+        {
+          "provider": "anime4up",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+          "title": "Diamond no Ace: Second Season",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx21085-qqkUxpMgtFDW.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:55:34.857Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:55:34.857Z",
+              "ended_at": "2026-10-17T15:55:36.071Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Diamond no Ace: Second Season",
+              "candidate_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:55:36.071Z",
+              "ended_at": "2026-10-17T15:55:37.869Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Diamond no Ace: Second Season",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:55:37.869Z",
+              "ended_at": "2026-10-17T15:55:38.869Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "episode_count": 0,
+              "ordered_numbers": [],
+              "error": {
+                "code": "EMPTY_RESULT",
+                "message": "No episodes found on page"
+              }
+            },
+            {
+              "episode": "item",
+              "episode_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:39.070Z",
+                "ended_at": "2026-10-17T15:55:41.186Z",
+                "result": "ok",
+                "http_status": 200,
+                "server_count": 0,
+                "error": null
+              },
+              "media_checks": [],
+              "result": "scraper_error"
+            }
+          ],
+          "work_reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:55:41.186Z"
+        },
+        {
+          "provider": "anime4up",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VyYW4tcmVpam91LW5pYS1saXN0b24v",
+          "title": "Kyouran Reijou Nia Liston",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx206949-4HYI3YuP0eLI.png",
+          "type": "series",
+          "started_at": "2026-10-17T15:55:41.186Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:55:41.186Z",
+              "ended_at": "2026-10-17T15:55:42.315Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Kyouran Reijou Nia Liston",
+              "candidate_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VyYW4tcmVpam91LW5pYS1saXN0b24v",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:55:42.387Z",
+              "ended_at": "2026-10-17T15:55:44.259Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Kyouran Reijou Nia Liston",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:55:44.259Z",
+              "ended_at": "2026-10-17T15:55:45.193Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 2,
+              "ordered_numbers": [
+                1,
+                2
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة 1",
+              "episode_ref": "anime4up:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-kyouran-reijou-nia-liston-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:45.459Z",
+                "ended_at": "2026-10-17T15:55:46.486Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 6,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:46.486Z",
+                  "ended_at": "2026-10-17T15:55:46.486Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/ap523dpx336r"
+                },
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:46.486Z",
+                  "ended_at": "2026-10-17T15:55:46.756Z",
+                  "result": "access_obstacle",
+                  "error": "fetch failed",
+                  "kind": "mp4",
+                  "url": "https://www.fireload.com/4b4339d2b773f711/%5BAnime4up.rest%5D_KRNL_EP_01_FHD.mp4"
+                }
+              ],
+              "result": "access_obstacle"
+            },
+            {
+              "episode": "الحلقة 2",
+              "episode_ref": "anime4up:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-kyouran-reijou-nia-liston-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 2,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:47.860Z",
+                "ended_at": "2026-10-17T15:55:48.871Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:48.871Z",
+                  "ended_at": "2026-10-17T15:55:48.871Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/9870av73yr2d"
+                },
+                {
+                  "server": "anime4up",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:55:48.871Z",
+                  "ended_at": "2026-10-17T15:55:48.871Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/oi7n7sgexowz"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VyYW4tcmVpam91LW5pYS1saXN0b24v",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:55:48.871Z"
+        },
+        {
+          "provider": "anime4up",
+          "selected_by": "type_completion",
+          "catalog_category": "anime_movies",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+          "title": "Shikioriori",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx101231-8X1CanhPk9iw.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:55:48.871Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:55:49.060Z",
+              "ended_at": "2026-10-17T15:55:50.218Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Shikioriori",
+              "candidate_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:55:50.261Z",
+              "ended_at": "2026-10-17T15:55:51.983Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Shikioriori",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:55:51.983Z",
+              "ended_at": "2026-10-17T15:55:52.971Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 1,
+              "ordered_numbers": [
+                1
+              ],
+              "error": null
+            },
+            {
+              "episode": "الفلم 1",
+              "episode_ref": "anime4up:https://w1.anime4up.rest/episode/%d9%81%d9%8a%d9%84%d9%85-shikioriori-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:55:53.184Z",
+                "ended_at": "2026-10-17T15:55:56.944Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:55:56.944Z",
+                  "ended_at": "2026-10-17T15:55:56.945Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://4h.7saym84.shop/Anime4up-S1/mal/37396/1/sub/"
+                },
+                {
+                  "server": "anime4up",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:55:56.945Z",
+                  "ended_at": "2026-10-17T15:55:56.945Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://4h.7saym84.shop/Anime4up-S2/mal/37396/1/sub/"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:55:56.945Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:55:08.780Z",
+        "ended_at": "2026-10-17T15:55:10.679Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://w1.anime4up.rest/anime-type/tv2/",
+        "items_found": 24,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:55:10.679Z",
+        "ended_at": "2026-10-17T15:55:17.349Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 20,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:55:17.349Z",
+        "ended_at": "2026-10-17T15:55:18.902Z",
+        "result": "success",
+        "category": "anime_movies",
+        "http_status": 200,
+        "selected_ref": "anime4up:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:55:56.945Z",
+      "result_counts": {
+        "scraper_error": 3,
+        "access_obstacle": 1,
+        "embed_unverified": 1
+      }
+    },
+    {
+      "provider": "qfilm",
+      "name": "كيو فيلم (QFilm)",
+      "domains": [
+        "https://a.qfilm.tv",
+        "https://qfilm.tv"
+      ],
+      "started_at": "2026-10-17T15:55:56.945Z",
+      "samples": [
+        {
+          "provider": "qfilm",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MjBlM2M4Zjc3",
+          "title": "فيلم حليمو أسطورة الشواطئ (2017)",
+          "poster": "https://a.qfilm.tv/uploads/thumbs/90ff9195a-1.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:56:00.802Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:00.925Z",
+              "ended_at": "2026-10-17T15:56:01.854Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "حليمو أسطورة الشواطئ (2017)",
+              "candidate_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MjBlM2M4Zjc3",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:02.126Z",
+              "ended_at": "2026-10-17T15:56:02.585Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "مشاهدة فيلم حليمو أسطورة الشواطئ (2017) HD",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MjBlM2M4Zjc3",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:03.327Z",
+                "ended_at": "2026-10-17T15:56:04.022Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:04.022Z",
+                  "ended_at": "2026-10-17T15:56:04.023Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/watch.php?vid=20e3c8f77"
+                },
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:04.023Z",
+                  "ended_at": "2026-10-17T15:56:04.023Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/embed.php?vid=20e3c8f77"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MjBlM2M4Zjc3",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:04.023Z"
+        },
+        {
+          "provider": "qfilm",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MzVjMjA1MmQx",
+          "title": "فيلم Is God Is 2026 مترجم",
+          "poster": "https://a.qfilm.tv/uploads/thumbs/92a695e22-1.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:56:04.023Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:04.527Z",
+              "ended_at": "2026-10-17T15:56:04.995Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Is God Is 2026",
+              "candidate_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MzVjMjA1MmQx",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:05.728Z",
+              "ended_at": "2026-10-17T15:56:06.149Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "مشاهدة فيلم Is God Is 2026 مترجم HD",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MzVjMjA1MmQx",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:06.929Z",
+                "ended_at": "2026-10-17T15:56:07.319Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:07.319Z",
+                  "ended_at": "2026-10-17T15:56:07.319Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/watch.php?vid=35c2052d1"
+                },
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:07.319Z",
+                  "ended_at": "2026-10-17T15:56:07.319Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/embed.php?vid=35c2052d1"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9MzVjMjA1MmQx",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:07.319Z"
+        },
+        {
+          "provider": "qfilm",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9N2Q5OGZjNTgy",
+          "title": "فيلم Pretty Lethal 2026 مترجم",
+          "poster": "https://a.qfilm.tv/uploads/thumbs/2df8c877f-1.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:56:07.319Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:08.129Z",
+              "ended_at": "2026-10-17T15:56:09.032Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Pretty Lethal 2026",
+              "candidate_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9N2Q5OGZjNTgy",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:09.330Z",
+              "ended_at": "2026-10-17T15:56:09.727Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "مشاهدة فيلم Pretty Lethal 2026 مترجم HD",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9N2Q5OGZjNTgy",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:10.530Z",
+                "ended_at": "2026-10-17T15:56:10.951Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:10.951Z",
+                  "ended_at": "2026-10-17T15:56:10.951Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/watch.php?vid=7d98fc582"
+                },
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:10.951Z",
+                  "ended_at": "2026-10-17T15:56:10.951Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/embed.php?vid=7d98fc582"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9N2Q5OGZjNTgy",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:10.951Z"
+        },
+        {
+          "provider": "qfilm",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9ZTg3YWEzN2Fh",
+          "title": "فيلم The Conjuring: Last Rites 2025 مترجم",
+          "poster": "https://a.qfilm.tv/uploads/thumbs/7c8056d4d-1.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:56:10.951Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:11.731Z",
+              "ended_at": "2026-10-17T15:56:12.196Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "The Conjuring: Last Rites 2025",
+              "candidate_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9ZTg3YWEzN2Fh",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:12.932Z",
+              "ended_at": "2026-10-17T15:56:13.510Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "مشاهدة فيلم The Conjuring: Last Rites 2025 مترجم HD",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9ZTg3YWEzN2Fh",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:14.133Z",
+                "ended_at": "2026-10-17T15:56:14.535Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:14.535Z",
+                  "ended_at": "2026-10-17T15:56:14.535Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/watch.php?vid=e87aa37aa"
+                },
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:14.535Z",
+                  "ended_at": "2026-10-17T15:56:14.535Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/embed.php?vid=e87aa37aa"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9ZTg3YWEzN2Fh",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:14.535Z"
+        },
+        {
+          "provider": "qfilm",
+          "selected_by": "type_completion",
+          "catalog_category": "series",
+          "page": 1,
+          "seed": null,
+          "reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9OGNiMDdlNGIx",
+          "title": "فيلم Hope 2026 مترجم",
+          "poster": "https://a.qfilm.tv/uploads/thumbs/0ec60976d-1.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:56:14.535Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:15.334Z",
+              "ended_at": "2026-10-17T15:56:16.002Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Hope 2026",
+              "candidate_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9OGNiMDdlNGIx",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:16.533Z",
+              "ended_at": "2026-10-17T15:56:16.932Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "مشاهدة فيلم Hope 2026 مترجم HD",
+              "type": "movie",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:56:17.734Z",
+              "ended_at": "2026-10-17T15:56:18.138Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "episode_count": 0,
+              "ordered_numbers": [],
+              "error": {
+                "code": "EMPTY_RESULT",
+                "message": "No episodes found on page"
+              }
+            },
+            {
+              "episode": "item",
+              "episode_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9OGNiMDdlNGIx",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:18.935Z",
+                "ended_at": "2026-10-17T15:56:19.447Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:19.447Z",
+                  "ended_at": "2026-10-17T15:56:19.447Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/watch.php?vid=8cb07e4b1"
+                },
+                {
+                  "server": "qfilm",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:19.447Z",
+                  "ended_at": "2026-10-17T15:56:19.447Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://a.qfilm.tv/embed.php?vid=8cb07e4b1"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9OGNiMDdlNGIx",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:19.447Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:55:56.945Z",
+        "ended_at": "2026-10-17T15:55:58.041Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://a.qfilm.tv/",
+        "items_found": 72,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:55:58.145Z",
+        "ended_at": "2026-10-17T15:55:59.725Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 69,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:55:59.725Z",
+        "ended_at": "2026-10-17T15:56:00.802Z",
+        "result": "success",
+        "category": "series",
+        "http_status": 200,
+        "selected_ref": "qfilm:aHR0cHM6Ly9hLnFmaWxtLnR2L3dhdGNoLnBocD92aWQ9OGNiMDdlNGIx",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:56:19.447Z",
+      "result_counts": {
+        "embed_unverified": 5
+      }
+    },
+    {
+      "provider": "ristoanime",
+      "name": "RistoAnime",
+      "domains": [
+        "https://ristoanime.me",
+        "https://ristoanime.com"
+      ],
+      "started_at": "2026-10-17T15:56:19.447Z",
+      "samples": [
+        {
+          "provider": "ristoanime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "انمي Black Clover الموسم 2 الحلقة 3 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329642.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:56:24.991Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:25.042Z",
+              "ended_at": "2026-10-17T15:56:27.118Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Black Clover",
+              "candidate_ref": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-black-clover/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "selected card URL is an episode in ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-black-clover/"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:27.118Z",
+              "ended_at": "2026-10-17T15:56:30.636Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "title": "جميع حلقات انمي Black Clover مترجمة",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:56:30.636Z",
+              "ended_at": "2026-10-17T15:56:31.675Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 3,
+              "ordered_numbers": [
+                1,
+                2,
+                3
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة1",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:31.836Z",
+                "ended_at": "2026-10-17T15:56:34.803Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:34.803Z",
+                  "ended_at": "2026-10-17T15:56:34.803Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-8yq3zanwc8rc.html"
+                }
+              ],
+              "result": "embed_unverified"
+            },
+            {
+              "episode": "الحلقة3",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 3,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:34.803Z",
+                "ended_at": "2026-10-17T15:56:37.227Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:37.227Z",
+                  "ended_at": "2026-10-17T15:56:37.227Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-6k8sl810epor.html"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-black-clover/",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:37.227Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-tokyo-revengers-santen-sensou-hen-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-4-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84/",
+          "title": "انمي Tokyo Revengers: Santen Sensou-hen الموسم 4 الحلقة 3 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329056.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:56:37.227Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:37.228Z",
+              "ended_at": "2026-10-17T15:56:39.204Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Tokyo Revengers: Santen Sensou-hen",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:56:39.204Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "انمي Hotaru no Yomeiri الحلقة 2 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329799.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:56:39.204Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:39.204Z",
+              "ended_at": "2026-10-17T15:56:41.188Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Hotaru no Yomeiri",
+              "candidate_ref": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "selected card URL is an episode in ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:56:41.188Z",
+              "ended_at": "2026-10-17T15:56:43.784Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "title": "جميع حلقات انمي Hotaru no Yomeiri مترجمة",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:56:43.784Z",
+              "ended_at": "2026-10-17T15:56:44.775Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 2,
+              "ordered_numbers": [
+                1,
+                2
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة1",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:44.985Z",
+                "ended_at": "2026-10-17T15:56:47.471Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:47.471Z",
+                  "ended_at": "2026-10-17T15:56:47.471Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-xp7qybg3y5su.html"
+                }
+              ],
+              "result": "embed_unverified"
+            },
+            {
+              "episode": "الحلقة2",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 2,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:56:47.471Z",
+                "ended_at": "2026-10-17T15:56:49.195Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:56:49.195Z",
+                  "ended_at": "2026-10-17T15:56:49.195Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-c16m6gzal8ir.html"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:56:49.195Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-aoki-denshou-welsh-shedar-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "انمي Aoki Denshou Welsh & Shedar الحلقة 1 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329362.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:56:49.195Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:49.195Z",
+              "ended_at": "2026-10-17T15:56:51.136Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Aoki Denshou Welsh & Shedar",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:56:51.136Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "type_completion",
+          "catalog_category": "anime_movies",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d9%81%d9%8a%d9%84%d9%85-mononoke-movie-3-hebigami-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "فيلم Mononoke Movie 3: Hebigami",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/156670l.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T15:56:51.136Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:56:51.136Z",
+              "ended_at": "2026-10-17T15:56:53.017Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Mononoke Movie 3: Hebigami",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T15:56:53.017Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:56:20.136Z",
+        "ended_at": "2026-10-17T15:56:21.735Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://ristoanime.me/",
+        "items_found": 33,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:56:21.735Z",
+        "ended_at": "2026-10-17T15:56:23.842Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 32,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:56:23.842Z",
+        "ended_at": "2026-10-17T15:56:24.991Z",
+        "result": "success",
+        "category": "anime_movies",
+        "http_status": 200,
+        "selected_ref": "ristoanime:https://ristoanime.me/%d9%81%d9%8a%d9%84%d9%85-mononoke-movie-3-hebigami-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:56:53.017Z",
+      "result_counts": {
+        "embed_unverified": 2,
+        "no_search_result": 3
+      }
+    },
+    {
+      "provider": "arabseed",
+      "name": "عرب سيد (ArabSeed)",
+      "domains": [
+        "https://www.arabseed.wine",
+        "https://arabseed.show",
+        "https://asd.homes"
+      ],
+      "started_at": "2026-10-17T15:56:53.017Z",
+      "samples": [],
+      "result": "scraper_error",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:56:53.017Z",
+        "ended_at": "2026-10-17T15:56:56.294Z",
+        "result": "scraper_error",
+        "http_status": 200,
+        "source_url": "https://www.arabseed.wine/category/foreign-movies/",
+        "items_found": 0,
+        "error": {
+          "code": "ACCESS_BLOCKED",
+          "message": "SOURCE_UNAVAILABLE: ArabSeed hosting account is suspended"
+        }
+      },
+      "ended_at": "2026-10-17T15:56:56.294Z"
+    },
+    {
+      "provider": "mewsry",
+      "name": "سوريا لايف (Mewsry / Syria Live)",
+      "domains": [
+        "https://www.manasorya.site",
+        "https://www.mewsry.live",
+        "https://www.soryatv.live"
+      ],
+      "started_at": "2026-10-17T15:56:56.294Z",
+      "samples": [],
+      "result": "access_obstacle",
+      "live_list": {
+        "name": "active_events",
+        "started_at": "2026-10-17T15:56:56.294Z",
+        "ended_at": "2026-10-17T15:56:56.544Z",
+        "result": "access_obstacle",
+        "http_status": 502,
+        "active_count": 0,
+        "error": "fetch failed"
+      },
+      "ended_at": "2026-10-17T15:56:56.544Z"
+    },
+    {
+      "provider": "anime4up_rest",
+      "name": "أنمي فور اب ريست (Anime4Up Rest)",
+      "domains": [
+        "https://w1.anime4up.rest",
+        "https://www.anime4up.bond",
+        "https://4f.7grcy6t.shop"
+      ],
+      "started_at": "2026-10-17T15:56:56.544Z",
+      "samples": [
+        {
+          "provider": "anime4up_rest",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL21haG91LXNob3Vqby1pa3VzZWkta2Vpa2FrdS1yZXN0YXJ0Lw",
+          "title": "Mahou Shoujo Ikusei Keikaku Restart",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx160803-Rcr3IvhE7q9c.png",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:06.874Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:06.874Z",
+              "ended_at": "2026-10-17T15:57:07.816Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Mahou Shoujo Ikusei Keikaku Restart",
+              "candidate_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL21haG91LXNob3Vqby1pa3VzZWkta2Vpa2FrdS1yZXN0YXJ0Lw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:08.073Z",
+              "ended_at": "2026-10-17T15:57:10.810Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Mahou Shoujo Ikusei Keikaku Restart",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:57:10.810Z",
+              "ended_at": "2026-10-17T15:57:11.967Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 2,
+              "ordered_numbers": [
+                1,
+                2
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة 1",
+              "episode_ref": "anime4up_rest:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-mahou-shoujo-ikusei-keikaku-restart-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:12.011Z",
+                "ended_at": "2026-10-17T15:57:13.112Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:13.112Z",
+                  "ended_at": "2026-10-17T15:57:13.112Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/augz01w6hk3a"
+                },
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:13.112Z",
+                  "ended_at": "2026-10-17T15:57:13.112Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/e6h62yixc7v5"
+                }
+              ],
+              "result": "unsupported"
+            },
+            {
+              "episode": "الحلقة 2",
+              "episode_ref": "anime4up_rest:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-mahou-shoujo-ikusei-keikaku-restart-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 2,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:13.211Z",
+                "ended_at": "2026-10-17T15:57:14.229Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:14.229Z",
+                  "ended_at": "2026-10-17T15:57:14.229Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/4abnm5e1cy94"
+                },
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:14.229Z",
+                  "ended_at": "2026-10-17T15:57:14.229Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/wkoht1ynafbt"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL21haG91LXNob3Vqby1pa3VzZWkta2Vpa2FrdS1yZXN0YXJ0Lw",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:57:14.229Z"
+        },
+        {
+          "provider": "anime4up_rest",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+          "title": "Kyoukai no Kanata",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx18153-oDqA9zQzQPOq.png",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:14.229Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:14.412Z",
+              "ended_at": "2026-10-17T15:57:15.983Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Kyoukai no Kanata",
+              "candidate_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:15.983Z",
+              "ended_at": "2026-10-17T15:57:18.110Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Kyoukai no Kanata",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:57:18.110Z",
+              "ended_at": "2026-10-17T15:57:19.032Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "episode_count": 0,
+              "ordered_numbers": [],
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:19.310Z",
+                "ended_at": "2026-10-17T15:57:21.458Z",
+                "result": "ok",
+                "http_status": 200,
+                "server_count": 0,
+                "error": null
+              },
+              "media_checks": [],
+              "result": "scraper_error"
+            }
+          ],
+          "work_reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2t5b3VrYWktbm8ta2FuYXRhLw",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:57:21.458Z"
+        },
+        {
+          "provider": "anime4up_rest",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+          "title": "Diamond no Ace: Second Season",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx21085-qqkUxpMgtFDW.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:21.458Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:21.458Z",
+              "ended_at": "2026-10-17T15:57:22.643Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Diamond no Ace: Second Season",
+              "candidate_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:22.658Z",
+              "ended_at": "2026-10-17T15:57:24.550Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Diamond no Ace: Second Season",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:57:24.550Z",
+              "ended_at": "2026-10-17T15:57:25.497Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "episode_count": 0,
+              "ordered_numbers": [],
+              "error": null
+            },
+            {
+              "episode": "item",
+              "episode_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+              "episode_number": null,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:25.749Z",
+                "ended_at": "2026-10-17T15:57:27.611Z",
+                "result": "ok",
+                "http_status": 200,
+                "server_count": 0,
+                "error": null
+              },
+              "media_checks": [],
+              "result": "scraper_error"
+            }
+          ],
+          "work_reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL2RpYW1vbmQtbm8tYWNlLXNlY29uZC1zZWFzb24v",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:57:27.611Z"
+        },
+        {
+          "provider": "anime4up_rest",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3RhbnRlaS13YS1tb3Utc2hpbmRlaXJ1LXNlYXNvbi0yLw",
+          "title": "Tantei wa Mou Shindeiru Season 2",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx152677-gtJbgjE94lCN.png",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:27.611Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:27.611Z",
+              "ended_at": "2026-10-17T15:57:28.775Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Tantei wa Mou Shindeiru",
+              "candidate_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3RhbnRlaS13YS1tb3Utc2hpbmRlaXJ1LXNlYXNvbi0yLw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:28.811Z",
+              "ended_at": "2026-10-17T15:57:30.540Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Tantei wa Mou Shindeiru Season 2",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:57:30.540Z",
+              "ended_at": "2026-10-17T15:57:31.502Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 2,
+              "ordered_numbers": [
+                1,
+                2
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة 1",
+              "episode_ref": "anime4up_rest:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-tantei-wa-mou-shindeiru-season-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:31.739Z",
+                "ended_at": "2026-10-17T15:57:32.976Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:32.976Z",
+                  "ended_at": "2026-10-17T15:57:32.976Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/qkbih10nbdpn"
+                },
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:32.976Z",
+                  "ended_at": "2026-10-17T15:57:32.976Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/t0cf4qz2jtwr"
+                }
+              ],
+              "result": "unsupported"
+            },
+            {
+              "episode": "الحلقة 2",
+              "episode_ref": "anime4up_rest:https://w1.anime4up.rest/episode/%d8%a7%d9%86%d9%85%d9%8a-tantei-wa-mou-shindeiru-season-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9/",
+              "episode_number": 2,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:32.976Z",
+                "ended_at": "2026-10-17T15:57:33.969Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 3,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:33.969Z",
+                  "ended_at": "2026-10-17T15:57:33.969Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/dbokfnscslkb"
+                },
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "download",
+                  "started_at": "2026-10-17T15:57:33.969Z",
+                  "ended_at": "2026-10-17T15:57:33.969Z",
+                  "result": "unsupported",
+                  "kind": "unknown",
+                  "url": "https://www.mp4upload.com/9xop4qq9k7k7"
+                }
+              ],
+              "result": "unsupported"
+            }
+          ],
+          "work_reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3RhbnRlaS13YS1tb3Utc2hpbmRlaXJ1LXNlYXNvbi0yLw",
+          "result": "scraper_error",
+          "ended_at": "2026-10-17T15:57:33.969Z"
+        },
+        {
+          "provider": "anime4up_rest",
+          "selected_by": "type_completion",
+          "catalog_category": "anime_movies",
+          "page": 1,
+          "seed": null,
+          "reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+          "title": "Shikioriori",
+          "poster": "https://w1.anime4up.rest/wp-content/uploads/2026/10/bx101231-8X1CanhPk9iw.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:57:33.969Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:34.177Z",
+              "ended_at": "2026-10-17T15:57:35.302Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Shikioriori",
+              "candidate_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "exact stable reference"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:35.377Z",
+              "ended_at": "2026-10-17T15:57:37.070Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": null,
+              "title": "Shikioriori",
+              "type": "anime",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:57:37.070Z",
+              "ended_at": "2026-10-17T15:57:38.149Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 1,
+              "ordered_numbers": [
+                1
+              ],
+              "error": null
+            },
+            {
+              "episode": "الفلم 1",
+              "episode_ref": "anime4up_rest:https://w1.anime4up.rest/episode/%d9%81%d9%8a%d9%84%d9%85-shikioriori-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:57:38.270Z",
+                "ended_at": "2026-10-17T15:57:41.263Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 2,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:57:41.263Z",
+                  "ended_at": "2026-10-17T15:57:41.263Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://4h.7saym84.shop/Anime4up-S1/mal/37396/1/sub/"
+                },
+                {
+                  "server": "anime4up_rest",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:57:41.263Z",
+                  "ended_at": "2026-10-17T15:57:41.263Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://4h.7saym84.shop/Anime4up-S2/mal/37396/1/sub/"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T15:57:41.263Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:56:57.495Z",
+        "ended_at": "2026-10-17T15:56:59.128Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://w1.anime4up.rest/anime-type/tv2/",
+        "items_found": 24,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:56:59.128Z",
+        "ended_at": "2026-10-17T15:57:05.008Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 20,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:57:05.008Z",
+        "ended_at": "2026-10-17T15:57:06.874Z",
+        "result": "success",
+        "category": "anime_movies",
+        "http_status": 200,
+        "selected_ref": "anime4up_rest:aHR0cHM6Ly93MS5hbmltZTR1cC5yZXN0L2FuaW1lL3NoaWtpb3Jpb3JpLw",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:57:41.263Z",
+      "result_counts": {
+        "scraper_error": 4,
+        "embed_unverified": 1
+      }
+    },
+    {
+      "provider": "witanime",
+      "name": "WitAnime",
+      "domains": [
+        "https://witanime.you",
+        "https://www.witanime.net",
+        "https://witanime.site"
+      ],
+      "started_at": "2026-10-17T15:57:41.263Z",
+      "samples": [],
+      "result": "scraper_error",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:57:41.263Z",
+        "ended_at": "2026-10-17T15:57:41.751Z",
+        "result": "scraper_error",
+        "http_status": 200,
+        "source_url": "https://witanime.site/browse",
+        "items_found": 0,
+        "error": {
+          "code": "ACCESS_BLOCKED",
+          "message": "CLOUDFLARE_OR_WAF_CHALLENGE_HTTP_403"
+        }
+      },
+      "ended_at": "2026-10-17T15:57:41.751Z"
+    },
+    {
+      "provider": "egydead_live",
+      "name": "إيجي ديد لايف (EgyDead Live TV)",
+      "domains": [
+        "https://tv10.egydead.live",
+        "https://k8w4e.sbs/h3/"
+      ],
+      "started_at": "2026-10-17T15:57:41.751Z",
+      "samples": [],
+      "result": "access_obstacle",
+      "live_list": {
+        "name": "active_events",
+        "started_at": "2026-10-17T15:57:42.463Z",
+        "ended_at": "2026-10-17T15:57:42.512Z",
+        "result": "access_obstacle",
+        "http_status": 502,
+        "active_count": 0,
+        "error": "fetch failed"
+      },
+      "ended_at": "2026-10-17T15:57:42.512Z"
+    },
+    {
+      "provider": "yallashoot",
+      "name": "يلا شوت (Yalla Shoot)",
+      "domains": [
+        "https://yalla-shootz.cc",
+        "https://yalla-shoot.tv"
+      ],
+      "started_at": "2026-10-17T15:57:42.512Z",
+      "samples": [],
+      "result": "access_obstacle",
+      "live_list": {
+        "name": "active_events",
+        "started_at": "2026-10-17T15:57:43.664Z",
+        "ended_at": "2026-10-17T15:57:44.040Z",
+        "result": "access_obstacle",
+        "http_status": 502,
+        "active_count": 0,
+        "error": "fetch failed"
+      },
+      "ended_at": "2026-10-17T15:57:44.040Z"
+    },
+    {
+      "provider": "3isk",
+      "name": "قصة عشق الأصلي (3isk)",
+      "domains": [
+        "https://ww4.3ick.club",
+        "https://3iskk.xyz",
+        "https://3isk.onl"
+      ],
+      "started_at": "2026-10-17T15:57:44.040Z",
+      "samples": [
+        {
+          "provider": "3isk",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "3isk:L3dhdGNoL2VwaXNvZGVzL3NlcmllLXRhc2FjYWstYnUtZGVuaXotc2Vhc29uLTEtZXBpc29kZS0zNC8",
+          "title": "مسلسل هذا البحر سوف يفيض الحلقة 34",
+          "poster": "https://3iskk.xyz/wp-content/uploads/2026/05/Bahr-S02-long.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:52.493Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:52.493Z",
+              "ended_at": "2026-10-17T15:57:55.067Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "هذا البحر سوف يفيض",
+              "candidate_ref": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtdGFzYWNhay1idS1kZW5pei1tdWRibGlqLw",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:55.067Z",
+              "ended_at": "2026-10-17T15:57:55.101Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtdGFzYWNhay1idS1kZW5pei1tdWRibGlqLw",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:57:55.101Z"
+        },
+        {
+          "provider": "3isk",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "3isk:L3dhdGNoL2VwaXNvZGVzL3NlcmllLW1lcmNhbi1rb3NrLXNlYXNvbi0xLWVwaXNvZGUtNy8",
+          "title": "مسلسل قصر المرجان الحلقة 7",
+          "poster": "https://3iskk.xyz/wp-content/uploads/2026/08/mercan-kosk.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:55.101Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:56.268Z",
+              "ended_at": "2026-10-17T15:57:58.579Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "قصر المرجان",
+              "candidate_ref": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtbWVyY2FuLWtvc2sv",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:57:58.579Z",
+              "ended_at": "2026-10-17T15:57:58.587Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtbWVyY2FuLWtvc2sv",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:57:58.587Z"
+        },
+        {
+          "provider": "3isk",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "3isk:L3dhdGNoL2VwaXNvZGVzL3NlcmllLWd1bGxlci12ZS1ndW5haGxhci1zZWFzb24tMS1lcGlzb2RlLTM4Lw",
+          "title": "مسلسل ورود و ذنوب الحلقة 38",
+          "poster": "https://3iskk.xyz/wp-content/uploads/2025/09/guller-ve-gunahlar-1.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:57:58.587Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:57:59.779Z",
+              "ended_at": "2026-10-17T15:58:01.424Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "ورود و ذنوب",
+              "candidate_ref": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtZ3VsbGVyLXZlLWd1bmFobGFyLw",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:01.424Z",
+              "ended_at": "2026-10-17T15:58:01.433Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtZ3VsbGVyLXZlLWd1bmFobGFyLw",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:01.433Z"
+        },
+        {
+          "provider": "3isk",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "3isk:L3dhdGNoL2VwaXNvZGVzL3NlcmllLWhhbGVmLTFvY3Q1LXNlYXNvbi0xLWVwaXNvZGUtMi8",
+          "title": "مسلسل الخليفة الحلقة 2",
+          "poster": "https://3iskk.xyz/wp-content/uploads/2025/12/Khalaf-.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:01.433Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:02.625Z",
+              "ended_at": "2026-10-17T15:58:03.621Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "الخليفة",
+              "candidate_ref": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtaGFsZWYtbXVkYmxqLw",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:03.825Z",
+              "ended_at": "2026-10-17T15:58:03.835Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "3isk:L3dhdGNoL3R2c2hvd3Mvc2VyaWUtaGFsZWYtbXVkYmxqLw",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:03.835Z"
+        },
+        {
+          "provider": "3isk",
+          "selected_by": "type_completion",
+          "catalog_category": "movies",
+          "page": 1,
+          "seed": null,
+          "reference": "3isk:L3dhdGNoL21vdmllcy9tb3ZpZS1zaWNjaW4tOS0yMDI2LW11ZGJsaWov",
+          "title": "فيلم سجين 9 2026 Siccin مدبلج",
+          "poster": "https://3iskk.xyz/wp-content/uploads/2026/10/movie-siccin-9-2026-Mudblij.jpg",
+          "type": "movie",
+          "started_at": "2026-10-17T15:58:03.835Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:05.025Z",
+              "ended_at": "2026-10-17T15:58:06.584Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "سجين 9 2026 Siccin",
+              "candidate_ref": "3isk:L3dhdGNoL21vdmllcy9tb3ZpZS1zaWNjaW4tOS0yMDI2LW11ZGJsaWov",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:06.584Z",
+              "ended_at": "2026-10-17T15:58:06.594Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "3isk:L3dhdGNoL21vdmllcy9tb3ZpZS1zaWNjaW4tOS0yMDI2LW11ZGJsaWov",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:06.594Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:57:44.864Z",
+        "ended_at": "2026-10-17T15:57:47.648Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://3iskk.xyz/",
+        "items_found": 49,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:57:47.649Z",
+        "ended_at": "2026-10-17T15:57:50.402Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 46,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:57:50.402Z",
+        "ended_at": "2026-10-17T15:57:52.493Z",
+        "result": "success",
+        "category": "movies",
+        "http_status": 200,
+        "selected_ref": "3isk:L3dhdGNoL21vdmllcy9tb3ZpZS1zaWNjaW4tOS0yMDI2LW11ZGJsaWov",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:58:06.594Z",
+      "result_counts": {
+        "access_obstacle": 5
+      }
+    },
+    {
+      "provider": "alooy",
+      "name": "علوي تي في (Alooy TV)",
+      "domains": [
+        "https://fa.alooytv16.xyz",
+        "https://alooytv5.xyz"
+      ],
+      "started_at": "2026-10-17T15:58:06.594Z",
+      "samples": [
+        {
+          "provider": "alooy",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "alooy:L3dhdGNoL3dvcm9vZC13YS16dW5vb2ItMi1hci5odG1s",
+          "title": "ورود وذنوب ج2 مدبلج",
+          "poster": "https://fa.alooytv16.xyz/uploads/video_thumb/2012.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:11.236Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:11.386Z",
+              "ended_at": "2026-10-17T15:58:12.265Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "ورود وذنوب ج2",
+              "candidate_ref": "alooy:L3dhdGNoL3dvcm9vZC13YS16dW5vb2ItMi1hci5odG1s",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:12.586Z",
+              "ended_at": "2026-10-17T15:58:12.599Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "alooy:L3dhdGNoL3dvcm9vZC13YS16dW5vb2ItMi1hci5odG1s",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:12.599Z"
+        },
+        {
+          "provider": "alooy",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "alooy:L3dhdGNoL3Rhc2FjYWstYnUtZGVuaXotYXIuaHRtbA",
+          "title": "هذا البحر سوف يفيض مدبلج",
+          "poster": "https://fa.alooytv16.xyz/uploads/video_thumb/1992.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:12.599Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:13.786Z",
+              "ended_at": "2026-10-17T15:58:14.109Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "هذا البحر سوف يفيض",
+              "candidate_ref": "alooy:L3dhdGNoL3Rhc2FjYWstYnUtZGVuaXotYXIuaHRtbA",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:14.988Z",
+              "ended_at": "2026-10-17T15:58:15.046Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "alooy:L3dhdGNoL3Rhc2FjYWstYnUtZGVuaXotYXIuaHRtbA",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:15.046Z"
+        },
+        {
+          "provider": "alooy",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "alooy:L3dhdGNoL3Rhc2FjYWstYnUtZGVuaXotMi1lbi5odG1s",
+          "title": "هذا البحر سوف يفيض ج2 مترجم",
+          "poster": "https://fa.alooytv16.xyz/uploads/video_thumb/2024.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:15.046Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:16.188Z",
+              "ended_at": "2026-10-17T15:58:17.123Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "هذا البحر سوف يفيض ج2",
+              "candidate_ref": "alooy:L3dhdGNoL3Rhc2FjYWstYnUtZGVuaXotMi1lbi5odG1s",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:17.388Z",
+              "ended_at": "2026-10-17T15:58:17.402Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "alooy:L3dhdGNoL3Rhc2FjYWstYnUtZGVuaXotMi1lbi5odG1s",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:17.402Z"
+        },
+        {
+          "provider": "alooy",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "alooy:L3dhdGNoL2Fzay12ZS10YWh0Lmh0bWw",
+          "title": "الحب والعرش",
+          "poster": "https://fa.alooytv16.xyz/uploads/video_thumb/2000.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:17.402Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:18.588Z",
+              "ended_at": "2026-10-17T15:58:18.921Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "الحب والعرش",
+              "candidate_ref": "alooy:L3dhdGNoL2Fzay12ZS10YWh0Lmh0bWw",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:19.788Z",
+              "ended_at": "2026-10-17T15:58:19.798Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "alooy:L3dhdGNoL2Fzay12ZS10YWh0Lmh0bWw",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:19.798Z"
+        },
+        {
+          "provider": "alooy",
+          "selected_by": "type_completion",
+          "catalog_category": "movies",
+          "page": 1,
+          "seed": null,
+          "reference": "alooy:L3dhdGNoL2hhbGVmLTIuaHRtbA",
+          "title": "الخليفة ج2",
+          "poster": "https://fa.alooytv16.xyz/uploads/video_thumb/2018.jpg",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:19.798Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:20.989Z",
+              "ended_at": "2026-10-17T15:58:21.280Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "الخليفة ج2",
+              "candidate_ref": "alooy:L3dhdGNoL2hhbGVmLTIuaHRtbA",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:22.189Z",
+              "ended_at": "2026-10-17T15:58:22.225Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "alooy:L3dhdGNoL2hhbGVmLTIuaHRtbA",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:22.225Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:58:07.784Z",
+        "ended_at": "2026-10-17T15:58:08.862Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://fa.alooytv16.xyz/tv-series.html",
+        "items_found": 24,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:58:08.985Z",
+        "ended_at": "2026-10-17T15:58:09.769Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 24,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:58:10.185Z",
+        "ended_at": "2026-10-17T15:58:11.236Z",
+        "result": "success",
+        "category": "movies",
+        "http_status": 200,
+        "selected_ref": "alooy:L3dhdGNoL2hhbGVmLTIuaHRtbA",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:58:22.225Z",
+      "result_counts": {
+        "access_obstacle": 5
+      }
+    },
+    {
+      "provider": "laroza",
+      "name": "لاروزا (Laroza)",
+      "domains": [
+        "https://larooza.beer",
+        "https://q.laroza.cfd",
+        "https://laroza.net"
+      ],
+      "started_at": "2026-10-17T15:58:22.225Z",
+      "samples": [
+        {
+          "provider": "laroza",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "laroza:L3BsYXkucGhwP3ZpZD1jZjhkNjg2MGE",
+          "title": "مسلسل انت من احببت 2 الحلقة 26 السادسة والعشرون مدبلجة",
+          "poster": "https://llaroza.casa/uploads/thumbs/2cc3dcfe0-1.jpg?thumbv=69b70663-e279",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:29.661Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:29.661Z",
+              "ended_at": "2026-10-17T15:58:31.231Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "انت من احببت 2",
+              "candidate_ref": "laroza:L3BsYXkucGhwP3ZpZD1jZjhkNjg2MGE",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:31.231Z",
+              "ended_at": "2026-10-17T15:58:31.335Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "laroza:L3BsYXkucGhwP3ZpZD1jZjhkNjg2MGE",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:31.335Z"
+        },
+        {
+          "provider": "laroza",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "laroza:L3BsYXkucGhwP3ZpZD05MmZiNGQ2MjE",
+          "title": "مسلسل احتمال حب الحلقة 86 السادسة والثمانون مدبلجة",
+          "poster": "https://llaroza.casa/uploads/thumbs/6c0f1dca3-1.jpg?thumbv=6a36f25d-d2f5",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:31.335Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:32.431Z",
+              "ended_at": "2026-10-17T15:58:33.328Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "احتمال حب",
+              "candidate_ref": "laroza:L3BsYXkucGhwP3ZpZD00YmRkNjVlOTA",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:33.632Z",
+              "ended_at": "2026-10-17T15:58:33.712Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "laroza:L3BsYXkucGhwP3ZpZD00YmRkNjVlOTA",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:33.712Z"
+        },
+        {
+          "provider": "laroza",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "laroza:L3BsYXkucGhwP3ZpZD1kMGU3MWNmMjg",
+          "title": "مسلسل القصة الكاملة - جريمة في الزمالك الحلقة 1 الاولي",
+          "poster": "https://llaroza.casa/uploads/thumbs/d0e71cf28-1.jpg?thumbv=6acd872b-ee30",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:33.712Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:34.834Z",
+              "ended_at": "2026-10-17T15:58:36.242Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "القصة الكاملة - جريمة في الزمالك",
+              "candidate_ref": "laroza:L3BsYXkucGhwP3ZpZD1kMGU3MWNmMjg",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:36.242Z",
+              "ended_at": "2026-10-17T15:58:36.377Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "laroza:L3BsYXkucGhwP3ZpZD1kMGU3MWNmMjg",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:36.377Z"
+        },
+        {
+          "provider": "laroza",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "laroza:L3BsYXkucGhwP3ZpZD05NzI4ODRkOTg",
+          "title": "مسلسل حب ع ورق الحلقة 38 الثامنة والثلاثون",
+          "poster": "https://llaroza.casa/uploads/thumbs/80b4a57fb-1.jpg?thumbv=6ab56852-17e1d",
+          "type": "series",
+          "started_at": "2026-10-17T15:58:36.377Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:37.443Z",
+              "ended_at": "2026-10-17T15:58:38.191Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "حب ع ورق",
+              "candidate_ref": "laroza:L3BsYXkucGhwP3ZpZD0wZjM5YjExZmQ",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:38.643Z",
+              "ended_at": "2026-10-17T15:58:38.652Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "laroza:L3BsYXkucGhwP3ZpZD0wZjM5YjExZmQ",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:38.652Z"
+        },
+        {
+          "provider": "laroza",
+          "selected_by": "type_completion",
+          "catalog_category": "movies",
+          "page": 1,
+          "seed": null,
+          "reference": "laroza:L3BsYXkucGhwP3ZpZD1mMDg5ZGZkMDI",
+          "title": "فيلم Crawlers 2026 مترجم HD",
+          "poster": "https://llaroza.casa/uploads/thumbs/f089dfd02-1.jpg?thumbv=6ad3809a-82dc",
+          "type": "movie",
+          "started_at": "2026-10-17T15:58:38.652Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:58:39.844Z",
+              "ended_at": "2026-10-17T15:58:40.514Z",
+              "result": "candidate_found_identity_pending_details",
+              "http_status": 200,
+              "query": "Crawlers 2026 مترجم HD",
+              "candidate_ref": "laroza:L3BsYXkucGhwP3ZpZD1mMDg5ZGZkMDI",
+              "identity_match": false,
+              "error": null
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:58:41.043Z",
+              "ended_at": "2026-10-17T15:58:41.098Z",
+              "result": "access_obstacle",
+              "http_status": 502,
+              "identity_match": false,
+              "linked_episode_ref": null,
+              "title": "",
+              "type": "",
+              "error": "fetch failed"
+            }
+          ],
+          "work_reference": "laroza:L3BsYXkucGhwP3ZpZD1mMDg5ZGZkMDI",
+          "result": "access_obstacle",
+          "ended_at": "2026-10-17T15:58:41.098Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:58:23.388Z",
+        "ended_at": "2026-10-17T15:58:25.426Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://llaroza.casa/newvideos1.php?page=1",
+        "items_found": 48,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:58:25.427Z",
+        "ended_at": "2026-10-17T15:58:27.783Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 48,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:58:27.783Z",
+        "ended_at": "2026-10-17T15:58:29.661Z",
+        "result": "success",
+        "category": "movies",
+        "http_status": 200,
+        "selected_ref": "laroza:L3BsYXkucGhwP3ZpZD1mMDg5ZGZkMDI",
+        "error": null
+      },
+      "ended_at": "2026-10-17T15:58:41.098Z",
+      "result_counts": {
+        "access_obstacle": 5
+      }
+    }
+  ],
+  "ended_at": "2026-10-17T15:58:41.098Z"
+}

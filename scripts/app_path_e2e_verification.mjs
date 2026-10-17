@@ -90,6 +90,13 @@ try {
   assert.equal(unsupportedResponse.status, 422);
   assert.equal((await unsupportedResponse.json()).status, 'unsupported');
 
+  const unknownCategoryResponse = await fetch(`${base}/api/v1/provider/category?provider=not-a-provider&category=latest`);
+  assert.equal(unknownCategoryResponse.status, 422, 'provider catalog route must report unsupported providers explicitly');
+  assert.equal((await unknownCategoryResponse.json()).error.code, 'CATALOG_UNSUPPORTED');
+  const unknownEpisodesResponse = await fetch(`${base}/api/v1/provider/episodes?ref=not-a-provider%3Ahttps%3A%2F%2Fexample.invalid%2Fseries`);
+  assert.equal(unknownEpisodesResponse.status, 422, 'episode route must report unsupported provider references explicitly');
+  assert.equal((await unknownEpisodesResponse.json()).error.code, 'EPISODES_UNSUPPORTED');
+
   assert.ok(detailsCalls.some((ref) => ref.startsWith('sports_live:')), 'the registered sports_live alias must reach provider details routing');
   console.log('PASS: real HTTP route sequence covers provider search, details, episode ordering, direct server resolution, empty/error/unsupported outcomes. This is API integration only, not a device playback claim.');
 } finally {

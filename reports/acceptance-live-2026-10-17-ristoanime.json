@@ -1,0 +1,433 @@
+{
+  "started_at": "2026-10-17T15:59:26.997Z",
+  "seed": 505,
+  "latest_count": 3,
+  "random_count": 1,
+  "pacing_ms": 1200,
+  "request_timeout_ms": 12000,
+  "application_base": "in-process HTTP server",
+  "providers": [
+    {
+      "provider": "ristoanime",
+      "name": "RistoAnime",
+      "domains": [
+        "https://ristoanime.me",
+        "https://ristoanime.com"
+      ],
+      "started_at": "2026-10-17T15:59:26.999Z",
+      "samples": [
+        {
+          "provider": "ristoanime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "انمي Black Clover الموسم 2 الحلقة 3 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329642.webp",
+          "type": "series",
+          "started_at": "2026-10-17T15:59:35.044Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T15:59:35.227Z",
+              "ended_at": "2026-10-17T15:59:35.435Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Black Clover",
+              "candidate_ref": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-black-clover/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "selected card URL is an episode in ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-black-clover/"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T15:59:36.427Z",
+              "ended_at": "2026-10-17T15:59:45.226Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "title": "جميع حلقات انمي Black Clover مترجمة",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T15:59:45.226Z",
+              "ended_at": "2026-10-17T15:59:51.548Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 3,
+              "ordered_numbers": [
+                1,
+                2,
+                3
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة1",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:59:51.548Z",
+                "ended_at": "2026-10-17T15:59:59.503Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T15:59:59.503Z",
+                  "ended_at": "2026-10-17T15:59:59.503Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-8yq3zanwc8rc.html"
+                }
+              ],
+              "result": "embed_unverified"
+            },
+            {
+              "episode": "الحلقة3",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-black-clover-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-2-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 3,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T15:59:59.503Z",
+                "ended_at": "2026-10-17T16:00:01.544Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T16:00:01.544Z",
+                  "ended_at": "2026-10-17T16:00:01.544Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-6k8sl810epor.html"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-black-clover/",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T16:00:01.544Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-tokyo-revengers-santen-sensou-hen-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-4-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84/",
+          "title": "انمي Tokyo Revengers: Santen Sensou-hen الموسم 4 الحلقة 3 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329056.webp",
+          "type": "series",
+          "started_at": "2026-10-17T16:00:01.544Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T16:00:01.544Z",
+              "ended_at": "2026-10-17T16:00:01.701Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Tokyo Revengers: Santen Sensou-hen",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T16:00:01.701Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "latest_additions",
+          "catalog_category": "latest",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "انمي Hotaru no Yomeiri الحلقة 2 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/329799.webp",
+          "type": "series",
+          "started_at": "2026-10-17T16:00:01.701Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T16:00:02.745Z",
+              "ended_at": "2026-10-17T16:00:02.915Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Hotaru no Yomeiri",
+              "candidate_ref": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "selected card URL is an episode in ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T16:00:03.949Z",
+              "ended_at": "2026-10-17T16:00:06.372Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "title": "جميع حلقات انمي Hotaru no Yomeiri مترجمة",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T16:00:06.372Z",
+              "ended_at": "2026-10-17T16:00:07.424Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 2,
+              "ordered_numbers": [
+                1,
+                2
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة1",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T16:00:07.573Z",
+                "ended_at": "2026-10-17T16:00:10.268Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T16:00:10.268Z",
+                  "ended_at": "2026-10-17T16:00:10.268Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-xp7qybg3y5su.html"
+                }
+              ],
+              "result": "embed_unverified"
+            },
+            {
+              "episode": "الحلقة2",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-2-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 2,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T16:00:10.268Z",
+                "ended_at": "2026-10-17T16:00:12.110Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T16:00:12.110Z",
+                  "ended_at": "2026-10-17T16:00:12.110Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-c16m6gzal8ir.html"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-hotaru-no-yomeiri-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T16:00:12.110Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "seeded_random_older_page",
+          "catalog_category": "latest",
+          "page": 2,
+          "seed": 505,
+          "reference": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "انمي Tempal: Item no Chikara الحلقة 3 مترجمة",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/09/160022l.webp",
+          "type": "series",
+          "started_at": "2026-10-17T16:00:12.110Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T16:00:12.110Z",
+              "ended_at": "2026-10-17T16:00:14.549Z",
+              "result": "success",
+              "http_status": 200,
+              "query": "Tempal: Item no Chikara",
+              "candidate_ref": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "identity_match": true,
+              "error": null,
+              "identity_evidence": "selected card URL is an episode in ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/"
+            },
+            {
+              "name": "details",
+              "started_at": "2026-10-17T16:00:14.549Z",
+              "ended_at": "2026-10-17T16:00:17.156Z",
+              "result": "success",
+              "http_status": 200,
+              "identity_match": true,
+              "linked_episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "title": "جميع حلقات انمي Tempal: Item no Chikara مترجمة",
+              "type": "series",
+              "error": null
+            },
+            {
+              "name": "episode_list",
+              "started_at": "2026-10-17T16:00:17.156Z",
+              "ended_at": "2026-10-17T16:00:18.171Z",
+              "result": "success",
+              "http_status": 200,
+              "episode_count": 3,
+              "ordered_numbers": [
+                1,
+                2,
+                3
+              ],
+              "error": null
+            },
+            {
+              "episode": "الحلقة1",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-1-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 1,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T16:00:18.357Z",
+                "ended_at": "2026-10-17T16:00:20.907Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T16:00:20.907Z",
+                  "ended_at": "2026-10-17T16:00:20.907Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-vk98g0ip14xb.html"
+                }
+              ],
+              "result": "embed_unverified"
+            },
+            {
+              "episode": "الحلقة3",
+              "episode_ref": "ristoanime:https://ristoanime.me/%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+              "episode_number": 3,
+              "resolve_stage": {
+                "name": "resolve_servers",
+                "started_at": "2026-10-17T16:00:20.907Z",
+                "ended_at": "2026-10-17T16:00:22.844Z",
+                "result": "success",
+                "http_status": 200,
+                "server_count": 1,
+                "error": null
+              },
+              "media_checks": [
+                {
+                  "server": "ristoanime",
+                  "server_type": "embed",
+                  "started_at": "2026-10-17T16:00:22.844Z",
+                  "ended_at": "2026-10-17T16:00:22.844Z",
+                  "result": "embed_unverified",
+                  "kind": "embed",
+                  "url": "https://www.mp4upload.com/embed-vf48cuaqhi2t.html"
+                }
+              ],
+              "result": "embed_unverified"
+            }
+          ],
+          "work_reference": "ristoanime:https://ristoanime.me/series/%d8%ac%d9%85%d9%8a%d8%b9-%d8%ad%d9%84%d9%82%d8%a7%d8%aa-%d8%a7%d9%86%d9%85%d9%8a-tempal-item-no-chikara-%d9%85%d8%aa%d8%b1%d8%ac%d9%85%d8%a9-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "result": "embed_unverified",
+          "ended_at": "2026-10-17T16:00:22.844Z"
+        },
+        {
+          "provider": "ristoanime",
+          "selected_by": "type_completion",
+          "catalog_category": "anime_movies",
+          "page": 1,
+          "seed": null,
+          "reference": "ristoanime:https://ristoanime.me/%d9%81%d9%8a%d9%84%d9%85-mononoke-movie-3-hebigami-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+          "title": "فيلم Mononoke Movie 3: Hebigami",
+          "poster": "https://ristoanime.me/wp-content/uploads/2026/10/156670l.webp",
+          "type": "movie",
+          "started_at": "2026-10-17T16:00:22.844Z",
+          "stages": [
+            {
+              "name": "search_identity",
+              "started_at": "2026-10-17T16:00:22.844Z",
+              "ended_at": "2026-10-17T16:00:23.014Z",
+              "result": "no_search_result",
+              "http_status": 200,
+              "query": "Mononoke Movie 3: Hebigami",
+              "candidate_ref": null,
+              "identity_match": false,
+              "error": null
+            }
+          ],
+          "result": "no_search_result",
+          "ended_at": "2026-10-17T16:00:23.014Z"
+        }
+      ],
+      "result": "tested_with_failures_or_unverified",
+      "category": {
+        "name": "latest_additions",
+        "started_at": "2026-10-17T15:59:26.999Z",
+        "ended_at": "2026-10-17T15:59:28.659Z",
+        "result": "ok",
+        "http_status": 200,
+        "source_url": "https://ristoanime.me/",
+        "items_found": 33,
+        "error": null
+      },
+      "older_page": {
+        "name": "older_page_for_seeded_sample",
+        "started_at": "2026-10-17T15:59:28.660Z",
+        "ended_at": "2026-10-17T15:59:34.027Z",
+        "result": "ok",
+        "http_status": 200,
+        "page": 2,
+        "items_found": 32,
+        "error": null
+      },
+      "type_completion": {
+        "name": "missing_type_completion",
+        "started_at": "2026-10-17T15:59:34.027Z",
+        "ended_at": "2026-10-17T15:59:35.044Z",
+        "result": "success",
+        "category": "anime_movies",
+        "http_status": 200,
+        "selected_ref": "ristoanime:https://ristoanime.me/%d9%81%d9%8a%d9%84%d9%85-mononoke-movie-3-hebigami-%d9%85%d8%aa%d8%b1%d8%ac%d9%85-%d8%a7%d9%88%d9%86-%d9%84%d8%a7%d9%8a%d9%86/",
+        "error": null
+      },
+      "ended_at": "2026-10-17T16:00:23.014Z",
+      "result_counts": {
+        "embed_unverified": 3,
+        "no_search_result": 2
+      }
+    }
+  ],
+  "ended_at": "2026-10-17T16:00:23.015Z"
+}

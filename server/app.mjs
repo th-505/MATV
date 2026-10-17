@@ -22,7 +22,7 @@ import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, searchProviderCatalog, activateAllScrapersForContent } from "./scrapers/index.mjs";
-import { resolveProviderReference } from "./scrapers/registry.mjs";
+import { getProvider, resolveProviderReference } from "./scrapers/registry.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -71,6 +71,27 @@ function awaitRequestSignal(promise, signal) {
       Promise.resolve(promise).finally(() => signal.removeEventListener('abort', onAbort)).catch(() => {});
     })
   ]);
+}
+
+async function runProviderOperation(operation, timeoutMs = 10_000) {
+  const controller = new AbortController();
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(() => operation(controller.signal)),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          const error = new Error('PROVIDER_OPERATION_TIMEOUT');
+          error.code = 'PROVIDER_OPERATION_TIMEOUT';
+          controller.abort(error);
+          reject(error);
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
+    controller.abort(new Error('PROVIDER_OPERATION_FINISHED'));
+  }
 }
 
 const apiRateLimit = createRateLimiter({ windowMs: 60_000, max: 120 });
@@ -583,6 +604,47 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
       if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status(), alooyRuntime.status(), larozaRuntime.status()] });
+      if (url.pathname === '/api/v1/provider/category') {
+        const providerId = url.searchParams.get('provider') || '';
+        const category = (url.searchParams.get('category') || 'latest').slice(0, 40);
+        const page = Math.min(50, Math.max(1, Number(url.searchParams.get('page')) || 1));
+        const provider = getProvider(providerId);
+        if (!provider || !provider.meta.capabilities?.catalog || typeof provider.module.scrapeCatalog !== 'function') {
+          return sendJson(req, res, 422, { status: 'unsupported', provider_id: providerId, category, data: [], error: { code: 'CATALOG_UNSUPPORTED' } });
+        }
+        let data;
+        try { data = await runProviderOperation((signal) => provider.module.scrapeCatalog(category, page, { timeoutMs: 10_000, signal })); }
+        catch (error) {
+          if (error?.code === 'PROVIDER_OPERATION_TIMEOUT') return sendJson(req, res, 504, { status: 'error', provider_id: provider.meta.id, category, page, data: [], error: { code: error.code } });
+          throw error;
+        }
+        const meta = data?._meta || null;
+        return sendJson(req, res, 200, {
+          status: meta?.ok === false ? 'error' : Array.isArray(data) && data.length ? 'success' : 'no_results',
+          provider_id: provider.meta.id, provider_name: provider.meta.name, category, page,
+          source_url: meta?.url || provider.meta.domains?.[0] || '', data: Array.isArray(data) ? data : [],
+          error: meta?.errorCode ? { code: meta.errorCode, message: meta.errorMessage || '' } : null
+        });
+      }
+      if (url.pathname === '/api/v1/provider/episodes') {
+        const ref = (url.searchParams.get('ref') || '').trim();
+        const provider = resolveProviderReference(ref);
+        if (!provider || !provider.meta.capabilities?.episodes || typeof provider.module.scrapeEpisodes !== 'function') {
+          return sendJson(req, res, 422, { status: 'unsupported', provider_id: provider?.meta.id || '', data: [], error: { code: 'EPISODES_UNSUPPORTED' } });
+        }
+        let data;
+        try { data = await runProviderOperation((signal) => provider.module.scrapeEpisodes(ref, { timeoutMs: 10_000, signal })); }
+        catch (error) {
+          if (error?.code === 'PROVIDER_OPERATION_TIMEOUT') return sendJson(req, res, 504, { status: 'error', provider_id: provider.meta.id, source_url: ref, data: [], error: { code: error.code } });
+          throw error;
+        }
+        const meta = data?._meta || null;
+        return sendJson(req, res, 200, {
+          status: meta?.ok === false ? 'error' : Array.isArray(data) && data.length ? 'success' : 'no_results',
+          provider_id: provider.meta.id, source_url: meta?.url || ref, data: Array.isArray(data) ? data : [],
+          error: meta?.errorCode ? { code: meta.errorCode, message: meta.errorMessage || '' } : null
+        });
+      }
       if (url.pathname.startsWith('/api/v1/3isk/')) {
         if (req.method !== 'GET') return sendJson(req, res, 405, { status: 'error', message: 'METHOD_NOT_ALLOWED' });
         const ref = url.searchParams.get('ref') || '';
