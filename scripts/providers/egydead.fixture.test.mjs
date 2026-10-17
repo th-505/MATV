@@ -178,6 +178,10 @@ const liveChannels = await scrapeLive({
 assert.ok(Array.isArray(liveChannels));
 assert.ok(liveChannels._meta?.ok);
 assert.ok(liveChannels.length >= 4, `Expected at least 4 live channels, got ${liveChannels.length}`);
+const vodOnlyLiveProbe = await scrapeLive({ fixtureHtml: fixtures.CATALOG_HTML });
+assert.equal(vodOnlyLiveProbe.length, 0);
+assert.equal(vodOnlyLiveProbe._meta?.errorCode, SCRAPER_ERROR_CODES.UNSUPPORTED_CAPABILITY);
+assert.match(vodOnlyLiveProbe._meta?.errorMessage || '', /LIVE_CHANNEL_SOURCE_UNAVAILABLE/);
 
 const bein1 = liveChannels.find((ch) => ch.name.includes('beIN Sports 1'));
 assert.ok(bein1, 'Must find beIN Sports 1 HD');
