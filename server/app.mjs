@@ -22,7 +22,8 @@ import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, searchProviderCatalog, activateAllScrapersForContent } from "./scrapers/index.mjs";
-import { getProvider, resolveProviderReference } from "./scrapers/registry.mjs";
+import { sourceDisplayName, sourceDisplayNames } from "./source-display.mjs";
+import { listProviders, PROVIDER_ALIASES, getProvider, resolveProviderReference } from "./scrapers/registry.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -603,6 +604,15 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
+      // Additive presentation contract; identities and the existing status route stay intact.
+      if (url.pathname === '/api/v1/search/providers') return sendJson(req, res, 200, {
+        status: 'success', data: listProviders().map(meta => ({
+          id: meta.id, displayName: sourceDisplayName(meta.name || meta.id),
+          displayNames: sourceDisplayNames(meta.name || meta.id),
+          aliases: Object.entries(PROVIDER_ALIASES).filter(([, id]) => id === meta.id).map(([alias]) => alias),
+          domains: meta.domains || [], supportsSearch: Boolean(meta.capabilities?.search && typeof getProvider(meta.id)?.module.scrapeSearch === 'function')
+        }))
+      });
       if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status(), alooyRuntime.status(), larozaRuntime.status()] });
       if (url.pathname === '/api/v1/provider/category') {
         const providerId = url.searchParams.get('provider') || '';

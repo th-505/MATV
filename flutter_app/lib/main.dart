@@ -537,13 +537,13 @@ class _HomePageState extends State<HomePage> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => Scaffold(
-                    appBar: AppBar(title: const Text('البحث')),
+                    appBar: AppBar(title: const Text('استكشاف')),
                     body: SearchPage(api: widget.api, store: widget.store),
                   ),
                 ),
               ),
               icon: const Icon(Icons.search),
-              label: const Text('البحث'),
+              label: const Text('استكشاف'),
             ),
           ],
         ),
@@ -1319,7 +1319,12 @@ class _CatalogPageState extends State<CatalogPage> {
 }
 
 class _CatalogCard extends StatelessWidget {
-  const _CatalogCard({required this.item, required this.onTap});
+  const _CatalogCard({
+    required this.item,
+    required this.onTap,
+    this.sourceLabel = '',
+  });
+  final String sourceLabel;
   final CatalogItem item;
   final VoidCallback onTap;
   @override
@@ -1371,6 +1376,7 @@ class _CatalogCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
+                  if (sourceLabel.isNotEmpty) Text(sourceLabel),
                   const SizedBox(height: 3),
                   Text(
                     [
@@ -1413,7 +1419,40 @@ class _SearchPageState extends State<SearchPage> {
   bool submitted = false;
   String? error;
   Timer? debounce;
+  String providerId = '';
+  List<Map<String, dynamic>> providers = const [];
+  String? providersError;
+  bool providersLoading = false;
   int generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    loadProviders();
+  }
+
+  Future<void> loadProviders() async {
+    if (providersLoading) return;
+    setState(() {
+      providersLoading = true;
+      providersError = null;
+    });
+    try {
+      final result = await widget.api.searchProviders();
+      if (mounted) {
+        setState(() {
+          providers = result;
+          providersError = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => providersError = 'تعذر تحميل المصادر');
+      }
+    } finally {
+      if (mounted) setState(() => providersLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -1436,11 +1475,19 @@ class _SearchPageState extends State<SearchPage> {
       });
       return;
     }
+    generation += 1;
+    setState(() {
+      items = const [];
+      loading = false;
+      submitted = false;
+      error = null;
+    });
     if (q.length < 2) return;
     debounce = Timer(const Duration(milliseconds: 450), () => run(q));
   }
 
   Future<void> run([String? requested]) async {
+    debounce?.cancel();
     final q = (requested ?? query.text).trim();
     if (q.isEmpty) return;
     final request = ++generation;
@@ -1448,20 +1495,23 @@ class _SearchPageState extends State<SearchPage> {
       loading = true;
       submitted = true;
       error = null;
+      items = const [];
     });
     try {
-      final result = await widget.api.search(q);
+      final result = await widget.api.search(q, providerId: providerId);
       if (!mounted || request != generation || q != query.text.trim()) return;
       setState(() {
         items = result;
         loading = false;
       });
-    } catch (_) {
+    } catch (failure) {
       if (!mounted || request != generation) return;
       setState(() {
         items = const [];
         loading = false;
-        error = 'تعذر البحث حاليًا. أعد المحاولة.';
+        error = failure.toString().contains('SEARCH_UNSUPPORTED')
+            ? 'البحث غير مدعوم في هذا المصدر'
+            : 'المصدر غير متاح حاليًا. أعد المحاولة.';
       });
     }
   }
@@ -1471,20 +1521,49 @@ class _SearchPageState extends State<SearchPage> {
     padding: EdgeInsets.all(isTvTarget ? 24 : 12),
     child: Column(
       children: [
+        DropdownButtonFormField<String>(
+          initialValue: providerId,
+          decoration: const InputDecoration(labelText: 'مصدر الاستكشاف'),
+          items: [
+            const DropdownMenuItem(value: '', child: Text('جميع المصادر')),
+            for (final p in providers)
+              DropdownMenuItem(value: '${p['id']}', child: Text('${p['displayName']}')),
+          ],
+          onChanged: (value) {
+            debounce?.cancel();
+            generation += 1;
+            setState(() {
+              providerId = value ?? '';
+              items = const [];
+              loading = false;
+              submitted = false;
+              error = null;
+            });
+            if (query.text.trim().isNotEmpty) run();
+          },
+        ),
+        if (providersError != null)
+          TextButton(
+            onPressed: providersLoading ? null : loadProviders,
+            child: Text('$providersError — إعادة المحاولة'),
+          ),
         TextField(
           controller: query,
           textInputAction: TextInputAction.search,
           onChanged: onQueryChanged,
           onSubmitted: (_) => run(),
           decoration: InputDecoration(
-            hintText: 'ابحث عن فيلم أو مسلسل',
+            hintText: 'استكشاف: اسم فيلم أو مسلسل',
             suffixIcon: IconButton(
               onPressed: loading ? null : () => run(),
               icon: const Icon(Icons.search),
             ),
           ),
         ),
-        if (loading) const LinearProgressIndicator(),
+        if (loading)
+          const Column(
+            children: [LinearProgressIndicator(), Text('جارٍ البحث…')],
+          ),
         const SizedBox(height: 10),
         Expanded(
           child: error != null
@@ -1504,7 +1583,7 @@ class _SearchPageState extends State<SearchPage> {
               : submitted && !loading && items.isEmpty
               ? const Center(child: Text('لا توجد نتائج لهذا البحث حاليًا'))
               : !submitted
-              ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للبحث'))
+              ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للاستكشاف'))
               : GridView.builder(
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: isTvTarget ? 260 : 220,
@@ -1515,6 +1594,7 @@ class _SearchPageState extends State<SearchPage> {
                   itemCount: items.length,
                   itemBuilder: (context, i) => _CatalogCard(
                     item: items[i],
+                    sourceLabel: widget.api.sourceDisplayLabel(items[i]),
                     onTap: () => openDetails(
                       context,
                       widget.api,

@@ -9,7 +9,7 @@ RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
     npm ci --omit=dev --no-audit --no-fund
 COPY --chown=node:node server/ ./server/
-COPY --chown=node:node edge/src/provider.mjs ./edge/src/provider.mjs
+COPY --chown=node:node edge/src/ ./edge/src/
 USER node
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

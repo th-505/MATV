@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
@@ -295,11 +296,69 @@ class MitvApi implements MediaRepository {
   }
 
   @override
-  Future<List<CatalogItem>> search(String query) async {
+  Future<List<CatalogItem>> search(String query, {String providerId = ''}) async {
     final generation = _cacheGeneration;
-    final json = await _getJson('/api/v1/search', {'q': query.trim()});
+    final json = await _getJson(
+      '/api/v1/search',
+      {'q': query.trim(), if (providerId.isNotEmpty) 'provider': providerId},
+      const Duration(seconds: 90),
+    );
     _ensureGeneration(generation);
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
+  }
+
+  final List<Map<String, dynamic>> _searchProviders = [];
+  final sourceMetadataChanges = ChangeNotifier();
+  Future<List<Map<String, dynamic>>>? _searchProvidersPending;
+  bool _searchProvidersLoaded = false;
+  bool sourceMetadataLoading = false;
+  String? sourceMetadataError;
+
+  // Shared by all entry points. Successful metadata is cached, in-flight calls
+  // coalesce, and failure clears the pending slot so an explicit retry can run.
+  Future<List<Map<String, dynamic>>> searchProviders() {
+    if (_searchProvidersLoaded) return Future.value(List.unmodifiable(_searchProviders));
+    if (_searchProvidersPending != null) return _searchProvidersPending!;
+    sourceMetadataLoading = true;
+    sourceMetadataError = null;
+    final pending = _loadSearchProviders();
+    _searchProvidersPending = pending;
+    sourceMetadataChanges.notifyListeners();
+    return pending;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSearchProviders() async {
+    try {
+      final json = await _getJson('/api/v1/search/providers');
+      _searchProviders..clear()..addAll(_list(json['data']));
+      _searchProvidersLoaded = true;
+      return List.unmodifiable(_searchProviders);
+    } catch (_) {
+      sourceMetadataError = 'تعذر تحميل المصادر';
+      rethrow;
+    } finally {
+      _searchProvidersPending = null;
+      sourceMetadataLoading = false;
+      if (!_closed) sourceMetadataChanges.notifyListeners();
+    }
+  }
+
+  String sourceDisplayLabel(CatalogItem item) {
+    final id = item.source;
+    final prefix = item.ref.split(':').first;
+    for (final p in _searchProviders) {
+      final aliases = p['aliases'] is List ? p['aliases'] as List : const [];
+      final host = Uri.tryParse(item.ref)?.host;
+      final domains = p['domains'] is List ? p['domains'] as List : const [];
+      if (p['id'] == id ||
+          p['id'] == prefix ||
+          aliases.contains(id) ||
+          aliases.contains(prefix) ||
+          (host != null && host.isNotEmpty && domains.any((d) => Uri.tryParse('$d')?.host == host))) {
+        return '${p['displayName'] ?? ''}';
+      }
+    }
+    return '';
   }
 
   Future<bool> tmdbAvailable() async {
@@ -830,6 +889,9 @@ class MitvApi implements MediaRepository {
         .timeout(timeout);
     _ensureGeneration(generation);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (path == '/api/v1/search' && response.statusCode == 422) {
+        throw const ApiException('SEARCH_UNSUPPORTED');
+      }
       throw ApiException('HTTP ${response.statusCode}');
     }
     if (response.bodyBytes.length > 128 * 1024) {
@@ -839,6 +901,7 @@ class MitvApi implements MediaRepository {
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
     }
+    if (path == '/api/v1/search' && decoded['status'] == 'no_results') return decoded;
     if (decoded['status'] != 'success') {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
     }
@@ -857,6 +920,7 @@ class MitvApi implements MediaRepository {
     _closed = true;
     _cacheGeneration++;
     _client.close();
+    sourceMetadataChanges.dispose();
   }
 }
 
