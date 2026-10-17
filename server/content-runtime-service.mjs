@@ -71,7 +71,7 @@ export function createContentRuntimeService({
   const maxStaleMs = Math.max(0, Number(staleIfErrorMs) || 0);
   const attempts = Math.max(1, Math.min(3, Math.trunc(Number(fetchAttempts) || DEFAULT_FETCH_ATTEMPTS)));
 
-  async function execute({ kind, key, ttlMs, fallbackProvider, fetcher, normalize }) {
+  async function execute({ kind, key, ttlMs, fallbackProvider, fetcher, normalize, signal = null }) {
     const stamp = now();
     const cachedEntry = typeof cache.peek === "function" ? cache.peek(key, stamp) : undefined;
     if (cachedEntry && !cachedEntry.expired) {
@@ -91,9 +91,10 @@ export function createContentRuntimeService({
     let source = fallbackProvider;
     let lastError = null;
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      if (signal?.aborted) throw signal.reason || new Error('REQUEST_ABORTED');
       const started = now();
       try {
-        const payload = await fetcher();
+        const payload = await fetcher({ signal });
         source = providerName(payload, fallbackProvider);
         const data = normalize(payload);
         const diagnostics = payload?.diagnostics || null;
@@ -112,6 +113,7 @@ export function createContentRuntimeService({
         });
       } catch (error) {
         lastError = error;
+        if (signal?.aborted) throw signal.reason || error;
         const failedAt = now();
         health.recordFailure(source || fallbackProvider, { now: failedAt });
       }
@@ -150,7 +152,7 @@ export function createContentRuntimeService({
       });
     },
 
-    async search(query) {
+    async search(query, { signal = null } = {}) {
       const q = String(query || "").trim();
       if (!q) return buildRuntimeEnvelope({ kind: "search", data: [], source: "basri-original", health: null });
       return execute({
@@ -158,7 +160,8 @@ export function createContentRuntimeService({
         key: cacheKey("search", q),
         ttlMs: catalogTtlMs,
         fallbackProvider: "basri-cinema",
-        fetcher: () => searchCatalog(q),
+        fetcher: ({ signal: requestSignal }) => searchCatalog(q, { signal: requestSignal }),
+        signal,
         normalize: (payload) => unwrapList(payload).map(normalizeCatalogItem).filter((item) => item.ref),
       });
     },

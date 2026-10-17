@@ -39,5 +39,17 @@ const shiiDetails = await shii4u.scrapeDetails(shiiSearch[0].ref, { fixtureHtml:
 assert.equal(shiiDetails?.source, 'shii4u');
 assert.ok(String(shiiDetails?.sourceUrl || '').includes('shii4u.cam'));
 assert.ok((shiiDetails?.servers || []).every((server) => server.provider === 'shii4u'));
+const shiiSeriesDetails = await shii4u.scrapeDetails(shiiSearch[0].ref, { fixtureHtml: shiiFixture.SERIES_DETAILS_HTML });
+assert.equal(shiiSeriesDetails?.source, 'shii4u');
+assert.equal(shiiSeriesDetails?.episodes?.length, 2);
+assert.ok(shiiSeriesDetails.episodes.every((episode) => episode.source === 'shii4u' &&
+  episode.providerId === 'shii4u' && episode.ref.startsWith('shii4u:') && episode.url.startsWith('shii4u:')));
+const shiiEpisodeDetails = await shii4u.scrapeDetails(shiiSeriesDetails.episodes[0].ref, {
+  fixtureHtml: shiiFixture.EPISODE_DETAILS_HTML
+});
+assert.equal(shiiEpisodeDetails?.source, 'shii4u', 'opening a Shii4U episode must remain under Shii4U identity');
+assert.ok(shiiEpisodeDetails?.servers?.every((server) => server.provider === 'shii4u'));
+const shiiEpisodes = await shii4u.scrapeEpisodes(shiiSearch[0].ref, { fixtureHtml: shiiFixture.SERIES_DETAILS_HTML });
+assert.ok(shiiEpisodes.every((episode) => episode.provider === 'shii4u' && episode.ref.startsWith('shii4u:')));
 
 console.log('additional provider fixture assertions passed (Anime4Up Rest, EgyDead Live, Shii4U)');

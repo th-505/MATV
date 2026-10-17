@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { basename, resolve } from 'node:path';
 import { readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   PROVIDERS_MAP, getProvider, getProviderByCode, getProvidersByCode, listProviders, resolveProviderReference
@@ -54,7 +54,10 @@ const fixtureTestFiles = readdirSync(resolve(ROOT, 'scripts/providers'))
   .filter((name) => name.endsWith('.fixture.test.mjs'))
   .map((name) => resolve(ROOT, 'scripts/providers', name));
 const requiredFixtureTests = new Set(['akwam', '3isk', 'alooy', 'anime4up', 'arabseed', 'cimanow', 'egydead', 'ipauniverse', 'laroza', 'mewsry', 'moviztime', 'mycima', 'qfilm', 'ristoanime', 'shahid4u', 'witanime', 'yallashoot']);
-for (const id of requiredFixtureTests) assert.ok(fixtureTestFiles.some((path) => path.endsWith(`/${id}.fixture.test.mjs`)), `missing deterministic fixture test: ${id}`);
+for (const id of requiredFixtureTests) assert.ok(
+  fixtureTestFiles.some((path) => basename(path) === `${id}.fixture.test.mjs`),
+  `missing deterministic fixture test: ${id}`
+);
 fixtureTestFiles.push(resolve(ROOT, 'scripts/providers/additional_provider_fixtures.test.mjs'));
 
 for (const testFile of fixtureTestFiles) {

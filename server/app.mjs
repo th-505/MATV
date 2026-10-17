@@ -36,6 +36,42 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:8000",
   "http://127.0.0.1:8000",
 ]);
+const SEARCH_HTTP_BUDGET_MS = 60_000; // web/core/api-client.js allows 90s for the backend response
+
+function createSearchRequestScope(req, res, timeoutMs = SEARCH_HTTP_BUDGET_MS) {
+  const controller = new AbortController();
+  const scope = { controller, timedOut: false, clientDisconnected: false };
+  const onAborted = () => {
+    scope.clientDisconnected = true;
+    controller.abort(new Error('CLIENT_DISCONNECTED'));
+  };
+  const onClose = () => { if (!res.writableEnded) onAborted(); };
+  const timer = setTimeout(() => {
+    scope.timedOut = true;
+    controller.abort(new Error('SEARCH_HTTP_BUDGET_EXCEEDED'));
+  }, timeoutMs);
+  req.once('aborted', onAborted);
+  res.once('close', onClose);
+  scope.dispose = () => {
+    clearTimeout(timer);
+    req.removeListener('aborted', onAborted);
+    res.removeListener('close', onClose);
+  };
+  return scope;
+}
+
+function awaitRequestSignal(promise, signal) {
+  if (!signal) return Promise.resolve(promise);
+  if (signal.aborted) return Promise.reject(signal.reason || new Error('REQUEST_ABORTED'));
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => {
+      const onAbort = () => reject(signal.reason || new Error('REQUEST_ABORTED'));
+      signal.addEventListener('abort', onAbort, { once: true });
+      Promise.resolve(promise).finally(() => signal.removeEventListener('abort', onAbort)).catch(() => {});
+    })
+  ]);
+}
 
 const apiRateLimit = createRateLimiter({ windowMs: 60_000, max: 120 });
 let cinemaToken = "";
@@ -96,6 +132,10 @@ function safeHeaderUrl(value) {
 
 async function fetchTextJson(url, init = {}, timeoutMs = 45_000) {
   const controller = new AbortController();
+  const callerSignal = init.signal || null;
+  const abortCaller = () => controller.abort(callerSignal?.reason || new Error('REQUEST_ABORTED'));
+  if (callerSignal?.aborted) abortCaller();
+  else callerSignal?.addEventListener('abort', abortCaller, { once: true });
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(url, { ...init, signal: controller.signal, cache: "no-store", redirect: "follow" });
@@ -105,6 +145,7 @@ async function fetchTextJson(url, init = {}, timeoutMs = 45_000) {
     return { response, data, text };
   } finally {
     clearTimeout(timer);
+    callerSignal?.removeEventListener('abort', abortCaller);
   }
 }
 
@@ -140,12 +181,12 @@ async function getMatchServers(target) {
   return result.data;
 }
 
-async function ensureCinemaSession(force = false) {
+async function ensureCinemaSession(force = false, { signal = null } = {}) {
   const now = Date.now();
   if (!force && cinemaToken && cinemaTokenExpiresAt > now + 10_000) return cinemaToken;
   if (!force && cinemaSessionPromise) return cinemaSessionPromise;
   cinemaSessionPromise = (async () => {
-    const result = await fetchTextJson(`${CINEMA}session`, { headers: { Accept: "application/json" } }, 15_000);
+    const result = await fetchTextJson(`${CINEMA}session`, { headers: { Accept: "application/json" }, signal }, 15_000);
     if (!result.response.ok || !result.data?.token) throw new Error(`CINEMA_SESSION_${result.response.status}`);
     cinemaToken = String(result.data.token);
     const expiresAt = Number(result.data.expiresAt || 0);
@@ -155,24 +196,27 @@ async function ensureCinemaSession(force = false) {
   try { return await cinemaSessionPromise; } finally { cinemaSessionPromise = null; }
 }
 
-async function cinemaWorkerRequest(action, params = {}, retry = true) {
-  const token = await ensureCinemaSession(false);
+async function cinemaWorkerRequest(action, params = {}, retry = true, signal = null) {
+  const token = await ensureCinemaSession(false, { signal });
   const query = new URLSearchParams({ action, token, ...params });
-  const result = await fetchTextJson(`${CINEMA}?${query}`, { headers: { Accept: "application/json" } }, 45_000);
+  const result = await fetchTextJson(`${CINEMA}?${query}`, { headers: { Accept: "application/json" }, signal }, 45_000);
   if (retry && result.response.status === 401) {
     cinemaToken = "";
     cinemaTokenExpiresAt = 0;
-    await ensureCinemaSession(true);
-    return cinemaWorkerRequest(action, params, false);
+    await ensureCinemaSession(true, { signal });
+    return cinemaWorkerRequest(action, params, false, signal);
   }
   if (!result.response.ok) throw new Error(`CINEMA_${action.toUpperCase()}_${result.response.status}`);
   if (result.data?.status !== "success") throw new Error(`CINEMA_${action.toUpperCase()}_REJECTED`);
   return result.data;
 }
 
-async function workerOrDirect(label, workerFn, directFn) {
+async function workerOrDirect(label, workerFn, directFn, signal = null) {
   try {return {data:await directFn(),source:'basri-direct'};}
-  catch {return {data:await workerFn(),source:'basri-worker'};}
+  catch (error) {
+    if (signal?.aborted) throw signal.reason || error;
+    return {data:await workerFn(),source:'basri-worker'};
+  }
 }
 
 function normalizeCatalog(items = []) {
@@ -228,11 +272,11 @@ async function normalizeWorkerDetails(data = {}) {
   }) };
 }
 
-async function cinemaSearch(query) {
+async function cinemaSearch(query, { signal = null } = {}) {
   const result = await workerOrDirect(
     "search",
-    () => cinemaWorkerRequest("search", { q: query }),
-    () => directSearch(query),
+    () => cinemaWorkerRequest("search", { q: query }, true, signal),
+    () => directSearch(query, { signal }), signal
   );
   const items = result.source === "basri-worker" ? (result.data.data || []) : result.data;
   return { status: "success", source: result.source, data: normalizeCatalog(items) };
@@ -253,14 +297,18 @@ async function cinemaCategory(sourceUrl, page = 1) {
 export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches, searchScraper = scrapeRealSearch, alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider() } = {}) {
   return createContentRuntimeService({
     fetchMatches,
-    async searchCatalog(query) {
-      const results = await Promise.allSettled([
-        searchCatalog(query),
-        iskRuntime.search(query),
-        alooyRuntime.search(query),
-        larozaRuntime.search(query),
-        searchScraper(query)
-      ]);
+    async searchCatalog(query, { signal = null } = {}) {
+      const sourceSearches = [
+        () => searchCatalog(query, { signal }),
+        () => iskRuntime.search(query, { signal }),
+        () => alooyRuntime.search(query, { signal }),
+        () => larozaRuntime.search(query, 1, { signal }),
+        () => searchScraper(query, { signal })
+      ];
+      const results = await awaitRequestSignal(
+        Promise.allSettled(sourceSearches.map((search) => search())),
+        signal
+      );
       const success = results.filter(result => result.status === 'fulfilled');
       if (!success.length) throw new Error('CATALOG_SEARCH_UNAVAILABLE');
       const data = success.flatMap(result => Array.isArray(result.value)
@@ -506,7 +554,8 @@ export function assertCatalogReference(ref) {
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now, providerSearch = searchProviderCatalog, providerDetails = scrapeRealDetails,
-  catalogLoader=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
+  catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
+  runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
       if(provider==='laroza') return larozaRuntime.metadata(ref);
@@ -549,23 +598,40 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (req.method !== 'GET') return sendJson(req, res, 405, { status: 'error', message: 'METHOD_NOT_ALLOWED' });
         const query = (url.searchParams.get("q") || "").trim();
         const provider = (url.searchParams.get('provider') || '').trim();
-        if (provider) {
-          const result = await providerSearch(provider, query);
-          const statusCode = result.status === 'unsupported' ? 422
-            : result.error?.code === 'INVALID_QUERY' ? 400
-            : result.status === 'error' ? 503 : 200;
-          return sendJson(req, res, statusCode, {
-            status: result.status || 'success',
-            version: runtimeService.version || '1.0.44', kind: 'search', source: result.provider_id || provider,
-            cached: false, health: result.diagnostics || null, provider_id: result.provider_id || provider,
-            error: result.error || null, data: result.data || []
+        const searchScope = createSearchRequestScope(req, res, searchTimeoutMs);
+        try {
+          if (provider) {
+            const result = await awaitRequestSignal(
+              providerSearch(provider, query, { signal: searchScope.controller.signal }),
+              searchScope.controller.signal
+            );
+            const statusCode = result.status === 'unsupported' ? 422
+              : result.error?.code === 'INVALID_QUERY' ? 400
+              : result.status === 'error' ? 503 : 200;
+            return sendJson(req, res, statusCode, {
+              status: result.status || 'success',
+              version: runtimeService.version || '1.0.44', kind: 'search', source: result.provider_id || provider,
+              cached: false, health: result.diagnostics || null, provider_id: result.provider_id || provider,
+              error: result.error || null, data: result.data || []
+            });
+          }
+          const result = await awaitRequestSignal(
+            runtimeService.search(query, { signal: searchScope.controller.signal }),
+            searchScope.controller.signal
+          );
+          if (result.diagnostics?.state === 'failed') {
+            return sendJson(req, res, 503, { ...result, status: 'error', error: { code: 'CATALOG_SEARCH_UNAVAILABLE' } });
+          }
+          return sendJson(req, res, 200, result);
+        } catch (error) {
+          if (searchScope.clientDisconnected || res.destroyed) return;
+          if (searchScope.timedOut) return sendJson(req, res, 504, {
+            status: 'error', kind: 'search', error: { code: 'SEARCH_BUDGET_EXCEEDED' }, data: []
           });
+          throw error;
+        } finally {
+          searchScope.dispose();
         }
-        const result = await runtimeService.search(query);
-        if (result.diagnostics?.state === 'failed') {
-          return sendJson(req, res, 503, { ...result, status: 'error', error: { code: 'CATALOG_SEARCH_UNAVAILABLE' } });
-        }
-        return sendJson(req, res, 200, result);
       }
       if (url.pathname === "/api/v1/resolve") {
         const ref = (url.searchParams.get("ref") || url.searchParams.get("id") || "").trim();

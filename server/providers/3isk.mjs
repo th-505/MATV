@@ -83,12 +83,13 @@ export function parse3iskDetails(html) {
 
 export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.now,
   onPage = process.env.ISK_DIAGNOSTICS === '1' ? info => console.info(JSON.stringify({ event: '3isk_source_page', ...info })) : () => {} } = {}) {
-  async function page(value, { referer = ISK_ORIGIN + '/', cookies = new Map(), redirects = 0, json = false } = {}) {
+  async function page(value, { referer = ISK_ORIGIN + '/', cookies = new Map(), redirects = 0, json = false, signal = null } = {}) {
     const url = new URL(value);
     const source = url.origin === ISK_ORIGIN;
     const player = url.protocol === 'https:' && ['ukrcdn.club', 'ukrcdn.com', 'miravd.com'].includes(url.hostname) && !url.port;
     if ((!source && !player) || url.username || url.password) throw new Error('3ISK_BAD_SOURCE');
-    const response = await fetchImpl(url.href, { redirect: 'manual', signal: AbortSignal.timeout(20_000), headers: {
+    const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000);
+    const response = await fetchImpl(url.href, { redirect: 'manual', signal: requestSignal, headers: {
       'User-Agent': ISK_UA, Referer: referer, Accept: json ? 'application/json' : 'text/html',
       ...(source && cookies.size ? { Cookie: [...cookies].map(([key, val]) => `${key}=${val}`).join('; ') } : {}),
     } });
@@ -100,7 +101,7 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       onPage({ host: url.hostname, path: url.pathname, status: response.status, redirect_path: new URL(response.headers.get('location'), url).pathname, cookie_names: [...cookies.keys()] });
       await response.body?.cancel();
       if (redirects >= 3) throw new Error('3ISK_REDIRECT_LIMIT');
-      return page(new URL(response.headers.get('location'), url).href, { referer, cookies, redirects: redirects + 1, json });
+      return page(new URL(response.headers.get('location'), url).href, { referer, cookies, redirects: redirects + 1, json, signal });
     }
     if (!response.ok) { await response.body?.cancel(); throw new Error(`3ISK_HTTP_${response.status}`); }
     let body = ''; let size = 0;
@@ -127,11 +128,11 @@ export function create3iskProvider({ fetchImpl = globalThis.fetch, now = Date.no
       const html = await page(p === 1 ? base : `${base}page/${p}/`);
       return { status: 'success', source: '3isk', data: parse3iskCatalog(html, id === '3isk-latest' ? 'episode' : id === '3isk-movies' ? 'movie' : 'series') };
     },
-    async search(query) {
+    async search(query, { signal = null } = {}) {
       const q = String(query || '').trim().slice(0, 120);
       if (!q) return { status: 'success', source: '3isk', data: [] };
       const url = new URL(ISK_ORIGIN + '/'); url.searchParams.set('s', q);
-      return { status: 'success', source: '3isk', data: parse3iskCatalog(await page(url.href)) };
+      return { status: 'success', source: '3isk', data: parse3iskCatalog(await page(url.href, { signal })) };
     },
     async metadata(ref) {
       return parse3iskDetails(await page(decode3iskRef(ref).href));

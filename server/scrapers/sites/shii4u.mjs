@@ -3,8 +3,6 @@
 // Shares parser code with Shahid4U, but requests its own declared host and identity.
 
 import {
-  PROVIDER_ID as SHAHID_ID,
-  extractShahid4uCardsFromHtml,
   scrapeCatalog as scrapeShahidCatalog,
   scrapeSearch as scrapeShahidSearch,
   scrapeDetails as scrapeShahidDetails,
@@ -56,6 +54,35 @@ export const SHII4U_CONFIG = Object.freeze({
 const coreOptions = (options = {}) => ({ ...options, baseUrl: PRIMARY_BASE_URL, providerId: PROVIDER_ID });
 const toCoreRef = (value) => typeof value === 'string' && value.startsWith('shii4u:')
   ? `shahid4u:${value.slice('shii4u:'.length)}` : value;
+const toShiiRef = (value) => {
+  if (typeof value !== 'string' || !value) return value;
+  if (value.startsWith('shii4u:')) return value;
+  if (value.startsWith('shahid4u:')) return `shii4u:${value.slice('shahid4u:'.length)}`;
+  if (/^https?:\/\//i.test(value)) return `shii4u:${Buffer.from(value).toString('base64url')}`;
+  return value;
+};
+const mapEpisode = (episode = {}, index = 0) => {
+  const target = episode.url || episode.ref || episode.id || episode.link || '';
+  const ref = toShiiRef(target);
+  return {
+    ...episode,
+    id: toShiiRef(episode.id) || ref || `shii4u:episode-${index + 1}`,
+    ref: toShiiRef(episode.ref) || ref,
+    url: ref,
+    source: PROVIDER_ID,
+    provider: PROVIDER_ID,
+    providerId: PROVIDER_ID,
+    serverPrefix: PROVIDER_CODE
+  };
+};
+const mapServer = (server = {}, index = 0) => ({
+  ...server,
+  source: PROVIDER_ID,
+  provider: PROVIDER_ID,
+  providerId: PROVIDER_ID,
+  code: `${PROVIDER_CODE}-${index + 1}`,
+  serverCode: `${PROVIDER_CODE}-${index + 1}`
+});
 function preserveMeta(mapped, original) {
   if (original?._meta) attachResultMeta(mapped, { ...original._meta, providerId: PROVIDER_ID });
   return mapped;
@@ -94,27 +121,19 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     providerId: PROVIDER_ID,
     id: details.id?.replace('shahid4u:', 'shii4u:') || details.id,
     ref: details.ref?.replace('shahid4u:', 'shii4u:') || details.ref,
-    servers: (details.servers || []).map((s, idx) => ({
-      ...s,
-      provider: PROVIDER_ID,
-      code: `${PROVIDER_CODE}-${idx + 1}`,
-      serverCode: `${PROVIDER_CODE}-${idx + 1}`
-    }))
+    episodes: (details.episodes || []).map(mapEpisode),
+    servers: (details.servers || []).map(mapServer)
   };
 }
 
 export async function scrapeEpisodes(urlOrRef, options = {}) {
-  return scrapeShahidEpisodes(toCoreRef(urlOrRef), coreOptions(options));
+  const episodes = await scrapeShahidEpisodes(toCoreRef(urlOrRef), coreOptions(options));
+  return preserveMeta((episodes || []).map(mapEpisode), episodes);
 }
 
 export async function scrapeServers(urlOrRef, options = {}) {
   const servers = await scrapeShahidServers(toCoreRef(urlOrRef), coreOptions(options));
-  return servers.map((s, idx) => ({
-    ...s,
-    provider: PROVIDER_ID,
-    code: `${PROVIDER_CODE}-${idx + 1}`,
-    serverCode: `${PROVIDER_CODE}-${idx + 1}`
-  }));
+  return (servers || []).map(mapServer);
 }
 
 export async function resolveStream(urlOrRef, options = {}) {

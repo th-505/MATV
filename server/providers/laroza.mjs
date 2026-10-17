@@ -69,7 +69,7 @@ export function createLarozaProvider({
   if (base.protocol !== 'https:' || base.username || base.password || base.port || base.search || base.hash || base.pathname !== '/')
     throw Error('LAROZA_BAD_EDGE_ENDPOINT');
   const pending = new Map();
-  async function request(path, params, refresh = false) {
+  async function request(path, params, refresh = false, signal = null) {
     const target = new URL('/v1/laroza/' + path, base);
     for (const [key,value] of Object.entries(params)) target.searchParams.set(key, String(value));
     const cacheKey = target.href;
@@ -77,10 +77,10 @@ export function createLarozaProvider({
       const cached = cache.get(cacheKey, now());
       if (cached) return cached;
     }
-    if (pending.has(cacheKey)) return pending.get(cacheKey);
+    if (!signal && pending.has(cacheKey)) return pending.get(cacheKey);
     const work = (async () => {
       const response = await fetchImpl(target, {
-        method:'GET', redirect:'error', signal:AbortSignal.timeout(20000),
+        method:'GET', redirect:'error', signal:signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
         headers:{ Accept:'application/json' },
       });
       if (!response.ok) { await response.body?.cancel(); throw Error('LAROZA_EDGE_HTTP_' + response.status); }
@@ -89,11 +89,11 @@ export function createLarozaProvider({
       }
       const data = await jsonText(response);
       if (!data || data.status !== 'success' || data.source !== 'laroza') throw Error('LAROZA_BAD_EDGE_RESPONSE');
-      cache.set(cacheKey, data, path === 'search' ? 30000 : 120000, now());
+      if (!signal?.aborted) cache.set(cacheKey, data, path === 'search' ? 30000 : 120000, now());
       return data;
     })();
-    pending.set(cacheKey, work);
-    try { return await work; } finally { pending.delete(cacheKey); }
+    if (!signal) pending.set(cacheKey, work);
+    try { return await work; } finally { if (!signal && pending.get(cacheKey) === work) pending.delete(cacheKey); }
   }
   return {
     async category(id = 'laroza-latest', page = 1) {
@@ -106,11 +106,11 @@ export function createLarozaProvider({
         return section === 'anime' ? { ...item, genres:[...new Set([...(item.genres || []),'anime'])], category:'anime' } : item;
       }) };
     },
-    async search(query, page = 1) {
+    async search(query, page = 1, { signal = null } = {}) {
       const q = String(query || '').trim().slice(0,120);
       if (q.length < 2) return { status:'success', source:'laroza', data:[] };
       if (!Number.isInteger(page) || page < 1 || page > 500) throw Error('LAROZA_BAD_PAGE');
-      const data = await request('search', {q,page});
+      const data = await request('search', {q,page}, false, signal);
       if (!Array.isArray(data.data)) throw Error('LAROZA_BAD_EDGE_RESPONSE');
       return { status:'success', source:'laroza', ...pagination(data,page), data:data.data.slice(0,60).map(catalogItem) };
     },

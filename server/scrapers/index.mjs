@@ -24,9 +24,10 @@ const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
 const SEARCH_MAX_IN_FLIGHT = 2;
 const SEARCH_PROVIDER_CONCURRENCY = 4;
-// Public HTTP search includes provider-specific redirects and WAF latency. Keep it
-// bounded, but allow one normal navigation through the configured egress proxy.
-const SEARCH_PROVIDER_TIMEOUT_MS = 15_000;
+// Four workers can cover the provider set within the 45s total search budget;
+// the public web client allows 90s for the complete response.
+const SEARCH_PROVIDER_TIMEOUT_MS = 7_000;
+const SEARCH_TOTAL_BUDGET_MS = 45_000;
 const searchCache = new Map();
 const searchInFlight = new Map();
 const categoryCache = new Map();
@@ -35,7 +36,7 @@ const categoryInFlight = new Map();
 /**
  * Searches TMDb to enrich scraped catalog items with official high-res posters and metadata
  */
-export async function enrichCatalogWithTmdb(items = []) {
+export async function enrichCatalogWithTmdb(items = [], { signal = null } = {}) {
   if (!Array.isArray(items) || items.length === 0 || !TMDB_API_KEY) return items;
 
   const promises = items.slice(0, 8).map(async (item) => {
@@ -55,7 +56,7 @@ export async function enrichCatalogWithTmdb(items = []) {
       searchUrl.searchParams.set('language', 'ar-SA');
       searchUrl.searchParams.set('query', cleanTitle);
       const res = await fetch(searchUrl, {
-        signal: AbortSignal.timeout(4000)
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(4000)]) : AbortSignal.timeout(4000)
       });
       if (!res.ok) return item;
       const json = await res.json();
@@ -189,16 +190,21 @@ export async function scrapeRealCategory(category, page = 1) {
 /**
  * Executes a real search query across top scraping engines concurrently
  */
-async function scrapeRealSearchUncached(q) {
+async function scrapeRealSearchUncached(q, { signal } = {}) {
   const entries = listProviders().map((meta) => getProvider(meta.id))
     .filter((entry) => entry?.meta.capabilities?.search === true && typeof entry.module.scrapeSearch === 'function');
-  const outcomes = await runBounded(entries, SEARCH_PROVIDER_CONCURRENCY,
-    (entry) => runProviderSearch(entry, q));
+  const outcomes = await runBounded(entries, SEARCH_PROVIDER_CONCURRENCY, (entry) => {
+    if (signal?.aborted) return Promise.resolve({
+      state: 'failed', providerId: entry.meta.id, errorCode: 'SEARCH_BUDGET_EXCEEDED',
+      errorMessage: 'Search budget expired before provider started', count: 0, elapsedMs: 0, items: []
+    });
+    return runProviderSearch(entry, q, SEARCH_PROVIDER_TIMEOUT_MS, signal);
+  });
   const results = outcomes.flatMap((outcome) => outcome.items);
   const failures = outcomes.filter((outcome) => outcome.state === 'failed');
   const state = results.length > 0 ? (failures.length ? 'partial' : 'success')
     : failures.length === outcomes.length ? 'failed' : 'no_results';
-  const enriched = await enrichCatalogWithTmdb(results);
+  const enriched = await enrichCatalogWithTmdb(results, { signal });
   return attachResultMeta(enriched, {
     ok: state !== 'failed', state,
     errorCode: state === 'failed' ? 'ALL_SEARCH_PROVIDERS_FAILED' : null,
@@ -230,14 +236,25 @@ function providerSearchOutcome(entry, result, elapsedMs) {
   };
 }
 
-async function runProviderSearch(entry, q, timeoutMs = SEARCH_PROVIDER_TIMEOUT_MS) {
+async function runProviderSearch(entry, q, timeoutMs = SEARCH_PROVIDER_TIMEOUT_MS, parentSignal = null) {
   const startedAt = Date.now();
   const controller = new AbortController();
+  const abortFromParent = () => controller.abort(parentSignal?.reason || new Error('SEARCH_ABORTED'));
+  if (parentSignal?.aborted) abortFromParent();
+  else parentSignal?.addEventListener('abort', abortFromParent, { once: true });
   const timer = setTimeout(() => controller.abort(new Error('PROVIDER_SEARCH_TIMEOUT')), timeoutMs);
+  let removeAbortListener = () => {};
   try {
-    const value = await entry.module.scrapeSearch(q, 1, {
+    const work = Promise.resolve().then(() => entry.module.scrapeSearch(q, 1, {
       timeoutMs, signal: controller.signal, strict: true
+    }));
+    const aborted = new Promise((_, reject) => {
+      const rejectAbort = () => reject(controller.signal.reason || new Error('SEARCH_ABORTED'));
+      if (controller.signal.aborted) rejectAbort();
+      else controller.signal.addEventListener('abort', rejectAbort, { once: true });
+      removeAbortListener = () => controller.signal.removeEventListener('abort', rejectAbort);
     });
+    const value = await Promise.race([work, aborted]);
     return providerSearchOutcome(entry, value, Date.now() - startedAt);
   } catch (error) {
     return {
@@ -248,6 +265,8 @@ async function runProviderSearch(entry, q, timeoutMs = SEARCH_PROVIDER_TIMEOUT_M
     };
   } finally {
     clearTimeout(timer);
+    removeAbortListener();
+    parentSignal?.removeEventListener('abort', abortFromParent);
   }
 }
 
@@ -265,7 +284,7 @@ async function runBounded(entries, limit, worker) {
 }
 
 /** Search one explicitly selected registered source and return JSON-serializable diagnostics. */
-export async function searchProviderCatalog(providerId, query, { timeoutMs = SEARCH_PROVIDER_TIMEOUT_MS } = {}) {
+export async function searchProviderCatalog(providerId, query, { timeoutMs = SEARCH_PROVIDER_TIMEOUT_MS, signal = null } = {}) {
   const q = typeof query === 'string' ? query.trim().replace(/\s+/g, ' ') : '';
   const entry = getProvider(providerId);
   if (!entry) return { status: 'unsupported', provider_id: String(providerId || ''), query: q, data: [], error: { code: 'PROVIDER_NOT_FOUND' } };
@@ -275,7 +294,7 @@ export async function searchProviderCatalog(providerId, query, { timeoutMs = SEA
   if (q.length < 2 || q.length > 120) {
     return { status: 'error', provider_id: entry.meta.id, query: q, data: [], error: { code: 'INVALID_QUERY' } };
   }
-  const outcome = await runProviderSearch(entry, q, Math.max(250, Math.min(15_000, Number(timeoutMs) || SEARCH_PROVIDER_TIMEOUT_MS)));
+  const outcome = await runProviderSearch(entry, q, Math.max(250, Math.min(15_000, Number(timeoutMs) || SEARCH_PROVIDER_TIMEOUT_MS)), signal);
   const data = await enrichCatalogWithTmdb(outcome.items);
   return {
     status: outcome.state === 'failed' ? 'error' : outcome.state === 'no_results' ? 'no_results' : 'success',
@@ -291,7 +310,7 @@ function cloneItems(items) {
   return cloned;
 }
 
-export async function scrapeRealSearch(query) {
+export async function scrapeRealSearch(query, { signal: callerSignal = null } = {}) {
   if (typeof query !== 'string') return [];
   const q = query.trim().replace(/\s+/g, ' ');
   if (q.length < 2 || q.length > 120) return [];
@@ -300,6 +319,27 @@ export async function scrapeRealSearch(query) {
   const cached = searchCache.get(key);
   if (cached && cached.expiresAt > now) return cloneItems(cached.items);
   if (cached) searchCache.delete(key);
+  // A request-owned AbortSignal must not be shared: one disconnected client must
+  // not cancel another caller's coalesced search. Signal-bearing calls run their
+  // own bounded fan-out; ordinary internal calls retain cache/coalescing.
+  if (callerSignal) {
+    const controller = new AbortController();
+    const abortCaller = () => controller.abort(callerSignal.reason || new Error('CLIENT_DISCONNECTED'));
+    if (callerSignal.aborted) abortCaller();
+    else callerSignal.addEventListener('abort', abortCaller, { once: true });
+    const timer = setTimeout(() => controller.abort(new Error('SEARCH_TOTAL_BUDGET_EXCEEDED')), SEARCH_TOTAL_BUDGET_MS);
+    try {
+      const items = await scrapeRealSearchUncached(q, { signal: controller.signal });
+      if (!controller.signal.aborted) {
+        searchCache.set(key, { items: cloneItems(items), expiresAt: Date.now() + SEARCH_CACHE_TTL_MS });
+      }
+      return cloneItems(items);
+    } finally {
+      clearTimeout(timer);
+      callerSignal.removeEventListener('abort', abortCaller);
+    }
+  }
+
   const pending = searchInFlight.get(key);
   if (pending) return cloneItems(await pending);
   if (searchInFlight.size >= SEARCH_MAX_IN_FLIGHT) return [];
