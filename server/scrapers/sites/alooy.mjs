@@ -740,6 +740,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
     });
 
     // 2b. Direct video links encoded in download_video.php?video_url=
+    const iframes = [];
     const rawDlMatches = [];
     $('a[href*="download_video.php"]').each((_, a) => {
       const href = $(a).attr('href') || '';
@@ -793,10 +794,10 @@ export async function scrapeServers(urlOrRef, options = {}) {
     }
 
     // 3. Iframe embeds (e.g. /m3u8/?src=...)
-    const iframes = $('iframe[src]')
+    iframes.push(...$('iframe[src]')
       .toArray()
       .map((ifr) => $(ifr).attr('src'))
-      .filter(Boolean);
+      .filter(Boolean));
 
     for (const ifrSrc of iframes) {
       if (ifrSrc.includes('/m3u8/')) {

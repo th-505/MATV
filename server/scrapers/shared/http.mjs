@@ -2,7 +2,7 @@
 // SSRF-safe HTTP client with redirect validation, IPv6/IPv4 normalization, DNS rebinding protection, rate limiting, and anti-ban headers
 import net from 'node:net';
 import dns from 'node:dns';
-import { Agent } from 'undici';
+import { Agent, EnvHttpProxyAgent } from 'undici';
 import { buildAntiBanHeaders } from '../anti-ban.mjs';
 import {
   SCRAPER_ERROR_CODES,
@@ -14,6 +14,7 @@ import {
 const HOST_SEMAPHORES = new Map();
 const MAX_CONCURRENT_PER_HOST = 4;
 const MIN_DELAY_BETWEEN_REQ_MS = 60;
+const USE_ENV_PROXY = Boolean(process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy);
 
 export function isPrivateIPv4(ip) {
   const parts = String(ip || '').split('.').map((n) => parseInt(n, 10));
@@ -381,7 +382,12 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
         const releaseSlot = await acquireHostSlot(parsedHop.hostname);
         const literalHost = parsedHop.hostname.replace(/^\[|\]$/g, '');
         const dispatcher = fetchImpl === globalThis.fetch && net.isIP(literalHost) === 0
-          ? new Agent({ connect: { lookup: createPinnedDnsLookup(parsedHop.hostname, resolvedAddresses[0]) } })
+          ? USE_ENV_PROXY
+            // Keep this runtime's configured egress proxy. DNS is checked above, but the
+            // forward proxy resolves the destination itself, so strict IP pinning is only
+            // available on direct connections.
+            ? new EnvHttpProxyAgent()
+            : new Agent({ connect: { lookup: createPinnedDnsLookup(parsedHop.hostname, resolvedAddresses[0]) } })
           : null;
 
         const controller = new AbortController();

@@ -1,6 +1,6 @@
 // scripts/yalla_script_and_hash_test.mjs
 import * as yallaMod from '../server/scrapers/sites/yallashoot.mjs';
-import { extractRawStreamsFromText } from '../server/scrapers/stream-unwrapper.mjs';
+import { extractRawStreamsFromText, isValidDirectMediaUrl } from '../server/scrapers/stream-unwrapper.mjs';
 import { resolveSafeUrl } from '../server/scrapers/shared/http.mjs';
 
 const htmlWithScript = `
@@ -30,6 +30,9 @@ const htmlWithScript = `
 
 async function test() {
   console.log('=== TESTING YALLASHOOT SCRIPT STREAMS & HASH EXCLUSION ===');
+  if (isValidDirectMediaUrl('https://acceptable.a-ads.com/ad/redirect.mp4')) {
+    throw new Error('FAIL: known advertising host a-ads.com was accepted as direct media');
+  }
 
   // 1. Raw Stream inside Script
   const streams = extractRawStreamsFromText(htmlWithScript, 'https://yalla-shootz.cc/match/123');

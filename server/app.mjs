@@ -577,10 +577,11 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (ref && !ref.startsWith("tmdb:")) {
           try {
             const registeredProvider = resolveProviderReference(ref);
-            const details = ref.startsWith("laroza:")
+            const details = ref.startsWith("alooy:") && registeredProvider?.meta.id === 'alooy'
+              && typeof registeredProvider.module.scrapeServers === 'function'
+              ? { source: 'alooy', media_sources: await registeredProvider.module.scrapeServers(ref) }
+              : ref.startsWith("laroza:")
               ? await larozaRuntime.details(ref, {})
-              : ref.startsWith("alooy:")
-              ? await alooyRuntime.details(ref, {})
               : ref.startsWith("3isk:")
               ? await iskRuntime.details(ref, {})
               : registeredProvider

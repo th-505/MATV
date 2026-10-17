@@ -26,7 +26,10 @@ console.log(`   Page 1 returned ${catPage1.length} items`);
 
 const sampleItem = catPage1[0];
 assert.ok(sampleItem.title, 'Catalog item must have title');
-assert.ok(sampleItem.url.startsWith('https://ww4.3ick.club/'), 'URL must resolve to active domain');
+const allowedHosts = [ISK_SITE_CONFIG.baseUrl, ISK_SITE_CONFIG.fallbackBaseUrl]
+  .filter(Boolean).map((value) => new URL(value).hostname);
+assert.ok(allowedHosts.includes(new URL(sampleItem.url).hostname),
+  `URL host ${new URL(sampleItem.url).hostname} must match configured primary/fallback domains`);
 assert.ok(sampleItem.ref.startsWith('3isk:'), 'Ref must use 3isk reference format');
 assert.equal(sampleItem.source, '3isk');
 assert.equal(sampleItem.serverPrefix, '3K');

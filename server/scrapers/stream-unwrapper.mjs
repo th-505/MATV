@@ -95,7 +95,7 @@ export function isValidDirectMediaUrl(url = '') {
   if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.gif') || lower.endsWith('.svg') || lower.endsWith('.js') || lower.endsWith('.css') || lower.endsWith('.vtt')) {
     return false;
   }
-  if (/googleads|doubleclick|popads|adsterra|exoclick|juicyads|disqus|facebook|analytics/i.test(lower)) {
+  if (/googleads|doubleclick|popads|adsterra|exoclick|juicyads|a-ads|disqus|facebook|analytics/i.test(lower)) {
     return false;
   }
   return lower.includes('.m3u8') || lower.includes('.mp4') || lower.includes('/hls/') || lower.includes('master.txt');

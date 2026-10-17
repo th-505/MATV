@@ -24,7 +24,9 @@ const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
 const SEARCH_MAX_IN_FLIGHT = 2;
 const SEARCH_PROVIDER_CONCURRENCY = 4;
-const SEARCH_PROVIDER_TIMEOUT_MS = 5_000;
+// Public HTTP search includes provider-specific redirects and WAF latency. Keep it
+// bounded, but allow one normal navigation through the configured egress proxy.
+const SEARCH_PROVIDER_TIMEOUT_MS = 15_000;
 const searchCache = new Map();
 const searchInFlight = new Map();
 const categoryCache = new Map();

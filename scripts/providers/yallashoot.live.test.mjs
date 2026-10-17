@@ -34,7 +34,10 @@ try {
   assert.ok(sampleMatch.title, 'Match must have a title');
   assert.ok(sampleMatch.team1?.name, 'Match must have team1 name');
   assert.ok(sampleMatch.team2?.name, 'Match must have team2 name');
-  assert.ok(sampleMatch.url.startsWith('https://yalla-shootz.cc/'), 'Match URL must resolve to active domain');
+  const allowedHosts = [YALLASHOOT_SITE_CONFIG.baseUrl, YALLASHOOT_SITE_CONFIG.fallbackBaseUrl]
+    .filter(Boolean).map((value) => new URL(value).hostname);
+  assert.ok(allowedHosts.includes(new URL(sampleMatch.url).hostname),
+    `Match URL host ${new URL(sampleMatch.url).hostname} must match configured primary/fallback domains`);
   assert.equal(sampleMatch.source, 'yallashoot');
   assert.equal(sampleMatch.serverPrefix, 'YS');
   assert.equal(sampleMatch.type, 'live');

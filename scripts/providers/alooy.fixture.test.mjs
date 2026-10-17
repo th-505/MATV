@@ -196,6 +196,18 @@ assert.ok(hlsServer.url.includes('.m3u8'));
 assert.equal(hlsServer.quality, 'AUTO-HLS');
 assert.equal(hlsServer.verified, true);
 
+// 7c. A decoded download_video.php URL can contribute an /m3u8/ iframe. Keep
+// this separate from page iframe parsing so TDZ/order regressions are caught.
+console.log('7c. Testing encoded download_video.php /m3u8/ bridge...');
+const encodedM3u8Path = Buffer.from('/m3u8/?src=fixture').toString('base64');
+const encodedDownloadHtml = `<a href="/download_video.php?video_url=${encodeURIComponent(encodedM3u8Path)}">Watch</a>`;
+const serversFromEncodedDownload = await scrapeServers('https://fa.alooytv16.xyz/watch/test.html?key=fixture', {
+  fixtureHtml: encodedDownloadHtml,
+  m3u8FixtureHtml: M3U8_PLAYER_HTML
+});
+assert.ok(serversFromEncodedDownload.some((server) => server.type === 'm3u8'),
+  'Encoded download_video.php m3u8 references must be preserved until player resolution');
+
 // 8. RESOLVE STREAM FIXTURE
 console.log('8. Testing Stream Resolution...');
 const resolvedFromDirect = await resolveStream('https://vid1.ujeklsj.site/Talae-Nazil/01.mp4');
