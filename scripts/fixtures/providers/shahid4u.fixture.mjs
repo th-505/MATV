@@ -22,6 +22,9 @@ export const FIXTURE_META = Object.freeze({
   }
 });
 
+// Captured current Shahid4U card theme (.br-card) from 2026-10-17.
+export const CURRENT_THEME_CARD_HTML = `<div class="br-card"><a class="br-card-link" href="https://shahidfu.cam/film/hope-2026" title="فيلم Hope 2026 مترجم"><div class="br-thumb"><img src="https://shahidfu.cam/assets/placeholder.png" data-src="https://shahidfu.cam/uploads/hope-2026.jpg" alt="فيلم Hope 2026 مترجم"></div><h3 class="br-card-title">فيلم Hope 2026 مترجم</h3></a></div>`;
+
 export const CATALOG_HTML = `<!DOCTYPE html>
 <html lang="ar">
 <head><meta charset="utf-8"><title>افلام اجنبي - شاهد فور يو</title></head>

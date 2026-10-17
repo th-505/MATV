@@ -111,21 +111,22 @@ export function extractShahid4uCardsFromHtml(html = '', baseUrl = PRIMARY_BASE_U
   const items = [];
   const seen = new Set();
 
-  $('.content-box, .media-card, .show-card, article.post').each((_, el) => {
-    const anchor = $(el).find('a').first();
+  $('.content-box, .media-card, .show-card, .br-card, article.post').each((_, el) => {
+    const anchor = $(el).find('.br-card-link, a[href]').first();
     const rawHref = anchor.attr('href') || '';
     const targetUrl = resolveShahid4uTargetUrl(rawHref, baseUrl);
     if (!targetUrl || seen.has(targetUrl)) return;
 
     const rawTitle =
-      $(el).find('.title, h3, h4').first().text().trim() ||
+      $(el).find('.br-card-title, .title, h3, h4').first().text().trim() ||
       anchor.attr('title') ||
       '';
     if (!rawTitle) return;
 
-    const bgStyle = $(el).find('.image, [style*="background"]').attr('style') || '';
+    const bgStyle = $(el).find('.br-thumb, .image, [style*="background"]').attr('style') || '';
     const bgMatch = bgStyle.match(/url\(['"]?([^'")]+)['"]?\)/i);
-    const poster = (bgMatch ? bgMatch[1] : '') || $(el).find('img').attr('data-src') || $(el).find('img').attr('src') || '';
+    const image = $(el).find('.br-thumb img, img').first();
+    const poster = (bgMatch ? bgMatch[1] : '') || image.attr('data-src') || image.attr('data-lazy-src') || image.attr('src') || '';
 
     const cleanTitle = cleanTitleText(rawTitle);
     const type = /مسلسل|حلقة|موسم/i.test(rawTitle) ? 'series' : defaultType;
