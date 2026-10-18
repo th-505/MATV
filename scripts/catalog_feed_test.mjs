@@ -62,3 +62,18 @@ assert.equal((await outage.read('browse-movies')).data.length,30);
 await timeout.read('browse-movies');
 assert.equal((await timeout.read('browse-movies')).cached,false,'failed pages remain retryable');
 console.log('Private feed persistence: restart restore, expiry refresh, database outage and retry passed');
+
+const {createServer}=await import('../server/app.mjs');
+const openCalls=[];
+const server=createServer({catalogStore:null,catalogFeedStore:{recordOpen:async(...args)=>openCalls.push(args)}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+try {
+  const base=`http://127.0.0.1:${server.address().port}`;
+  const ref='mycima:original-work-ref';
+  assert.equal((await fetch(base+'/api/cinema/open?ref='+encodeURIComponent(ref),{method:'POST'})).status,202);
+  assert.deepEqual(openCalls,[['mycima',ref]],'only original provider and work reference are recorded');
+  assert.equal((await fetch(base+'/api/cinema/open?ref='+encodeURIComponent(ref))).status,405);
+  assert.equal((await fetch(base+'/api/cinema/open?ref=unknown:work',{method:'POST'})).status,400);
+  assert.equal(openCalls.length,1);
+} finally {await new Promise(resolve=>server.close(resolve));}
+console.log('Aggregate opens: POST-only, known provider, original reference, no user identity passed');

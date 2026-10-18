@@ -28,7 +28,13 @@ function isRuntimeCatalogPayload(value){return Boolean(value&&value.status==="su
 function adaptRuntimeCatalogEnvelope(value){return{status:value.status||"success",source:value.source||"basri-original",version:value.version,kind:value.kind,cached:Boolean(value.cached),health:value.health||null,provider_id:value.provider_id||null,error:value.error||null,data:(value.data||[]).map(item=>({id:item.id||item.ref||"",title:item.title||"بدون عنوان",img:item.poster||item.img||item.image||"",is_series:item.type!=="movie",href:item.ref||item.id||"",year:item.year??null,runtime:item.runtime_minutes??item.runtime??null,season_number:item.season_number??null,episode_number:item.episode_number??null,episode_count:item.episode_count??null,source:item.source||item.providerId||null,providerId:item.providerId||item.source||null})).filter(item=>item.href)}}
 export async function getCinemaCategory(type,name,categoryId="",page=1){const p=Math.max(1,Number(page)||1);const result=await fetchJsonWithHealth(ENDPOINTS.backend+"/api/v1/category?ref="+encodeURIComponent(String(categoryId||"").trim())+"&p="+encodeURIComponent(String(p)),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:isRuntimeCatalogPayload});if(result?.data)result.data=adaptRuntimeCatalogEnvelope(result.data);return result}
 export async function searchCinema(query,providerId="",{signal}={}){const params=new URLSearchParams({q:String(query||"").trim()});if(providerId)params.set("provider",String(providerId).trim());const result=await fetchJsonWithHealth(ENDPOINTS.backend+"/api/v1/search?"+params.toString(),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,acceptErrorResponse:true,init:{signal},validate:value=>isRuntimeList(value,"search")});if(result?.data)result.data=adaptRuntimeCatalogEnvelope(result.data);return result}
-export async function getCinemaDetails(ref){return fetchJsonWithHealth(ENDPOINTS.backend+"/api/cinema/details?ref="+encodeURIComponent(ref),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:isCinemaPayload})}
+const workOpenAttempts=new Map();
+export async function recordWorkOpen(ref){
+  const stamp=Date.now();if(stamp-(workOpenAttempts.get(ref)||0)<120000)return;
+  workOpenAttempts.set(ref,stamp);while(workOpenAttempts.size>128)workOpenAttempts.delete(workOpenAttempts.keys().next().value);
+  try{await fetch(ENDPOINTS.backend+'/api/cinema/open?ref='+encodeURIComponent(ref),{method:'POST',signal:AbortSignal.timeout(5000)});}catch{}
+}
+export async function getCinemaDetails(ref){const response=await fetchJsonWithHealth(ENDPOINTS.backend+"/api/cinema/details?ref="+encodeURIComponent(ref),{kind:ProviderKind.CINEMA,timeoutMs:BACKEND_TIMEOUT_MS,validate:isCinemaPayload});if(response?.data?.status==='success')void recordWorkOpen(ref);return response}
 export const ProviderEndpoints=ENDPOINTS;
 
 let sourceCatalogPromise;

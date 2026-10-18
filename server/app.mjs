@@ -112,7 +112,7 @@ function applyCors(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
   res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,Content-Disposition");
 }
@@ -578,7 +578,7 @@ export function assertCatalogReference(ref) {
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now, providerSearch = searchProviderCatalog, providerDetails = scrapeRealDetails,
-  catalogFeed=createCatalogFeed({store:createSupabaseFeedStore()}), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
+  catalogFeedStore=createSupabaseFeedStore(), catalogFeed=createCatalogFeed({store:catalogFeedStore}), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
   runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
@@ -862,6 +862,16 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/api/matches/servers") return sendJson(req, res, 200, await getMatchServers(url.searchParams.get("url") || ""));
       if (url.pathname === "/api/cinema/search") return sendJson(req, res, 200, await cinemaSearch((url.searchParams.get("q") || "").trim()));
       if (url.pathname === "/api/cinema/category") return sendJson(req, res, 200, await cinemaCategory(url.searchParams.get("url") || "", Number(url.searchParams.get("p") || 1)));
+      if (url.pathname === '/api/cinema/open') {
+        if(req.method!=='POST') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        const ref=url.searchParams.get('ref') || '';
+        if(!ref || Buffer.byteLength(ref)>1536 || /[\r\n\x00]/.test(ref)) return sendJson(req,res,400,{status:'error',message:'BAD_CINEMA_REFERENCE'});
+        const provider=resolveProviderReference(ref)?.meta.id || (ref.startsWith('legacy:') ? assertCatalogReference(ref) : null);
+        if(!provider) return sendJson(req,res,400,{status:'error',message:'BAD_CINEMA_REFERENCE'});
+        if(!catalogFeedStore) return sendJson(req,res,503,{status:'error',message:'ACTIVITY_STORE_UNAVAILABLE'});
+        await catalogFeedStore.recordOpen(provider,ref);
+        return sendJson(req,res,202,{status:'success'});
+      }
       if (url.pathname === '/api/cinema/metadata') {
         if(req.method!=='GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         const ref = url.searchParams.get('ref') || '';

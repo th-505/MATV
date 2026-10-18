@@ -89,8 +89,8 @@ export function createSupabaseFeedStore({url=process.env.SUPABASE_URL,
   if(base.protocol!=='https:' || !base.hostname.endsWith('.supabase.co') || base.username || base.password || base.port || base.pathname!=='/') throw Error('SUPABASE_BAD_URL');
   if(key.startsWith('sb_publishable_')) throw Error('SUPABASE_SERVER_KEY_REQUIRED');
   const headers={apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:`Bearer ${key}`})};
-  async function request(params,body) {
-    const target=new URL('/rest/v1/mitv_catalog_feed_cache',base);
+  async function request(params,body,path='mitv_catalog_feed_cache') {
+    const target=new URL('/rest/v1/'+path,base);
     for(const [name,value] of Object.entries(params)) target.searchParams.set(name,value);
     const response=await fetchImpl(target,{method:body?'POST':'GET',redirect:'error',
       signal:AbortSignal.timeout(5000),headers:{...headers,...(body?{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'}:{})},
@@ -108,6 +108,7 @@ export function createSupabaseFeedStore({url=process.env.SUPABASE_URL,
     } finally {await reader.cancel();}
   }
   return {
+    recordOpen:(provider,ref)=>request({}, {p_provider:provider,p_ref:ref},'rpc/mitv_record_work_open'),
     get:(provider,category,now)=>request({provider:`eq.${provider}`,category:`eq.${category}`,
       expires_at:`gt.${new Date(now).toISOString()}`,select:'payload,expires_at',limit:'1'}),
     put:(provider,category,payload,expires,now)=>request({on_conflict:'provider,category'},

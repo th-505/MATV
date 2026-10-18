@@ -386,12 +386,26 @@ class MitvApi implements MediaRepository {
     return merged;
   }
 
+  final _workOpenAttempts=<String,DateTime>{};
+  Future<void> _recordWorkOpen(String ref) async {
+    final now=DateTime.now();
+    final previous=_workOpenAttempts[ref];
+    if (previous!=null && now.difference(previous)<const Duration(minutes:2)) return;
+    _workOpenAttempts[ref]=now;
+    while(_workOpenAttempts.length>128) {_workOpenAttempts.remove(_workOpenAttempts.keys.first);}
+    try {
+      await _client.post(_baseUri.replace(path:'/api/cinema/open',queryParameters:{'ref':ref}))
+        .timeout(const Duration(seconds:5));
+    } catch (_) { /* Aggregate metadata activity must never block playback. */ }
+  }
+
   @override
   Future<TitleDetails> details(String ref) async {
     final generation = _cacheGeneration;
     final cached = cachedMetadata(ref);
     var metadata = cached?.hasEpisodes == true ? cached! : await _details(ref);
     _ensureGeneration(generation);
+    unawaited(_recordWorkOpen(ref));
     final group = _catalogGroups[ref];
     if (group != null) {
       metadata = metadata.copyWith(sourceRefs: group.sourceRefs);

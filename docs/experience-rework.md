@@ -20,7 +20,7 @@ source selector; building a client alone cannot add that server route.
 - [x] Neutral movie/series/anime feeds browse declared provider categories in ten-work blocks.
 - [x] Coalesced hourly in-memory cache, bounded concurrency/deadlines and continued paging after sixty works.
 - [x] Private Supabase feed persistence, one-hour expiry and hourly purge; RLS/grants verified remotely.
-- [ ] Aggregate per-work open lifecycle across all provider paths.
+- [x] Aggregate per-work open counters and last-open time; no user/device identifier.
 - [ ] Validate owned Akwam/live replacement before retiring obsolete upstream dependencies.
 - [ ] Deploy backend and clients together after the complete regression gate.
 
@@ -45,3 +45,9 @@ no anon/authenticated grants and service-role-only CRUD. The hourly purge is act
 This is additive and does not modify existing library, favorites or provider tables.
 The stored first sixty works can survive a process restart; expired snapshots are
 refreshed on demand. Database outages fall back to the normal provider adapters.
+
+Applied `20261018085119_aggregate_work_activity.sql`: service-role-only atomic
+open counter. The SQL transaction regression incremented a temporary fixture twice,
+verified the count and rolled it back (zero fixture rows left). anon/authenticated
+cannot read/write the table or execute the RPC. The feed and activity migrations
+are already applied; application code remains under review on PR #2.

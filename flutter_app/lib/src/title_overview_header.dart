@@ -25,9 +25,9 @@ class TitleOverviewHeader extends StatelessWidget {
         child:Wrap(spacing:12,runSpacing:8,children:facts.map((fact)=>Text(fact)).toList())),
       if(plot.isNotEmpty) Padding(padding:const EdgeInsets.only(top:16),child:Text(plot)),
     ]);
-    if(wide) return Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+    if(wide) { return Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
       if(image!=null)...[image,const SizedBox(width:28)],Expanded(child:info),
-    ]);
+    ]); }
     return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
       if(image!=null)...[Center(child:image),const SizedBox(height:20)],info,
     ]);
