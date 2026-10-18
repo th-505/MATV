@@ -342,6 +342,21 @@ jobs:
           path: device-verification.json
           retention-days: 14
           if-no-files-found: error
+      - name: Verify production Explore metadata before publishing
+        if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
+        run: |
+          python3 - <<'PYAPI'
+          import json, os, urllib.request
+          endpoint = os.environ['MITV_API_BASE'].rstrip('/') + '/api/v1/search/providers'
+          with urllib.request.urlopen(endpoint, timeout=90) as response:
+              assert response.status == 200
+              payload = json.load(response)
+          assert payload.get('status') == 'success' and payload.get('data')
+          providers = payload['data']
+          assert len({p['id'] for p in providers}) == len(providers)
+          assert all(p.get('displayName') and p.get('displayNames') for p in providers)
+          print('Production Explore metadata is available for all registered providers')
+          PYAPI
       - name: Publish verified Web bundle through the existing Pages source
         if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
         env:
