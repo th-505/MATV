@@ -5,6 +5,11 @@ on:
     branches: ['build/mitv-*']
   workflow_dispatch:
     inputs:
+      publish:
+        description: Publish verified packages and update the production website (main only)
+        required: true
+        default: false
+        type: boolean
       api_base:
         description: Verified public metadata API URL
         required: true
@@ -34,6 +39,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Explore UI regressions
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: npm run test:explore
       - run: python3 scripts/native_network_config_test.py
 
   verify-api:
@@ -334,6 +343,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Publish verified Web bundle through the existing Pages source
+        if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -341,7 +351,7 @@ jobs:
           # Publish only when this release was built from the current main
           # ancestor, so a slow older run cannot replace a newer Web bundle.
           git fetch origin main
-          git merge-base --is-ancestor origin/main "$MITV_SOURCE_COMMIT"
+          test "$(git rev-parse origin/main)" = "$MITV_SOURCE_COMMIT"
           python3 - <<'PY'
           import pathlib, zipfile
           archive = pathlib.Path('device-artifacts/MA-TV-Flutter-Web/MA-TV-Web.zip')
@@ -366,6 +376,7 @@ jobs:
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
       - name: Publish all verified packages together
+        if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -376,9 +387,9 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"MA TV {version} (build {build}), Master Sprint v2.9.\n\n"
+              f"MA TV {version} (build {build}) — Explore release.\n\n"
               "Six targets verified from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
-              "MA TV charcoal-and-gold six-tab UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
+              "Explore with general and real source-specific search, retryable source metadata, independently transformed bilingual display names, cancelled stale searches and direct favorite detail source labels. MA TV charcoal-and-gold six-tab UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
               "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
               "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"
               f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n\n"
