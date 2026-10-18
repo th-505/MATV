@@ -1,0 +1,36 @@
+name: Flutter analysis and regressions
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Resolve locked dependencies
+        working-directory: flutter_app
+        run: flutter pub get --enforce-lockfile
+      - name: Analyze
+        working-directory: flutter_app
+        run: flutter analyze
+      - name: Explore regressions
+        working-directory: flutter_app
+        run: flutter test test/explore_search_test.dart test/explore_widget_test.dart --dart-define=MITV_TARGET=mobile
+      - name: Full Flutter suite
+        working-directory: flutter_app
+        run: flutter test --dart-define=MITV_TARGET=mobile

@@ -141,6 +141,7 @@ void main() {
       expect(find.text('Saved fixture'), findsOneWidget);
       expect(calls, 0); // no visit to SearchPage or prior metadata request
       await tester.tap(find.text('Saved fixture'));
+      await tester.pump(); // attach the pushed route before advancing its transition
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(DetailsPage), findsOneWidget);
       expect(calls, 1);
