@@ -816,7 +816,13 @@ class _TeamBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, bounds) {
-      final diameter = bounds.maxWidth.clamp(0.0, isTvTarget ? 82.0 : 62.0);
+      final label=TextPainter(text:TextSpan(text:name,style:DefaultTextStyle.of(context).style),
+        maxLines:2,ellipsis:'…',textDirection:Directionality.of(context),textScaler:MediaQuery.textScalerOf(context))
+        ..layout(maxWidth:bounds.maxWidth);
+      final labelHeight=label.height;
+      label.dispose();
+      final heightLimit=bounds.hasBoundedHeight ? (bounds.maxHeight-labelHeight-7).clamp(0.0,82.0) : 82.0;
+      final diameter=bounds.maxWidth.clamp(0.0,isTvTarget?82.0:62.0).clamp(0.0,heightLimit);
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
