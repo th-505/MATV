@@ -70,3 +70,13 @@ Flutter validation run `39114283495` passed analyze, targeted exploration tests
 and the complete suite on `033cf33` (Flutter 3.47.7). Genre-routing changes follow
 that run and are revalidated in the next build; do not attribute the earlier run
 to later commits.
+
+The legacy web live page contained demo match scores and public test videos labeled
+as sports channels. Those production fallbacks are removed. The page reads the live
+capability registry route, retries failures, and never substitutes demonstration
+media. Failed match/server references remain failures for that match. The retired
+cloud-fallback export stays callable but returns no unverified embedded players.
+
+Publication now verifies the matching backend version, complete registry display
+metadata, every new feed category and configured TMDb metadata. This gate calls
+only static contracts and does not repeat live provider scraping or playback tests.

@@ -224,63 +224,17 @@ const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
 
 // توليد السيرفرات السحابية الاحتياطية فائقة السرعة عند تعذر القواشط المباشرة
 export function generateCloudFallbackServers(tmdbId, isTv, season = 1, episode = 1) {
-  const safeId = String(tmdbId || '550').trim();
-  const s = Math.max(1, Number(season) || 1);
-  const ep = Math.max(1, Number(episode) || 1);
-  return [
-    {
-      provider: 'vidsrc',
-      code: 'VC-1',
-      kind: 'embed',
-      url: `https://vidsrc.cc/v2/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}?autoPlay=true`,
-      ms: 75,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '75ms فائق',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.20)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'multiembed',
-      code: 'MD-1',
-      kind: 'embed',
-      url: `https://multiembed.mov/?video_id=${safeId}&tmdb=1${isTv ? `&s=${s}&e=${ep}` : ''}`,
-      ms: 110,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '110ms ممتاز',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'autoembed',
-      code: 'AE-1',
-      kind: 'embed',
-      url: `https://player.autoembed.cc/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}`,
-      ms: 140,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '140ms سريع',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    }
-  ];
+  // Compatibility export: unverified third-party embedded playback is retired.
+  return [];
 }
 
-// بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة (القواشط الـ 18 + السيرفرات السحابية)
 export async function resolveUnifiedServersForItem(item, season = 1, episode = 1, apiBase = '') {
   const servers = [];
   const backendBase = apiBase || (typeof ProviderEndpoints !== 'undefined' ? ProviderEndpoints?.backend : '') || '';
   // إذا كان العمل يحتوي على روابط مباشرة في بياناته
   if (Array.isArray(item?.servers)) {
     for (const s of item.servers) {
-      if (s?.url) servers.push({ provider: s.provider || s.name || 'akwam', url: s.url, kind: s.kind, downloadUrl: s.downloadUrl || s.url });
+      if (s?.url) servers.push({ provider: s.provider || s.name || 'akwam', code:s.code, headers:s.headers || {}, url: s.url, kind: s.kind, downloadUrl: s.downloadUrl || s.url });
     }
   }
 
@@ -293,7 +247,7 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     item?.id
   ].filter(r => r && !String(r).startsWith('tmdb:') && !String(r).startsWith('work:'));
 
-  if (candidateRefs.length > 0) {
+  if (candidateRefs.length > 0 && !servers.length) {
     try {
       const refVal = String(candidateRefs[0]).trim();
       const refParam = refVal.includes(':')
@@ -320,7 +274,7 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     } catch (_) {}
   }
 
-  try {
+  if (!servers.length) try {
     const q = new URLSearchParams({
       id: item?.id || '',
       ref: String(candidateRefs[0] || ''),

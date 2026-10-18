@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   encodeProviderServerName,
+  generateCloudFallbackServers,
   classifyLatencyTier,
   deduplicateAndMergeCatalog,
   normalizeEpisodesList,
   formatRuntimeArabic
 } from '../web/core/ma-nexus.js';
+
+assert.deepEqual(generateCloudFallbackServers('42',false),[]);
 
 // 1. Server code encryption contract (never expose raw scraper names)
 assert.equal(encodeProviderServerName('akwam', 1), 'AK-1');

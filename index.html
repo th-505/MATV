@@ -1199,7 +1199,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </div>
 
     <div class="shelf-header" style="margin-top:32px;">
-      <h2 class="shelf-title">باقات القنوات الرياضية والسينمائية المباشرة (24/7)</h2>
+      <h2 class="shelf-title">القنوات المباشرة</h2>
     </div>
     <div class="media-grid" id="channelsGrid"></div>
   </section>
@@ -1736,7 +1736,7 @@ export function renderMediaCard(rawItem) {
   const item = registerWorkItem(rawItem);
   const itemId = item.id || item.href;
   const isTv = item.mediaType === 'tv' || item.type === 'series' || item.is_series;
-  const typeLabel = item.typeLabel || (item.type==='anime' ? 'أنمي' : isTv ? 'مسلسل' : item.type==='movie' ? 'فيلم' : 'عمل');
+  const typeLabel = item.typeLabel || (item.type==='live' ? 'قناة مباشرة' : item.type==='anime' ? 'أنمي' : isTv ? 'مسلسل' : item.type==='movie' ? 'فيلم' : 'عمل');
   const year = String(item.year || '').slice(0, 4);
   const durationText = item.durationText || formatRuntimeArabic(item.runtime, isTv ? 'tv' : 'movie');
   const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '';
@@ -1836,8 +1836,9 @@ window.openPlayerPage = function(id, season = 1, epNum = 1, srvIdx = 0) {
   const s = Math.max(1, Number(season) || 1);
   const ep = Math.max(1, Number(epNum) || 1);
   const srv = Math.max(0, Number(srvIdx) || 0);
-  const title = currentDetailItem?.title || currentWatchItem?.title || '';
-  const type = currentDetailItem?.mediaType || currentWatchItem?.mediaType || 'movie';
+  const work=getRegisteredWorkItem(id);
+  const title=work?.title || currentDetailItem?.title || currentWatchItem?.title || '';
+  const type=work?.type==='live' ? 'live' : work?.mediaType || currentDetailItem?.mediaType || currentWatchItem?.mediaType || 'movie';
   window.location.hash = `#/watch?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&s=${s}&ep=${ep}&srv=${srv}`;
 };
 
@@ -2676,7 +2677,7 @@ async function renderPlayerWatchPage(params) {
   currentWatchEpisode = epNum;
 
   const isTv = item.mediaType === 'tv' || item.type === 'series' || typeParam === 'tv' || typeParam === 'series';
-  const isLiveStream = String(id).startsWith('live:');
+  const isLiveStream = item.type==='live' || item.isLive===true || String(id).startsWith('live:');
 
   const displayHeader = isLiveStream
     ? `🔴 بث مباشر: ${item.title}`
@@ -2789,64 +2790,6 @@ document.getElementById('toggleFitBtn').onclick = () => {
 // -------------------------------------------------------------
 // 5. LIVE MATCHES & SPORTS CHANNELS (#/live — Guaranteed Servers)
 // -------------------------------------------------------------
-const LIVE_SPORTS_CHANNELS = [
-  {
-    id: 'live:bein1',
-    title: 'beIN SPORTS 1 HD Premium',
-    poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
-      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'mycima', url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:bein2',
-    title: 'beIN SPORTS 2 HD',
-    poster: 'https://images.unsplash.com/photo-1489944445391-116e9d63c530?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:ssc1',
-    title: 'SSC SPORTS 1 HD (الدوري السعودي)',
-    poster: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'cimanow', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
-      { provider: 'arabseed', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:ssc2',
-    title: 'SSC SPORTS 2 HD',
-    poster: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'mycima', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:alkass',
-    title: 'Al Kass One HD (الكأس الرياضية)',
-    poster: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'egydead', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
-      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:adsports',
-    title: 'Abu Dhabi Sports 1 HD',
-    poster: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'shahid4u', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
-    ]
-  }
-];
-
 let matchesLoaded = false;
 async function loadLiveMatches() {
   const container = document.getElementById('matchesContainer');
@@ -2856,30 +2799,9 @@ async function loadLiveMatches() {
   try {
     const res = await getMatches();
     const payload = res.data;
-    const matchList = Array.isArray(payload?.data) && payload.data.length > 0
-      ? payload.data
-      : [
-          {
-            id: 'live:match1',
-            team1: { name: 'الهلال', goals: 2 },
-            team2: { name: 'النصر', goals: 1 },
-            competition: 'دوري روشن السعودي — قمة الجولة',
-            status: 'live',
-            priority: 1,
-            time: '21:00'
-          },
-          {
-            id: 'live:match2',
-            team1: { name: 'ريال مدريد', goals: 1 },
-            team2: { name: 'برشلونة', goals: 1 },
-            competition: 'الدوري الإسباني — البث المباشر',
-            status: 'live',
-            priority: 1,
-            time: '22:00'
-          }
-        ];
-
+    const matchList = Array.isArray(payload?.data) ? payload.data : [];
     container.innerHTML = '';
+    if (!matchList.length) container.textContent='لا توجد مباريات متاحة حالياً';
     matchList.forEach((m, idx) => {
       const card = document.createElement('div');
       card.className = 'match-card';
@@ -2909,61 +2831,61 @@ async function loadLiveMatches() {
     });
     matchesLoaded = true;
   } catch (err) {
-    matchesLoaded = true;
+    container.textContent='تعذر تحميل المباريات. أعد المحاولة.';
+    matchesLoaded = false;
   }
 }
 document.getElementById('refreshMatchesBtn').addEventListener('click', loadLiveMatches);
 
-async function openMatchStream(match, idx = 0) {
-  const matchTitle = `${match.team1?.name || 'الفريق الأول'} × ${match.team2?.name || 'الفريق الثاني'}`;
-  const fallbackChannel = LIVE_SPORTS_CHANNELS[idx % LIVE_SPORTS_CHANNELS.length];
-  const servers = [...fallbackChannel.servers];
-
-  const ref = match.ref || match.link;
-  if (ref) {
-    try {
-      const serversRes = await getMatchServers(ref);
-      const apiServers = serversRes.data?.data || [];
-      for (const s of apiServers) {
-        if (s.url) servers.unshift({ provider: 'akwam', url: s.url, kind: 'direct' });
-      }
-    } catch (_) {}
-  }
-
-  const liveWork = registerWorkItem({
-    id: `live:match:${idx + 1}`,
-    title: matchTitle,
-    mediaType: 'movie',
-    type: 'movie',
-    servers
-  });
-  window.openPlayerPage(liveWork.id, 1, 1, 0);
+async function openMatchStream(match) {
+  const ref=match.ref || match.link;
+  if(!ref || match.status==='ended'){toast('لا يتوفر بث لهذه المباراة حالياً');return;}
+  try {
+    const response=await getMatchServers(ref);
+    const servers=[];
+    for (const server of (response.data?.data || []).slice(0,4)) {
+      const serverRef=server.ref || server.url;
+      if(!serverRef)continue;
+      try {
+        const resolved=await getMatchPlayback(serverRef);
+        const playback=resolved.data?.data;
+        if(playback?.media_path)servers.push({provider:playback.server_name || server.provider,
+          code:server.code || server.name || playback.server_name,url:playback.media_path,
+          kind:'direct',headers:playback.headers || {}});
+      } catch { /* Try only another server reference belonging to this match. */ }
+    }
+    if(!servers.length){toast('لا يتوفر مصدر تشغيل لهذه المباراة حالياً');return;}
+    const work=registerWorkItem({id:ref,href:ref,ref,type:'live',isLive:true,mediaType:'live',
+      title:`${match.team1?.name || 'الفريق الأول'} × ${match.team2?.name || 'الفريق الثاني'}`,servers});
+    window.openPlayerPage(work.href,1,1,0);
+  } catch {toast('تعذر تحميل مصادر المباراة. أعد المحاولة.');}
 }
 
-function loadLiveChannels() {
-  const grid = document.getElementById('channelsGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  LIVE_SPORTS_CHANNELS.forEach(ch => {
-    registerWorkItem(ch);
-    const card = document.createElement('div');
-    card.className = 'media-card';
-    card.innerHTML = `
-      <div class="poster-wrap">
-        <img src="${ch.poster}" loading="lazy" alt="${ch.title}">
-        <span class="poster-type">بث حي 24/7</span>
-      </div>
-      <div class="card-info">
-        <div class="card-title">${ch.title}</div>
-        <div class="card-sub">
-          <span>FHD 1080p • 60fps</span>
-          <span class="badge-gold-sm">LIVE 🔴</span>
-        </div>
-      </div>
-    `;
-    card.onclick = () => window.openPlayerPage(ch.id, 1, 1, 0);
-    grid.appendChild(card);
-  });
+let liveChannelsLoading=false;
+async function loadLiveChannels() {
+  if(liveChannelsLoading)return;
+  const grid=document.getElementById('channelsGrid');if(!grid)return;
+  liveChannelsLoading=true;
+  grid.textContent='جارٍ تحميل القنوات…';
+  try {
+    const response=await fetch(ProviderEndpoints.backend+'/api/v1/live/channels',{signal:AbortSignal.timeout(15000)});
+    const payload=await response.json();
+    if(!response.ok || payload.status==='error')throw Error('LIVE_UNAVAILABLE');
+    grid.replaceChildren();
+    const rows=Array.isArray(payload.data)?payload.data:[];
+    if(!rows.length)grid.textContent='لا توجد قنوات متاحة حالياً';
+    rows.forEach(channel=>{
+      const work=registerWorkItem({...channel,href:channel.ref || channel.id,type:'live',isLive:true});
+      const card=renderMediaCard({...work,typeLabel:'قناة مباشرة'});
+      card.onclick=()=>window.openPlayerPage(work.href,1,1,0);
+      card.onkeydown=event=>{if(event.key==='Enter' || event.key===' '){event.preventDefault();card.click();}};
+      grid.append(card);
+    });
+  } catch {
+    grid.replaceChildren();
+    const retry=document.createElement('button');retry.className='tool-btn';
+    retry.textContent='تعذر تحميل القنوات — إعادة المحاولة';retry.onclick=loadLiveChannels;grid.append(retry);
+  } finally {liveChannelsLoading=false;}
 }
 
 // -------------------------------------------------------------

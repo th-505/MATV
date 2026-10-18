@@ -22,6 +22,7 @@ try {
     const page = await browser.newPage({serviceWorkers:'block'});
     const errors = [];
     let providerLoads = 0;
+    let liveLoads = 0;
     let completedSlow = 0;
     let aborted = 0;
     const detailRefs=[];
@@ -41,6 +42,11 @@ try {
     });
     await page.route('**/*', async route => {
       const u = new URL(route.request().url());
+      if (u.pathname === '/api/v1/matches') return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{status:'success',kind:'matches',data:[]}});
+      if (u.pathname === '/api/v1/live/channels') {
+        if(++liveLoads===1)return route.fulfill({status:503,headers:{'access-control-allow-origin':'*'},json:{status:'error',data:[]}});
+        return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{status:'success',data:[{id:'egydead_live:fixture',ref:'egydead_live:fixture',title:'Fixture live channel',type:'live',source:'egydead_live'}]}});
+      }
       if (u.pathname === '/api/v1/search/providers') {
         ++providerLoads;
         if (providerLoads === 1) return route.fulfill({status:503,headers:{'access-control-allow-origin':'*'},json:{status:'error'}});
@@ -211,6 +217,18 @@ try {
       assert.equal(await active.textContent(), content);
       assert.ok(!(await active.textContent()).includes('Result slow-leave'));
       assert.ok(!(await grid.textContent()).includes('Result slow-leave'));
+    }
+    if(main) {
+      await page.evaluate(()=>window.switchTab('live'));
+      const retryLive=page.getByRole('button',{name:'تعذر تحميل القنوات — إعادة المحاولة'});
+      await retryLive.waitFor();
+      assert.match(await page.locator('#matchesContainer').textContent(),/لا توجد مباريات/);
+      assert.equal(await page.locator('#channelsGrid .media-card').count(),0);
+      await retryLive.click();
+      await page.waitForFunction(()=>document.querySelector('#channelsGrid').textContent.includes('Fixture live channel'));
+      assert.equal(liveLoads,2);
+      assert.equal(await page.locator('#channelsGrid .media-card').count(),1);
+      assert.ok(!(await page.locator('#tab-live').textContent()).includes('beIN SPORTS'));
     }
     assert.ok(detailRefs.includes('akoam:fixture'), 'details use the original reference, not the card ID');
     assert.ok(!detailRefs.includes('opaque-card-id'));
