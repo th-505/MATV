@@ -317,7 +317,9 @@ class MitvApi implements MediaRepository {
   // Shared by all entry points. Successful metadata is cached, in-flight calls
   // coalesce, and failure clears the pending slot so an explicit retry can run.
   Future<List<Map<String, dynamic>>> searchProviders() {
-    if (_searchProvidersLoaded) return Future.value(List.unmodifiable(_searchProviders));
+    if (_searchProvidersLoaded) {
+      return Future.value(List.unmodifiable(_searchProviders));
+    }
     if (_searchProvidersPending != null) return _searchProvidersPending!;
     sourceMetadataLoading = true;
     sourceMetadataError = null;
@@ -901,7 +903,9 @@ class MitvApi implements MediaRepository {
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
     }
-    if (path == '/api/v1/search' && decoded['status'] == 'no_results') return decoded;
+    if (path == '/api/v1/search' && decoded['status'] == 'no_results') {
+      return decoded;
+    }
     if (decoded['status'] != 'success') {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
     }
