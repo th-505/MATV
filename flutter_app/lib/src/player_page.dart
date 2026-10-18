@@ -4,6 +4,8 @@ import 'download_service.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'player_viewport_frame.dart';
+import 'playback_policy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -821,7 +823,9 @@ class _PlayerPageState extends State<PlayerPage> {
                 ),
               ),
               LayoutBuilder(builder: (context, bounds) {
+                final compact = MediaQuery.sizeOf(context).height < 260;
                 final transport = PlayerControls(
+                  showPlaybackSpeed: !compact,
                   isPlaying: value.isPlaying,
                   isTv: isTvTarget,
                   playbackSpeed: _playbackSpeed,
@@ -834,6 +838,27 @@ class _PlayerPageState extends State<PlayerPage> {
                   data: const IconThemeData(color: Colors.white),
                   child: _trackControls(activeController),
                 );
+                if (compact) {
+                  return Directionality(textDirection: TextDirection.ltr, child: Row(
+                    children: [Expanded(child:transport), IconButton(
+                      key:const Key('player-more-options'),
+                      tooltip:'خيارات المشغل', color:Colors.white,
+                      icon:const Icon(Icons.more_horiz),
+                      onPressed:() => showModalBottomSheet<void>(context:context,
+                        builder:(context) => SafeArea(child:Padding(
+                          padding:const EdgeInsets.all(16),
+                          child:Column(mainAxisSize:MainAxisSize.min,children:[
+                            DropdownButton<double>(value:_playbackSpeed,
+                              items:supportedPlaybackSpeeds.map((speed)=>DropdownMenuItem(
+                                value:speed,child:Text(playbackSpeedLabel(speed)))).toList(),
+                              onChanged:(speed){if(speed!=null){_setPlaybackSpeed(speed);Navigator.pop(context);}},
+                            ), tracks,
+                          ]),
+                        )),
+                      ),
+                    )],
+                  ));
+                }
                 if (bounds.maxWidth < 600) {
                   return Column(mainAxisSize: MainAxisSize.min,
                     children: [transport, Align(alignment: Alignment.centerRight, child: tracks)]);
@@ -1384,7 +1409,9 @@ class _PlayerPageState extends State<PlayerPage> {
           if (isTvTarget && event is KeyDownEvent) _revealControls();
           return KeyEventResult.ignored;
         },
-        child: SizedBox.expand(
+        child: PlayerViewportFrame(
+          fullscreen: _fullscreen,
+          videoSize: active?.value.size ?? const Size(16, 9),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -1538,6 +1565,7 @@ class _PlayerPageState extends State<PlayerPage> {
                         },
                       ),
                       IconButton(
+                        key: const Key('player-fullscreen-toggle'),
                         tooltip: _fullscreen ? 'تصغير' : 'ملء الشاشة',
                         icon: Icon(
                           _fullscreen

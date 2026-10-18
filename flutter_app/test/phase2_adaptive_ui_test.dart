@@ -85,7 +85,7 @@ void main() {
       expect(dropdown.items!.map((e) => e.value),
           containsAll(['movie-foreign', 'movie-arabic', '3isk-movies']));
       expect(tester.widget<GridView>(find.byType(GridView)).gridDelegate,
-          isA<SliverGridDelegateWithMaxCrossAxisExtent>());
+          isA<SliverGridDelegateWithFixedCrossAxisCount>());
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
@@ -117,9 +117,9 @@ void main() {
     }
     expect(api.requests, [
       '3isk-latest:1',
-      'movie-foreign:1',
-      'series-foreign:1',
-      'movie-anime:1'
+      'browse-movies:1',
+      'browse-series:1',
+      'browse-anime:1'
     ]);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);

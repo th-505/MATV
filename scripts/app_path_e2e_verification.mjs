@@ -22,7 +22,7 @@ const providerSearch = async (providerId, query) => {
   if (query === 'failing-query') return { status: 'error', provider_id: providerId, data: [], error: { code: 'ACCESS_BLOCKED' } };
   const item = cases.find((entry) => entry.id === providerId && entry.query === query);
   if (!item) return { status: 'unsupported', provider_id: providerId, data: [], error: { code: 'SEARCH_UNSUPPORTED' } };
-  return { status: 'success', provider_id: providerId, provider_name: providerId, data: [{ id: item.ref, ref: item.ref, title: `Fixture ${item.type}`, source: providerId, providerId }] };
+  return { status: 'success', provider_id: providerId, provider_name: providerId, data: [{ id: item.ref, ref: item.ref, title: `Fixture ${item.type}`, original_title: item.query, source: providerId, providerId }] };
 };
 const providerDetails = async (ref) => {
   detailsCalls.push(ref);
@@ -34,7 +34,7 @@ const providerDetails = async (ref) => {
   ] : [];
   return {
     id: item.ref, ref: item.ref, source: item.id, providerId: item.id,
-    title: `Fixture ${item.type}`, type: item.type, episodes,
+    title: `Fixture ${item.type}`, original_title: item.query, type: item.type, episodes,
     servers: [{ provider: item.id, code: 'T-1', kind: 'direct', type: 'm3u8', url: `https://media.example/${item.id}.m3u8`, headers: {} }],
     media_sources: [{ provider: item.id, code: 'T-1', kind: 'direct', type: 'm3u8', url: `https://media.example/${item.id}.m3u8`, headers: {} }]
   };

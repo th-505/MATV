@@ -95,7 +95,7 @@ header.app-header {
   padding: calc(10px + var(--safe-top)) 16px 10px;
 }
 .header-inner {
-  max-width: 1280px;
+  max-width: 1920px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -282,7 +282,7 @@ nav.mobile-nav {
 
 /* Main Container */
 main.container {
-  max-width: 1280px;
+  max-width: 1920px;
   margin: 0 auto;
   padding: 18px 16px 36px;
 }
@@ -579,14 +579,11 @@ main.container {
 }
 
 /* Grid Layouts for Sections */
-.media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 14px;
-}
-@media (min-width: 600px) {
-  .media-grid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 16px; }
-}
+.media-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media(min-width:600px){.media-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}}
+@media(min-width:900px){.media-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(min-width:1200px){.media-grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
+@media(min-width:1600px){.media-grid{grid-template-columns:repeat(10,minmax(0,1fr))}}
 
 /* Filter Chips Bar */
 .filter-bar {
@@ -937,6 +934,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   gap: 12px;
 }
 .watch-video-box {
+  max-width: 1440px;
+  margin-inline: auto;
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -956,6 +955,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 }
 .watch-video-box:fullscreen {
   width: 100vw;
+  max-width: none;
   height: 100dvh;
   max-height: none;
   aspect-ratio: auto;
@@ -1424,7 +1424,6 @@ import {
   loadHomeWithSupabaseSync,
   deduplicateAndMergeCatalog,
   resolveUnifiedServersForItem,
-  nexusUnifiedSearch,
   formatRuntimeArabic,
   normalizeEpisodesList,
   probeAndRankServers,
@@ -3000,16 +2999,11 @@ async function performSearch(query) {
   const grid = document.getElementById('moviesGrid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">جارٍ البحث…</div>';
   try {
-    let items;
-    if (provider) {
-      const response = await searchCinema(q, provider, { signal: request.signal });
-      if (!exploreRequest.current(request)) return;
-      const message = searchStateMessage(response.data);
-      if (message) { grid.replaceChildren(); const state = document.createElement('p'); state.setAttribute('role', 'status'); state.textContent = message; grid.appendChild(state); return; }
-      items = response.data.data;
-    } else {
-      items = await nexusUnifiedSearch(q, ProviderEndpoints.backend, { signal: request.signal });
-    }
+    const response = await searchCinema(q, provider, { signal: request.signal });
+    if (!exploreRequest.current(request)) return;
+    const message = searchStateMessage(response.data);
+    if (message) { grid.replaceChildren(); const state = document.createElement('p'); state.setAttribute('role', 'status'); state.textContent = message; grid.appendChild(state); return; }
+    const items = response.data.data;
     if (!exploreRequest.current(request)) return;
     grid.innerHTML = '';
     if (!items.length) {

@@ -262,6 +262,15 @@ void main() {
                 .scheme,
             'https');
       }
+      await tester.tap(find.byKey(const Key('player-fullscreen-toggle')));
+      await tester.pump(const Duration(milliseconds:100));
+      final frame = tester.getRect(find.byKey(const Key('player-viewport-frame')));
+      final boundedOverlay = tester.getRect(find.byKey(const Key('player-controls-overlay')));
+      expect(boundedOverlay.left,frame.left);
+      expect(boundedOverlay.right,frame.right);
+      expect(boundedOverlay.bottom,frame.bottom);
+      expect(boundedOverlay.top,greaterThanOrEqualTo(frame.top));
+      expect(tester.takeException(),isNull);
       await tester.pumpWidget(const SizedBox());
       api.close();
     });

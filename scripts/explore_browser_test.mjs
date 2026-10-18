@@ -76,7 +76,7 @@ try {
           stage.remove();
           return result;
         });
-        assert.equal(bounds.width,size.width);
+        assert.equal(bounds.width,Math.min(size.width,1440));
         assert.ok(bounds.height <= size.height*.76 + 1);
         assert.ok(bounds.height > 0);
         assert.equal(bounds.direction,'ltr');

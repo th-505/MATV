@@ -283,7 +283,8 @@ class MitvApi implements MediaRepository {
             'section': categoryId.substring(7),
             'page': '$page',
           })
-        : await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
+        : await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'},
+            Duration(seconds: categoryId.startsWith('browse-') ? 90 : 30));
     _ensureGeneration(generation);
     final pagination = json['pagination'];
     if (pagination is Map && pagination['has_more'] is bool) {
@@ -896,14 +897,15 @@ class MitvApi implements MediaRepository {
       }
       throw ApiException('HTTP ${response.statusCode}');
     }
-    if (response.bodyBytes.length > 128 * 1024) {
+    final responseLimit = path == '/api/v1/category' && (query?['ref']?.startsWith('browse-') ?? false) ? 512 * 1024 : 128 * 1024;
+    if (response.bodyBytes.length > responseLimit) {
       throw const ApiException('RUNTIME_RESPONSE_TOO_LARGE');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
     }
-    if (path == '/api/v1/search' && decoded['status'] == 'no_results') {
+    if ((path == '/api/v1/search' || path == '/api/v1/category') && decoded['status'] == 'no_results') {
       return decoded;
     }
     if (decoded['status'] != 'success') {

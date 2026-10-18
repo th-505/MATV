@@ -308,7 +308,7 @@ class _ShellState extends State<Shell> {
       api: api,
       store: widget.store,
       title: 'الأفلام',
-      categoryId: 'movie-foreign',
+      categoryId: 'browse-movies',
       mediaKind: 'movie',
       unified: true,
     ),
@@ -316,7 +316,7 @@ class _ShellState extends State<Shell> {
       api: api,
       store: widget.store,
       title: 'المسلسلات',
-      categoryId: 'series-foreign',
+      categoryId: 'browse-series',
       mediaKind: 'series',
       unified: true,
     ),
@@ -324,7 +324,7 @@ class _ShellState extends State<Shell> {
       api: api,
       store: widget.store,
       title: 'الأنمي',
-      categoryId: 'movie-anime',
+      categoryId: 'browse-anime',
       mediaKind: 'anime',
       unified: true,
     ),
@@ -1075,11 +1075,10 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   late String selectedCategory = widget.categoryId;
   static const seriesCategories = <String, String>{
-    'laroza-series': 'لاروزا — مسلسلات',
-    'alooy-series': 'Alooy TV',
-    'series-foreign': 'أكوام — أجنبية',
-    'series-arabic': 'أكوام — عربية',
-    'series-turkish': 'أكوام — تركية',
+    'browse-series': 'جميع المسلسلات',
+    'series-foreign': 'أجنبية',
+    'series-arabic': 'عربية',
+    'series-turkish': 'تركية',
   };
   static const iskCategories = <String, String>{
     '3isk-latest': 'قصة عشق (أحدث الحلقات)',
@@ -1091,10 +1090,10 @@ class _CatalogPageState extends State<CatalogPage> {
     switch (widget.mediaKind) {
       case 'movie':
         return {
-          'movie-foreign': 'أكوام — أفلام أجنبية',
-          'movie-arabic': 'أكوام — أفلام عربية',
-          'laroza-movies': 'لاروزا — أفلام',
-          '3isk-movies': 'قصة عشق — أفلام',
+          'browse-movies': 'جميع الأفلام',
+          'movie-foreign': 'أفلام أجنبية',
+          'movie-arabic': 'أفلام عربية',
+          '3isk-movies': 'أفلام تركية',
         };
       case 'series':
         return {
@@ -1104,15 +1103,16 @@ class _CatalogPageState extends State<CatalogPage> {
         };
       case 'anime':
         return {
-          'movie-anime': 'أكوام — أفلام أنمي',
-          'series-anime': 'أكوام — مسلسلات أنمي',
-          'laroza-anime': 'لاروزا — أنمي',
+          'browse-anime': 'جميع الأنمي',
+          'movie-anime': 'أفلام أنمي',
+          'series-anime': 'مسلسلات أنمي',
         };
       default:
         return widget.unified
             ? {
-                'movie-foreign': 'أكوام — أفلام أجنبية',
-                'movie-arabic': 'أكوام — أفلام عربية',
+                'browse-movies': 'جميع الأفلام',
+          'movie-foreign': 'أفلام أجنبية',
+                'movie-arabic': 'أفلام عربية',
                 ...seriesCategories,
                 ...iskCategories,
               }
@@ -1274,15 +1274,10 @@ class _CatalogPageState extends State<CatalogPage> {
       Expanded(
         child: RefreshIndicator(
           onRefresh: _refresh,
-          child: GridView.builder(
+          child: AdaptiveCatalogGrid(
+            isTv: isTvTarget,
             controller: controller,
             padding: EdgeInsets.all(isTvTarget ? 24 : 12),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: isTvTarget ? 260 : 220,
-              childAspectRatio: isTvTarget ? .68 : .62,
-              crossAxisSpacing: isTvTarget ? 18 : 10,
-              mainAxisSpacing: isTvTarget ? 18 : 10,
-            ),
             itemCount: items.length + 1,
             itemBuilder: (context, i) {
               if (i == items.length) {
@@ -1376,7 +1371,7 @@ class _CatalogCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  if (sourceLabel.isNotEmpty) Text(sourceLabel),
+                  if (sourceLabel.isNotEmpty) Text(sourceLabel, maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
                   Text(
                     [
@@ -1584,13 +1579,8 @@ class _SearchPageState extends State<SearchPage> {
               ? const Center(child: Text('لا توجد نتائج لهذا البحث حاليًا'))
               : !submitted
               ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للاستكشاف'))
-              : GridView.builder(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: isTvTarget ? 260 : 220,
-                    childAspectRatio: isTvTarget ? .68 : .62,
-                    crossAxisSpacing: isTvTarget ? 18 : 10,
-                    mainAxisSpacing: isTvTarget ? 18 : 10,
-                  ),
+              : AdaptiveCatalogGrid(
+                  isTv: isTvTarget,
                   itemCount: items.length,
                   itemBuilder: (context, i) => _CatalogCard(
                     item: items[i],

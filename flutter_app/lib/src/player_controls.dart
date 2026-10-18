@@ -7,6 +7,7 @@ class PlayerControls extends StatefulWidget {
     super.key,
     required this.isPlaying,
     required this.isTv,
+    this.showPlaybackSpeed = true,
     required this.playbackSpeed,
     required this.onRewind,
     required this.onTogglePlay,
@@ -16,6 +17,7 @@ class PlayerControls extends StatefulWidget {
 
   final bool isPlaying;
   final bool isTv;
+  final bool showPlaybackSpeed;
   final double playbackSpeed;
   final VoidCallback onRewind;
   final VoidCallback onTogglePlay;
@@ -85,7 +87,7 @@ class _PlayerControlsState extends State<PlayerControls> {
             icon: const Icon(Icons.forward_10),
           ),
           const SizedBox(width: 4),
-          MenuAnchor(
+          if (widget.showPlaybackSpeed) MenuAnchor(
             builder: (context, controller, child) => FilledButton.tonalIcon(
               key: const Key('player-speed'),
               style: FilledButton.styleFrom(

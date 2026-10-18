@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { presentSearchResults } from '../server/search-presentation.mjs';
 import { sourceDisplayName, sourceDisplayNames } from '../server/source-display.mjs';
 import { searchStateMessage } from '../web/core/source-display.js';
 import { createServer } from '../server/app.mjs';
@@ -12,7 +13,7 @@ assert.equal(sourceDisplayName(newMeta.name), 'ذewProvider');
 const calls = [];
 const server = createServer({ catalogStore: null, providerSearch: async (id, q) => {
   calls.push([id, q]);
-  return { status: q, provider_id: id, data: q === 'success' ? [{title: 'Fixture', ref: 'akoam:fixture', providerId: id, source: id}] : [], error: null };
+  return { status: q, provider_id: id, data: q === 'success' ? [{title: 'Fixture success', ref: 'akoam:fixture', providerId: id, source: id}] : [], error: null };
 }});
 try {
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
@@ -48,3 +49,10 @@ try {
   assert.deepEqual(calls, ['success', 'no_results', 'unsupported', 'error'].map(q => ['akoam', q]));
   console.log('Explore policy, registry metadata, HTTP error states, query and reference preservation passed');
 } finally { delete globalThis.document; await new Promise(resolve => server.close(resolve)); }
+
+const related = {title:'أحلى نصيب',ref:'akwam:one',providerId:'akwam'};
+const matching = presentSearchResults([related, related, {title:'Parker',ref:'akwam:two'}, {title:'خوش نصيبي',ref:'other:three'}], 'احلى نصيب');
+assert.deepEqual(matching, [related]);
+assert.equal(matching[0].ref, 'akwam:one');
+assert.equal(presentSearchResults([{title:'One Piece',ref:'anime:one'}], 'one piece').length, 1);
+console.log('Query relevance and exact reference duplicate protection passed');

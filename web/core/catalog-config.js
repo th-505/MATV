@@ -4,7 +4,7 @@
 
 export const CinemaCategories = Object.freeze({
   movies: Object.freeze([
-    { title: "الكل", url: "movie-foreign" },
+    { title: "الكل", url: "browse-movies" },
     { title: "أجنبي", url: "movie-foreign" },
     { title: "عربي", url: "movie-arabic" },
     { title: "هندي", url: "movie-indian" },
@@ -12,7 +12,7 @@ export const CinemaCategories = Object.freeze({
     { title: "تركي", url: "3isk-movies" },
   ]),
   series: Object.freeze([
-    { title: "الكل", url: "series-foreign" },
+    { title: "الكل", url: "browse-series" },
     { title: "أجنبية", url: "series-foreign" },
     { title: "عربية", url: "series-arabic" },
     { title: "تركية", url: "series-turkish" },
@@ -27,7 +27,7 @@ export const CinemaCategories = Object.freeze({
     { title: "أفلام تركية", url: "3isk-movies" },
   ]),
   anime: Object.freeze([
-    { title: "الكل", url: "movie-anime" },
+    { title: "الكل", url: "browse-anime" },
     { title: "أفلام أنمي", url: "movie-anime" },
     { title: "مسلسلات أنمي", url: "series-anime" },
   ]),
