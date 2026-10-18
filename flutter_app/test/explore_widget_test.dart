@@ -16,7 +16,7 @@ const savedItem = CatalogItem(id: 'akoam:saved', ref: 'akoam:saved',
     title: 'Saved fixture', poster: '', type: 'movie', source: 'akwam');
 http.Response metadataResponse() => http.Response(jsonEncode({
   'status': 'success', 'data': [
-    {'id': 'akwam', 'displayName': 'ذكوام (thkwam)', 'aliases': ['akoam'], 'domains': []},
+    {'id': 'akwam', 'displayName': 'ذكوام (ذkwam)', 'aliases': ['akoam'], 'domains': []},
     {'id': 'future', 'displayName': 'thuture', 'aliases': [], 'domains': []},
   ],
 }), 200, headers: {'content-type': 'application/json; charset=utf-8'});
@@ -56,7 +56,7 @@ void main() {
     expect(find.text('جارٍ البحث…'), findsOneWidget);
     await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('ذكوام (thkwam)').last);
+    await tester.tap(find.text('ذكوام (ذkwam)').last);
     await tester.pump(const Duration(milliseconds: 300));
     expect(api.requests.last.provider, 'akwam');
     api.requests.last.result.complete([savedItem]);
@@ -163,7 +163,7 @@ void main() {
         await concurrent;
       }
       await tester.pumpAndSettle();
-      expect(find.text('Saved fixture • ذكوام (thkwam)'), findsOneWidget);
+      expect(find.text('Saved fixture • ذكوام (ذkwam)'), findsOneWidget);
       expect(api.detailRefs, ['akoam:saved']);
       expect(savedItem.source, 'akwam');
       expect(savedItem.ref, 'akoam:saved');

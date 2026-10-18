@@ -2,8 +2,7 @@
 function transformName(original) {
   const chars = Array.from(original.trim());
   if (!chars.length) return '';
-  const firstLetter = chars.find(char => /\p{Letter}/u.test(char)) || chars[0];
-  return (/\p{Script=Arabic}/u.test(firstLetter) ? 'ذ' : 'th') + chars.slice(1).join('');
+  return 'ذ' + chars.slice(1).join('');
 }
 
 // Registry names may contain an Arabic name and parenthesized English aliases.

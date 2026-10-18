@@ -3,12 +3,12 @@ import { sourceDisplayName, sourceDisplayNames } from '../server/source-display.
 import { searchStateMessage } from '../web/core/source-display.js';
 import { createServer } from '../server/app.mjs';
 import { listProviders, PROVIDERS_MAP } from '../server/scrapers/registry.mjs';
-for (const [original, expected] of [[' أكوام ', 'ذكوام'], [' Akoam ', 'thkoam'], ['123Movies', 'th23Movies'], ['١٢٣عربي', 'ذ٢٣عربي'], ['😀Movie', 'thMovie'], ['', ''], ['أكوام (Akwam)', 'ذكوام (thkwam)'], ['ماي سيما (MyCima / WeCima)', 'ذاي سيما (thyCima / theCima)'], ['123 (456Movies)', 'th23 (th56Movies)'], ['𐐀Name', 'thName']]) assert.equal(sourceDisplayName(original), expected);
-assert.deepEqual(sourceDisplayNames('ماي سيما (MyCima / WeCima)'), {primary: 'ذاي سيما', alternatives: ['thyCima', 'theCima']});
+for (const [original, expected] of [[' أكوام ', 'ذكوام'], [' Akoam ', 'ذkoam'], ['123Movies', 'ذ23Movies'], ['١٢٣عربي', 'ذ٢٣عربي'], ['😀Movie', 'ذMovie'], ['', ''], ['أكوام (Akwam)', 'ذكوام (ذkwam)'], ['ماي سيما (MyCima / WeCima)', 'ذاي سيما (ذyCima / ذeCima)'], ['123 (456Movies)', 'ذ23 (ذ56Movies)'], ['𐐀Name', 'ذName']]) assert.equal(sourceDisplayName(original), expected);
+assert.deepEqual(sourceDisplayNames('ماي سيما (MyCima / WeCima)'), {primary: 'ذاي سيما', alternatives: ['ذyCima', 'ذeCima']});
 const newMeta = { id: 'new-provider', name: 'NewProvider', domains: [], capabilities: { search: true } };
 // The registry list is the single source of metadata; no client-side source registry.
 const known = listProviders();
-assert.equal(sourceDisplayName(newMeta.name), 'thewProvider');
+assert.equal(sourceDisplayName(newMeta.name), 'ذewProvider');
 const calls = [];
 const server = createServer({ catalogStore: null, providerSearch: async (id, q) => {
   calls.push([id, q]);

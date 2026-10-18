@@ -43,10 +43,18 @@ class _PlayerControlsState extends State<PlayerControls> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusTraversalGroup(
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: IconButtonTheme(
+        data: IconButtonThemeData(style: IconButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.white12,
+          minimumSize: const Size(48, 48),
+        )),
+        child: FocusTraversalGroup(
       policy: WidgetOrderTraversalPolicy(),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           IconButton.filledTonal(
             key: const Key('player-rewind'),
@@ -55,7 +63,7 @@ class _PlayerControlsState extends State<PlayerControls> {
             onPressed: widget.onRewind,
             icon: const Icon(Icons.replay_10),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
           IconButton.filled(
             key: const Key('player-play-toggle'),
             focusNode: _playFocus,
@@ -64,7 +72,7 @@ class _PlayerControlsState extends State<PlayerControls> {
             onPressed: widget.onTogglePlay,
             icon: Icon(widget.isPlaying ? Icons.pause : Icons.play_arrow),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
           IconButton.filledTonal(
             key: const Key('player-forward'),
             focusNode: _forwardFocus,
@@ -72,7 +80,7 @@ class _PlayerControlsState extends State<PlayerControls> {
             onPressed: widget.onForward,
             icon: const Icon(Icons.forward_10),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
           MenuAnchor(
             builder: (context, controller, child) => FilledButton.tonalIcon(
               key: const Key('player-speed'),
@@ -91,6 +99,8 @@ class _PlayerControlsState extends State<PlayerControls> {
                 .toList(growable: false),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
