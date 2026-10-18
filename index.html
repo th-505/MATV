@@ -3025,7 +3025,11 @@ if (searchInput) {
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') performSearch(searchInput.value);
   });
-  searchInput.addEventListener('search', () => performSearch(searchInput.value));
+  // Native search events can arrive after a subsequent input edit. Enter and
+  // the explicit button own submission; the native clear action only invalidates.
+  searchInput.addEventListener('search', () => {
+    if (!searchInput.value.trim()) invalidateExplore(true);
+  });
 }
 
 document.addEventListener('keydown', (e) => {
