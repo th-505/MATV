@@ -24,6 +24,7 @@ try {
     let providerLoads = 0;
     let completedSlow = 0;
     let aborted = 0;
+    const detailRefs=[];
     page.on('requestfailed', request => { if (request.url().includes('q=slow')) ++aborted; });
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => {
@@ -53,10 +54,10 @@ try {
           await new Promise(r => setTimeout(r, delay)); ++completedSlow;
         }
         const status = ['unsupported', 'error', 'no_results'].includes(q) ? q : 'success';
-        return route.fulfill({headers:{'access-control-allow-origin':'*'},status:status === 'unsupported'?422:status === 'error'?503:200,json:{status,version:'test',kind:'search',data: status === 'success'?[{id:'akoam:fixture',ref:'akoam:fixture',title:'Result '+q+(q==='slow-source'?' '+u.searchParams.get('provider'):''),source:'akwam',providerId:'akwam',poster:''}]:[]}});
+        return route.fulfill({headers:{'access-control-allow-origin':'*'},status:status === 'unsupported'?422:status === 'error'?503:200,json:{status,version:'test',kind:'search',data: status === 'success'?[{id:'opaque-card-id',ref:'akoam:fixture',title:'Result '+q+(q==='slow-source'?' '+u.searchParams.get('provider'):''),source:'akwam',providerId:'akwam',poster:''}]:[]}});
       }
       if (u.pathname === '/api/v1/category') return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{status:'success',version:'test',kind:'category',data:[{id:'akoam:category',ref:'akoam:category',title:'Category fixture',type:'movie',source:'akwam'}]}});
-      if (u.pathname === '/api/cinema/details') return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{status:'success',movie_title:'Result success',providerId:'akwam',episodes:[{num:1,link:'akoam:fixture:episode-1',watch_available:true}]}});
+      if (u.pathname === '/api/cinema/details') { detailRefs.push(u.searchParams.get('ref')); return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{status:'success',movie_title:'Result success',providerId:'akwam',episodes:[{num:1,link:'akoam:fixture:episode-1',watch_available:true}]}}); }
       if (u.origin === `http://127.0.0.1:${server.address().port}` && !u.pathname.startsWith('/api/')) return route.continue();
       if (route.request().resourceType() === 'script') return route.fulfill({contentType:'text/javascript',body:''});
       return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{status:'success',version:'test',kind:'category',data:[],results:[],shelves:[]}});
@@ -202,6 +203,8 @@ try {
       assert.ok(!(await active.textContent()).includes('Result slow-leave'));
       assert.ok(!(await grid.textContent()).includes('Result slow-leave'));
     }
+    assert.ok(detailRefs.includes('akoam:fixture'), 'details use the original reference, not the card ID');
+    assert.ok(!detailRefs.includes('opaque-card-id'));
     assert.deepEqual(errors,[],file+' page errors');
     await page.close();
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'title_overview_header.dart';
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'app_target.dart';
@@ -350,17 +351,15 @@ class _DetailsPageState extends State<DetailsPage> {
             return ListView(
               padding: EdgeInsets.all(isTvTarget ? 28 : 16),
               children: [
-                if (details.poster.isNotEmpty)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 420),
-                    child: Image.network(details.poster, fit: BoxFit.contain),
-                  ),
-                const SizedBox(height: 16),
-                Text(
-                  details.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                TitleOverviewHeader(
+                  title:details.title,poster:details.poster,plot:details.plot,
+                  facts:[
+                    if(details.year!=null) '${details.year}',
+                    if((widget.item.runtimeMinutes??0)>0) '${widget.item.runtimeMinutes} د',
+                    if(details.season!=null) 'S${details.season}',
+                    if(details.episode!=null) 'E${details.episode}',
+                    if(details.episodes.isNotEmpty) '${details.episodes.length} حلقات متاحة',
+                  ],
                 ),
                 const SizedBox(height: 12),
                 if (details.hasEpisodes) ...[

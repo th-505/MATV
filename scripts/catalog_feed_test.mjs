@@ -39,3 +39,26 @@ for(const meta of listProviders()) {
  }
 }
 console.log('Catalog feed: registry routing, balanced ten-source blocks, coalescing, bounded concurrency, hourly refresh, pagination beyond sixty and timeout passed');
+
+const durableRows=new Map();
+const store={
+  async get(provider,category){return durableRows.get(`${provider}:${category}`)||null;},
+  async put(provider,category,payload,expires){durableRows.set(`${provider}:${category}`,{payload:structuredClone(payload),expires_at:new Date(expires).toISOString()});},
+};
+clock=0;
+const durableFeed=createCatalogFeed({providers:()=>entries,store,now:()=>clock});
+await durableFeed.read('browse-movies');
+const beforeRestore=calls.length;
+const restored=createCatalogFeed({providers:()=>entries,store,now:()=>clock});
+assert.equal((await restored.read('browse-movies')).data.length,30);
+assert.equal(calls.length,beforeRestore,'restart restores private fresh metadata without rescraping');
+assert.equal((await restored.read('browse-movies',2)).data.length,30);
+assert.equal(calls.length,beforeRestore);
+clock=3_600_001;
+await restored.read('browse-movies');
+assert.equal(calls.length,beforeRestore+3,'expired durable metadata is refreshed');
+const outage=createCatalogFeed({providers:()=>entries,store:{get:async()=>{throw Error('offline');},put:async()=>{throw Error('offline');}}});
+assert.equal((await outage.read('browse-movies')).data.length,30);
+await timeout.read('browse-movies');
+assert.equal((await timeout.read('browse-movies')).cached,false,'failed pages remain retryable');
+console.log('Private feed persistence: restart restore, expiry refresh, database outage and retry passed');

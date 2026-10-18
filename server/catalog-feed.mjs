@@ -21,7 +21,7 @@ export function catalogCategoryFor(entry, kind, lookup = getProvider) {
 }
 
 export function createCatalogFeed({providers = () => listProviders().map(meta => getProvider(meta.id)),
-  now = Date.now, ttlMs = 3_600_000, timeoutMs = 7_000, concurrency = 4} = {}) {
+  store = null, now = Date.now, ttlMs = 3_600_000, timeoutMs = 7_000, concurrency = 4} = {}) {
   const snapshots = new Map();
   const pending = new Map();
   let serial = 0;
@@ -32,7 +32,7 @@ export function createCatalogFeed({providers = () => listProviders().map(meta =>
     if (!snapshot || snapshot.expires <= now()) {
       snapshot = {id:`${now()}-${++serial}`, expires:now()+ttlMs, pages:new Map(), states:providers()
         .filter(entry => entry?.meta.capabilities?.catalog && typeof entry.module.scrapeCatalog === 'function')
-        .map(entry => ({entry, category:catalogCategoryFor(entry, definition.type), rows:[], base:0, next:1, hasMore:true, seen:new Set()}))
+        .map(entry => ({entry, category:catalogCategoryFor(entry, definition.type), rows:[], base:0, next:1, hasMore:true, restored:false, seen:new Set()}))
         .filter(state => state.category)};
       snapshots.set(category, snapshot);
     }
@@ -63,6 +63,19 @@ export function createCatalogFeed({providers = () => listProviders().map(meta =>
           let failed = false;
           // A browse request never calls a search endpoint or guesses a genre URL.
           try {
+            if (!state.restored) {
+              state.restored = true;
+              try {
+                const saved = await store?.get(state.entry.meta.id,category,now());
+                const payload = saved?.payload;
+                if (payload && Date.parse(saved.expires_at)>now() && Array.isArray(payload.rows) && payload.rows.length<=60 && Number.isInteger(payload.next) && payload.next>=1 && payload.next<=101) {
+                  state.rows=payload.rows.map(row=>normalizeCatalogItem({...row,source:state.entry.meta.id})).filter(row=>row.ref && row.title);
+                  state.next=payload.next;state.hasMore=payload.hasMore===true;
+                  state.seen=new Set(state.rows.map(row=>row.ref));
+                  snapshot.expires=Math.min(snapshot.expires,Date.parse(saved.expires_at));
+                }
+              } catch { /* Database outage must not prevent direct catalog browsing. */ }
+            }
             if (offset < state.base) throw Error('FEED_WINDOW_EXPIRED');
             for (let attempt = 0; state.hasMore && state.base + state.rows.length < offset + 10 && attempt < 8; attempt++) {
               const budget = Math.min(timeoutMs, deadline-Date.now());
@@ -84,6 +97,13 @@ export function createCatalogFeed({providers = () => listProviders().map(meta =>
               state.rows.push(...unique);
               state.next++;
               state.hasMore = rows.length > 0 && unique.length > 0 && result?.has_more !== false;
+              if (store && state.base===0 && state.rows.length<=60) {
+                try {
+                  await store.put(state.entry.meta.id,category,
+                    {rows:state.rows,next:state.next,hasMore:state.hasMore},snapshot.expires,now());
+                } catch { /* Retry on the next successful source page; never fail playback. */ }
+              }
+
               if (state.rows.length > 60 && offset > state.base) {
                 const discard = Math.min(state.rows.length-60, offset-state.base);
                 state.rows.splice(0,discard); state.base += discard;

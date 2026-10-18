@@ -135,7 +135,7 @@ void main() {
   });
 
   testWidgets(
-      'anime taxonomy excludes programs and distinguishes provider names',
+      'anime taxonomy excludes programs and exposes neutral browsing categories',
       (tester) async {
     final api = _PagedUnifiedApi({
       1: [
@@ -164,7 +164,7 @@ void main() {
     expect(find.text('Ordinary Film'), findsNothing);
     final menu = tester
         .widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
-    expect(menu.items!.map((item) => item.value), contains('laroza-anime'));
+    expect(menu.items!.map((item) => item.value), containsAll(['browse-anime','movie-anime','series-anime']));
     expect(api.requests, [1]);
     await tester.pumpWidget(const SizedBox());
   });

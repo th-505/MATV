@@ -8,6 +8,8 @@ class MediaItem {
     required this.type,
     required this.ref,
     this.year,
+    this.runtimeMinutes,
+    this.episodeCount,
     this.rating = 0,
     this.source = 'mitv',
     this.genres = const [],
@@ -26,6 +28,8 @@ class MediaItem {
   final String type;
   final String ref;
   final int? year;
+  final int? runtimeMinutes;
+  final int? episodeCount;
   final double rating;
   final String source;
   final List<String> genres;
@@ -45,6 +49,8 @@ class MediaItem {
     String? type,
     String? ref,
     int? year,
+    int? runtimeMinutes,
+    int? episodeCount,
     double? rating,
     String? source,
     List<String>? genres,
@@ -63,6 +69,8 @@ class MediaItem {
     type: type ?? this.type,
     ref: ref ?? this.ref,
     year: year ?? this.year,
+    runtimeMinutes: runtimeMinutes ?? this.runtimeMinutes,
+    episodeCount: episodeCount ?? this.episodeCount,
     rating: rating ?? this.rating,
     source: source ?? this.source,
     genres: List.unmodifiable(genres ?? this.genres),
@@ -85,6 +93,8 @@ class MediaItem {
     'type': type,
     'ref': ref,
     'year': year,
+    if (runtimeMinutes != null) 'runtime_minutes': runtimeMinutes,
+    if (episodeCount != null) 'episode_count': episodeCount,
     'rating': rating,
     'source': source,
     'genres': genres,
@@ -105,6 +115,8 @@ class MediaItem {
     type: '${json['type'] ?? 'series'}',
     ref: '${json['ref'] ?? ''}',
     year: int.tryParse('${json['year'] ?? ''}'),
+    runtimeMinutes: _positiveIdentityNumber(json['runtime_minutes'] ?? json['runtime']),
+    episodeCount: _positiveIdentityNumber(json['episode_count']),
     rating: (json['rating'] as num?)?.toDouble() ?? 0,
     source: '${json['source'] ?? 'mitv'}',
     genres: _descriptiveGenres(json),

@@ -17,7 +17,7 @@
     "test:integration": "node scripts/runtime_http_test.mjs && node scripts/app_path_e2e_verification.mjs",
     "test:live": "node scripts/run_live_provider_tests.mjs",
     "test:acceptance:live": "node scripts/live_acceptance.mjs",
-    "test:explore": "node scripts/catalog_feed_test.mjs && node scripts/explore_search_test.mjs && node scripts/explore_browser_test.mjs"
+    "test:explore": "node scripts/player_reference_test.mjs && node scripts/catalog_feed_test.mjs && node scripts/explore_search_test.mjs && node scripts/explore_browser_test.mjs"
   },
   "engines": {
     "node": ">=22"

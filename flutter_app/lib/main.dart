@@ -1081,7 +1081,7 @@ class _CatalogPageState extends State<CatalogPage> {
     'series-turkish': 'تركية',
   };
   static const iskCategories = <String, String>{
-    '3isk-latest': 'قصة عشق (أحدث الحلقات)',
+    '3isk-latest': 'أحدث الحلقات التركية',
     '3isk-turkish': 'جميع المسلسلات (مترجم ومدبلج)',
     '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
     '3isk-movies': 'جميع الأفلام',
@@ -1383,6 +1383,10 @@ class _CatalogCard extends StatelessWidget {
                         _ => 'عمل',
                       },
                       if (item.year != null) '${item.year}',
+                      if ((item.runtimeMinutes ?? 0) > 0) '${item.runtimeMinutes} د',
+                      if (item.season != null) 'S${item.season}',
+                      if (item.episode != null) 'E${item.episode}',
+                      if ((item.episodeCount ?? 0) > 0) '${item.episodeCount} حلقة',
                     ].join(' • '),
                     style: const TextStyle(
                       color: Color(0xFFB8B09F),

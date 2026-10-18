@@ -8,7 +8,7 @@ source selector; building a client alone cannot add that server route.
 
 - [x] Shared Flutter catalog/search grid uses actual parent constraints and 2/4/6/8/10 columns.
 - [x] Matching responsive web grids and larger desktop content area.
-- [ ] Responsive details layout and complete trustworthy card metadata.
+- [x] Responsive details header, optional duration/season/episode metadata; removed invented web metadata.
 - [ ] Consistent refreshed logo/theme across all six build targets.
 
 ## 2. Search, sources and browsing
@@ -19,7 +19,8 @@ source selector; building a client alone cannot add that server route.
 - [x] Search presentation rejects unrelated titles and exact duplicate references.
 - [x] Neutral movie/series/anime feeds browse declared provider categories in ten-work blocks.
 - [x] Coalesced hourly in-memory cache, bounded concurrency/deadlines and continued paging after sixty works.
-- [ ] Private Supabase persistence, refresh/purge scheduling and aggregate last-request lifecycle.
+- [x] Private Supabase feed persistence, one-hour expiry and hourly purge; RLS/grants verified remotely.
+- [ ] Aggregate per-work open lifecycle across all provider paths.
 - [ ] Validate owned Akwam/live replacement before retiring obsolete upstream dependencies.
 - [ ] Deploy backend and clients together after the complete regression gate.
 
@@ -37,3 +38,10 @@ notice is changed by this rework. Legacy search aggregation remains available on
 when an explicit adapter is injected, preserving its existing compatibility tests.
 Search matching operates on returned presentation titles; the original query is
 passed unchanged to the provider. No user identifier or covert tracking is added.
+
+Applied database migration: `20261018084150_catalog_feed_persistence.sql` to the
+repository-configured Supabase project on 2026-10-18. The new table has RLS enabled,
+no anon/authenticated grants and service-role-only CRUD. The hourly purge is active.
+This is additive and does not modify existing library, favorites or provider tables.
+The stored first sixty works can survive a process restart; expired snapshots are
+refreshed on demand. Database outages fall back to the normal provider adapters.

@@ -19,7 +19,7 @@ import { createLarozaProvider, LAROZA_CATEGORIES, assertLarozaRef } from './prov
 import { ISK_CATEGORIES, decode3iskRef } from "./providers/3isk.mjs";
 import { decodeAlooyRef } from './providers/alooy.mjs';
 import { createCatalogMetadataCache } from './catalog-metadata-cache.mjs';
-import { createSupabaseCatalogStore } from './provider-store.mjs';
+import { createSupabaseCatalogStore, createSupabaseFeedStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
@@ -578,7 +578,7 @@ export function assertCatalogReference(ref) {
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now, providerSearch = searchProviderCatalog, providerDetails = scrapeRealDetails,
-  catalogFeed=createCatalogFeed(), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
+  catalogFeed=createCatalogFeed({store:createSupabaseFeedStore()}), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
   runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
@@ -755,7 +755,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         }
 
         // إذا لم نجد مصادر بالـ ref أو كان المطلوب عبر title، نقوم بتفعيل وتشغيل جميع القواشط المحلية
-        if (rawServers.length === 0 && title) {
+        if (rawServers.length === 0 && title && !ref) {
           try {
             const activated = await activateAllScrapersForContent(title, season, episode);
             if (Array.isArray(activated) && activated.length > 0) {

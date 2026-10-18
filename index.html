@@ -1455,8 +1455,9 @@ function registerWorkItem(item) {
   const id = String(item.id || item.href || item.ref || '');
   if (!id) return item;
   const existing = workRegistry.get(id) || {};
-  const merged = { ...existing, ...item, id, href: id };
+  const merged = { ...existing, ...item, id, href: item.href || item.ref || existing.href || id };
   workRegistry.set(id, merged);
+  if (merged.href !== id) workRegistry.set(merged.href, merged);
   try {
     sessionStorage.setItem('matv_work_' + id, JSON.stringify(merged));
   } catch (_) {}
@@ -1483,8 +1484,8 @@ function getRegisteredWorkItem(id, fallbackTitle = '', fallbackType = 'movie') {
     type: isTv ? 'series' : 'movie',
     typeLabel: isTv ? 'مسلسل' : 'فيلم',
     title: fallbackTitle || 'عمل سينمائي',
-    year: '2025',
-    rating: '8.5',
+    year: '',
+    rating: '',
     durationText: formatRuntimeArabic(null, isTv ? 'tv' : 'movie')
   };
 }
@@ -1603,8 +1604,8 @@ window.toggleFavorite = function(item) {
       mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
       type: item.type || (item.is_series ? 'series' : 'movie'),
       typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
-      year: item.year || '2025',
-      rating: item.rating || '8.5',
+      year: item.year || '',
+      rating: item.rating || '',
       durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType)
     });
     toast('تمت الإضافة إلى المفضلة ♥');
@@ -1633,8 +1634,8 @@ function saveContinueWatching(item, currentTime, duration, season = 1, episode =
     mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
     type: item.type || (item.is_series ? 'series' : 'movie'),
     typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
-    year: item.year || '2025',
-    rating: item.rating || '8.5',
+    year: item.year || '',
+    rating: item.rating || '',
     durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType),
     season,
     episode,
@@ -1727,10 +1728,10 @@ export function renderMediaCard(rawItem) {
   const itemId = item.id || item.href;
   const isTv = item.mediaType === 'tv' || item.type === 'series' || item.is_series;
   const typeLabel = item.typeLabel || (isTv ? 'مسلسل' : 'فيلم');
-  const year = String(item.year || '2025').slice(0, 4);
+  const year = String(item.year || '').slice(0, 4);
   const durationText = item.durationText || formatRuntimeArabic(item.runtime, isTv ? 'tv' : 'movie');
-  const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '8.4';
-  const poster = item.poster || item.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+  const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '';
+  const poster = item.poster || item.img || '';
   const favActive = isFavorite(itemId);
 
   const card = document.createElement('div');
@@ -1741,20 +1742,33 @@ export function renderMediaCard(rawItem) {
 
   card.innerHTML = `
     <div class="poster-wrap">
-      <img src="${poster}" loading="lazy" alt="${item.title || ''}" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
-      <span class="poster-type">${typeLabel}</span>
-      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${itemId}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
-        ${favActive ? '♥' : '♡'}
-      </button>
+      <img loading="lazy" alt="">
+      <span class="poster-type"></span>
+      <button class="card-fav-btn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">♡</button>
     </div>
     <div class="card-info">
-      <div class="card-title">${item.title}</div>
-      <div class="card-sub">
-        <span>${year} • ${durationText}</span>
-        <span class="badge-gold-sm">★ ${rating}</span>
-      </div>
-    </div>
-  `;
+      <div class="card-title"></div>
+      <div class="card-sub"><span class="card-facts"></span><span class="badge-gold-sm"></span></div>
+    </div>`;
+  const image = card.querySelector('img');
+  image.alt = item.title || '';
+  if (poster && /^https?:\/\//i.test(poster)) image.src = poster;
+  else image.hidden = true;
+  image.onerror = () => { image.hidden = true; };
+  card.querySelector('.poster-type').textContent = typeLabel;
+  card.querySelector('.card-title').textContent = item.title || '';
+  card.querySelector('.card-facts').textContent = [year,durationText,
+    item.season_number != null ? 'S'+item.season_number : '',
+    item.episode_number != null ? 'E'+item.episode_number : '',
+    item.episode_count > 0 ? item.episode_count+' حلقة' : '',
+  ].filter(Boolean).join(' • ');
+  const score = card.querySelector('.badge-gold-sm');
+  score.textContent = rating ? '★ '+rating : '';
+  score.hidden = !rating;
+  const favorite = card.querySelector('.card-fav-btn');
+  favorite.classList.toggle('active', favActive);
+  favorite.dataset.href = itemId;
+  favorite.textContent = favActive ? '♥' : '♡';
 
   const source = document.createElement('div');
   source.textContent = sourceLabel(item);
@@ -1803,7 +1817,7 @@ function stopActivePlayerStream() {
 window.openTitlePage = function(item) {
   invalidateExplore();
   const registered = registerWorkItem(item);
-  const id = registered.id || registered.href;
+  const id = registered.href || registered.ref || registered.id;
   const type = registered.mediaType || (registered.is_series ? 'tv' : 'movie');
   const title = registered.title || '';
   window.location.hash = `#/title?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}`;
@@ -1928,9 +1942,9 @@ async function loadHomeShelves() {
       document.getElementById('heroTitle').textContent = heroItem.title;
       document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.backdrop || heroItem.poster})`;
       document.getElementById('heroDesc').textContent = heroItem.overview || '';
-      document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || '8.8'}`;
-      document.getElementById('heroYearPill').textContent = heroItem.year || '2025';
-      document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || '4K UHD'}`;
+      document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || ''}`;
+      document.getElementById('heroYearPill').textContent = heroItem.year || '';
+      document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || ''}`;
       document.getElementById('heroPlayBtn').onclick = () => openTitlePage(heroItem);
       const favBtn = document.getElementById('heroFavBtn');
       const active = isFavorite(heroItem.id);
@@ -2124,7 +2138,7 @@ async function renderTitleDetailPage(params) {
   };
 
   document.getElementById('detailPlayNowBtn').onclick = () => {
-    window.openPlayerPage(currentDetailItem.id, currentDetailSeason, 1, 0);
+    window.openPlayerPage(currentDetailItem.href || currentDetailItem.id, currentDetailSeason, 1, 0);
   };
 
   // Resolve TMDb ID if needed
@@ -2183,19 +2197,19 @@ async function renderTitleDetailPage(params) {
   document.getElementById('detailTitle').textContent = currentDetailItem.title;
   document.getElementById('detailPoster').src = currentDetailItem.poster || currentDetailItem.img;
   document.getElementById('detailBackdrop').style.backgroundImage = `url(${currentDetailItem.backdrop || currentDetailItem.poster})`;
-  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'عمل سينمائي ودرامي متوفر بجودة فائقة عبر منصة MA TV.';
+  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'لا يتوفر وصف لهذا العمل حالياً.';
 
   const pillsWrap = document.getElementById('detailMetaPills');
-  const genresText = Array.isArray(currentDetailItem.genres) && currentDetailItem.genres.length
-    ? currentDetailItem.genres.join(' • ')
-    : (mediaType === 'tv' ? 'دراما وتشويق' : 'سينما عالمية');
-  pillsWrap.innerHTML = `
-    <span class="meta-pill">★ ${currentDetailItem.rating || '8.6'} TMDb</span>
-    <span class="meta-pill">${currentDetailItem.year || '2025'}</span>
-    <span class="meta-pill">${currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType)}</span>
-    <span class="meta-pill">${mediaType === 'tv' ? 'مسلسل' : 'فيلم'}</span>
-    <span class="meta-pill">${genresText}</span>
-  `;
+  const genresText = Array.isArray(currentDetailItem.genres) ? currentDetailItem.genres.join(' • ') : '';
+  pillsWrap.replaceChildren();
+  for (const text of [
+    Number(currentDetailItem.rating)>0 ? '★ '+currentDetailItem.rating : '',
+    currentDetailItem.year,
+    currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType),
+    mediaType === 'tv' ? 'مسلسل' : 'فيلم', genresText,
+  ].filter(Boolean)) {
+    const pill=document.createElement('span');pill.className='meta-pill';pill.textContent=text;pillsWrap.append(pill);
+  }
 
   // Cast Row
   if (Array.isArray(currentDetailItem.cast) && currentDetailItem.cast.length > 0) {
@@ -2227,7 +2241,7 @@ async function renderTitleDetailPage(params) {
 
     const renderSeasonEpisodes = (rawEps, seasonNum) => {
       currentDetailSeason = seasonNum;
-      const cleanEps = normalizeEpisodesList(rawEps.length ? rawEps : Array.from({ length: 12 }, (_, i) => ({ number: i + 1, title: `الحلقة ${i + 1}` })));
+      const cleanEps = normalizeEpisodesList(rawEps);
       currentDetailItem.episodes = cleanEps;
       epGrid.innerHTML = '';
       cleanEps.forEach((ep, index) => {
@@ -2235,9 +2249,10 @@ async function renderTitleDetailPage(params) {
         const btn = document.createElement('button');
         btn.className = 'ep-btn';
         btn.textContent = `الحلقة ${epNum}`;
+        btn.disabled = !ep.url;
         btn.onclick = () => {
           if (ep.url || ep.link) currentDetailItem.episodeRef = ep.url || ep.link;
-          window.openPlayerPage(currentDetailItem.id, seasonNum, epNum, 0);
+          window.openPlayerPage(currentDetailItem.href || currentDetailItem.id, seasonNum, epNum, 0);
         };
         epGrid.appendChild(btn);
       });
@@ -2694,7 +2709,7 @@ async function renderPlayerWatchPage(params) {
   if (isLiveStream && Array.isArray(item.servers) && item.servers.length > 0) {
     rankedServers = await probeAndRankServers(item.servers);
   } else {
-    rankedServers = await resolveUnifiedServersForItem(item, season, epNum);
+    rankedServers = await resolveUnifiedServersForItem(item, season, epNum, ProviderEndpoints.backend);
   }
 
   // تصفية أزرار السيرفرات وإلغاء أي سيرفر خارجي (Embed) نهائياً

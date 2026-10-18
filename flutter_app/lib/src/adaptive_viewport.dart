@@ -62,7 +62,7 @@ class AdaptiveCatalogGrid extends StatelessWidget {
       controller: controller, padding: padding,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,
-        mainAxisExtent: cardWidth*1.5 + 108*scale,
+        mainAxisExtent: cardWidth*1.5 + 140*scale,
         crossAxisSpacing: gap, mainAxisSpacing: gap,
       ),
       itemCount: itemCount, itemBuilder: itemBuilder,
