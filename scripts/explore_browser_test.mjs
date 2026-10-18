@@ -69,7 +69,7 @@ try {
         await page.setViewportSize(size);
         const bounds = await page.evaluate(() => {
           const stage = document.querySelector('#playerContainer').cloneNode(true);
-          Object.assign(stage.style, {position:'fixed',top:'0',left:'0',width:'100vw'});
+          Object.assign(stage.style, {position:'fixed',top:'0',left:'0'});
           document.body.append(stage);
           const rect = stage.getBoundingClientRect();
           const video = stage.querySelector('video');
@@ -77,7 +77,8 @@ try {
           stage.remove();
           return result;
         });
-        assert.equal(bounds.width,Math.min(size.width,1440));
+        assert.ok(Math.abs(bounds.width-Math.min(size.width,1440,size.height*.76*16/9))<1);
+        assert.ok(Math.abs(bounds.height-bounds.width*9/16)<1);
         assert.ok(bounds.height <= size.height*.76 + 1);
         assert.ok(bounds.height > 0);
         assert.equal(bounds.direction,'ltr');

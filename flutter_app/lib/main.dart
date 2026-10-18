@@ -550,6 +550,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        const Padding(padding:EdgeInsets.only(top:24,bottom:8),
+          child:Text('This product uses the TMDB API but is not endorsed or certified by TMDB.',
+            textDirection:TextDirection.ltr,style:TextStyle(fontSize:11,color:Colors.white54))),
       ],
     ),
   );

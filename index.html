@@ -943,10 +943,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   gap: 12px;
 }
 .watch-video-box {
+  width: min(100%, 135.111111dvh);
   max-width: 1440px;
   margin-inline: auto;
   position: relative;
-  width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 76dvh;
   min-height: 0;
@@ -1422,8 +1422,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 
 <!-- Unified JavaScript Application (MA-NEXUS v8.0) -->
 <script type="module">
-import { searchStateMessage, ExploreRequest, mountSourcePicker } from './web/core/source-display.js?v=1.0.45-build45';
-import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails, getSearchProviders, sourceLabel, ProviderEndpoints } from './web/core/api-client.js?v=1.0.45-build45';
+import { searchStateMessage, ExploreRequest, mountSourcePicker } from './web/core/source-display.js?v=1.0.46-build46';
+import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails, getSearchProviders, sourceLabel, ProviderEndpoints } from './web/core/api-client.js?v=1.0.46-build46';
 import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.46';
 import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.46';
 import { resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.46';
@@ -1437,7 +1437,7 @@ import {
   normalizeEpisodesList,
   probeAndRankServers,
   generateCloudFallbackServers
-} from './web/core/ma-nexus.js?v=1.0.45-build45';
+} from './web/core/ma-nexus.js?v=1.0.46-build46';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {

@@ -1,4 +1,4 @@
-import { ProviderKind, fetchJsonWithHealth } from "./providers.js?v=1.0.45-build45";
+import { ProviderKind, fetchJsonWithHealth } from "./providers.js?v=1.0.46-build46";
 import { isNewsPayload, isCinemaPayload } from "./contracts.js";
 
 const configuredBackend=typeof document!=='undefined'?document.querySelector('meta[name="matv-api-base"]')?.content:'';

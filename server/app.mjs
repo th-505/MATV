@@ -22,7 +22,7 @@ import { decodeAlooyRef } from './providers/alooy.mjs';
 import { createCatalogMetadataCache } from './catalog-metadata-cache.mjs';
 import { createSupabaseCatalogStore, createSupabaseFeedStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
-import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
+import { buildRuntimeEnvelope, normalizeCatalogItem, PRODUCT_VERSION } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, searchProviderCatalog, activateAllScrapersForContent } from "./scrapers/index.mjs";
 import { sourceDisplayName, sourceDisplayNames } from "./source-display.mjs";
@@ -689,7 +689,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
               : result.status === 'error' ? 503 : 200;
             return sendJson(req, res, statusCode, {
               status: result.status || 'success',
-              version: runtimeService.version || '1.0.44', kind: 'search', source: result.provider_id || provider,
+              version: runtimeService.version || PRODUCT_VERSION, kind: 'search', source: result.provider_id || provider,
               cached: false, health: result.diagnostics || null, provider_id: result.provider_id || provider,
               error: result.error || null, data: presentSearchResults(result.data, query)
             });
