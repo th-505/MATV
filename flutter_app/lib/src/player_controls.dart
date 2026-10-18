@@ -66,6 +66,10 @@ class _PlayerControlsState extends State<PlayerControls> {
           const SizedBox(width: 4),
           IconButton.filled(
             key: const Key('player-play-toggle'),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white, foregroundColor: Colors.black,
+              minimumSize: const Size(48, 48),
+            ),
             focusNode: _playFocus,
             autofocus: widget.isTv,
             tooltip: widget.isPlaying ? 'إيقاف مؤقت' : 'تشغيل',
@@ -84,6 +88,11 @@ class _PlayerControlsState extends State<PlayerControls> {
           MenuAnchor(
             builder: (context, controller, child) => FilledButton.tonalIcon(
               key: const Key('player-speed'),
+              style: FilledButton.styleFrom(
+                foregroundColor: Colors.white, backgroundColor: Colors.white12,
+                minimumSize: const Size(48, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
               focusNode: _speedFocus,
               onPressed: () =>
                   controller.isOpen ? controller.close() : controller.open(),
