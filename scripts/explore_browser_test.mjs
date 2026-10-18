@@ -117,9 +117,12 @@ try {
     // Actual cancellation is attempted, and editing immediately releases waiting state.
     await beginSlow('slow-abort');
     await input.fill('edited without submit');
+    // Chrome can emit a delayed native search event for an earlier Enter.
+    await input.evaluate(element => element.dispatchEvent(new Event('search')));
     assert.match(await grid.textContent(), /اضغط للاستكشاف/);
     await page.waitForTimeout(600);
     assert.ok(aborted > 0, 'transport was aborted');
+    assert.ok(!calls.some(([f, , q]) => f === file && q === 'edited without submit'));
     assert.match(await grid.textContent(), /اضغط للاستكشاف/);
     // Repeat with cancellation deliberately ignored, so late response guards are proven.
     await page.evaluate(() => { window.ignoreExploreAbort = true; });
