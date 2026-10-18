@@ -71,6 +71,10 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
     const main = file === 'index.html';
     if (main) {
+      await page.locator('#toggleFitBtn').evaluate(button=>button.click());
+      assert.equal(await page.locator('#maVideoPlayer').evaluate(video=>getComputedStyle(video).objectFit),'cover');
+      await page.locator('#toggleFitBtn').evaluate(button=>button.click());
+      assert.equal(await page.locator('#maVideoPlayer').evaluate(video=>getComputedStyle(video).objectFit),'contain');
       for (const size of [{width:320,height:640},{width:844,height:390},{width:1920,height:1080}]) {
         await page.setViewportSize(size);
         const bounds = await page.evaluate(() => {
