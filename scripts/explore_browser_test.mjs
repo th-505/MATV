@@ -63,6 +63,26 @@ try {
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
     const main = file === 'index.html';
+    if (main) {
+      for (const size of [{width:320,height:640},{width:844,height:390},{width:1920,height:1080}]) {
+        await page.setViewportSize(size);
+        const bounds = await page.evaluate(() => {
+          const stage = document.querySelector('#playerContainer').cloneNode(true);
+          Object.assign(stage.style, {position:'fixed',top:'0',left:'0',width:'100vw'});
+          document.body.append(stage);
+          const rect = stage.getBoundingClientRect();
+          const video = stage.querySelector('video');
+          const result = {width:rect.width,height:rect.height,direction:getComputedStyle(video).direction};
+          stage.remove();
+          return result;
+        });
+        assert.equal(bounds.width,size.width);
+        assert.ok(bounds.height <= size.height*.76 + 1);
+        assert.ok(bounds.height > 0);
+        assert.equal(bounds.direction,'ltr');
+      }
+    }
+
     const select = page.locator(main?'#searchProvider':'#sourceSelect');
     const input = page.locator(main?'#globalSearch':'#q');
     const grid = page.locator(main?'#moviesGrid':'#mediaGrid');

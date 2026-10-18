@@ -940,7 +940,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 76vh;
+  max-height: 76dvh;
+  min-height: 0;
   background: #000;
 }
 .watch-video-box video,
@@ -950,6 +951,14 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   height: 100%;
   border: 0;
   display: block;
+  object-fit: contain;
+  direction: ltr;
+}
+.watch-video-box:fullscreen {
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  aspect-ratio: auto;
 }
 .watch-server-bar {
   padding: 14px 18px;
@@ -1344,8 +1353,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       </div>
 
       <!-- شاشة العرض المزدوجة (HLS Direct Video + Clean Launcher Container) -->
-      <div class="watch-video-box" id="playerContainer" style="position:relative; width:100%; height:100%; min-height:450px; background:#000;">
-        <video id="maVideoPlayer" controls playsinline webkit-playsinline style="width:100%; height:100%; display:none;"></video>
+      <div class="watch-video-box" id="playerContainer">
+        <video id="maVideoPlayer" dir="ltr" controls playsinline webkit-playsinline style="width:100%; height:100%; display:none;"></video>
         <div id="embedContainer" style="width:100%; height:100%; display:none; position:relative; align-items:center; justify-content:center;"></div>
       </div>
 
