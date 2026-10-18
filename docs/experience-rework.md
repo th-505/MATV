@@ -80,3 +80,11 @@ cloud-fallback export stays callable but returns no unverified embedded players.
 Publication now verifies the matching backend version, complete registry display
 metadata, every new feed category and configured TMDb metadata. This gate calls
 only static contracts and does not repeat live provider scraping or playback tests.
+
+Final home integration uses the configured server TMDb trending route when a web
+visitor has no local API key; BYOK remains supported. Credentials stay on the
+server. TMDb metadata cards lead to source exploration, while provider cards keep
+their own details/reference and do not guess another title through TMDb. Home
+backdrops use the actual optional wide image field rather than stretching posters.
+The web Explore results now have a dedicated section and grid; movie categories
+retain their separate grid and page state.

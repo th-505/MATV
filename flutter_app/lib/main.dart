@@ -448,9 +448,9 @@ class _HomePageState extends State<HomePage> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        if (item.poster.isNotEmpty)
+                        if (item.poster.isNotEmpty || item.backdrop.isNotEmpty)
                           Image.network(
-                            item.poster,
+                            item.backdrop.isNotEmpty?item.backdrop:item.poster,
                             fit: BoxFit.cover,
                             cacheWidth: 1000,
                             errorBuilder: (_, _, _) => const SizedBox.shrink(),

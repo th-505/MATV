@@ -5,6 +5,7 @@ class MediaItem {
     required this.id,
     required this.title,
     required this.poster,
+    this.backdrop = '',
     required this.type,
     required this.ref,
     this.year,
@@ -25,6 +26,7 @@ class MediaItem {
   final String id;
   final String title;
   final String poster;
+  final String backdrop;
   final String type;
   final String ref;
   final int? year;
@@ -46,6 +48,7 @@ class MediaItem {
     String? id,
     String? title,
     String? poster,
+    String? backdrop,
     String? type,
     String? ref,
     int? year,
@@ -66,6 +69,7 @@ class MediaItem {
     id: id ?? this.id,
     title: title ?? this.title,
     poster: poster ?? this.poster,
+    backdrop: backdrop ?? this.backdrop,
     type: type ?? this.type,
     ref: ref ?? this.ref,
     year: year ?? this.year,
@@ -90,6 +94,7 @@ class MediaItem {
     'id': id,
     'title': title,
     'poster': poster,
+    if(backdrop.isNotEmpty) 'backdrop':backdrop,
     'type': type,
     'ref': ref,
     'year': year,
@@ -112,6 +117,7 @@ class MediaItem {
     id: '${json['id'] ?? ''}',
     title: '${json['title'] ?? 'بدون عنوان'}',
     poster: '${json['poster'] ?? json['img'] ?? json['image'] ?? ''}',
+    backdrop:'${json['backdrop'] ?? ''}',
     type: '${json['type'] ?? 'series'}',
     ref: '${json['ref'] ?? ''}',
     year: int.tryParse('${json['year'] ?? ''}'),

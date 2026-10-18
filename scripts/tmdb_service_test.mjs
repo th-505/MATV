@@ -10,7 +10,7 @@ class MemoryStorage {
 }
 
 globalThis.localStorage = new MemoryStorage();
-const { getUserTmdbKey, tmdbFetch, normalizeTmdbItem, fetchFullTmdbDetails } = await import('../web/core/tmdb-service.js');
+const { getUserTmdbKey, tmdbFetch, normalizeTmdbItem, fetchFullTmdbDetails, fetchNetflixHomeShelves } = await import('../web/core/tmdb-service.js');
 
 let networkCalls = 0;
 globalThis.fetch = async (url, options) => {
@@ -64,3 +64,18 @@ const details = await fetchFullTmdbDetails('tv', '1396', 1);
 assert.deepEqual(details.episodes, [], 'missing season data must not fabricate episode numbers');
 
 console.log('web TMDb service tests passed');
+
+localStorage.removeItem('matv_user_tmdb_key');
+let homeCalls=0;
+globalThis.fetch=async(url,options)=>{
+  homeCalls++;
+  assert.equal(new URL(url).pathname,'/api/v1/tmdb/trending');
+  assert.equal(options.headers.Authorization,undefined);
+  assert.equal(new URL(url).searchParams.has('api_key'),false);
+  return {ok:true,json:async()=>({status:'success',data:[{id:'42',ref:'tmdb:movie:42',title:'Server home',type:'movie',poster:'https://image.tmdb.org/t/p/w500/poster.jpg'}]})};
+};
+const home=await fetchNetflixHomeShelves();
+assert.equal(homeCalls,1);
+assert.equal(home.heroItems[0].href,'tmdb:movie:42');
+assert.equal(home.shelves.find(row=>row.id==='shelfSeries').items.length,0,'no unrelated series fillers');
+console.log('Web home uses server TMDb metadata without browser credentials');

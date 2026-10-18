@@ -6,9 +6,10 @@ import 'package:mitv/src/models.dart';
 void main() {
   test('card metadata remains optional and round trips without changing identity', () {
     final item=MediaItem.fromJson({'id':'original-id','ref':'akwam:original-ref','title':'Work',
-      'runtime_minutes':97,'episode_count':12,'season_number':2,'episode_number':8});
+      'backdrop':'https://image.tmdb.org/t/p/w1280/backdrop.jpg','runtime_minutes':97,'episode_count':12,'season_number':2,'episode_number':8});
     final roundTrip=MediaItem.fromJson(item.copyWith(title:'Work').toJson());
     expect(roundTrip.id,'original-id');expect(roundTrip.ref,'akwam:original-ref');
+    expect(roundTrip.backdrop,'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
     expect(roundTrip.runtimeMinutes,97);expect(roundTrip.episodeCount,12);
     expect(roundTrip.season,2);expect(roundTrip.episode,8);
     final unknown=MediaItem.fromJson({'id':'id','ref':'ref'});

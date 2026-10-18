@@ -383,7 +383,7 @@ export async function loadHomeWithSupabaseSync(supabaseConfig = {}) {
     return homeData;
   })();
 
-  if (cached?.data && Array.isArray(cached.data.shelves) && cached.data.shelves.length > 0) {
+  if (cached?.data && Date.now()-cached.updatedAt<3600000 && Array.isArray(cached.data.shelves) && cached.data.shelves.some(shelf=>shelf.items?.length)) {
     // نرجع النسخة المخزنة فوراً (0ms) ونحدث في الخلفية بصمت
     refreshPromise.catch(() => {});
     return cached.data;

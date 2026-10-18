@@ -93,12 +93,12 @@ try {
 
     const select = page.locator(main?'#searchProvider':'#sourceSelect');
     const input = page.locator(main?'#globalSearch':'#q');
-    const grid = page.locator(main?'#moviesGrid':'#mediaGrid');
+    const grid = page.locator(main?'#exploreGrid':'#mediaGrid');
     const retry = page.getByRole('button', {name:'إعادة محاولة تحميل المصادر'});
     await retry.waitFor();
     // General search must remain usable before the metadata retry succeeds.
     await input.fill('general-before-retry'); await input.press('Enter');
-    await page.waitForFunction(id => document.querySelector(id)?.textContent.includes('Result general-before-retry'), main?'#moviesGrid':'#mediaGrid');
+    await page.waitForFunction(id => document.querySelector(id)?.textContent.includes('Result general-before-retry'), main?'#exploreGrid':'#mediaGrid');
     for (const [width,columns] of [[320,2],[768,4],[1024,6],[1440,8],[1920,10]]) {
       await page.setViewportSize({width,height:844});
       const layout=await grid.evaluate(element=>({columns:getComputedStyle(element).gridTemplateColumns.split(' ').length,
@@ -107,6 +107,7 @@ try {
       assert.ok(layout.scroll<=layout.viewport+1,`${file} horizontal overflow at ${width}: ${JSON.stringify(layout)}`);
     }
     await page.setViewportSize({width:390,height:844});
+    if(main){assert.equal(await page.locator('.tab-view.active').getAttribute('id'),'tab-explore');assert.ok(!(await page.locator('#moviesGrid').textContent()).includes('Result general-before-retry'));}
     assert.equal(providerLoads, 1);
     await retry.evaluate(button => { button.click(); button.click(); });
     assert.match(await page.locator(main?'#searchProviderState':'#sourcesState').textContent(), /جارٍ تحميل/);
@@ -121,13 +122,13 @@ try {
     await select.selectOption('akwam');
     for (const [q, message] of [['success','Result success'],['no_results','لا توجد نتائج'],['unsupported','البحث غير مدعوم'],['error','المصدر غير متاح']]) {
       await input.fill(q); await input.press('Enter');
-      await page.waitForFunction(({id, text})=>document.querySelector(id)?.textContent.includes(text),{id:main?'#moviesGrid':'#mediaGrid',text:message});
+      await page.waitForFunction(({id, text})=>document.querySelector(id)?.textContent.includes(text),{id:main?'#exploreGrid':'#mediaGrid',text:message});
       if(q!=='success') assert.equal(await grid.locator(main?'.media-card':'.item').count(),0);
       else assert.match(await grid.textContent(),/ذكوام/);
     }
     await select.selectOption('new-source');
     await input.fill('unsupported'); await input.press('Enter');
-    await page.waitForFunction(id => document.querySelector(id)?.textContent.includes('البحث غير مدعوم'), main?'#moviesGrid':'#mediaGrid');
+    await page.waitForFunction(id => document.querySelector(id)?.textContent.includes('البحث غير مدعوم'), main?'#exploreGrid':'#mediaGrid');
     assert.ok(calls.some(([f,p,q]) => f === file && p === 'new-source' && q === 'unsupported'));
     await select.selectOption('akwam');
     await input.fill('slow'); await input.press('Enter');
@@ -143,7 +144,7 @@ try {
     await page.waitForTimeout(200);
     assert.ok(calls.some(([f,p,q])=>f===file&&p===null&&q==='general'));
 
-    const gridId = main?'#moviesGrid':'#mediaGrid';
+    const gridId = main?'#exploreGrid':'#mediaGrid';
     const beginSlow = async name => {
       await input.fill(name);
       const arrived = page.waitForRequest(request => new URL(request.url()).searchParams.get('q') === name);

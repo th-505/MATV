@@ -1092,6 +1092,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 
     <nav class="desktop-nav">
       <button class="nav-btn active" data-tab="home">الرئيسية</button>
+      <button class="nav-btn" data-tab="explore"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg>استكشاف</button>
       <button class="nav-btn" data-tab="movies">أفلام</button>
       <button class="nav-btn" data-tab="series">مسلسلات</button>
       <button class="nav-btn" data-tab="anime">أنمي</button>
@@ -1116,7 +1117,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="hero-banner" id="homeHero">
       <div class="hero-backdrop" id="heroBackdrop"></div>
       <div class="hero-content">
-        <span class="hero-badge">✦ الأكثر شهرة ورواجاً اليوم • MA TV</span>
+        <span class="hero-badge">اكتشف عملك القادم</span>
         <h1 class="hero-title" id="heroTitle">جاري تجهيز المنصة السينمائية…</h1>
         <div class="hero-tags" id="heroTags">
           <span class="rating-pill" id="heroRatingPill"></span>
@@ -1186,6 +1187,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="filter-bar" id="animeFilters"></div>
     <div class="media-grid" id="animeGrid"></div>
     <div id="animeLoadMore" style="text-align:center;padding:24px;"></div>
+  </section>
+
+  <section id="tab-explore" class="tab-view">
+    <h2 style="margin-bottom:16px">استكشاف</h2>
+    <div class="media-grid" id="exploreGrid"><p role="status">اكتب اسم فيلم أو مسلسل في البحث أعلاه</p></div>
   </section>
 
   <!-- TAB 6: LIVE MATCHES & CHANNELS -->
@@ -1284,7 +1290,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </div>
 
     <div style="text-align:center;color:var(--gold-primary);opacity:0.8;font-size:0.82rem;margin-top:24px;font-weight:700;">
-      MA TV OFFICIAL • MA-NEXUS v8.0 • Zero-Cost & Zero-Ads Architecture
+      This product uses the TMDB API but is not endorsed or certified by TMDB.
     </div>
   </section>
 
@@ -1843,7 +1849,7 @@ window.openPlayerPage = function(id, season = 1, epNum = 1, srvIdx = 0) {
 };
 
 window.switchTab = function(tabId, updateHash = true) {
-  if (tabId !== 'movies') invalidateExplore();
+  if (tabId !== 'explore') invalidateExplore();
   stopActivePlayerStream();
   currentTab = tabId;
   lastMainTab = tabId;
@@ -1872,7 +1878,7 @@ window.switchTab = function(tabId, updateHash = true) {
 
 async function handleRouteChange() {
   const rawHash = window.location.hash || '#home';
-  if (rawHash !== '#movies') invalidateExplore();
+  if (rawHash !== '#explore') invalidateExplore();
 
   // 1. Check Full-Screen Watch Route (#/watch?...)
   if (rawHash.startsWith('#/watch') || rawHash.startsWith('#watch')) {
@@ -1901,7 +1907,7 @@ async function handleRouteChange() {
 
   // 3. Standard Navigation Tabs
   const cleanTab = rawHash.replace(/^#\/?/, '').split('?')[0].toLowerCase();
-  const validTabs = ['home', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
+  const validTabs = ['home', 'explore', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
   const targetTab = validTabs.includes(cleanTab) ? cleanTab : 'home';
   switchTab(targetTab, false);
 }
@@ -1947,6 +1953,11 @@ async function loadHomeShelves() {
   try {
     const homeData = await loadHomeWithSupabaseSync();
     const heroItems = homeData?.heroItems || [];
+    if(!heroItems.length){
+      document.getElementById('heroTitle').textContent='لا توجد أعمال متاحة حالياً';
+      document.getElementById('heroDesc').textContent='';
+      const explore=document.getElementById('heroPlayBtn');explore.textContent='استكشاف';explore.onclick=()=>switchTab('explore',true);
+    }
     if (heroItems.length > 0) {
       const heroItem = registerWorkItem(heroItems[0]);
       document.getElementById('heroTitle').textContent = heroItem.title;
@@ -1955,7 +1966,9 @@ async function loadHomeShelves() {
       document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || ''}`;
       document.getElementById('heroYearPill').textContent = heroItem.year || '';
       document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || ''}`;
-      document.getElementById('heroPlayBtn').onclick = () => openTitlePage(heroItem);
+      const exploreHero=document.getElementById('heroPlayBtn');
+      exploreHero.textContent='استكشاف العمل';
+      exploreHero.onclick=()=>{document.getElementById('globalSearch').value=heroItem.title;performSearch(heroItem.title);};
       const favBtn = document.getElementById('heroFavBtn');
       const active = isFavorite(heroItem.id);
       favBtn.textContent = active ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
@@ -1991,7 +2004,9 @@ async function loadHomeShelves() {
       });
     }
   } catch (err) {
-    console.warn('Home load error:', err);
+    document.getElementById('heroTitle').textContent='تعذر تحميل الرئيسية';
+    document.getElementById('heroDesc').textContent='أعد المحاولة أو انتقل إلى الاستكشاف.';
+    const retry=document.getElementById('heroPlayBtn');retry.textContent='إعادة المحاولة';retry.onclick=loadHomeShelves;
   }
 }
 
@@ -2129,7 +2144,7 @@ async function renderTitleDetailPage(params) {
 
   document.getElementById('detailSource').textContent = sourceLabel(baseItem);
   document.getElementById('detailTitle').textContent = baseItem.title || 'جاري التحميل…';
-  document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+  document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || '';
   document.getElementById('detailBackdrop').style.backgroundImage = `url(${baseItem.backdrop || baseItem.poster || baseItem.img || ''})`;
   document.getElementById('detailStory').textContent = baseItem.overview || 'جاري جلب القصة الكاملة وتفاصيل العمل من TMDb…';
   document.getElementById('detailEpisodesWrap').style.display = 'none';
@@ -2147,34 +2162,16 @@ async function renderTitleDetailPage(params) {
     updateFavBtnText();
   };
 
-  document.getElementById('detailPlayNowBtn').onclick = () => {
-    window.openPlayerPage(currentDetailItem.href || currentDetailItem.id, currentDetailSeason, 1, 0);
+  const playAction=document.getElementById('detailPlayNowBtn');
+  playAction.textContent=String(id).startsWith('tmdb:')?'استكشاف مصادر العمل':'مشاهدة';
+  playAction.onclick=()=>{
+    if(String(id).startsWith('tmdb:')) {document.getElementById('globalSearch').value=currentDetailItem.title;performSearch(currentDetailItem.title);}
+    else window.openPlayerPage(currentDetailItem.href || currentDetailItem.id,currentDetailSeason,1,0);
   };
 
   // Resolve TMDb ID if needed
   let tmdbId = baseItem.tmdbId || (String(id).startsWith('tmdb:') ? String(id).split(':').pop() : '');
   let mediaType = (baseItem.mediaType === 'tv' || baseItem.type === 'series' || typeParam === 'tv' || typeParam === 'series') ? 'tv' : 'movie';
-
-  if (!tmdbId || !/^\d+$/.test(String(tmdbId))) {
-    const cleanQ = String(baseItem.title || titleParam || '')
-      .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الحلقة\s*\d+|الموسم\s*\d+|\b\d{4}\b)/gi, '')
-      .trim();
-    if (cleanQ.length >= 2) {
-      try {
-        const sRes = await tmdbFetch(`/search/${mediaType}`, { query: cleanQ });
-        if (sRes?.results?.[0]?.id) {
-          tmdbId = String(sRes.results[0].id);
-        } else {
-          const mRes = await tmdbFetch('/search/multi', { query: cleanQ });
-          const hit = (mRes?.results || []).find(r => r.media_type === 'tv' || r.media_type === 'movie');
-          if (hit?.id) {
-            tmdbId = String(hit.id);
-            mediaType = hit.media_type === 'tv' ? 'tv' : 'movie';
-          }
-        }
-      } catch (_) {}
-    }
-  }
 
   let fullDetails = null;
   if (tmdbId && /^\d+$/.test(String(tmdbId))) {
@@ -2186,6 +2183,18 @@ async function renderTitleDetailPage(params) {
   if (!String(id).startsWith('tmdb:')) {
     try {
       const scRes = await getCinemaDetails(id);
+      if(scRes?.data?.status==='success') {
+        const data=scRes.data;
+        currentDetailItem=registerWorkItem({...baseItem,
+          title:data.title || data.movie_title || baseItem.title,
+          poster:data.poster || data.img || baseItem.poster,
+          year:data.year ?? baseItem.year,
+          overview:data.overview || data.description || data.plot || baseItem.overview || '',
+          runtime:data.runtime_minutes ?? data.runtime ?? baseItem.runtime,
+          genres:Array.isArray(data.genres)?data.genres:baseItem.genres,
+          id:baseItem.id,href:baseItem.href || id,
+        });
+      }
       if (Array.isArray(scRes?.data?.episodes) && scRes.data.episodes.length > 0) {
         scraperEpisodes = normalizeEpisodesList(scRes.data.episodes);
       }
@@ -2197,7 +2206,7 @@ async function renderTitleDetailPage(params) {
       ...baseItem,
       ...fullDetails,
       id: baseItem.id || fullDetails.id,
-      href: baseItem.id || fullDetails.id,
+      href: baseItem.href || baseItem.ref || baseItem.id || fullDetails.id,
       tmdbId,
       mediaType,
       durationText: formatRuntimeArabic(fullDetails.runtime, mediaType)
@@ -2913,18 +2922,20 @@ document.getElementById('purgeCacheBtn').onclick = async () => {
 
 const exploreRequest = new ExploreRequest();
 let exploreOwnsGrid = false;
+let exploreLoading = false;
 function invalidateExplore(showPrompt = false) {
   exploreRequest.invalidate();
-  if (exploreOwnsGrid) {
-    const grid = document.getElementById('moviesGrid');
+  if ((exploreOwnsGrid && exploreLoading) || showPrompt) {
+    const grid = document.getElementById('exploreGrid');
     grid.replaceChildren();
-    if (showPrompt) {
+    if (showPrompt || exploreLoading) {
       const state = document.createElement('p');
       state.setAttribute('role', 'status');
       state.textContent = document.getElementById('globalSearch').value.trim() ? 'اضغط للاستكشاف' : 'اكتب اسم عمل للاستكشاف';
       grid.appendChild(state);
     }
   }
+  exploreLoading = false;
   exploreOwnsGrid = showPrompt;
 }
 const providerSelect = document.getElementById('searchProvider');
@@ -2935,14 +2946,14 @@ providerSelect.onchange = () => {
 };
 async function performSearch(query) {
   const q = (query || '').trim();
-  if (!q) { invalidateExplore(true); return; }
+  if (!q) { invalidateExplore(true); switchTab('explore',true); return; }
   const request = exploreRequest.start();
   exploreOwnsGrid = true;
+  exploreLoading = true;
   const provider = providerSelect.value;
   document.title = 'استكشاف | MA TV';
-  moviesLoaded = true;
-  switchTab('movies', true);
-  const grid = document.getElementById('moviesGrid');
+  switchTab('explore', true);
+  const grid = document.getElementById('exploreGrid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">جارٍ البحث…</div>';
   try {
     const response = await searchCinema(q, provider, { signal: request.signal });
@@ -2960,7 +2971,7 @@ async function performSearch(query) {
   } catch (_) {
     if (!exploreRequest.current(request)) return;
     grid.innerHTML = '<div role="status" style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">المصدر غير متاح حاليًا.</div>';
-  }
+  } finally {if(exploreRequest.current(request))exploreLoading=false;}
 }
 
 const searchInput = document.getElementById('globalSearch');

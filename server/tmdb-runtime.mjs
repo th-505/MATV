@@ -38,6 +38,8 @@ function normalizeResult(item = {}) {
     id: String(id),
     title,
     poster: posterUrl(item.poster_path),
+    ...(item.backdrop_path ? {backdrop:posterUrl(item.backdrop_path,'w1280')} : {}),
+    ...(text(item.overview) ? {overview:text(item.overview)} : {}),
     type: series ? "series" : "movie",
     year: yearFrom(releaseDate),
     rating: ratingFrom(item.vote_average),

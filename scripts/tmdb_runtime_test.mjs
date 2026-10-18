@@ -175,3 +175,7 @@ const empty = await runtime.search("a");
 assert.deepEqual(empty.data, []);
 
 console.log("tmdb runtime tests passed");
+
+const described=__tmdbTest.normalizeResult({media_type:'movie',id:42,title:'Fixture',backdrop_path:'/wide.jpg',overview:'Source description'});
+assert.equal(described.backdrop,'https://image.tmdb.org/t/p/w1280/wide.jpg');
+assert.equal(described.overview,'Source description');
