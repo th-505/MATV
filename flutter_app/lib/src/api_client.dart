@@ -308,7 +308,7 @@ class MitvApi implements MediaRepository {
   }
 
   final List<Map<String, dynamic>> _searchProviders = [];
-  final sourceMetadataChanges = ChangeNotifier();
+  final sourceMetadataChanges = ValueNotifier<int>(0);
   Future<List<Map<String, dynamic>>>? _searchProvidersPending;
   bool _searchProvidersLoaded = false;
   bool sourceMetadataLoading = false;
@@ -323,7 +323,7 @@ class MitvApi implements MediaRepository {
     sourceMetadataError = null;
     final pending = _loadSearchProviders();
     _searchProvidersPending = pending;
-    sourceMetadataChanges.notifyListeners();
+    sourceMetadataChanges.value += 1;
     return pending;
   }
 
@@ -339,7 +339,7 @@ class MitvApi implements MediaRepository {
     } finally {
       _searchProvidersPending = null;
       sourceMetadataLoading = false;
-      if (!_closed) sourceMetadataChanges.notifyListeners();
+      if (!_closed) sourceMetadataChanges.value += 1;
     }
   }
 
