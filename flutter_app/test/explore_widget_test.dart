@@ -135,7 +135,10 @@ void main() {
         return calls == 1 ? first.future : second.future;
       }));
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: LibraryPage(api: api, store: store))));
-      await tester.pumpAndSettle();
+      // The downloads section has its own ongoing loader. Wait for the favorite
+      // entry we exercise, rather than requiring every unrelated animation to stop.
+      await tester.pump();
+      expect(find.text('Saved fixture'), findsOneWidget);
       expect(calls, 0); // no visit to SearchPage or prior metadata request
       await tester.tap(find.text('Saved fixture'));
       await tester.pump(const Duration(milliseconds: 400));
