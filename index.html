@@ -1611,7 +1611,7 @@ window.toggleFavorite = function(item) {
   } else {
     list.unshift({
       id: itemId,
-      href: itemId,
+      href: item.href || item.ref || itemId,
       tmdbId: item.tmdbId || '',
       title: item.title,
       poster: item.poster || item.img,
@@ -1641,7 +1641,7 @@ function saveContinueWatching(item, currentTime, duration, season = 1, episode =
   let list = getContinueWatching().filter(i => (i.id || i.href) !== itemId);
   list.unshift({
     id: itemId,
-    href: itemId,
+    href: item.href || item.ref || itemId,
     tmdbId: item.tmdbId || '',
     title: item.title,
     poster: item.poster || item.img,

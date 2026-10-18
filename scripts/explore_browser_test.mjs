@@ -224,6 +224,13 @@ try {
       assert.ok(!(await grid.textContent()).includes('Result slow-leave'));
     }
     if(main) {
+      await page.evaluate(()=>window.savedExploreCard.querySelector('.card-fav-btn').click());
+      const favorite=await page.evaluate(()=>JSON.parse(localStorage.getItem('matv_favorites'))[0]);
+      assert.equal(favorite.id,'opaque-card-id','stored ID stays unchanged');
+      assert.equal(favorite.href,'akoam:fixture','favorite keeps the original work reference');
+      await page.evaluate(()=>window.switchTab('favorites'));
+      await page.locator('#favoritesGrid .media-card').first().click();
+      await page.waitForFunction(()=>location.hash.includes(encodeURIComponent('akoam:fixture')));
       await page.evaluate(()=>window.switchTab('live'));
       const retryLive=page.getByRole('button',{name:'تعذر تحميل القنوات — إعادة المحاولة'});
       await retryLive.waitFor();
