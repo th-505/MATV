@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'phase2_player_test.dart' show FakeEngine;
 
 class _LayoutApi extends MitvApi {
+  @override
+  Future<List<CatalogItem>> liveChannels() async => [];
   final requests = <String>[];
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
@@ -52,7 +54,7 @@ void main() {
               textDirection: TextDirection.rtl,
               child: Shell(api: api, store: store))));
       await tester.pumpAndSettle();
-      expect(api.requests, ['3isk-latest:1']);
+      expect(api.requests, ['home-trending:1']);
       expect(find.byType(HomePage), findsOneWidget);
       expect(find.text('الأخبار'), findsNothing);
       if (!isTvTarget && dimensions.width < 900) {
@@ -83,9 +85,9 @@ void main() {
       final dropdown = tester
           .widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
       expect(dropdown.items!.map((e) => e.value),
-          containsAll(['movie-foreign', 'movie-arabic', '3isk-movies']));
+          containsAll(['browse-movie-foreign', 'browse-movie-arabic', 'browse-movie-turkish']));
       expect(tester.widget<GridView>(find.byType(GridView)).gridDelegate,
-          isA<SliverGridDelegateWithMaxCrossAxisExtent>());
+          isA<SliverGridDelegateWithFixedCrossAxisCount>());
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
@@ -116,10 +118,10 @@ void main() {
           tester.widget<CatalogPage>(find.byType(CatalogPage)).mediaKind, kind);
     }
     expect(api.requests, [
-      '3isk-latest:1',
-      'movie-foreign:1',
-      'series-foreign:1',
-      'movie-anime:1'
+      'home-trending:1',
+      'browse-movies:1',
+      'browse-series:1',
+      'browse-anime:1'
     ]);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);

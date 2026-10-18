@@ -9,6 +9,8 @@ import 'package:mitv/src/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _CleanupApi extends MitvApi {
+  @override
+  Future<List<CatalogItem>> liveChannels() async => [];
   final categories = <String>[];
   int clears = 0;
   @override
@@ -63,7 +65,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('الأفلام'));
       await tester.pumpAndSettle();
-      expect(api.categories, ['3isk-latest', 'movie-foreign']);
+      expect(api.categories, ['home-trending', 'browse-movies']);
       await tester.tap(find.text('الإعدادات'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('مسح الكاش المحلي'));
@@ -89,10 +91,10 @@ void main() {
       expect(store.resumePosition(item.ref), const Duration(seconds: 15));
       await tester.tap(find.text('الرئيسية'));
       await tester.pumpAndSettle();
-      expect(api.categories, ['3isk-latest', 'movie-foreign', '3isk-latest']);
+      expect(api.categories, ['home-trending', 'browse-movies', 'home-trending']);
       await tester.tap(find.text('الأفلام'));
       await tester.pumpAndSettle();
-      expect(api.categories.last, 'movie-foreign');
+      expect(api.categories.last, 'browse-movies');
       expect(api.categories.length, 4);
       await tester.pumpWidget(const SizedBox());
     },
@@ -161,10 +163,10 @@ void main() {
     await tester.tap(find.text('الأفلام'));
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
-    expect(api.categories, ['3isk-latest', 'movie-foreign']);
+    expect(api.categories, ['home-trending', 'browse-movies']);
     pending.complete();
     await tester.pumpAndSettle();
-    expect(api.categories, ['3isk-latest', 'movie-foreign', 'movie-foreign']);
+    expect(api.categories, ['home-trending', 'browse-movies', 'browse-movies']);
     expect(api.clears, 1);
     await tester.tap(find.text('الإعدادات'));
     await tester.pumpAndSettle();

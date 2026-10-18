@@ -100,7 +100,7 @@ void main() {
     final details = await api.details('3isk:movie');
     expect(details.title, 'فيلم');
     expect(details.canPlay, true);
-    expect(paths, ['/api/cinema/details', '/v1/resolve']);
+    expect(paths, ['/api/cinema/details', '/api/cinema/open', '/v1/resolve']);
     api.close();
   });
 

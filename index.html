@@ -95,8 +95,10 @@ header.app-header {
   padding: calc(10px + var(--safe-top)) 16px 10px;
 }
 .header-inner {
-  max-width: 1280px;
+  max-width: 1920px;
   margin: 0 auto;
+  flex-wrap: wrap;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -154,6 +156,8 @@ header.app-header {
 }
 
 .desktop-nav {
+  flex-wrap: wrap;
+  min-width: 0;
   display: none;
   align-items: center;
   gap: 4px;
@@ -196,8 +200,9 @@ header.app-header {
   border-radius: 12px;
   padding: 6px 14px;
   gap: 8px;
-  flex: 1;
-  max-width: 260px;
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 100%;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .search-box:focus-within {
@@ -213,6 +218,10 @@ header.app-header {
   font-size: 0.84rem;
   width: 100%;
 }
+#searchProvider { max-width: 150px; min-width: 0; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--gold-border); border-radius: 8px; padding: 6px; }
+.search-box { flex-wrap: wrap; }
+.search-box input { min-width: 0; flex: 1 1 120px; }
+#searchProviderState { font-size: 12px; color: var(--text-secondary); }
 .search-box input::placeholder { color: var(--text-muted); }
 .search-btn {
   background: transparent;
@@ -252,6 +261,8 @@ nav.mobile-nav {
   nav.mobile-nav { display: none; }
 }
 .mob-btn {
+  min-width: 0;
+  min-height: 44px;
   background: transparent;
   border: 0;
   color: var(--text-secondary);
@@ -276,9 +287,11 @@ nav.mobile-nav {
   filter: drop-shadow(0 2px 8px var(--gold-glow));
 }
 
+@media(max-width:360px){nav.mobile-nav{left:4px;right:4px;padding:8px 0}.mob-btn{font-size:.55rem}}
+
 /* Main Container */
 main.container {
-  max-width: 1280px;
+  max-width: 1920px;
   margin: 0 auto;
   padding: 18px 16px 36px;
 }
@@ -575,14 +588,11 @@ main.container {
 }
 
 /* Grid Layouts for Sections */
-.media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 14px;
-}
-@media (min-width: 600px) {
-  .media-grid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 16px; }
-}
+.media-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media(min-width:600px){.media-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}}
+@media(min-width:900px){.media-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(min-width:1200px){.media-grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
+@media(min-width:1600px){.media-grid{grid-template-columns:repeat(10,minmax(0,1fr))}}
 
 /* Filter Chips Bar */
 .filter-bar {
@@ -715,7 +725,7 @@ video#cinemaVideo {
   object-fit: contain;
   background: #000;
 }
-video#cinemaVideo.fit-cover { object-fit: cover; }
+video#cinemaVideo.fit-cover, video#maVideoPlayer.fit-cover { object-fit: cover; }
 .player-toolbar {
   background: var(--bg-surface);
   border-top: 1px solid var(--gold-border-subtle);
@@ -933,10 +943,13 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   gap: 12px;
 }
 .watch-video-box {
+  width: min(100%, 135.111111dvh);
+  max-width: 1440px;
+  margin-inline: auto;
   position: relative;
-  width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 76vh;
+  max-height: 76dvh;
+  min-height: 0;
   background: #000;
 }
 .watch-video-box video,
@@ -946,6 +959,15 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   height: 100%;
   border: 0;
   display: block;
+  object-fit: contain;
+  direction: ltr;
+}
+.watch-video-box:fullscreen {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  aspect-ratio: auto;
 }
 .watch-server-bar {
   padding: 14px 18px;
@@ -1056,7 +1078,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 <header class="app-header">
   <div class="header-inner">
     <div class="brand-wrap" id="brandBtn">
-      <div class="brand-badge">MA</div>
+      <img class="brand-badge" src="web/assets/brand_mark.png" alt="MA TV">
       <div class="brand-name-wrap">
         <div class="brand-name">
           <span class="white-text">MA</span>
@@ -1064,12 +1086,13 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
           <span class="gold-sep">•</span>
           <span class="gold-text" style="font-size:0.82em;">OFFICIAL</span>
         </div>
-        <div class="brand-sub">MA-NEXUS v8.0 • ZERO ADS</div>
+        <div class="brand-sub">مساحتك للمشاهدة والاستكشاف</div>
       </div>
     </div>
 
     <nav class="desktop-nav">
       <button class="nav-btn active" data-tab="home">الرئيسية</button>
+      <button class="nav-btn" data-tab="explore"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg>استكشاف</button>
       <button class="nav-btn" data-tab="movies">أفلام</button>
       <button class="nav-btn" data-tab="series">مسلسلات</button>
       <button class="nav-btn" data-tab="anime">أنمي</button>
@@ -1080,10 +1103,10 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </nav>
 
     <div class="search-box">
-      <button class="search-btn" id="searchTriggerBtn" title="بحث فوري" aria-label="بحث فوري">
+      <button class="search-btn" id="searchTriggerBtn" title="استكشاف" aria-label="استكشاف">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       </button>
-      <input type="search" id="globalSearch" placeholder="بحث موحد (MA-NEXUS) عن فيلم، مسلسل، أنمي..." autocomplete="off">
+      <label for="searchProvider">استكشاف</label><select id="searchProvider" aria-label="مصدر الاستكشاف"><option value="">جميع المصادر</option></select><span id="searchProviderState" role="status"></span><input type="search" id="globalSearch" placeholder="استكشاف: فيلم، مسلسل، أنمي..." autocomplete="off">
     </div>
   </div>
 </header>
@@ -1094,12 +1117,12 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="hero-banner" id="homeHero">
       <div class="hero-backdrop" id="heroBackdrop"></div>
       <div class="hero-content">
-        <span class="hero-badge">✦ الأكثر شهرة ورواجاً اليوم • MA TV</span>
+        <span class="hero-badge">اكتشف عملك القادم</span>
         <h1 class="hero-title" id="heroTitle">جاري تجهيز المنصة السينمائية…</h1>
         <div class="hero-tags" id="heroTags">
-          <span class="rating-pill" id="heroRatingPill">★ 8.9</span>
-          <span id="heroYearPill">2025</span>
-          <span id="heroTypePill">4K UHD</span>
+          <span class="rating-pill" id="heroRatingPill"></span>
+          <span id="heroYearPill"></span>
+          <span id="heroTypePill"></span>
         </div>
         <p class="hero-desc" id="heroDesc">استمتع بتجربة بث سينمائية مباشرة بدون إعلانات وبأعلى جودة متوفرة عبر العقل المركزي الموحد MA-NEXUS.</p>
         <div class="hero-actions">
@@ -1166,6 +1189,11 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div id="animeLoadMore" style="text-align:center;padding:24px;"></div>
   </section>
 
+  <section id="tab-explore" class="tab-view">
+    <h2 style="margin-bottom:16px">استكشاف</h2>
+    <div class="media-grid" id="exploreGrid"><p role="status">اكتب اسم فيلم أو مسلسل في البحث أعلاه</p></div>
+  </section>
+
   <!-- TAB 6: LIVE MATCHES & CHANNELS -->
   <section id="tab-live" class="tab-view">
     <div class="shelf-header">
@@ -1177,7 +1205,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </div>
 
     <div class="shelf-header" style="margin-top:32px;">
-      <h2 class="shelf-title">باقات القنوات الرياضية والسينمائية المباشرة (24/7)</h2>
+      <h2 class="shelf-title">القنوات المباشرة</h2>
     </div>
     <div class="media-grid" id="channelsGrid"></div>
   </section>
@@ -1262,7 +1290,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </div>
 
     <div style="text-align:center;color:var(--gold-primary);opacity:0.8;font-size:0.82rem;margin-top:24px;font-weight:700;">
-      MA TV OFFICIAL • MA-NEXUS v8.0 • Zero-Cost & Zero-Ads Architecture
+      This product uses the TMDB API but is not endorsed or certified by TMDB.
     </div>
   </section>
 
@@ -1279,7 +1307,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <div class="full-page-content">
         <img id="detailPoster" class="detail-poster-lg" src="" alt="">
         <div class="detail-info-col">
-          <h1 id="detailTitle" class="detail-title-lg">...</h1>
+          <h1 id="detailTitle" class="detail-title-lg">...</h1><p id="detailSource"></p>
           <div id="detailMetaPills" class="detail-meta-pills"></div>
           <p id="detailStory" class="detail-story">جاري تحميل القصة الكاملة وتفاصيل العمل من TMDb…</p>
 
@@ -1340,8 +1368,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       </div>
 
       <!-- شاشة العرض المزدوجة (HLS Direct Video + Clean Launcher Container) -->
-      <div class="watch-video-box" id="playerContainer" style="position:relative; width:100%; height:100%; min-height:450px; background:#000;">
-        <video id="maVideoPlayer" controls playsinline webkit-playsinline style="width:100%; height:100%; display:none;"></video>
+      <div class="watch-video-box" id="playerContainer">
+        <video id="maVideoPlayer" dir="ltr" controls playsinline webkit-playsinline style="width:100%; height:100%; display:none;"></video>
         <div id="embedContainer" style="width:100%; height:100%; display:none; position:relative; align-items:center; justify-content:center;"></div>
       </div>
 
@@ -1400,7 +1428,8 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 
 <!-- Unified JavaScript Application (MA-NEXUS v8.0) -->
 <script type="module">
-import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.0.46';
+import { searchStateMessage, ExploreRequest, mountSourcePicker } from './web/core/source-display.js?v=1.0.46-build46';
+import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails, getSearchProviders, sourceLabel, ProviderEndpoints } from './web/core/api-client.js?v=1.0.46-build46';
 import { CinemaCategories } from './web/core/catalog-config.js?v=1.0.46';
 import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.0.46';
 import { resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.0.46';
@@ -1410,12 +1439,11 @@ import {
   loadHomeWithSupabaseSync,
   deduplicateAndMergeCatalog,
   resolveUnifiedServersForItem,
-  nexusUnifiedSearch,
   formatRuntimeArabic,
   normalizeEpisodesList,
   probeAndRankServers,
   generateCloudFallbackServers
-} from './web/core/ma-nexus.js?v=1.0.46';
+} from './web/core/ma-nexus.js?v=1.0.46-build46';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -1442,8 +1470,9 @@ function registerWorkItem(item) {
   const id = String(item.id || item.href || item.ref || '');
   if (!id) return item;
   const existing = workRegistry.get(id) || {};
-  const merged = { ...existing, ...item, id, href: id };
+  const merged = { ...existing, ...item, id, href: item.href || item.ref || existing.href || id };
   workRegistry.set(id, merged);
+  if (merged.href !== id) workRegistry.set(merged.href, merged);
   try {
     sessionStorage.setItem('matv_work_' + id, JSON.stringify(merged));
   } catch (_) {}
@@ -1470,8 +1499,8 @@ function getRegisteredWorkItem(id, fallbackTitle = '', fallbackType = 'movie') {
     type: isTv ? 'series' : 'movie',
     typeLabel: isTv ? 'مسلسل' : 'فيلم',
     title: fallbackTitle || 'عمل سينمائي',
-    year: '2025',
-    rating: '8.5',
+    year: '',
+    rating: '',
     durationText: formatRuntimeArabic(null, isTv ? 'tv' : 'movie')
   };
 }
@@ -1582,7 +1611,7 @@ window.toggleFavorite = function(item) {
   } else {
     list.unshift({
       id: itemId,
-      href: itemId,
+      href: item.href || item.ref || itemId,
       tmdbId: item.tmdbId || '',
       title: item.title,
       poster: item.poster || item.img,
@@ -1590,8 +1619,8 @@ window.toggleFavorite = function(item) {
       mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
       type: item.type || (item.is_series ? 'series' : 'movie'),
       typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
-      year: item.year || '2025',
-      rating: item.rating || '8.5',
+      year: item.year || '',
+      rating: item.rating || '',
       durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType)
     });
     toast('تمت الإضافة إلى المفضلة ♥');
@@ -1612,7 +1641,7 @@ function saveContinueWatching(item, currentTime, duration, season = 1, episode =
   let list = getContinueWatching().filter(i => (i.id || i.href) !== itemId);
   list.unshift({
     id: itemId,
-    href: itemId,
+    href: item.href || item.ref || itemId,
     tmdbId: item.tmdbId || '',
     title: item.title,
     poster: item.poster || item.img,
@@ -1620,8 +1649,8 @@ function saveContinueWatching(item, currentTime, duration, season = 1, episode =
     mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
     type: item.type || (item.is_series ? 'series' : 'movie'),
     typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
-    year: item.year || '2025',
-    rating: item.rating || '8.5',
+    year: item.year || '',
+    rating: item.rating || '',
     durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType),
     season,
     episode,
@@ -1713,11 +1742,11 @@ export function renderMediaCard(rawItem) {
   const item = registerWorkItem(rawItem);
   const itemId = item.id || item.href;
   const isTv = item.mediaType === 'tv' || item.type === 'series' || item.is_series;
-  const typeLabel = item.typeLabel || (isTv ? 'مسلسل' : 'فيلم');
-  const year = String(item.year || '2025').slice(0, 4);
+  const typeLabel = item.typeLabel || (item.type==='live' ? 'قناة مباشرة' : item.type==='anime' ? 'أنمي' : isTv ? 'مسلسل' : item.type==='movie' ? 'فيلم' : 'عمل');
+  const year = String(item.year || '').slice(0, 4);
   const durationText = item.durationText || formatRuntimeArabic(item.runtime, isTv ? 'tv' : 'movie');
-  const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '8.4';
-  const poster = item.poster || item.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+  const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '';
+  const poster = item.poster || item.img || '';
   const favActive = isFavorite(itemId);
 
   const card = document.createElement('div');
@@ -1728,21 +1757,37 @@ export function renderMediaCard(rawItem) {
 
   card.innerHTML = `
     <div class="poster-wrap">
-      <img src="${poster}" loading="lazy" alt="${item.title || ''}" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
-      <span class="poster-type">${typeLabel}</span>
-      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${itemId}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
-        ${favActive ? '♥' : '♡'}
-      </button>
+      <img loading="lazy" alt="">
+      <span class="poster-type"></span>
+      <button class="card-fav-btn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">♡</button>
     </div>
     <div class="card-info">
-      <div class="card-title">${item.title}</div>
-      <div class="card-sub">
-        <span>${year} • ${durationText}</span>
-        <span class="badge-gold-sm">★ ${rating}</span>
-      </div>
-    </div>
-  `;
+      <div class="card-title"></div>
+      <div class="card-sub"><span class="card-facts"></span><span class="badge-gold-sm"></span></div>
+    </div>`;
+  const image = card.querySelector('img');
+  image.alt = item.title || '';
+  if (poster && /^https?:\/\//i.test(poster)) image.src = poster;
+  else image.hidden = true;
+  image.onerror = () => { image.hidden = true; };
+  card.querySelector('.poster-type').textContent = typeLabel;
+  card.querySelector('.card-title').textContent = item.title || '';
+  card.querySelector('.card-facts').textContent = [year,durationText,
+    item.season_number != null ? 'S'+item.season_number : '',
+    item.episode_number != null ? 'E'+item.episode_number : '',
+    item.episode_count > 0 ? item.episode_count+' حلقة' : '',
+  ].filter(Boolean).join(' • ');
+  const score = card.querySelector('.badge-gold-sm');
+  score.textContent = rating ? '★ '+rating : '';
+  score.hidden = !rating;
+  const favorite = card.querySelector('.card-fav-btn');
+  favorite.classList.toggle('active', favActive);
+  favorite.dataset.href = itemId;
+  favorite.textContent = favActive ? '♥' : '♡';
 
+  const source = document.createElement('div');
+  source.textContent = sourceLabel(item);
+  card.querySelector('.card-info').appendChild(source);
   const favBtn = card.querySelector('.card-fav-btn');
   favBtn.onclick = (e) => {
     e.stopPropagation();
@@ -1785,8 +1830,9 @@ function stopActivePlayerStream() {
 }
 
 window.openTitlePage = function(item) {
+  invalidateExplore();
   const registered = registerWorkItem(item);
-  const id = registered.id || registered.href;
+  const id = registered.href || registered.ref || registered.id;
   const type = registered.mediaType || (registered.is_series ? 'tv' : 'movie');
   const title = registered.title || '';
   window.location.hash = `#/title?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}`;
@@ -1796,12 +1842,14 @@ window.openPlayerPage = function(id, season = 1, epNum = 1, srvIdx = 0) {
   const s = Math.max(1, Number(season) || 1);
   const ep = Math.max(1, Number(epNum) || 1);
   const srv = Math.max(0, Number(srvIdx) || 0);
-  const title = currentDetailItem?.title || currentWatchItem?.title || '';
-  const type = currentDetailItem?.mediaType || currentWatchItem?.mediaType || 'movie';
+  const work=getRegisteredWorkItem(id);
+  const title=work?.title || currentDetailItem?.title || currentWatchItem?.title || '';
+  const type=work?.type==='live' ? 'live' : work?.mediaType || currentDetailItem?.mediaType || currentWatchItem?.mediaType || 'movie';
   window.location.hash = `#/watch?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&s=${s}&ep=${ep}&srv=${srv}`;
 };
 
 window.switchTab = function(tabId, updateHash = true) {
+  if (tabId !== 'explore') invalidateExplore();
   stopActivePlayerStream();
   currentTab = tabId;
   lastMainTab = tabId;
@@ -1830,6 +1878,7 @@ window.switchTab = function(tabId, updateHash = true) {
 
 async function handleRouteChange() {
   const rawHash = window.location.hash || '#home';
+  if (rawHash !== '#explore') invalidateExplore();
 
   // 1. Check Full-Screen Watch Route (#/watch?...)
   if (rawHash.startsWith('#/watch') || rawHash.startsWith('#watch')) {
@@ -1858,7 +1907,7 @@ async function handleRouteChange() {
 
   // 3. Standard Navigation Tabs
   const cleanTab = rawHash.replace(/^#\/?/, '').split('?')[0].toLowerCase();
-  const validTabs = ['home', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
+  const validTabs = ['home', 'explore', 'movies', 'series', 'anime', 'turkish', 'live', 'favorites', 'settings'];
   const targetTab = validTabs.includes(cleanTab) ? cleanTab : 'home';
   switchTab(targetTab, false);
 }
@@ -1904,15 +1953,22 @@ async function loadHomeShelves() {
   try {
     const homeData = await loadHomeWithSupabaseSync();
     const heroItems = homeData?.heroItems || [];
+    if(!heroItems.length){
+      document.getElementById('heroTitle').textContent='لا توجد أعمال متاحة حالياً';
+      document.getElementById('heroDesc').textContent='';
+      const explore=document.getElementById('heroPlayBtn');explore.textContent='استكشاف';explore.onclick=()=>switchTab('explore',true);
+    }
     if (heroItems.length > 0) {
       const heroItem = registerWorkItem(heroItems[0]);
       document.getElementById('heroTitle').textContent = heroItem.title;
       document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.backdrop || heroItem.poster})`;
       document.getElementById('heroDesc').textContent = heroItem.overview || '';
-      document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || '8.8'}`;
-      document.getElementById('heroYearPill').textContent = heroItem.year || '2025';
-      document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || '4K UHD'}`;
-      document.getElementById('heroPlayBtn').onclick = () => openTitlePage(heroItem);
+      document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || ''}`;
+      document.getElementById('heroYearPill').textContent = heroItem.year || '';
+      document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || ''}`;
+      const exploreHero=document.getElementById('heroPlayBtn');
+      exploreHero.textContent='استكشاف العمل';
+      exploreHero.onclick=()=>{document.getElementById('globalSearch').value=heroItem.title;performSearch(heroItem.title);};
       const favBtn = document.getElementById('heroFavBtn');
       const active = isFavorite(heroItem.id);
       favBtn.textContent = active ? '♥ في المفضلة' : '♡ حفظ في المفضلة';
@@ -1948,7 +2004,9 @@ async function loadHomeShelves() {
       });
     }
   } catch (err) {
-    console.warn('Home load error:', err);
+    document.getElementById('heroTitle').textContent='تعذر تحميل الرئيسية';
+    document.getElementById('heroDesc').textContent='أعد المحاولة أو انتقل إلى الاستكشاف.';
+    const retry=document.getElementById('heroPlayBtn');retry.textContent='إعادة المحاولة';retry.onclick=loadHomeShelves;
   }
 }
 
@@ -2007,6 +2065,7 @@ async function loadAnimeTab() {
 }
 
 async function loadCategoryGrid(sectionType, cat, gridId) {
+  invalidateExplore();
   const grid = document.getElementById(gridId);
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري جلب ودمج الأعمال عبر MA-NEXUS…</div>';
@@ -2083,8 +2142,9 @@ async function renderTitleDetailPage(params) {
   currentDetailItem = baseItem;
   currentDetailSeason = 1;
 
+  document.getElementById('detailSource').textContent = sourceLabel(baseItem);
   document.getElementById('detailTitle').textContent = baseItem.title || 'جاري التحميل…';
-  document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+  document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || '';
   document.getElementById('detailBackdrop').style.backgroundImage = `url(${baseItem.backdrop || baseItem.poster || baseItem.img || ''})`;
   document.getElementById('detailStory').textContent = baseItem.overview || 'جاري جلب القصة الكاملة وتفاصيل العمل من TMDb…';
   document.getElementById('detailEpisodesWrap').style.display = 'none';
@@ -2102,34 +2162,16 @@ async function renderTitleDetailPage(params) {
     updateFavBtnText();
   };
 
-  document.getElementById('detailPlayNowBtn').onclick = () => {
-    window.openPlayerPage(currentDetailItem.id, currentDetailSeason, 1, 0);
+  const playAction=document.getElementById('detailPlayNowBtn');
+  playAction.textContent=String(id).startsWith('tmdb:')?'استكشاف مصادر العمل':'مشاهدة';
+  playAction.onclick=()=>{
+    if(String(id).startsWith('tmdb:')) {document.getElementById('globalSearch').value=currentDetailItem.title;performSearch(currentDetailItem.title);}
+    else window.openPlayerPage(currentDetailItem.href || currentDetailItem.id,currentDetailSeason,1,0);
   };
 
   // Resolve TMDb ID if needed
   let tmdbId = baseItem.tmdbId || (String(id).startsWith('tmdb:') ? String(id).split(':').pop() : '');
   let mediaType = (baseItem.mediaType === 'tv' || baseItem.type === 'series' || typeParam === 'tv' || typeParam === 'series') ? 'tv' : 'movie';
-
-  if (!tmdbId || !/^\d+$/.test(String(tmdbId))) {
-    const cleanQ = String(baseItem.title || titleParam || '')
-      .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الحلقة\s*\d+|الموسم\s*\d+|\b\d{4}\b)/gi, '')
-      .trim();
-    if (cleanQ.length >= 2) {
-      try {
-        const sRes = await tmdbFetch(`/search/${mediaType}`, { query: cleanQ });
-        if (sRes?.results?.[0]?.id) {
-          tmdbId = String(sRes.results[0].id);
-        } else {
-          const mRes = await tmdbFetch('/search/multi', { query: cleanQ });
-          const hit = (mRes?.results || []).find(r => r.media_type === 'tv' || r.media_type === 'movie');
-          if (hit?.id) {
-            tmdbId = String(hit.id);
-            mediaType = hit.media_type === 'tv' ? 'tv' : 'movie';
-          }
-        }
-      } catch (_) {}
-    }
-  }
 
   let fullDetails = null;
   if (tmdbId && /^\d+$/.test(String(tmdbId))) {
@@ -2141,6 +2183,18 @@ async function renderTitleDetailPage(params) {
   if (!String(id).startsWith('tmdb:')) {
     try {
       const scRes = await getCinemaDetails(id);
+      if(scRes?.data?.status==='success') {
+        const data=scRes.data;
+        currentDetailItem=registerWorkItem({...baseItem,
+          title:data.title || data.movie_title || baseItem.title,
+          poster:data.poster || data.img || baseItem.poster,
+          year:data.year ?? baseItem.year,
+          overview:data.overview || data.description || data.plot || baseItem.overview || '',
+          runtime:data.runtime_minutes ?? data.runtime ?? baseItem.runtime,
+          genres:Array.isArray(data.genres)?data.genres:baseItem.genres,
+          id:baseItem.id,href:baseItem.href || id,
+        });
+      }
       if (Array.isArray(scRes?.data?.episodes) && scRes.data.episodes.length > 0) {
         scraperEpisodes = normalizeEpisodesList(scRes.data.episodes);
       }
@@ -2152,7 +2206,7 @@ async function renderTitleDetailPage(params) {
       ...baseItem,
       ...fullDetails,
       id: baseItem.id || fullDetails.id,
-      href: baseItem.id || fullDetails.id,
+      href: baseItem.href || baseItem.ref || baseItem.id || fullDetails.id,
       tmdbId,
       mediaType,
       durationText: formatRuntimeArabic(fullDetails.runtime, mediaType)
@@ -2162,19 +2216,19 @@ async function renderTitleDetailPage(params) {
   document.getElementById('detailTitle').textContent = currentDetailItem.title;
   document.getElementById('detailPoster').src = currentDetailItem.poster || currentDetailItem.img;
   document.getElementById('detailBackdrop').style.backgroundImage = `url(${currentDetailItem.backdrop || currentDetailItem.poster})`;
-  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'عمل سينمائي ودرامي متوفر بجودة فائقة عبر منصة MA TV.';
+  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'لا يتوفر وصف لهذا العمل حالياً.';
 
   const pillsWrap = document.getElementById('detailMetaPills');
-  const genresText = Array.isArray(currentDetailItem.genres) && currentDetailItem.genres.length
-    ? currentDetailItem.genres.join(' • ')
-    : (mediaType === 'tv' ? 'دراما وتشويق' : 'سينما عالمية');
-  pillsWrap.innerHTML = `
-    <span class="meta-pill">★ ${currentDetailItem.rating || '8.6'} TMDb</span>
-    <span class="meta-pill">${currentDetailItem.year || '2025'}</span>
-    <span class="meta-pill">${currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType)}</span>
-    <span class="meta-pill">${mediaType === 'tv' ? 'مسلسل' : 'فيلم'}</span>
-    <span class="meta-pill">${genresText}</span>
-  `;
+  const genresText = Array.isArray(currentDetailItem.genres) ? currentDetailItem.genres.join(' • ') : '';
+  pillsWrap.replaceChildren();
+  for (const text of [
+    Number(currentDetailItem.rating)>0 ? '★ '+currentDetailItem.rating : '',
+    currentDetailItem.year,
+    currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType),
+    mediaType === 'tv' ? 'مسلسل' : 'فيلم', genresText,
+  ].filter(Boolean)) {
+    const pill=document.createElement('span');pill.className='meta-pill';pill.textContent=text;pillsWrap.append(pill);
+  }
 
   // Cast Row
   if (Array.isArray(currentDetailItem.cast) && currentDetailItem.cast.length > 0) {
@@ -2206,7 +2260,7 @@ async function renderTitleDetailPage(params) {
 
     const renderSeasonEpisodes = (rawEps, seasonNum) => {
       currentDetailSeason = seasonNum;
-      const cleanEps = normalizeEpisodesList(rawEps.length ? rawEps : Array.from({ length: 12 }, (_, i) => ({ number: i + 1, title: `الحلقة ${i + 1}` })));
+      const cleanEps = normalizeEpisodesList(rawEps);
       currentDetailItem.episodes = cleanEps;
       epGrid.innerHTML = '';
       cleanEps.forEach((ep, index) => {
@@ -2214,9 +2268,10 @@ async function renderTitleDetailPage(params) {
         const btn = document.createElement('button');
         btn.className = 'ep-btn';
         btn.textContent = `الحلقة ${epNum}`;
+        btn.disabled = !ep.url;
         btn.onclick = () => {
           if (ep.url || ep.link) currentDetailItem.episodeRef = ep.url || ep.link;
-          window.openPlayerPage(currentDetailItem.id, seasonNum, epNum, 0);
+          window.openPlayerPage(currentDetailItem.href || currentDetailItem.id, seasonNum, epNum, 0);
         };
         epGrid.appendChild(btn);
       });
@@ -2631,7 +2686,7 @@ async function renderPlayerWatchPage(params) {
   currentWatchEpisode = epNum;
 
   const isTv = item.mediaType === 'tv' || item.type === 'series' || typeParam === 'tv' || typeParam === 'series';
-  const isLiveStream = String(id).startsWith('live:');
+  const isLiveStream = item.type==='live' || item.isLive===true || String(id).startsWith('live:');
 
   const displayHeader = isLiveStream
     ? `🔴 بث مباشر: ${item.title}`
@@ -2673,7 +2728,7 @@ async function renderPlayerWatchPage(params) {
   if (isLiveStream && Array.isArray(item.servers) && item.servers.length > 0) {
     rankedServers = await probeAndRankServers(item.servers);
   } else {
-    rankedServers = await resolveUnifiedServersForItem(item, season, epNum);
+    rankedServers = await resolveUnifiedServersForItem(item, season, epNum, ProviderEndpoints.backend);
   }
 
   // تصفية أزرار السيرفرات وإلغاء أي سيرفر خارجي (Embed) نهائياً
@@ -2744,64 +2799,6 @@ document.getElementById('toggleFitBtn').onclick = () => {
 // -------------------------------------------------------------
 // 5. LIVE MATCHES & SPORTS CHANNELS (#/live — Guaranteed Servers)
 // -------------------------------------------------------------
-const LIVE_SPORTS_CHANNELS = [
-  {
-    id: 'live:bein1',
-    title: 'beIN SPORTS 1 HD Premium',
-    poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
-      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'mycima', url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:bein2',
-    title: 'beIN SPORTS 2 HD',
-    poster: 'https://images.unsplash.com/photo-1489944445391-116e9d63c530?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:ssc1',
-    title: 'SSC SPORTS 1 HD (الدوري السعودي)',
-    poster: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'cimanow', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
-      { provider: 'arabseed', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:ssc2',
-    title: 'SSC SPORTS 2 HD',
-    poster: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'mycima', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:alkass',
-    title: 'Al Kass One HD (الكأس الرياضية)',
-    poster: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'egydead', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' },
-      { provider: 'alooy', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' }
-    ]
-  },
-  {
-    id: 'live:adsports',
-    title: 'Abu Dhabi Sports 1 HD',
-    poster: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=500&auto=format&fit=crop&q=80',
-    servers: [
-      { provider: 'shahid4u', url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8', kind: 'direct' },
-      { provider: 'akwam', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', kind: 'direct' }
-    ]
-  }
-];
-
 let matchesLoaded = false;
 async function loadLiveMatches() {
   const container = document.getElementById('matchesContainer');
@@ -2811,30 +2808,9 @@ async function loadLiveMatches() {
   try {
     const res = await getMatches();
     const payload = res.data;
-    const matchList = Array.isArray(payload?.data) && payload.data.length > 0
-      ? payload.data
-      : [
-          {
-            id: 'live:match1',
-            team1: { name: 'الهلال', goals: 2 },
-            team2: { name: 'النصر', goals: 1 },
-            competition: 'دوري روشن السعودي — قمة الجولة',
-            status: 'live',
-            priority: 1,
-            time: '21:00'
-          },
-          {
-            id: 'live:match2',
-            team1: { name: 'ريال مدريد', goals: 1 },
-            team2: { name: 'برشلونة', goals: 1 },
-            competition: 'الدوري الإسباني — البث المباشر',
-            status: 'live',
-            priority: 1,
-            time: '22:00'
-          }
-        ];
-
+    const matchList = Array.isArray(payload?.data) ? payload.data : [];
     container.innerHTML = '';
+    if (!matchList.length) container.textContent='لا توجد مباريات متاحة حالياً';
     matchList.forEach((m, idx) => {
       const card = document.createElement('div');
       card.className = 'match-card';
@@ -2864,61 +2840,61 @@ async function loadLiveMatches() {
     });
     matchesLoaded = true;
   } catch (err) {
-    matchesLoaded = true;
+    container.textContent='تعذر تحميل المباريات. أعد المحاولة.';
+    matchesLoaded = false;
   }
 }
 document.getElementById('refreshMatchesBtn').addEventListener('click', loadLiveMatches);
 
-async function openMatchStream(match, idx = 0) {
-  const matchTitle = `${match.team1?.name || 'الفريق الأول'} × ${match.team2?.name || 'الفريق الثاني'}`;
-  const fallbackChannel = LIVE_SPORTS_CHANNELS[idx % LIVE_SPORTS_CHANNELS.length];
-  const servers = [...fallbackChannel.servers];
-
-  const ref = match.ref || match.link;
-  if (ref) {
-    try {
-      const serversRes = await getMatchServers(ref);
-      const apiServers = serversRes.data?.data || [];
-      for (const s of apiServers) {
-        if (s.url) servers.unshift({ provider: 'akwam', url: s.url, kind: 'direct' });
-      }
-    } catch (_) {}
-  }
-
-  const liveWork = registerWorkItem({
-    id: `live:match:${idx + 1}`,
-    title: matchTitle,
-    mediaType: 'movie',
-    type: 'movie',
-    servers
-  });
-  window.openPlayerPage(liveWork.id, 1, 1, 0);
+async function openMatchStream(match) {
+  const ref=match.ref || match.link;
+  if(!ref || match.status==='ended'){toast('لا يتوفر بث لهذه المباراة حالياً');return;}
+  try {
+    const response=await getMatchServers(ref);
+    const servers=[];
+    for (const server of (response.data?.data || []).slice(0,4)) {
+      const serverRef=server.ref || server.url;
+      if(!serverRef)continue;
+      try {
+        const resolved=await getMatchPlayback(serverRef);
+        const playback=resolved.data?.data;
+        if(playback?.media_path)servers.push({provider:playback.server_name || server.provider,
+          code:server.code || server.name || playback.server_name,url:playback.media_path,
+          kind:'direct',headers:playback.headers || {}});
+      } catch { /* Try only another server reference belonging to this match. */ }
+    }
+    if(!servers.length){toast('لا يتوفر مصدر تشغيل لهذه المباراة حالياً');return;}
+    const work=registerWorkItem({id:ref,href:ref,ref,type:'live',isLive:true,mediaType:'live',
+      title:`${match.team1?.name || 'الفريق الأول'} × ${match.team2?.name || 'الفريق الثاني'}`,servers});
+    window.openPlayerPage(work.href,1,1,0);
+  } catch {toast('تعذر تحميل مصادر المباراة. أعد المحاولة.');}
 }
 
-function loadLiveChannels() {
-  const grid = document.getElementById('channelsGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  LIVE_SPORTS_CHANNELS.forEach(ch => {
-    registerWorkItem(ch);
-    const card = document.createElement('div');
-    card.className = 'media-card';
-    card.innerHTML = `
-      <div class="poster-wrap">
-        <img src="${ch.poster}" loading="lazy" alt="${ch.title}">
-        <span class="poster-type">بث حي 24/7</span>
-      </div>
-      <div class="card-info">
-        <div class="card-title">${ch.title}</div>
-        <div class="card-sub">
-          <span>FHD 1080p • 60fps</span>
-          <span class="badge-gold-sm">LIVE 🔴</span>
-        </div>
-      </div>
-    `;
-    card.onclick = () => window.openPlayerPage(ch.id, 1, 1, 0);
-    grid.appendChild(card);
-  });
+let liveChannelsLoading=false;
+async function loadLiveChannels() {
+  if(liveChannelsLoading)return;
+  const grid=document.getElementById('channelsGrid');if(!grid)return;
+  liveChannelsLoading=true;
+  grid.textContent='جارٍ تحميل القنوات…';
+  try {
+    const response=await fetch(ProviderEndpoints.backend+'/api/v1/live/channels',{signal:AbortSignal.timeout(15000)});
+    const payload=await response.json();
+    if(!response.ok || payload.status==='error')throw Error('LIVE_UNAVAILABLE');
+    grid.replaceChildren();
+    const rows=Array.isArray(payload.data)?payload.data:[];
+    if(!rows.length)grid.textContent='لا توجد قنوات متاحة حالياً';
+    rows.forEach(channel=>{
+      const work=registerWorkItem({...channel,href:channel.ref || channel.id,type:'live',isLive:true});
+      const card=renderMediaCard({...work,typeLabel:'قناة مباشرة'});
+      card.onclick=()=>window.openPlayerPage(work.href,1,1,0);
+      card.onkeydown=event=>{if(event.key==='Enter' || event.key===' '){event.preventDefault();card.click();}};
+      grid.append(card);
+    });
+  } catch {
+    grid.replaceChildren();
+    const retry=document.createElement('button');retry.className='tool-btn';
+    retry.textContent='تعذر تحميل القنوات — إعادة المحاولة';retry.onclick=loadLiveChannels;grid.append(retry);
+  } finally {liveChannelsLoading=false;}
 }
 
 // -------------------------------------------------------------
@@ -2944,15 +2920,48 @@ document.getElementById('purgeCacheBtn').onclick = async () => {
   }
 };
 
+const exploreRequest = new ExploreRequest();
+let exploreOwnsGrid = false;
+let exploreLoading = false;
+function invalidateExplore(showPrompt = false) {
+  exploreRequest.invalidate();
+  if ((exploreOwnsGrid && exploreLoading) || showPrompt) {
+    const grid = document.getElementById('exploreGrid');
+    grid.replaceChildren();
+    if (showPrompt || exploreLoading) {
+      const state = document.createElement('p');
+      state.setAttribute('role', 'status');
+      state.textContent = document.getElementById('globalSearch').value.trim() ? 'اضغط للاستكشاف' : 'اكتب اسم عمل للاستكشاف';
+      grid.appendChild(state);
+    }
+  }
+  exploreLoading = false;
+  exploreOwnsGrid = showPrompt;
+}
+const providerSelect = document.getElementById('searchProvider');
+mountSourcePicker(providerSelect, document.getElementById('searchProviderState'), getSearchProviders);
+providerSelect.onchange = () => {
+  invalidateExplore(true);
+  if (document.getElementById('globalSearch').value.trim()) performSearch(document.getElementById('globalSearch').value);
+};
 async function performSearch(query) {
   const q = (query || '').trim();
-  if (!q) return;
-  toast('جاري البحث الموحد عبر MA-NEXUS عن: ' + q);
-  switchTab('movies', true);
-  const grid = document.getElementById('moviesGrid');
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">✦ جاري البحث والدمج الذكي من TMDb والـ 18 مصدراً…</div>';
+  if (!q) { invalidateExplore(true); switchTab('explore',true); return; }
+  const request = exploreRequest.start();
+  exploreOwnsGrid = true;
+  exploreLoading = true;
+  const provider = providerSelect.value;
+  document.title = 'استكشاف | MA TV';
+  switchTab('explore', true);
+  const grid = document.getElementById('exploreGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gold-primary);">جارٍ البحث…</div>';
   try {
-    const items = await nexusUnifiedSearch(q);
+    const response = await searchCinema(q, provider, { signal: request.signal });
+    if (!exploreRequest.current(request)) return;
+    const message = searchStateMessage(response.data);
+    if (message) { grid.replaceChildren(); const state = document.createElement('p'); state.setAttribute('role', 'status'); state.textContent = message; grid.appendChild(state); return; }
+    const items = response.data.data;
+    if (!exploreRequest.current(request)) return;
     grid.innerHTML = '';
     if (!items.length) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-secondary);">لم يتم العثور على نتائج مطابقة لهذا البحث.</div>';
@@ -2960,8 +2969,9 @@ async function performSearch(query) {
     }
     items.forEach(it => grid.appendChild(renderMediaCard(it)));
   } catch (_) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">تعذر إتمام البحث حالياً.</div>';
-  }
+    if (!exploreRequest.current(request)) return;
+    grid.innerHTML = '<div role="status" style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">المصدر غير متاح حاليًا.</div>';
+  } finally {if(exploreRequest.current(request))exploreLoading=false;}
 }
 
 const searchInput = document.getElementById('globalSearch');
@@ -2971,10 +2981,15 @@ if (searchTriggerBtn) {
   searchTriggerBtn.addEventListener('click', () => performSearch(searchInput.value));
 }
 if (searchInput) {
+  searchInput.addEventListener('input', () => invalidateExplore(true));
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') performSearch(searchInput.value);
   });
-  searchInput.addEventListener('search', () => performSearch(searchInput.value));
+  // Native search events can arrive after a subsequent input edit. Enter and
+  // the explicit button own submission; the native clear action only invalidates.
+  searchInput.addEventListener('search', () => {
+    if (!searchInput.value.trim()) invalidateExplore(true);
+  });
 }
 
 document.addEventListener('keydown', (e) => {

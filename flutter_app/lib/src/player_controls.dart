@@ -7,6 +7,7 @@ class PlayerControls extends StatefulWidget {
     super.key,
     required this.isPlaying,
     required this.isTv,
+    this.showPlaybackSpeed = true,
     required this.playbackSpeed,
     required this.onRewind,
     required this.onTogglePlay,
@@ -16,6 +17,7 @@ class PlayerControls extends StatefulWidget {
 
   final bool isPlaying;
   final bool isTv;
+  final bool showPlaybackSpeed;
   final double playbackSpeed;
   final VoidCallback onRewind;
   final VoidCallback onTogglePlay;
@@ -43,10 +45,18 @@ class _PlayerControlsState extends State<PlayerControls> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusTraversalGroup(
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: IconButtonTheme(
+        data: IconButtonThemeData(style: IconButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.white12,
+          minimumSize: const Size(48, 48),
+        )),
+        child: FocusTraversalGroup(
       policy: WidgetOrderTraversalPolicy(),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           IconButton.filledTonal(
             key: const Key('player-rewind'),
@@ -55,16 +65,20 @@ class _PlayerControlsState extends State<PlayerControls> {
             onPressed: widget.onRewind,
             icon: const Icon(Icons.replay_10),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
           IconButton.filled(
             key: const Key('player-play-toggle'),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white, foregroundColor: Colors.black,
+              minimumSize: const Size(48, 48),
+            ),
             focusNode: _playFocus,
             autofocus: widget.isTv,
             tooltip: widget.isPlaying ? 'إيقاف مؤقت' : 'تشغيل',
             onPressed: widget.onTogglePlay,
             icon: Icon(widget.isPlaying ? Icons.pause : Icons.play_arrow),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
           IconButton.filledTonal(
             key: const Key('player-forward'),
             focusNode: _forwardFocus,
@@ -72,10 +86,15 @@ class _PlayerControlsState extends State<PlayerControls> {
             onPressed: widget.onForward,
             icon: const Icon(Icons.forward_10),
           ),
-          const SizedBox(width: 12),
-          MenuAnchor(
+          const SizedBox(width: 4),
+          if (widget.showPlaybackSpeed) MenuAnchor(
             builder: (context, controller, child) => FilledButton.tonalIcon(
               key: const Key('player-speed'),
+              style: FilledButton.styleFrom(
+                foregroundColor: Colors.white, backgroundColor: Colors.white12,
+                minimumSize: const Size(48, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
               focusNode: _speedFocus,
               onPressed: () =>
                   controller.isOpen ? controller.close() : controller.open(),
@@ -91,6 +110,8 @@ class _PlayerControlsState extends State<PlayerControls> {
                 .toList(growable: false),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

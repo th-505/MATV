@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
@@ -207,6 +208,11 @@ class MitvApi implements MediaRepository {
     );
   }
 
+  Future<List<CatalogItem>> liveChannels() async {
+    final json=await _getJson('/api/v1/live/channels');
+    return _list(json['data']).map(_catalogItem).where((row)=>row.ref.isNotEmpty).toList(growable:false);
+  }
+
   Future<List<MatchItem>> matches() async {
     final json = _useEdge
         ? await _edgeJson('/v1/matches')
@@ -277,12 +283,15 @@ class MitvApi implements MediaRepository {
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
     final generation = _cacheGeneration;
-    final json = _useEdge && categoryId.startsWith('laroza-')
+    final json = categoryId == 'home-trending'
+        ? await _getJson('/api/v1/tmdb/trending',{'type':'all'})
+        : _useEdge && categoryId.startsWith('laroza-')
         ? await _edgeJson('/v1/laroza/category', {
             'section': categoryId.substring(7),
             'page': '$page',
           })
-        : await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
+        : await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'},
+            Duration(seconds: categoryId.startsWith('browse-') ? 90 : 30));
     _ensureGeneration(generation);
     final pagination = json['pagination'];
     if (pagination is Map && pagination['has_more'] is bool) {
@@ -295,11 +304,73 @@ class MitvApi implements MediaRepository {
   }
 
   @override
-  Future<List<CatalogItem>> search(String query) async {
+  Future<List<CatalogItem>> search(String query, {String providerId = ''}) async {
     final generation = _cacheGeneration;
-    final json = await _getJson('/api/v1/search', {'q': query.trim()});
+    final json = await _getJson(
+      '/api/v1/search',
+      {'q': query.trim(), if (providerId.isNotEmpty) 'provider': providerId},
+      const Duration(seconds: 90),
+    );
     _ensureGeneration(generation);
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
+  }
+
+  final List<Map<String, dynamic>> _searchProviders = [];
+  final sourceMetadataChanges = ValueNotifier<int>(0);
+  Future<List<Map<String, dynamic>>>? _searchProvidersPending;
+  bool _searchProvidersLoaded = false;
+  bool sourceMetadataLoading = false;
+  String? sourceMetadataError;
+
+  // Shared by all entry points. Successful metadata is cached, in-flight calls
+  // coalesce, and failure clears the pending slot so an explicit retry can run.
+  Future<List<Map<String, dynamic>>> searchProviders() {
+    if (_searchProvidersLoaded) {
+      return Future.value(List.unmodifiable(_searchProviders));
+    }
+    if (_searchProvidersPending != null) return _searchProvidersPending!;
+    sourceMetadataLoading = true;
+    sourceMetadataError = null;
+    final pending = _loadSearchProviders();
+    _searchProvidersPending = pending;
+    // A new page may request metadata during initState while another page listens.
+    // Dispatch after the current build to keep every shared observer safe.
+    scheduleMicrotask(() {if (!_closed) sourceMetadataChanges.value += 1;});
+    return pending;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSearchProviders() async {
+    try {
+      final json = await _getJson('/api/v1/search/providers');
+      _searchProviders..clear()..addAll(_list(json['data']));
+      _searchProvidersLoaded = true;
+      return List.unmodifiable(_searchProviders);
+    } catch (_) {
+      sourceMetadataError = 'تعذر تحميل المصادر';
+      rethrow;
+    } finally {
+      _searchProvidersPending = null;
+      sourceMetadataLoading = false;
+      if (!_closed) sourceMetadataChanges.value += 1;
+    }
+  }
+
+  String sourceDisplayLabel(CatalogItem item) {
+    final id = item.source;
+    final prefix = item.ref.split(':').first;
+    for (final p in _searchProviders) {
+      final aliases = p['aliases'] is List ? p['aliases'] as List : const [];
+      final host = Uri.tryParse(item.ref)?.host;
+      final domains = p['domains'] is List ? p['domains'] as List : const [];
+      if (p['id'] == id ||
+          p['id'] == prefix ||
+          aliases.contains(id) ||
+          aliases.contains(prefix) ||
+          (host != null && host.isNotEmpty && domains.any((d) => Uri.tryParse('$d')?.host == host))) {
+        return '${p['displayName'] ?? ''}';
+      }
+    }
+    return '';
   }
 
   Future<bool> tmdbAvailable() async {
@@ -324,12 +395,26 @@ class MitvApi implements MediaRepository {
     return merged;
   }
 
+  final _workOpenAttempts=<String,DateTime>{};
+  Future<void> _recordWorkOpen(String ref) async {
+    final now=DateTime.now();
+    final previous=_workOpenAttempts[ref];
+    if (previous!=null && now.difference(previous)<const Duration(minutes:2)) return;
+    _workOpenAttempts[ref]=now;
+    while(_workOpenAttempts.length>128) {_workOpenAttempts.remove(_workOpenAttempts.keys.first);}
+    try {
+      await _client.post(_baseUri.replace(path:'/api/cinema/open',queryParameters:{'ref':ref}))
+        .timeout(const Duration(seconds:5));
+    } catch (_) { /* Aggregate metadata activity must never block playback. */ }
+  }
+
   @override
   Future<TitleDetails> details(String ref) async {
     final generation = _cacheGeneration;
     final cached = cachedMetadata(ref);
     var metadata = cached?.hasEpisodes == true ? cached! : await _details(ref);
     _ensureGeneration(generation);
+    unawaited(_recordWorkOpen(ref));
     final group = _catalogGroups[ref];
     if (group != null) {
       metadata = metadata.copyWith(sourceRefs: group.sourceRefs);
@@ -830,14 +915,21 @@ class MitvApi implements MediaRepository {
         .timeout(timeout);
     _ensureGeneration(generation);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (path == '/api/v1/search' && response.statusCode == 422) {
+        throw const ApiException('SEARCH_UNSUPPORTED');
+      }
       throw ApiException('HTTP ${response.statusCode}');
     }
-    if (response.bodyBytes.length > 128 * 1024) {
+    final responseLimit = path == '/api/v1/category' && (query?['ref']?.startsWith('browse-') ?? false) ? 512 * 1024 : 128 * 1024;
+    if (response.bodyBytes.length > responseLimit) {
       throw const ApiException('RUNTIME_RESPONSE_TOO_LARGE');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
+    }
+    if ((path == '/api/v1/search' || path == '/api/v1/category' || path == '/api/v1/live/channels') && decoded['status'] == 'no_results') {
+      return decoded;
     }
     if (decoded['status'] != 'success') {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
@@ -857,6 +949,7 @@ class MitvApi implements MediaRepository {
     _closed = true;
     _cacheGeneration++;
     _client.close();
+    sourceMetadataChanges.dispose();
   }
 }
 

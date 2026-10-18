@@ -154,36 +154,8 @@ class _MPlayMark extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: size,
     height: size,
-    child: CustomPaint(painter: _MPlayPainter()),
+    child: Image.asset('assets/brand_mark.png',filterQuality:FilterQuality.high),
   );
-}
-
-class _MPlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * .10
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..color = _brandAccent;
-    final m = Path()
-      ..moveTo(size.width * .2, size.height * .78)
-      ..lineTo(size.width * .2, size.height * .22)
-      ..lineTo(size.width * .5, size.height * .50)
-      ..lineTo(size.width * .8, size.height * .22)
-      ..lineTo(size.width * .8, size.height * .78);
-    canvas.drawPath(m, stroke);
-    final play = Path()
-      ..moveTo(size.width * .43, size.height * .55)
-      ..lineTo(size.width * .43, size.height * .76)
-      ..lineTo(size.width * .63, size.height * .655)
-      ..close();
-    canvas.drawPath(play, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BrandTitle extends StatelessWidget {
@@ -308,7 +280,7 @@ class _ShellState extends State<Shell> {
       api: api,
       store: widget.store,
       title: 'الأفلام',
-      categoryId: 'movie-foreign',
+      categoryId: 'browse-movies',
       mediaKind: 'movie',
       unified: true,
     ),
@@ -316,7 +288,7 @@ class _ShellState extends State<Shell> {
       api: api,
       store: widget.store,
       title: 'المسلسلات',
-      categoryId: 'series-foreign',
+      categoryId: 'browse-series',
       mediaKind: 'series',
       unified: true,
     ),
@@ -324,7 +296,7 @@ class _ShellState extends State<Shell> {
       api: api,
       store: widget.store,
       title: 'الأنمي',
-      categoryId: 'movie-anime',
+      categoryId: 'browse-anime',
       mediaKind: 'anime',
       unified: true,
     ),
@@ -444,8 +416,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final Future<List<CatalogItem>> _latest = widget.api.category(
-    '3isk-latest',
+  late Future<List<CatalogItem>> _latest = widget.api.category(
+    'home-trending',
   );
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -456,8 +428,15 @@ class _HomePageState extends State<HomePage> {
         FutureBuilder<List<CatalogItem>>(
           future: _latest,
           builder: (context, snapshot) {
+            if (snapshot.connectionState!=ConnectionState.done) {
+              return const SizedBox(height:180,child:Center(child:CircularProgressIndicator()));
+            }
+            if(snapshot.hasError) {
+              return TextButton.icon(onPressed:()=>setState((){_latest=widget.api.category('home-trending');}),
+                icon:const Icon(Icons.refresh),label:const Text('تعذر تحميل الرئيسية — إعادة المحاولة'));
+            }
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const SizedBox.shrink();
+              return const Padding(padding:EdgeInsets.all(24),child:Text('لا توجد أعمال متاحة في الرئيسية حالياً'));
             }
             final item = snapshot.data!.first;
             return FocusHighlight(
@@ -469,9 +448,9 @@ class _HomePageState extends State<HomePage> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        if (item.poster.isNotEmpty)
+                        if (item.poster.isNotEmpty || item.backdrop.isNotEmpty)
                           Image.network(
-                            item.poster,
+                            item.backdrop.isNotEmpty?item.backdrop:item.poster,
                             fit: BoxFit.cover,
                             cacheWidth: 1000,
                             errorBuilder: (_, _, _) => const SizedBox.shrink(),
@@ -491,7 +470,7 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('أحدث الإضافات'),
+                              const Text('الرائج الآن'),
                               const SizedBox(height: 8),
                               Text(
                                 item.title,
@@ -503,14 +482,11 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(height: 12),
                               FilledButton.icon(
-                                onPressed: () => openDetails(
-                                  context,
-                                  widget.api,
-                                  widget.store,
-                                  item,
-                                ),
-                                icon: const Icon(Icons.play_arrow),
-                                label: const Text('التفاصيل والتشغيل'),
+                                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                                  builder:(_)=>Scaffold(appBar:AppBar(title:const Text('استكشاف')),
+                                    body:SearchPage(api:widget.api,store:widget.store,initialQuery:item.title)))),
+                                icon: const Icon(Icons.search),
+                                label: const Text('استكشاف العمل'),
                               ),
                             ],
                           ),
@@ -537,13 +513,13 @@ class _HomePageState extends State<HomePage> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => Scaffold(
-                    appBar: AppBar(title: const Text('البحث')),
+                    appBar: AppBar(title: const Text('استكشاف')),
                     body: SearchPage(api: widget.api, store: widget.store),
                   ),
                 ),
               ),
               icon: const Icon(Icons.search),
-              label: const Text('البحث'),
+              label: const Text('استكشاف'),
             ),
           ],
         ),
@@ -574,6 +550,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        const Padding(padding:EdgeInsets.only(top:24,bottom:8),
+          child:Text('This product uses the TMDB API but is not endorsed or certified by TMDB.',
+            textDirection:TextDirection.ltr,style:TextStyle(fontSize:11,color:Colors.white54))),
       ],
     ),
   );
@@ -590,10 +569,17 @@ class LivePage extends StatelessWidget {
   final LocalLibraryStore store;
   final List<ConfiguredTvChannel> channels;
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => LayoutBuilder(builder:(context,bounds) {
+    if(bounds.maxHeight<420) {
+      return SingleChildScrollView(child:SizedBox(height:720,child:_content(context)));
+    }
+    return _content(context);
+  });
+  Widget _content(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Expanded(
+      SizedBox(
+        height:(260+80*(MediaQuery.textScalerOf(context).scale(14)/14-1).clamp(0,1)).toDouble(),
         child: MatchesPage(api: api, store: store),
       ),
       Padding(
@@ -603,11 +589,7 @@ class LivePage extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
       ),
-      if (channels.isEmpty)
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: Text('لا توجد قنوات مباشرة مهيأة حاليًا'),
-        ),
+      if (channels.isEmpty) Expanded(child:_DiscoveredChannels(api:api,store:store)),
       if (channels.isNotEmpty)
         Expanded(
           child: ListView(
@@ -650,6 +632,49 @@ class LivePage extends StatelessWidget {
         ),
     ],
   );
+}
+
+class _DiscoveredChannels extends StatefulWidget {
+  const _DiscoveredChannels({required this.api,required this.store});
+  final MitvApi api;
+  final LocalLibraryStore store;
+  @override
+  State<_DiscoveredChannels> createState()=>_DiscoveredChannelsState();
+}
+class _DiscoveredChannelsState extends State<_DiscoveredChannels> {
+  late Future<List<CatalogItem>> future;
+  @override
+  void initState(){super.initState();future=widget.api.liveChannels();}
+  @override
+  Widget build(BuildContext context)=>FutureBuilder<List<CatalogItem>>(
+    future:future,builder:(context,snapshot) {
+      if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
+      if(snapshot.hasError) { return Center(child:TextButton.icon(
+        onPressed:()=>setState((){future=widget.api.liveChannels();}),
+        icon:const Icon(Icons.refresh),label:const Text('تعذر تحميل القنوات — إعادة المحاولة'))); }
+      final rows=snapshot.data??const <CatalogItem>[];
+      if(rows.isEmpty) { return const Align(alignment:Alignment.topCenter,
+        child:Padding(padding:EdgeInsets.all(16),child:Text('لا توجد قنوات مباشرة مهيأة حاليًا'))); }
+      return LayoutBuilder(builder:(context,bounds)=>GridView.builder(
+        padding:const EdgeInsets.all(12),
+        gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount:AdaptiveCatalogGrid.columnsFor(bounds.maxWidth),mainAxisExtent:112+40*MediaQuery.textScalerOf(context).scale(14)/14,
+          crossAxisSpacing:12,mainAxisSpacing:12),
+        itemCount:rows.length,itemBuilder:(context,index) {
+          final row=rows[index];
+          return FocusHighlight(child:Card(child:InkWell(
+            onTap:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>PlayerPage(
+              api:widget.api,store:widget.store,item:row,title:row.title,sourceRef:row.ref,isLive:true))),
+            child:Padding(padding:const EdgeInsets.all(12),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+              if(row.poster.isEmpty)const Icon(Icons.live_tv,size:32)
+              else Image.network(row.poster,width:48,height:40,fit:BoxFit.contain,
+                errorBuilder:(_,_,_)=>const Icon(Icons.live_tv,size:32)),
+              const SizedBox(height:8),Text(row.title,maxLines:2,overflow:TextOverflow.ellipsis,textAlign:TextAlign.center),
+            ])),
+          )));
+        },
+      ));
+    });
 }
 
 class SettingsPage extends StatefulWidget {
@@ -791,7 +816,13 @@ class _TeamBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, bounds) {
-      final diameter = bounds.maxWidth.clamp(0.0, isTvTarget ? 82.0 : 62.0);
+      final label=TextPainter(text:TextSpan(text:name,style:DefaultTextStyle.of(context).style),
+        maxLines:2,ellipsis:'…',textDirection:Directionality.of(context),textScaler:MediaQuery.textScalerOf(context))
+        ..layout(maxWidth:bounds.maxWidth);
+      final labelHeight=label.height;
+      label.dispose();
+      final heightLimit=bounds.hasBoundedHeight ? (bounds.maxHeight-labelHeight-7).clamp(0.0,82.0) : 82.0;
+      final diameter=bounds.maxWidth.clamp(0.0,isTvTarget?82.0:62.0).clamp(0.0,heightLimit);
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1075,52 +1106,38 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   late String selectedCategory = widget.categoryId;
   static const seriesCategories = <String, String>{
-    'laroza-series': 'لاروزا — مسلسلات',
-    'alooy-series': 'Alooy TV',
-    'series-foreign': 'أكوام — أجنبية',
-    'series-arabic': 'أكوام — عربية',
-    'series-turkish': 'أكوام — تركية',
+    'browse-series': 'جميع المسلسلات',
+    'series-foreign': 'أجنبية',
+    'series-arabic': 'عربية',
+    'series-turkish': 'تركية',
   };
   static const iskCategories = <String, String>{
-    '3isk-latest': 'قصة عشق (أحدث الحلقات)',
+    '3isk-latest': 'أحدث الحلقات التركية',
     '3isk-turkish': 'جميع المسلسلات (مترجم ومدبلج)',
     '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
     '3isk-movies': 'جميع الأفلام',
   };
   Map<String, String> get _categories {
-    switch (widget.mediaKind) {
-      case 'movie':
-        return {
-          'movie-foreign': 'أكوام — أفلام أجنبية',
-          'movie-arabic': 'أكوام — أفلام عربية',
-          'laroza-movies': 'لاروزا — أفلام',
-          '3isk-movies': 'قصة عشق — أفلام',
-        };
-      case 'series':
-        return {
-          ...seriesCategories,
-          for (final entry in iskCategories.entries)
-            if (entry.key != '3isk-movies') entry.key: entry.value,
-        };
-      case 'anime':
-        return {
-          'movie-anime': 'أكوام — أفلام أنمي',
-          'series-anime': 'أكوام — مسلسلات أنمي',
-          'laroza-anime': 'لاروزا — أنمي',
-        };
-      default:
-        return widget.unified
-            ? {
-                'movie-foreign': 'أكوام — أفلام أجنبية',
-                'movie-arabic': 'أكوام — أفلام عربية',
-                ...seriesCategories,
-                ...iskCategories,
-              }
-            : widget.categoryId.startsWith('3isk-')
-            ? iskCategories
-            : seriesCategories;
+    final categories = switch(widget.mediaKind) {
+      'movie'=> <String,String>{'browse-movies':'جميع الأفلام',
+        'browse-movie-foreign':'أفلام أجنبية','browse-movie-arabic':'أفلام عربية',
+        'browse-movie-turkish':'أفلام تركية','browse-movie-indian':'أفلام هندية'},
+      'series'=> <String,String>{'browse-series':'جميع المسلسلات',
+        'browse-series-foreign':'مسلسلات أجنبية','browse-series-arabic':'مسلسلات عربية',
+        'browse-series-turkish':'مسلسلات تركية','browse-series-asian':'مسلسلات آسيوية',
+        'browse-series-ramadan':'مسلسلات رمضان'},
+      'anime'=> <String,String>{'browse-anime':'جميع الأنمي',
+        'browse-anime-movies':'أفلام أنمي','browse-anime-series':'مسلسلات أنمي'},
+      _=> widget.categoryId.startsWith('3isk-') ? <String,String>{...iskCategories}
+        : <String,String>{'browse-movies':'جميع الأفلام',...seriesCategories},
+    };
+    // Preserve old deep links without presenting providers as category filters.
+    if(!categories.containsKey(widget.categoryId)) {
+      categories[widget.categoryId]=iskCategories[widget.categoryId] ?? 'التصنيف المحدد';
     }
+    return categories;
   }
+
 
   bool _matchesKind(CatalogItem item) {
     return widget.mediaKind == null ||
@@ -1138,12 +1155,19 @@ class _CatalogPageState extends State<CatalogPage> {
   void initState() {
     super.initState();
     controller.addListener(_onScroll);
+    widget.api.sourceMetadataChanges.addListener(_sourceLabelsChanged);
+    unawaited(_loadSourceLabels());
     _loadMore();
   }
 
+  void _sourceLabelsChanged() {if(mounted)setState((){});}
+  Future<void> _loadSourceLabels() async {
+    try {await widget.api.searchProviders();} catch (_) { /* General browsing remains available. */ }
+  }
   @override
   void dispose() {
     requestGeneration += 1;
+    widget.api.sourceMetadataChanges.removeListener(_sourceLabelsChanged);
     controller.dispose();
     super.dispose();
   }
@@ -1274,15 +1298,10 @@ class _CatalogPageState extends State<CatalogPage> {
       Expanded(
         child: RefreshIndicator(
           onRefresh: _refresh,
-          child: GridView.builder(
+          child: AdaptiveCatalogGrid(
+            isTv: isTvTarget,
             controller: controller,
             padding: EdgeInsets.all(isTvTarget ? 24 : 12),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: isTvTarget ? 260 : 220,
-              childAspectRatio: isTvTarget ? .68 : .62,
-              crossAxisSpacing: isTvTarget ? 18 : 10,
-              mainAxisSpacing: isTvTarget ? 18 : 10,
-            ),
             itemCount: items.length + 1,
             itemBuilder: (context, i) {
               if (i == items.length) {
@@ -1307,6 +1326,7 @@ class _CatalogPageState extends State<CatalogPage> {
               final item = items[i];
               return _CatalogCard(
                 item: item,
+                sourceLabel:widget.api.sourceDisplayLabel(item),
                 onTap: () =>
                     openDetails(context, widget.api, widget.store, item),
               );
@@ -1319,7 +1339,12 @@ class _CatalogPageState extends State<CatalogPage> {
 }
 
 class _CatalogCard extends StatelessWidget {
-  const _CatalogCard({required this.item, required this.onTap});
+  const _CatalogCard({
+    required this.item,
+    required this.onTap,
+    this.sourceLabel = '',
+  });
+  final String sourceLabel;
   final CatalogItem item;
   final VoidCallback onTap;
   @override
@@ -1371,6 +1396,7 @@ class _CatalogCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
+                  if (sourceLabel.isNotEmpty) Text(sourceLabel, maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
                   Text(
                     [
@@ -1382,6 +1408,10 @@ class _CatalogCard extends StatelessWidget {
                         _ => 'عمل',
                       },
                       if (item.year != null) '${item.year}',
+                      if ((item.runtimeMinutes ?? 0) > 0) '${item.runtimeMinutes} د',
+                      if (item.season != null) 'S${item.season}',
+                      if (item.episode != null) 'E${item.episode}',
+                      if ((item.episodeCount ?? 0) > 0) '${item.episodeCount} حلقة',
                     ].join(' • '),
                     style: const TextStyle(
                       color: Color(0xFFB8B09F),
@@ -1399,7 +1429,8 @@ class _CatalogCard extends StatelessWidget {
 }
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key, required this.api, required this.store});
+  const SearchPage({super.key, required this.api, required this.store,this.initialQuery=''});
+  final String initialQuery;
   final MitvApi api;
   final LocalLibraryStore store;
   @override
@@ -1413,7 +1444,44 @@ class _SearchPageState extends State<SearchPage> {
   bool submitted = false;
   String? error;
   Timer? debounce;
+  String providerId = '';
+  List<Map<String, dynamic>> providers = const [];
+  String? providersError;
+  bool providersLoading = false;
   int generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    loadProviders();
+    if(widget.initialQuery.trim().isNotEmpty) {
+      query.text=widget.initialQuery;
+      WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)run();});
+    }
+  }
+
+  Future<void> loadProviders() async {
+    if (providersLoading) return;
+    setState(() {
+      providersLoading = true;
+      providersError = null;
+    });
+    try {
+      final result = await widget.api.searchProviders();
+      if (mounted) {
+        setState(() {
+          providers = result;
+          providersError = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => providersError = 'تعذر تحميل المصادر');
+      }
+    } finally {
+      if (mounted) setState(() => providersLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -1436,11 +1504,19 @@ class _SearchPageState extends State<SearchPage> {
       });
       return;
     }
+    generation += 1;
+    setState(() {
+      items = const [];
+      loading = false;
+      submitted = false;
+      error = null;
+    });
     if (q.length < 2) return;
     debounce = Timer(const Duration(milliseconds: 450), () => run(q));
   }
 
   Future<void> run([String? requested]) async {
+    debounce?.cancel();
     final q = (requested ?? query.text).trim();
     if (q.isEmpty) return;
     final request = ++generation;
@@ -1448,20 +1524,23 @@ class _SearchPageState extends State<SearchPage> {
       loading = true;
       submitted = true;
       error = null;
+      items = const [];
     });
     try {
-      final result = await widget.api.search(q);
+      final result = await widget.api.search(q, providerId: providerId);
       if (!mounted || request != generation || q != query.text.trim()) return;
       setState(() {
         items = result;
         loading = false;
       });
-    } catch (_) {
+    } catch (failure) {
       if (!mounted || request != generation) return;
       setState(() {
         items = const [];
         loading = false;
-        error = 'تعذر البحث حاليًا. أعد المحاولة.';
+        error = failure.toString().contains('SEARCH_UNSUPPORTED')
+            ? 'البحث غير مدعوم في هذا المصدر'
+            : 'المصدر غير متاح حاليًا. أعد المحاولة.';
       });
     }
   }
@@ -1471,20 +1550,49 @@ class _SearchPageState extends State<SearchPage> {
     padding: EdgeInsets.all(isTvTarget ? 24 : 12),
     child: Column(
       children: [
+        DropdownButtonFormField<String>(
+          initialValue: providerId,
+          decoration: const InputDecoration(labelText: 'مصدر الاستكشاف'),
+          items: [
+            const DropdownMenuItem(value: '', child: Text('جميع المصادر')),
+            for (final p in providers)
+              DropdownMenuItem(value: '${p['id']}', child: Text('${p['displayName']}')),
+          ],
+          onChanged: (value) {
+            debounce?.cancel();
+            generation += 1;
+            setState(() {
+              providerId = value ?? '';
+              items = const [];
+              loading = false;
+              submitted = false;
+              error = null;
+            });
+            if (query.text.trim().isNotEmpty) run();
+          },
+        ),
+        if (providersError != null)
+          TextButton(
+            onPressed: providersLoading ? null : loadProviders,
+            child: Text('$providersError — إعادة المحاولة'),
+          ),
         TextField(
           controller: query,
           textInputAction: TextInputAction.search,
           onChanged: onQueryChanged,
           onSubmitted: (_) => run(),
           decoration: InputDecoration(
-            hintText: 'ابحث عن فيلم أو مسلسل',
+            hintText: 'استكشاف: اسم فيلم أو مسلسل',
             suffixIcon: IconButton(
               onPressed: loading ? null : () => run(),
               icon: const Icon(Icons.search),
             ),
           ),
         ),
-        if (loading) const LinearProgressIndicator(),
+        if (loading)
+          const Column(
+            children: [LinearProgressIndicator(), Text('جارٍ البحث…')],
+          ),
         const SizedBox(height: 10),
         Expanded(
           child: error != null
@@ -1504,17 +1612,13 @@ class _SearchPageState extends State<SearchPage> {
               : submitted && !loading && items.isEmpty
               ? const Center(child: Text('لا توجد نتائج لهذا البحث حاليًا'))
               : !submitted
-              ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للبحث'))
-              : GridView.builder(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: isTvTarget ? 260 : 220,
-                    childAspectRatio: isTvTarget ? .68 : .62,
-                    crossAxisSpacing: isTvTarget ? 18 : 10,
-                    mainAxisSpacing: isTvTarget ? 18 : 10,
-                  ),
+              ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للاستكشاف'))
+              : AdaptiveCatalogGrid(
+                  isTv: isTvTarget,
                   itemCount: items.length,
                   itemBuilder: (context, i) => _CatalogCard(
                     item: items[i],
+                    sourceLabel: widget.api.sourceDisplayLabel(items[i]),
                     onTap: () => openDetails(
                       context,
                       widget.api,

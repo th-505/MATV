@@ -195,9 +195,14 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     api.close();
   });
+  for (final dimensions in [const Size(320, 640), const Size(844, 390), const Size(1280, 720), const Size(1920, 1080)]) {
   for (final format in ['hls', 'mp4']) {
-    testWidgets('download control follows actual $format source format',
+    testWidgets('RTL overlay fits $dimensions and download follows $format',
         (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = dimensions;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       SharedPreferences.setMockInitialValues({});
       final store = await LocalLibraryStore.create();
       final api = MitvApi(
@@ -224,7 +229,7 @@ void main() {
               200,
               headers: {'content-type': 'application/json'})));
       await tester.pumpWidget(MaterialApp(
-          home: PlayerPage(
+          home: Directionality(textDirection: TextDirection.rtl, child: PlayerPage(
               api: api,
               store: store,
               item: const MediaItem(
@@ -236,10 +241,17 @@ void main() {
               title: 'movie',
               sourceRef: 'legacy:fixture',
               playerFactory: (u, t, h, software) => FakeEngine(u,
-                  mediaType: t, headers: h, software: software, fail: false))));
+                  mediaType: t, headers: h, software: software, fail: false)))));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
+      final overlay = tester.getRect(find.byKey(const Key('player-controls-overlay')));
+      final viewport = tester.getRect(find.byKey(const Key('fullscreen-video-viewport')));
+      expect(overlay.left, viewport.left);
+      expect(overlay.right, viewport.right);
+      expect(overlay.bottom, viewport.bottom);
+      expect(Directionality.of(tester.element(find.byKey(const Key('player-timeline')))), TextDirection.ltr);
+      expect(tester.takeException(), isNull);
       expect(find.byIcon(Icons.download),
           format == 'mp4' ? findsOneWidget : findsNothing);
       if (format == 'mp4') {
@@ -250,8 +262,18 @@ void main() {
                 .scheme,
             'https');
       }
+      await tester.tap(find.byKey(const Key('player-fullscreen-toggle')));
+      await tester.pump(const Duration(milliseconds:100));
+      final frame = tester.getRect(find.byKey(const Key('player-viewport-frame')));
+      final boundedOverlay = tester.getRect(find.byKey(const Key('player-controls-overlay')));
+      expect(boundedOverlay.left,frame.left);
+      expect(boundedOverlay.right,frame.right);
+      expect(boundedOverlay.bottom,frame.bottom);
+      expect(boundedOverlay.top,greaterThanOrEqualTo(frame.top));
+      expect(tester.takeException(),isNull);
       await tester.pumpWidget(const SizedBox());
       api.close();
     });
+  }
   }
 }

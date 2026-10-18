@@ -1,4 +1,7 @@
 import http from "node:http";
+import { createLiveCatalog } from "./live-catalog.mjs";
+import { createCatalogFeed, FEED_CATEGORIES } from "./catalog-feed.mjs";
+import { presentSearchResults } from "./search-presentation.mjs";
 import { directSource, probeDirectMedia, filterBrowserSources } from "./direct-media.mjs";
 import {
   assertSourceUrl,
@@ -17,12 +20,13 @@ import { createLarozaProvider, LAROZA_CATEGORIES, assertLarozaRef } from './prov
 import { ISK_CATEGORIES, decode3iskRef } from "./providers/3isk.mjs";
 import { decodeAlooyRef } from './providers/alooy.mjs';
 import { createCatalogMetadataCache } from './catalog-metadata-cache.mjs';
-import { createSupabaseCatalogStore } from './provider-store.mjs';
+import { createSupabaseCatalogStore, createSupabaseFeedStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
-import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
+import { buildRuntimeEnvelope, normalizeCatalogItem, PRODUCT_VERSION } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, searchProviderCatalog, activateAllScrapersForContent } from "./scrapers/index.mjs";
-import { getProvider, resolveProviderReference } from "./scrapers/registry.mjs";
+import { sourceDisplayName, sourceDisplayNames } from "./source-display.mjs";
+import { listProviders, PROVIDER_ALIASES, getProvider, resolveProviderReference } from "./scrapers/registry.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -109,7 +113,7 @@ function applyCors(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
   res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,Content-Disposition");
 }
@@ -315,17 +319,17 @@ async function cinemaCategory(sourceUrl, page = 1) {
   return { status: "success", source: result.source, data: normalizeCatalog(items) };
 }
 
-export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cinemaSearch, fetchCategory = cinemaCategory, fetchMatches = getMatches, searchScraper = scrapeRealSearch, alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider() } = {}) {
+export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = null, fetchCategory = cinemaCategory, fetchMatches = getMatches, searchScraper = scrapeRealSearch, alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider() } = {}) {
   return createContentRuntimeService({
     fetchMatches,
     async searchCatalog(query, { signal = null } = {}) {
-      const sourceSearches = [
+      const sourceSearches = searchCatalog ? [
         () => searchCatalog(query, { signal }),
         () => iskRuntime.search(query, { signal }),
         () => alooyRuntime.search(query, { signal }),
         () => larozaRuntime.search(query, 1, { signal }),
         () => searchScraper(query, { signal })
-      ];
+      ] : [() => searchScraper(query, { signal })];
       const results = await awaitRequestSignal(
         Promise.allSettled(sourceSearches.map((search) => search())),
         signal
@@ -335,12 +339,12 @@ export function createIntegratedContentRuntime(iskRuntime, { searchCatalog = cin
       const data = success.flatMap(result => Array.isArray(result.value)
         ? result.value
         : Array.isArray(result.value?.data) ? result.value.data : []);
-      const sourceNames = ['basri-original', '3isk', 'alooy', 'laroza', 'registered-scrapers'];
+      const sourceNames = searchCatalog ? ['basri-original', '3isk', 'alooy', 'laroza', 'registered-scrapers'] : ['registered-scrapers'];
       const sourceDiagnostics = results.map((result, index) => {
         if (result.status === 'rejected') return { source: sourceNames[index], state: 'failed', error: String(result.reason?.code || result.reason?.message || 'UPSTREAM_FAILED').slice(0, 100) };
         const payload = result.value;
         const items = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
-        if (index === 4 && payload?._meta?.providerResults) {
+        if (sourceNames[index] === 'registered-scrapers' && payload?._meta?.providerResults) {
           return {
             source: sourceNames[index], state: payload._meta.state || 'no_results', item_count: items.length,
             providers: payload._meta.providerResults.map(({ providerId, state, errorCode, errorMessage, count, elapsedMs }) => ({
@@ -575,7 +579,7 @@ export function assertCatalogReference(ref) {
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now, providerSearch = searchProviderCatalog, providerDetails = scrapeRealDetails,
-  catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
+  liveCatalog=createLiveCatalog(), catalogFeedStore=createSupabaseFeedStore(), catalogFeed=createCatalogFeed({store:catalogFeedStore}), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
   runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
@@ -602,7 +606,20 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     try {
       if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
-      if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
+      if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: [...Object.entries(FEED_CATEGORIES).map(([id, row]) => ({id,...row})), ...CatalogCategories] });
+      // Additive presentation contract; identities and the existing status route stay intact.
+      if (url.pathname === '/api/v1/search/providers') return sendJson(req, res, 200, {
+        status: 'success', data: listProviders().map(meta => ({
+          id: meta.id, displayName: sourceDisplayName(meta.name || meta.id),
+          displayNames: sourceDisplayNames(meta.name || meta.id),
+          aliases: Object.entries(PROVIDER_ALIASES).filter(([, id]) => id === meta.id).map(([alias]) => alias),
+          domains: meta.domains || [], supportsSearch: Boolean(meta.capabilities?.search && typeof getProvider(meta.id)?.module.scrapeSearch === 'function')
+        }))
+      });
+      if (url.pathname === '/api/v1/live/channels') {
+        const result=await liveCatalog.read();
+        return sendJson(req,res,result.status==='error'?503:200,result);
+      }
       if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status(), alooyRuntime.status(), larozaRuntime.status()] });
       if (url.pathname === '/api/v1/provider/category') {
         const providerId = url.searchParams.get('provider') || '';
@@ -672,9 +689,9 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
               : result.status === 'error' ? 503 : 200;
             return sendJson(req, res, statusCode, {
               status: result.status || 'success',
-              version: runtimeService.version || '1.0.44', kind: 'search', source: result.provider_id || provider,
+              version: runtimeService.version || PRODUCT_VERSION, kind: 'search', source: result.provider_id || provider,
               cached: false, health: result.diagnostics || null, provider_id: result.provider_id || provider,
-              error: result.error || null, data: result.data || []
+              error: result.error || null, data: presentSearchResults(result.data, query)
             });
           }
           const result = await awaitRequestSignal(
@@ -684,7 +701,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           if (result.diagnostics?.state === 'failed') {
             return sendJson(req, res, 503, { ...result, status: 'error', error: { code: 'CATALOG_SEARCH_UNAVAILABLE' } });
           }
-          return sendJson(req, res, 200, result);
+          return sendJson(req, res, 200, { ...result, data: presentSearchResults(result.data, query) });
         } catch (error) {
           if (searchScope.clientDisconnected || res.destroyed) return;
           if (searchScope.timedOut) return sendJson(req, res, 504, {
@@ -743,7 +760,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         }
 
         // إذا لم نجد مصادر بالـ ref أو كان المطلوب عبر title، نقوم بتفعيل وتشغيل جميع القواشط المحلية
-        if (rawServers.length === 0 && title) {
+        if (rawServers.length === 0 && title && !ref) {
           try {
             const activated = await activateAllScrapersForContent(title, season, episode);
             if (Array.isArray(activated) && activated.length > 0) {
@@ -829,6 +846,10 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       if (url.pathname === "/api/v1/category") {
         const ref = url.searchParams.get('ref') || '';
+        if (Object.hasOwn(FEED_CATEGORIES,ref)) {
+          const result = await catalogFeed.read(ref, Number(url.searchParams.get('p') || 1));
+          return sendJson(req,res,result.status === 'error' ? 503 : 200,result);
+        }
         if (Object.hasOwn(LAROZA_CATEGORIES,ref)) {
           const result = await larozaRuntime.category(ref,Number(url.searchParams.get('p') || 1));
           if(ref==='laroza-latest' && Number(url.searchParams.get('p') || 1)===1) catalog.observeLatest(result.data);
@@ -846,6 +867,16 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/api/matches/servers") return sendJson(req, res, 200, await getMatchServers(url.searchParams.get("url") || ""));
       if (url.pathname === "/api/cinema/search") return sendJson(req, res, 200, await cinemaSearch((url.searchParams.get("q") || "").trim()));
       if (url.pathname === "/api/cinema/category") return sendJson(req, res, 200, await cinemaCategory(url.searchParams.get("url") || "", Number(url.searchParams.get("p") || 1)));
+      if (url.pathname === '/api/cinema/open') {
+        if(req.method!=='POST') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        const ref=url.searchParams.get('ref') || '';
+        if(!ref || Buffer.byteLength(ref)>1536 || /[\r\n\x00]/.test(ref)) return sendJson(req,res,400,{status:'error',message:'BAD_CINEMA_REFERENCE'});
+        const provider=resolveProviderReference(ref)?.meta.id || (ref.startsWith('legacy:') ? assertCatalogReference(ref) : null);
+        if(!provider) return sendJson(req,res,400,{status:'error',message:'BAD_CINEMA_REFERENCE'});
+        if(!catalogFeedStore) return sendJson(req,res,503,{status:'error',message:'ACTIVITY_STORE_UNAVAILABLE'});
+        await catalogFeedStore.recordOpen(provider,ref);
+        return sendJson(req,res,202,{status:'success'});
+      }
       if (url.pathname === '/api/cinema/metadata') {
         if(req.method!=='GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         const ref = url.searchParams.get('ref') || '';
@@ -866,6 +897,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       return sendJson(req, res, 404, { error: "NOT_FOUND" });
     } catch (error) {
+      if(error?.message==='FEED_BUSY') return sendJson(req,res,503,{status:'error',message:error.message});
+      if(error?.message==='FEED_BAD_REQUEST') return sendJson(req,res,400,{status:'error',message:error.message});
       if(error?.message==='BAD_CINEMA_REFERENCE') return sendJson(req,res,400,{status:'error',message:error.message});
       if(error?.message==='CATALOG_BUSY') return sendJson(req,res,503,{status:'error',message:error.message});
       if (String(error?.message).startsWith('LAROZA_BAD_REFERENCE') || String(error?.message).startsWith('LAROZA_BAD_CATEGORY') || String(error?.message).startsWith('LAROZA_BAD_PAGE') || String(error?.message).startsWith('ALOOY_BAD_') || String(error?.message).startsWith('3ISK_BAD_') || String(error?.message).startsWith('3ISK_EXPECTED_')) return sendJson(req, res, 400, { status: 'error', message: error.message });

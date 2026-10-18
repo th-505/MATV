@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'title_overview_header.dart';
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 import 'app_target.dart';
@@ -57,6 +59,15 @@ class _DetailsPageState extends State<DetailsPage> {
     _ownsDownloads = widget.downloads == null;
     widget.api.rememberIdentity(widget.item);
     future = widget.api.details(widget.item.ref);
+    unawaited(_loadSources());
+  }
+
+  Future<void> _loadSources() async {
+    try {
+      await widget.api.searchProviders();
+    } catch (_) {
+      // The shared API state exposes the failure and enables the retry action.
+    }
   }
 
   @override
@@ -75,7 +86,7 @@ class _DetailsPageState extends State<DetailsPage> {
     super.dispose();
   }
 
-  void retry() => setState(() => future = widget.api.details(widget.item.ref));
+  void retry() => setState(() { future = widget.api.details(widget.item.ref); });
 
   FocusNode _episodeFocus(EpisodeItem episode) {
     final key = '${episode.id}:${episode.number}';
@@ -264,11 +275,28 @@ class _DetailsPageState extends State<DetailsPage> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: Listenable.merge([widget.store, widget.api.sourceMetadataChanges]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
-          title: Text(widget.item.title),
+          title: Text(
+            [widget.item.title, widget.api.sourceDisplayLabel(widget.item)]
+                .where((s) => s.isNotEmpty)
+                .join(' • '),
+          ),
           actions: [
+            if (widget.api.sourceMetadataLoading)
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: SizedBox(
+                  width: 18, height: 18, child: CircularProgressIndicator(),
+                ),
+              ),
+            if (widget.api.sourceMetadataError != null)
+              IconButton(
+                tooltip: 'إعادة محاولة تحميل المصادر',
+                icon: const Icon(Icons.refresh),
+                onPressed: () => unawaited(_loadSources()),
+              ),
             IconButton(
               tooltip: widget.store.isFavorite(widget.item.ref)
                   ? 'إزالة من المفضلة'
@@ -323,17 +351,15 @@ class _DetailsPageState extends State<DetailsPage> {
             return ListView(
               padding: EdgeInsets.all(isTvTarget ? 28 : 16),
               children: [
-                if (details.poster.isNotEmpty)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 420),
-                    child: Image.network(details.poster, fit: BoxFit.contain),
-                  ),
-                const SizedBox(height: 16),
-                Text(
-                  details.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                TitleOverviewHeader(
+                  title:details.title,poster:details.poster,plot:details.plot,
+                  facts:[
+                    if(details.year!=null) '${details.year}',
+                    if((widget.item.runtimeMinutes??0)>0) '${widget.item.runtimeMinutes} د',
+                    if(details.season!=null) 'S${details.season}',
+                    if(details.episode!=null) 'E${details.episode}',
+                    if(details.episodes.isNotEmpty) '${details.episodes.length} حلقات متاحة',
+                  ],
                 ),
                 const SizedBox(height: 12),
                 if (details.hasEpisodes) ...[

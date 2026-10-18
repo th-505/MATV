@@ -37,3 +37,35 @@ class AdaptiveViewport extends StatelessWidget {
                 textScaler: media.textScaler));
       });
 }
+
+/// All catalog/search grids share breakpoints based on their parent constraints.
+class AdaptiveCatalogGrid extends StatelessWidget {
+  const AdaptiveCatalogGrid({super.key, this.controller, this.padding,
+    required this.itemCount, required this.itemBuilder, this.isTv = false});
+  final ScrollController? controller;
+  final EdgeInsetsGeometry? padding;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final bool isTv;
+
+  static int columnsFor(double width) => width < 600 ? 2 : width < 900 ? 4
+      : width < 1200 ? 6 : width < 1600 ? 8 : 10;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, bounds) {
+    final columns = columnsFor(bounds.maxWidth);
+    final gap = isTv ? 18.0 : 10.0;
+    final insets = (padding ?? EdgeInsets.zero).resolve(Directionality.of(context));
+    final cardWidth = (bounds.maxWidth-insets.horizontal-gap*(columns-1))/columns;
+    final scale = MediaQuery.textScalerOf(context).scale(14)/14;
+    return GridView.builder(
+      controller: controller, padding: padding,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        mainAxisExtent: cardWidth*1.5 + 140*scale,
+        crossAxisSpacing: gap, mainAxisSpacing: gap,
+      ),
+      itemCount: itemCount, itemBuilder: itemBuilder,
+    );
+  });
+}

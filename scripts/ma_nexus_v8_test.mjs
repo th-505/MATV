@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   encodeProviderServerName,
+  generateCloudFallbackServers,
   classifyLatencyTier,
   deduplicateAndMergeCatalog,
   normalizeEpisodesList,
   formatRuntimeArabic
 } from '../web/core/ma-nexus.js';
+
+assert.deepEqual(generateCloudFallbackServers('42',false),[]);
 
 // 1. Server code encryption contract (never expose raw scraper names)
 assert.equal(encodeProviderServerName('akwam', 1), 'AK-1');
@@ -45,6 +48,9 @@ assert.ok(!eps.some(e => String(e.title).includes('undefined') || String(e.label
 // 5. Arabic runtime formatting
 assert.equal(formatRuntimeArabic(115, 'movie'), '1س 55د');
 assert.equal(formatRuntimeArabic(45, 'tv'), '45 د');
+assert.equal(formatRuntimeArabic(null, 'tv'), '');
+assert.equal(formatRuntimeArabic(undefined, 'movie'), '');
+assert.equal(formatRuntimeArabic(-1), '');
 
 // 6. index.html MA-NEXUS v8.0 architectural contract guard
 const indexHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');

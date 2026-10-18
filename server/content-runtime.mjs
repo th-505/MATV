@@ -1,4 +1,4 @@
-export const PRODUCT_VERSION = "1.0.44";
+export const PRODUCT_VERSION = "1.0.46";
 
 export class TtlCache {
   #entries = new Map();
@@ -33,7 +33,7 @@ export function normalizeCatalogItem(item={}) {
   const result = {
     id:asText(item.id||item.ref||item.href||item.link), title:asText(item.title||item.name)||'بدون عنوان',
     poster:asText(item.poster||item.img||item.image),
-    type:['movie','series','episode','anime'].includes(declaredType) ? declaredType : item.is_series===false ? 'movie' : 'series',
+    type:['movie','series','episode','anime','live','program','unknown'].includes(declaredType) ? declaredType : item.is_series===false ? 'movie' : item.is_series===true ? 'series' : 'unknown',
     year:asNumber(item.year), ref:asText(item.ref||item.href||item.link),
     ...(item.source ? {source:asText(item.source)} : {}),
   };
@@ -42,7 +42,7 @@ export function normalizeCatalogItem(item={}) {
   if (Array.isArray(item.genres)) result.genres = [...new Set(item.genres.filter(x => typeof x === 'string').map(x => x.trim().slice(0,64)).filter(Boolean))].slice(0,20);
   if (typeof item.category === 'string') result.category = asText(item.category).slice(0,64);
   for (const key of ['audio_language','edition']) if (Object.hasOwn(item,key)) result[key] = typeof item[key] === 'string' ? asText(item[key]).slice(0,120) : '';
-  for (const key of ['season_number','episode_number']) if (Object.hasOwn(item,key)) {
+  for (const key of ['season_number','episode_number','runtime_minutes','episode_count']) if (Object.hasOwn(item,key)) {
     const n = asNumber(item[key]); result[key] = Number.isInteger(n) && n >= 0 ? n : null;
   }
   if (Object.hasOwn(item,'imdb_id')) result.imdb_id = /^tt\d{5,12}$/.test(asText(item.imdb_id)) ? asText(item.imdb_id) : null;

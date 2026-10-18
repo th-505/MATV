@@ -27,7 +27,7 @@ def png_bytes(width: int, height: int, rgba: bytearray) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
 
 
-def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
+def mark(size: int, background: tuple[int, int, int, int], raw: bool = False):
     w = h = max(16, int(size))
     px = bytearray(background * (w * h))
 
@@ -79,11 +79,18 @@ def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
                 if not ((d1 < 0 or d2 < 0 or d3 < 0) and (d1 > 0 or d2 > 0 or d3 > 0)):
                     put(x, y, color)
 
-    points=[(.20,.78),(.20,.22),(.50,.50),(.80,.22),(.80,.78)]
-    for a,b in zip(points,points[1:]):
-        thick_line(w*a[0],h*a[1],w*b[0],h*b[1],w*.048)
-    triangle((w*.43,h*.55),(w*.43,h*.76),(w*.63,h*.655))
-    return png_bytes(w, h, px)
+    # Filled ribbon monogram: clear at launcher size, with a distinct play cutout.
+    def quad(points, color=ACCENT):
+        scaled=[(w*x,h*y) for x,y in points]
+        triangle(scaled[0],scaled[1],scaled[2],color)
+        triangle(scaled[0],scaled[2],scaled[3],color)
+    quad([(.20,.22),(.33,.22),(.33,.78),(.20,.78)])
+    quad([(.67,.22),(.80,.22),(.80,.78),(.67,.78)])
+    quad([(.27,.22),(.50,.43),(.50,.62),(.27,.41)])
+    quad([(.50,.43),(.73,.22),(.73,.41),(.50,.62)])
+    triangle((w*.44,h*.66),(w*.44,h*.82),(w*.60,h*.74))
+    return (w,h,px) if raw else png_bytes(w, h, px)
+
 
 
 def write_icon(path: Path, size: int, transparent: bool = False):
@@ -106,6 +113,16 @@ def apply_android(root: Path):
     for folder, size in sizes.items():
         write_icon(res / folder / "ic_launcher.png", size)
     write_icon(res / "drawable" / "launch_mitv.png", 256, transparent=True)
+    banner=bytearray(BACKGROUND*(320*180))
+    width,height,pixels=mark(144,TRANSPARENT,raw=True)
+    for y in range(height):
+        for x in range(width):
+            i=(y*width+x)*4
+            if pixels[i+3]:
+                target=((y+18)*320+x+88)*4
+                banner[target:target+4]=pixels[i:i+4]
+    (res / 'drawable/tv_banner.png').write_bytes(png_bytes(320,180,banner))
+
 
     # Android's layer-list item `android:drawable` requires a drawable resource
     # reference. Keep the splash background in a named color resource rather than
@@ -244,6 +261,11 @@ def apply_macos(root: Path):
     macos = root / "macos"
     if not macos.exists():
         return
+    contents=macos / 'Runner/Assets.xcassets/AppIcon.appiconset/Contents.json'
+    if contents.exists():
+        for image in json.loads(contents.read_text(encoding='utf-8')).get('images',[]):
+            if image.get('filename'):
+                write_icon(contents.parent/image['filename'],ios_pixel_size(image))
     plist = macos / "Runner/Info.plist"
     if plist.exists():
         with plist.open("rb") as fh:
@@ -270,6 +292,9 @@ def apply_macos(root: Path):
 
 def main():
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "flutter_app").resolve()
+    write_icon(root/'assets/brand_mark.png',512,transparent=True)
+    if (root.parent/'index.html').exists():
+        write_icon(root.parent/'web/assets/brand_mark.png',512,transparent=True)
     apply_android(root)
     apply_ios(root)
     apply_windows(root)

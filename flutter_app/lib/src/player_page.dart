@@ -4,6 +4,8 @@ import 'download_service.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'player_viewport_frame.dart';
+import 'playback_policy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -769,40 +771,36 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Widget _modernControls(UniversalPlayer activeController) => Container(
+    key: const Key('player-controls-overlay'),
     decoration: const BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Colors.transparent, Color(0xE6000000)],
+        colors: [Colors.transparent, Color(0xCC000000)],
       ),
     ),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ValueListenableBuilder<VideoPlayerValue>(
-          valueListenable: activeController,
-          builder: (context, value, _) => PlayerControls(
-            isPlaying: value.isPlaying,
-            isTv: isTvTarget,
-            playbackSpeed: _playbackSpeed,
-            onRewind: () => _seekBy(const Duration(seconds: -10)),
-            onTogglePlay: () => _togglePlay(activeController),
-            onForward: () => _seekBy(const Duration(seconds: 10)),
-            onPlaybackSpeedChanged: _setPlaybackSpeed,
-          ),
-        ),
-        ValueListenableBuilder<VideoPlayerValue>(
-          valueListenable: activeController,
-          builder: (context, value, _) {
-            final maximum = value.duration.inMilliseconds.toDouble();
-            return Column(
-              children: [
-                if (!widget.isLive || maximum > 0)
-                  Slider(
+    // The gradient reaches the viewport edges; only interactive content is inset.
+    child: SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(12, 20, 12, 8),
+      child: ValueListenableBuilder<VideoPlayerValue>(
+        valueListenable: activeController,
+        builder: (context, value, _) {
+          final maximum = value.duration.inMilliseconds.toDouble();
+          final remaining = value.duration - value.position;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!widget.isLive || maximum > 0)
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Slider(
+                    key: const Key('player-timeline'),
+                    activeColor: Colors.white,
+                    inactiveColor: Colors.white38,
+                    thumbColor: Colors.white,
                     value: value.position.inMilliseconds.toDouble().clamp(
-                      0,
-                      maximum > 0 ? maximum : 1,
+                      0, maximum > 0 ? maximum : 1,
                     ),
                     max: maximum > 0 ? maximum : 1,
                     onChanged: maximum > 0
@@ -811,18 +809,70 @@ class _PlayerPageState extends State<PlayerPage> {
                           )
                         : null,
                   ),
-                Text(
-                  widget.isLive
-                      ? 'بث مباشر • ${_time(value.position)}'
-                      : '${_time(value.position)} • المتبقي ${_time(value.duration - value.position)}',
-                  style: const TextStyle(fontSize: 12),
                 ),
-                _trackControls(activeController),
-              ],
-            );
-          },
-        ),
-      ],
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_time(value.position),
+                        style: const TextStyle(color: Colors.white)),
+                    Text(widget.isLive ? 'LIVE' : '-${_time(remaining.isNegative ? Duration.zero : remaining)}',
+                        style: const TextStyle(color: Colors.white70)),
+                  ],
+                ),
+              ),
+              LayoutBuilder(builder: (context, bounds) {
+                final compact = MediaQuery.sizeOf(context).height < 260;
+                final transport = PlayerControls(
+                  showPlaybackSpeed: !compact,
+                  isPlaying: value.isPlaying,
+                  isTv: isTvTarget,
+                  playbackSpeed: _playbackSpeed,
+                  onRewind: () => _seekBy(const Duration(seconds: -10)),
+                  onTogglePlay: () => _togglePlay(activeController),
+                  onForward: () => _seekBy(const Duration(seconds: 10)),
+                  onPlaybackSpeedChanged: _setPlaybackSpeed,
+                );
+                final tracks = IconTheme(
+                  data: const IconThemeData(color: Colors.white),
+                  child: _trackControls(activeController),
+                );
+                if (compact) {
+                  return Directionality(textDirection: TextDirection.ltr, child: Row(
+                    children: [Expanded(child:transport), IconButton(
+                      key:const Key('player-more-options'),
+                      tooltip:'خيارات المشغل', color:Colors.white,
+                      icon:const Icon(Icons.more_horiz),
+                      onPressed:() => showModalBottomSheet<void>(context:context,
+                        builder:(context) => SafeArea(child:Padding(
+                          padding:const EdgeInsets.all(16),
+                          child:Column(mainAxisSize:MainAxisSize.min,children:[
+                            DropdownButton<double>(value:_playbackSpeed,
+                              items:supportedPlaybackSpeeds.map((speed)=>DropdownMenuItem(
+                                value:speed,child:Text(playbackSpeedLabel(speed)))).toList(),
+                              onChanged:(speed){if(speed!=null){_setPlaybackSpeed(speed);Navigator.pop(context);}},
+                            ), tracks,
+                          ]),
+                        )),
+                      ),
+                    )],
+                  ));
+                }
+                if (bounds.maxWidth < 600) {
+                  return Column(mainAxisSize: MainAxisSize.min,
+                    children: [transport, Align(alignment: Alignment.centerRight, child: tracks)]);
+                }
+                return Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [Expanded(child: transport), Flexible(child: tracks)]),
+                );
+              }),
+            ],
+          );
+        },
+      ),
     ),
   );
 
@@ -1359,7 +1409,9 @@ class _PlayerPageState extends State<PlayerPage> {
           if (isTvTarget && event is KeyDownEvent) _revealControls();
           return KeyEventResult.ignored;
         },
-        child: SizedBox.expand(
+        child: PlayerViewportFrame(
+          fullscreen: _fullscreen,
+          videoSize: active?.value.size ?? const Size(16, 9),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -1513,6 +1565,7 @@ class _PlayerPageState extends State<PlayerPage> {
                         },
                       ),
                       IconButton(
+                        key: const Key('player-fullscreen-toggle'),
                         tooltip: _fullscreen ? 'تصغير' : 'ملء الشاشة',
                         icon: Icon(
                           _fullscreen
@@ -1525,9 +1578,9 @@ class _PlayerPageState extends State<PlayerPage> {
                   ),
                 ),
                 Positioned(
-                  left: insets.left,
-                  right: insets.right,
-                  bottom: insets.bottom,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                   child: _modernControls(active),
                 ),
               ],

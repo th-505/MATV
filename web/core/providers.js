@@ -28,6 +28,7 @@ export async function fetchJsonWithHealth(url, {
   timeoutMs = DEFAULT_TIMEOUT_MS,
   init = {},
   validate = () => true,
+  acceptErrorResponse = false,
 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -40,11 +41,11 @@ export async function fetchJsonWithHealth(url, {
     const response = await fetch(url, {
       ...init,
       cache: "no-store",
-      signal: controller.signal,
+      signal: init.signal ? AbortSignal.any([controller.signal, init.signal]) : controller.signal,
       headers,
     });
 
-    if (!response.ok) {
+    if (!response.ok && !acceptErrorResponse) {
       throw new ProviderError(`HTTP ${response.status}`, {
         kind,
         status: response.status,

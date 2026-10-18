@@ -9,6 +9,8 @@ import 'package:mitv/src/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RequestCountingApi extends MitvApi {
+  @override
+  Future<List<CatalogItem>> liveChannels() async => [];
   int matchesRequests = 0;
   int newsRequests = 0;
   int closeCalls = 0;
@@ -54,12 +56,12 @@ void main() {
 
     expect(api.matchesRequests, 0);
     expect(api.newsRequests, 0);
-    expect(api.categoryRequests, ['3isk-latest:1']);
+    expect(api.categoryRequests, ['home-trending:1']);
     expect(find.byType(CatalogPage, skipOffstage: false), findsNothing);
 
     await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
-    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
+    expect(api.categoryRequests, ['home-trending:1', 'browse-movies:1']);
     final cinemaState = tester.state(find.byType(CatalogPage));
 
     await tester.tap(find.text('الإعدادات'));
@@ -70,7 +72,7 @@ void main() {
     await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
     expect(tester.state(find.byType(CatalogPage)), same(cinemaState));
-    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
+    expect(api.categoryRequests, ['home-trending:1', 'browse-movies:1']);
 
     await tester.tap(find.text('المباشر'));
     await tester.pumpAndSettle();
@@ -78,16 +80,16 @@ void main() {
     await tester.tap(find.text('الرئيسية'));
     await tester.pumpAndSettle();
     expect(api.matchesRequests, 1);
-    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
+    expect(api.categoryRequests, ['home-trending:1', 'browse-movies:1']);
     expect(api.newsRequests, 0);
     expect(find.text('الأخبار'), findsNothing);
 
     await tester.tap(find.text('المسلسلات'));
     await tester.pumpAndSettle();
-    expect(api.categoryRequests.last, 'series-foreign:1');
+    expect(api.categoryRequests.last, 'browse-series:1');
     await tester.tap(find.text('الأنمي'));
     await tester.pumpAndSettle();
-    expect(api.categoryRequests.last, 'movie-anime:1');
+    expect(api.categoryRequests.last, 'browse-anime:1');
     expect(api.categoryRequests.length, 4);
     await tester.tap(find.text('المسلسلات'));
     await tester.pumpAndSettle();

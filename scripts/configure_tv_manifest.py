@@ -18,7 +18,7 @@ for feature, value in [('android.software.leanback', 'true'), ('android.hardware
     node.set(required, value)
 application = root.find('application')
 assert application is not None
-application.set(f'{{{ANDROID}}}banner', '@drawable/launch_mitv')
+application.set(f'{{{ANDROID}}}banner', '@drawable/tv_banner')
 launcher = next((node for node in application.findall('.//intent-filter') if any(child.get(name) == 'android.intent.category.LAUNCHER' for child in node.findall('category'))), None)
 assert launcher is not None
 if not any(node.get(name) == 'android.intent.category.LEANBACK_LAUNCHER' for node in launcher.findall('category')):

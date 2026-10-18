@@ -1,7 +1,7 @@
 name: mitv
 publish_to: none
 description: MITV cross-platform media client with direct edge-resolved playback.
-version: 1.0.44+44
+version: 1.0.46+46
 
 environment:
   sdk: ">=3.11.0 <4.0.0"
@@ -32,3 +32,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand_mark.png

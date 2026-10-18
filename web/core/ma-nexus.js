@@ -70,7 +70,8 @@ export function buildCompositeWorkKey(item) {
 
 // تنسيق المدة الزمنية للبطاقة (مثل: 1س 55د أو 45 د)
 export function formatRuntimeArabic(minutes, mediaType = 'movie') {
-  const mins = Number(minutes) || (mediaType === 'tv' || mediaType === 'series' ? 45 : 115);
+  const mins = Number(minutes);
+  if (!Number.isFinite(mins) || mins <= 0) return '';
   if (mins < 60) return `${mins} د`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -109,17 +110,17 @@ export function deduplicateAndMergeCatalog(items = []) {
 
     const mediaType = (raw.mediaType === 'tv' || raw.type === 'series' || raw.type === 'tv' || raw.is_series) ? 'tv' : 'movie';
     const typeLabel = mediaType === 'tv' ? 'مسلسل' : 'فيلم';
-    const year = String(raw.year || '').slice(0, 4) || '2025';
-    const rating = raw.rating && Number(raw.rating) > 0 ? Number(raw.rating).toFixed(1) : '8.4';
+    const year = String(raw.year || '').slice(0, 4);
+    const rating = raw.rating && Number(raw.rating) > 0 ? Number(raw.rating).toFixed(1) : '';
     const durationText = raw.durationText || formatRuntimeArabic(raw.runtime, mediaType);
-    const poster = raw.poster || raw.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
+    const poster = raw.poster || raw.img || '';
     const itemId = raw.id || raw.href || raw.ref || `work:${cleanKey}`;
 
     if (!map.has(cleanKey)) {
       map.set(cleanKey, {
         ...raw,
         id: itemId,
-        href: itemId,
+        href: raw.href || raw.ref || itemId,
         poster,
         img: poster,
         mediaType,
@@ -223,85 +224,30 @@ const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
 
 // توليد السيرفرات السحابية الاحتياطية فائقة السرعة عند تعذر القواشط المباشرة
 export function generateCloudFallbackServers(tmdbId, isTv, season = 1, episode = 1) {
-  const safeId = String(tmdbId || '550').trim();
-  const s = Math.max(1, Number(season) || 1);
-  const ep = Math.max(1, Number(episode) || 1);
-  return [
-    {
-      provider: 'vidsrc',
-      code: 'VC-1',
-      kind: 'embed',
-      url: `https://vidsrc.cc/v2/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}?autoPlay=true`,
-      ms: 75,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '75ms فائق',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.20)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'multiembed',
-      code: 'MD-1',
-      kind: 'embed',
-      url: `https://multiembed.mov/?video_id=${safeId}&tmdb=1${isTv ? `&s=${s}&e=${ep}` : ''}`,
-      ms: 110,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '110ms ممتاز',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'autoembed',
-      code: 'AE-1',
-      kind: 'embed',
-      url: `https://player.autoembed.cc/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}`,
-      ms: 140,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '140ms سريع',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    }
-  ];
+  // Compatibility export: unverified third-party embedded playback is retired.
+  return [];
 }
 
-// بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة (القواشط الـ 18 + السيرفرات السحابية)
 export async function resolveUnifiedServersForItem(item, season = 1, episode = 1, apiBase = '') {
   const servers = [];
   const backendBase = apiBase || (typeof ProviderEndpoints !== 'undefined' ? ProviderEndpoints?.backend : '') || '';
-  const isTv = item?.mediaType === 'tv' || item?.type === 'series' || item?.is_series;
-  let tmdbId = item?.tmdbId || item?.tmdb_id || '';
-  if (!tmdbId && String(item?.id || '').startsWith('tmdb:')) {
-    tmdbId = String(item.id).split(':').pop();
-  }
-  if (!tmdbId && /^\d+$/.test(String(item?.id || ''))) {
-    tmdbId = String(item.id);
-  }
-
   // إذا كان العمل يحتوي على روابط مباشرة في بياناته
   if (Array.isArray(item?.servers)) {
     for (const s of item.servers) {
-      if (s?.url) servers.push({ provider: s.provider || s.name || 'akwam', url: s.url, kind: s.kind, downloadUrl: s.downloadUrl || s.url });
+      if (s?.url) servers.push({ provider: s.provider || s.name || 'akwam', code:s.code, headers:s.headers || {}, url: s.url, kind: s.kind, downloadUrl: s.downloadUrl || s.url });
     }
   }
 
   // 1. جلب السيرفرات المستخرجة من القواشط الـ 18 عبر Edge Worker أو السيرفر الخلفي
   const candidateRefs = [
-    ...(Array.isArray(item?.mergedRefs) ? item.mergedRefs : []),
     item?.episodeRef,
-    item?.id,
     item?.href,
-    item?.ref
+    item?.ref,
+    ...(Array.isArray(item?.mergedRefs) ? item.mergedRefs : []),
+    item?.id
   ].filter(r => r && !String(r).startsWith('tmdb:') && !String(r).startsWith('work:'));
 
-  if (candidateRefs.length > 0) {
+  if (candidateRefs.length > 0 && !servers.length) {
     try {
       const refVal = String(candidateRefs[0]).trim();
       const refParam = refVal.includes(':')
@@ -315,6 +261,8 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
             if (s?.url) {
               servers.push({
                 provider: s.provider || s.provider_id || '3isk',
+                code: s.code,
+                headers: s.headers || {},
                 url: s.url,
                 kind: s.format === 'hls' || /\.(m3u8|mp4)(?:$|\?)/i.test(s.url) ? 'direct' : 'embed',
                 downloadUrl: s.url
@@ -326,15 +274,16 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     } catch (_) {}
   }
 
-  try {
+  if (!servers.length) try {
     const q = new URLSearchParams({
       id: item?.id || '',
+      ref: String(candidateRefs[0] || ''),
       title: item?.title || item?.name || item?.originalTitle || '',
       year: item?.year || '',
       season: String(season),
       episode: String(episode)
     });
-    const candidateBases = [backendBase, 'http://127.0.0.1:3000'].filter(Boolean);
+    const candidateBases = [backendBase].filter(Boolean);
     for (const base of candidateBases) {
       try {
         const res = await fetch(`${base}/api/v1/resolve?${q.toString()}`, { signal: AbortSignal.timeout(6000) });
@@ -354,31 +303,6 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     }
   } catch (_) {}
 
-  // إن لم يكن لدينا tmdbId رقمي للعمل (مثل الأعمال القادمة من القواشط العربية)، نبحث عنه تلقائياً في TMDb
-  if (!tmdbId || !/^\d+$/.test(String(tmdbId))) {
-    const cleanQuery = String(item?.originalTitle || item?.title || '')
-      .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الحلقة\s*\d+|الموسم\s*\d+|\b\d{4}\b)/gi, '')
-      .trim();
-    if (cleanQuery.length >= 2) {
-      try {
-        const searchData = await tmdbFetch(`/search/${isTv ? 'tv' : 'movie'}`, { query: cleanQuery });
-        const firstHit = searchData?.results?.[0];
-        if (firstHit?.id) {
-          tmdbId = String(firstHit.id);
-        } else {
-          const multiData = await tmdbFetch('/search/multi', { query: cleanQuery });
-          const multiHit = (multiData?.results || []).find(r => r.media_type === 'movie' || r.media_type === 'tv');
-          if (multiHit?.id) tmdbId = String(multiHit.id);
-        }
-      } catch (_) {}
-    }
-  }
-
-  if (!tmdbId) {
-    const digits = String(item?.id || '').match(/\d+/);
-    if (digits) tmdbId = digits[0];
-  }
-
   // 2. تصفية صارمة للروابط المباشرة النقية (Direct Media Streams) من القواشط المحلية ومنع الـ Embed نهائياً
   const cleanDirect = servers.filter(s => {
     const u = String(s.url || '').toLowerCase();
@@ -391,13 +315,13 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
 }
 
 // محرك البحث الموحد (Search-Fusion Engine) الذي يصفي ويدمج النتائج من القواشط + TMDb
-export async function nexusUnifiedSearch(queryText, apiBase = '') {
+export async function nexusUnifiedSearch(queryText, apiBase = '', { signal } = {}) {
   const q = String(queryText || '').trim();
   if (!q) return [];
 
   const [tmdbRes, scraperRes] = await Promise.allSettled([
     tmdbFetch('/search/multi', { query: q, page: '1' }),
-    fetch(`${apiBase}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] }))
+    fetch(`${apiBase}/api/v1/search?q=${encodeURIComponent(q)}`, { signal }).then(r => r.json()).catch(() => ({ status: 'error', data: [] }))
   ]);
 
   const rawList = [];
@@ -409,6 +333,7 @@ export async function nexusUnifiedSearch(queryText, apiBase = '') {
     }
   }
   if (scraperRes.status === 'fulfilled') {
+    if (scraperRes.value?.status === 'error' && rawList.length === 0) throw new Error('SEARCH_UNAVAILABLE');
     const items = scraperRes.value?.items || scraperRes.value?.results || scraperRes.value?.data || [];
     if (Array.isArray(items)) rawList.push(...items);
   }
@@ -458,7 +383,7 @@ export async function loadHomeWithSupabaseSync(supabaseConfig = {}) {
     return homeData;
   })();
 
-  if (cached?.data && Array.isArray(cached.data.shelves) && cached.data.shelves.length > 0) {
+  if (cached?.data && Date.now()-cached.updatedAt<3600000 && Array.isArray(cached.data.shelves) && cached.data.shelves.some(shelf=>shelf.items?.length)) {
     // نرجع النسخة المخزنة فوراً (0ms) ونحدث في الخلفية بصمت
     refreshPromise.catch(() => {});
     return cached.data;

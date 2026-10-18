@@ -1,3 +1,4 @@
+import {ProviderEndpoints} from './api-client.js';
 // web/core/tmdb-service.js — Real TMDb v3/v4 Engine + BYOK Local Environment Support
 const CACHE_PREFIX = 'matv_tmdb_v7_';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 Hour TTL
@@ -125,7 +126,7 @@ export function normalizeTmdbItem(item, forcedType = null) {
   const rating = Number.isFinite(Number(item.vote_average)) ? Number(item.vote_average).toFixed(1) : '0.0';
   const poster = item.poster_path
     ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-    : (item.poster || item.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80');
+    : (item.poster || item.img || '');
   const backdrop = item.backdrop_path
     ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
     : poster;
@@ -144,7 +145,7 @@ export function normalizeTmdbItem(item, forcedType = null) {
     poster,
     img: poster,
     backdrop,
-    overview: item.overview || 'عمل درامي وسينمائي متوفر بجودة عالية ومصادر متعددة على منصة MA TV.',
+    overview: item.overview || '',
     genreIds: item.genre_ids || [],
     originalLang: item.original_language || 'en',
     source: 'tmdb'
@@ -153,6 +154,24 @@ export function normalizeTmdbItem(item, forcedType = null) {
 
 // جلب أقسام الصفحة الرئيسية الغزيرة بأسلوب Netflix & Shahid
 export async function fetchNetflixHomeShelves() {
+  if (!getUserTmdbKey()) {
+    const response=await fetch(ProviderEndpoints.backend+'/api/v1/tmdb/trending?type=all',{
+      signal:AbortSignal.timeout(30000),redirect:'error',headers:{Accept:'application/json'},
+    });
+    const payload=await response.json();
+    if(!response.ok || payload.status!=='success' || !Array.isArray(payload.data))throw Error('HOME_METADATA_UNAVAILABLE');
+    const items=payload.data.filter(row=>row.ref && row.title).map(row=>({...row,
+      id:row.ref,href:row.ref,tmdbId:String(row.id),mediaType:row.type==='series'?'tv':'movie',
+      typeLabel:row.type==='series'?'مسلسل':'فيلم',img:row.poster,backdrop:row.backdrop || row.poster,
+      overview:row.overview || '',
+    }));
+    return {heroItems:items.slice(0,8),shelves:[
+      {id:'shelfTrending',title:'الرائج الآن',items},
+      {id:'shelfMovies',title:'أفلام رائجة',items:items.filter(row=>row.type==='movie')},
+      {id:'shelfSeries',title:'مسلسلات رائجة',items:items.filter(row=>row.type==='series')},
+    ]};
+  }
+
   const [
     trendingAll,
     topRatedMovies,
@@ -252,7 +271,7 @@ export async function fetchFullTmdbDetails(mediaType, tmdbId, seasonNumber = 1) 
     ...normalizeTmdbItem(details, type),
     imdbId: details.external_ids?.imdb_id || details.imdb_id || '',
     genres: (details.genres || []).map(g => g.name),
-    runtime: details.runtime || (details.episode_run_time && details.episode_run_time[0]) || 110,
+    runtime: details.runtime || (details.episode_run_time && details.episode_run_time[0]) || null,
     numberOfSeasons: details.number_of_seasons || 1,
     seasons: (details.seasons || []).filter(s => s.season_number > 0),
     cast: (details.credits?.cast || []).slice(0, 8).map(c => ({
