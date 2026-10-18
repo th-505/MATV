@@ -77,3 +77,11 @@ try {
   assert.equal(openCalls.length,1);
 } finally {await new Promise(resolve=>server.close(resolve));}
 console.log('Aggregate opens: POST-only, known provider, original reference, no user identity passed');
+
+const foreignEntry={meta:{id:'genre-source',capabilities:{catalog:true}},module:{config:{categories:{movies_foreign:'/foreign'}},
+  scrapeCatalog:async category=>{assert.equal(category,'movies_foreign');return [{title:'Foreign fixture',ref:'genre-source:original',type:'movie'}];}}};
+assert.equal(catalogCategoryFor(foreignEntry,'movie',getProvider,'arabic'),null,'unsupported genres never fall back to another genre');
+const genreFeed=createCatalogFeed({providers:()=>[foreignEntry]});
+assert.equal((await genreFeed.read('browse-movie-foreign')).data[0].ref,'genre-source:original');
+assert.deepEqual((await genreFeed.read('browse-movie-arabic')).data,[]);
+console.log('Genre feed: declared category only, no unrelated genre fallback passed');

@@ -897,6 +897,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       return sendJson(req, res, 404, { error: "NOT_FOUND" });
     } catch (error) {
+      if(error?.message==='FEED_BUSY') return sendJson(req,res,503,{status:'error',message:error.message});
       if(error?.message==='FEED_BAD_REQUEST') return sendJson(req,res,400,{status:'error',message:error.message});
       if(error?.message==='BAD_CINEMA_REFERENCE') return sendJson(req,res,400,{status:'error',message:error.message});
       if(error?.message==='CATALOG_BUSY') return sendJson(req,res,503,{status:'error',message:error.message});

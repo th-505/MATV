@@ -19,7 +19,7 @@ source selector; building a client alone cannot add that server route.
 - [x] Default search calls the existing capability registry once, rather than parallel legacy duplicate paths.
 - [x] General web search uses the same real provider search API; TMDb does not substitute playback cards.
 - [x] Search presentation rejects unrelated titles and exact duplicate references.
-- [x] Neutral movie/series/anime feeds browse declared provider categories in ten-work blocks.
+- [x] Neutral movie/series/anime and language/type feeds browse declared categories in ten-work blocks. Unsupported genres do not fall back to other genres.
 - [x] Coalesced hourly in-memory cache, bounded concurrency/deadlines and continued paging after sixty works.
 - [x] Private Supabase feed persistence, one-hour expiry and hourly purge; RLS/grants verified remotely.
 - [x] Aggregate per-work open counters and last-open time; no user/device identifier.
@@ -60,3 +60,13 @@ and synchronous setState callbacks for async retry operations. The expanded brow
 suite checks the actual column count and document width at 320/768/1024/1440/1920px.
 A 78px horizontal overflow found at 320px was repaired by wrapping the header/search
 and constraining the seven-button mobile navigation.
+
+Applied `20261018091131_catalog_feed_genres.sql` adds the new browse genre IDs to
+the private feed cache boundary. All three migrations are additive; original
+provider IDs and existing library/provider cache rows are preserved. New feed
+work is bounded to two concurrent snapshot builds per server instance.
+
+Flutter validation run `39114283495` passed analyze, targeted exploration tests
+and the complete suite on `033cf33` (Flutter 3.47.7). Genre-routing changes follow
+that run and are revalidated in the next build; do not attribute the earlier run
+to later commits.

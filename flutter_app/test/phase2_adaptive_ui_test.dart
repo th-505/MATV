@@ -85,7 +85,7 @@ void main() {
       final dropdown = tester
           .widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
       expect(dropdown.items!.map((e) => e.value),
-          containsAll(['movie-foreign', 'movie-arabic', '3isk-movies']));
+          containsAll(['browse-movie-foreign', 'browse-movie-arabic', 'browse-movie-turkish']));
       expect(tester.widget<GridView>(find.byType(GridView)).gridDelegate,
           isA<SliverGridDelegateWithFixedCrossAxisCount>());
       expect(tester.takeException(), isNull);

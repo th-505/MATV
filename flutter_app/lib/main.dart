@@ -1109,40 +1109,26 @@ class _CatalogPageState extends State<CatalogPage> {
     '3isk-movies': 'جميع الأفلام',
   };
   Map<String, String> get _categories {
-    switch (widget.mediaKind) {
-      case 'movie':
-        return {
-          'browse-movies': 'جميع الأفلام',
-          'movie-foreign': 'أفلام أجنبية',
-          'movie-arabic': 'أفلام عربية',
-          '3isk-movies': 'أفلام تركية',
-        };
-      case 'series':
-        return {
-          ...seriesCategories,
-          for (final entry in iskCategories.entries)
-            if (entry.key != '3isk-movies') entry.key: entry.value,
-        };
-      case 'anime':
-        return {
-          'browse-anime': 'جميع الأنمي',
-          'movie-anime': 'أفلام أنمي',
-          'series-anime': 'مسلسلات أنمي',
-        };
-      default:
-        return widget.unified
-            ? {
-                'browse-movies': 'جميع الأفلام',
-          'movie-foreign': 'أفلام أجنبية',
-                'movie-arabic': 'أفلام عربية',
-                ...seriesCategories,
-                ...iskCategories,
-              }
-            : widget.categoryId.startsWith('3isk-')
-            ? iskCategories
-            : seriesCategories;
+    final categories = switch(widget.mediaKind) {
+      'movie'=> <String,String>{'browse-movies':'جميع الأفلام',
+        'browse-movie-foreign':'أفلام أجنبية','browse-movie-arabic':'أفلام عربية',
+        'browse-movie-turkish':'أفلام تركية','browse-movie-indian':'أفلام هندية'},
+      'series'=> <String,String>{'browse-series':'جميع المسلسلات',
+        'browse-series-foreign':'مسلسلات أجنبية','browse-series-arabic':'مسلسلات عربية',
+        'browse-series-turkish':'مسلسلات تركية','browse-series-asian':'مسلسلات آسيوية',
+        'browse-series-ramadan':'مسلسلات رمضان'},
+      'anime'=> <String,String>{'browse-anime':'جميع الأنمي',
+        'browse-anime-movies':'أفلام أنمي','browse-anime-series':'مسلسلات أنمي'},
+      _=> widget.categoryId.startsWith('3isk-') ? <String,String>{...iskCategories}
+        : <String,String>{'browse-movies':'جميع الأفلام',...seriesCategories},
+    };
+    // Preserve old deep links without presenting providers as category filters.
+    if(!categories.containsKey(widget.categoryId)) {
+      categories[widget.categoryId]=iskCategories[widget.categoryId] ?? 'التصنيف المحدد';
     }
+    return categories;
   }
+
 
   bool _matchesKind(CatalogItem item) {
     return widget.mediaKind == null ||

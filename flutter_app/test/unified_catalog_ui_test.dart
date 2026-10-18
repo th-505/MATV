@@ -164,7 +164,7 @@ void main() {
     expect(find.text('Ordinary Film'), findsNothing);
     final menu = tester
         .widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
-    expect(menu.items!.map((item) => item.value), containsAll(['browse-anime','movie-anime','series-anime']));
+    expect(menu.items!.map((item) => item.value), containsAll(['browse-anime','browse-anime-movies','browse-anime-series']));
     expect(api.requests, [1]);
     await tester.pumpWidget(const SizedBox());
   });

@@ -5,15 +5,27 @@ export const FEED_CATEGORIES = Object.freeze({
   'browse-movies': {type:'movie', title:'جميع الأفلام'},
   'browse-series': {type:'series', title:'جميع المسلسلات'},
   'browse-anime': {type:'anime', title:'جميع الأنمي'},
+  ...Object.fromEntries([['foreign','أجنبية'],['arabic','عربية'],['indian','هندية'],['asian','آسيوية'],['turkish','تركية']]
+    .map(([genre,title])=>['browse-movie-'+genre,{type:'movie',genre,title:'أفلام '+title}])),
+  ...Object.fromEntries([['foreign','أجنبية'],['arabic','عربية'],['asian','آسيوية'],['turkish','تركية'],['ramadan','رمضان']]
+    .map(([genre,title])=>['browse-series-'+genre,{type:'series',genre,title:'مسلسلات '+title}])),
+  'browse-anime-movies':{type:'anime',genre:'movies',title:'أفلام أنمي'},
+  'browse-anime-series':{type:'anime',genre:'series',title:'مسلسلات أنمي'},
 });
 
 // Read each adapter's declared categories from the existing capability registry.
 // This is a routing policy, not another provider registration or another scraper.
-export function catalogCategoryFor(entry, kind, lookup = getProvider) {
+export function catalogCategoryFor(entry, kind, lookup = getProvider, genre = null) {
   if (!entry) return null;
   const config = Object.values(entry.module).find(value => value && typeof value === 'object' && value.categories);
-  if (!config && entry.meta.mirrorOf) return catalogCategoryFor(lookup(entry.meta.mirrorOf), kind, lookup);
+  if (!config && entry.meta.mirrorOf) return catalogCategoryFor(lookup(entry.meta.mirrorOf), kind, lookup, genre);
   const keys = Object.keys(config?.categories || {});
+  if (genre) {
+    const plural=kind==='movie'?'movies':'series';
+    const candidates=kind==='anime' ? ['anime_'+genre,genre==='movies'?'movie-anime':'series-anime']
+      : [plural+'_'+genre,(kind==='movie'?'movie':'series')+'-'+genre,genre+'-'+plural,genre+'_'+plural];
+    return candidates.find(key=>keys.includes(key)) || null;
+  }
   const preferred = kind === 'movie' ? ['movies','movies_all','movie','movies_foreign','foreign-movies']
     : kind === 'series' ? ['series','series_all','series_foreign','foreign-series']
     : ['anime','anime_all','anime_series','anmi'];
@@ -32,13 +44,14 @@ export function createCatalogFeed({providers = () => listProviders().map(meta =>
     if (!snapshot || snapshot.expires <= now()) {
       snapshot = {id:`${now()}-${++serial}`, expires:now()+ttlMs, pages:new Map(), states:providers()
         .filter(entry => entry?.meta.capabilities?.catalog && typeof entry.module.scrapeCatalog === 'function')
-        .map(entry => ({entry, category:catalogCategoryFor(entry, definition.type), rows:[], base:0, next:1, hasMore:true, restored:false, seen:new Set()}))
+        .map(entry => ({entry, category:catalogCategoryFor(entry, definition.type, getProvider, definition.genre), rows:[], base:0, next:1, hasMore:true, restored:false, seen:new Set()}))
         .filter(state => state.category)};
       snapshots.set(category, snapshot);
     }
     if (snapshot.pages.has(page)) return {...snapshot.pages.get(page), cached:true};
     const key = `${snapshot.id}:${page}`;
     if (pending.has(key)) return pending.get(key);
+    if(pending.size>=2)throw Error('FEED_BUSY');
     const work = buildPage(snapshot, category, definition, page).finally(() => pending.delete(key));
     pending.set(key, work);
     return work;
@@ -89,7 +102,7 @@ export function createCatalogFeed({providers = () => listProviders().map(meta =>
                 result = await Promise.race([Promise.resolve().then(() => state.entry.module.scrapeCatalog(state.category, state.next, {signal:controller.signal,timeoutMs:budget,strict:true})), timeout]);
               } finally { clearTimeout(timer); }
               if (result?._meta?.ok === false && result._meta.errorCode !== 'EMPTY_RESULT') throw Error(result._meta.errorCode || 'CATALOG_FAILED');
-              const rows = (Array.isArray(result) ? result : result?.data || []).map(row => normalizeCatalogItem({...row, ref:row.ref || row.id || row.url || row.link, source:state.entry.meta.id, providerId:state.entry.meta.id})).filter(row => row.ref && row.title);
+              const rows = (Array.isArray(result) ? result : result?.data || []).map(row => normalizeCatalogItem({...row, ref:row.ref || row.id || row.url || row.link, ...(definition.type==='anime'?{category:'anime',genres:[...(Array.isArray(row.genres)?row.genres:[]),'anime']}:{}), source:state.entry.meta.id, providerId:state.entry.meta.id})).filter(row => row.ref && row.title);
               const unique = rows.filter(row => {
                 if (state.seen.has(row.ref)) return false;
                 state.seen.add(row.ref); return true;
