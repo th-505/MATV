@@ -331,7 +331,9 @@ class MitvApi implements MediaRepository {
     sourceMetadataError = null;
     final pending = _loadSearchProviders();
     _searchProvidersPending = pending;
-    sourceMetadataChanges.value += 1;
+    // A new page may request metadata during initState while another page listens.
+    // Dispatch after the current build to keep every shared observer safe.
+    scheduleMicrotask(() {if (!_closed) sourceMetadataChanges.value += 1;});
     return pending;
   }
 
