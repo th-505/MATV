@@ -208,6 +208,11 @@ class MitvApi implements MediaRepository {
     );
   }
 
+  Future<List<CatalogItem>> liveChannels() async {
+    final json=await _getJson('/api/v1/live/channels');
+    return _list(json['data']).map(_catalogItem).where((row)=>row.ref.isNotEmpty).toList(growable:false);
+  }
+
   Future<List<MatchItem>> matches() async {
     final json = _useEdge
         ? await _edgeJson('/v1/matches')
@@ -919,7 +924,7 @@ class MitvApi implements MediaRepository {
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
     }
-    if ((path == '/api/v1/search' || path == '/api/v1/category') && decoded['status'] == 'no_results') {
+    if ((path == '/api/v1/search' || path == '/api/v1/category' || path == '/api/v1/live/channels') && decoded['status'] == 'no_results') {
       return decoded;
     }
     if (decoded['status'] != 'success') {

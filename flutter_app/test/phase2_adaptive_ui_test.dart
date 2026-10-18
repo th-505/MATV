@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'phase2_player_test.dart' show FakeEngine;
 
 class _LayoutApi extends MitvApi {
+  @override
+  Future<List<CatalogItem>> liveChannels() async => [];
   final requests = <String>[];
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {

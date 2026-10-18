@@ -1,4 +1,5 @@
 import http from "node:http";
+import { createLiveCatalog } from "./live-catalog.mjs";
 import { createCatalogFeed, FEED_CATEGORIES } from "./catalog-feed.mjs";
 import { presentSearchResults } from "./search-presentation.mjs";
 import { directSource, probeDirectMedia, filterBrowserSources } from "./direct-media.mjs";
@@ -578,7 +579,7 @@ export function assertCatalogReference(ref) {
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now, providerSearch = searchProviderCatalog, providerDetails = scrapeRealDetails,
-  catalogFeedStore=createSupabaseFeedStore(), catalogFeed=createCatalogFeed({store:catalogFeedStore}), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
+  liveCatalog=createLiveCatalog(), catalogFeedStore=createSupabaseFeedStore(), catalogFeed=createCatalogFeed({store:catalogFeedStore}), catalogLoader=null, searchTimeoutMs = SEARCH_HTTP_BUDGET_MS,
   runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
@@ -615,6 +616,10 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           domains: meta.domains || [], supportsSearch: Boolean(meta.capabilities?.search && typeof getProvider(meta.id)?.module.scrapeSearch === 'function')
         }))
       });
+      if (url.pathname === '/api/v1/live/channels') {
+        const result=await liveCatalog.read();
+        return sendJson(req,res,result.status==='error'?503:200,result);
+      }
       if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status(), alooyRuntime.status(), larozaRuntime.status()] });
       if (url.pathname === '/api/v1/provider/category') {
         const providerId = url.searchParams.get('provider') || '';

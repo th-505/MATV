@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createLiveCatalog} from '../server/live-catalog.mjs';
+let calls=0,clock=0;
+const channel={ref:'egydead_live:original',title:'Channel',type:'live',category:'live',poster:''};
+const provider={meta:{id:'egydead_live',capabilities:{live:true}},module:{scrapeLive:async()=>{calls++;return [channel,channel,{ref:'match:one',title:'Match',type:'live',category:'match',team1:{name:'A'}}];}}};
+const live=createLiveCatalog({providers:()=>[provider],now:()=>clock});
+const [a,b]=await Promise.all([live.read(),live.read()]);
+assert.equal(calls,1);assert.deepEqual(a,b);assert.equal(a.data.length,1);
+assert.equal(a.data[0].ref,channel.ref);assert.equal(a.data[0].source,'egydead_live');
+assert.equal((await live.read()).cached,true);
+clock=30001;await live.read();assert.equal(calls,2);
+let attempts=0;
+const failure=createLiveCatalog({timeoutMs:5,providers:()=>[{...provider,module:{scrapeLive:()=>{attempts++;return new Promise(()=>{});}}}]});
+assert.equal((await failure.read()).status,'error');
+assert.equal((await failure.read()).status,'error');assert.equal(attempts,2);
+console.log('Live channel metadata: real registry capability, coalescing, channel/match separation, duplicates, TTL and retryable timeouts passed');

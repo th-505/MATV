@@ -154,36 +154,8 @@ class _MPlayMark extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: size,
     height: size,
-    child: CustomPaint(painter: _MPlayPainter()),
+    child: Image.asset('assets/brand_mark.png',filterQuality:FilterQuality.high),
   );
-}
-
-class _MPlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * .10
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..color = _brandAccent;
-    final m = Path()
-      ..moveTo(size.width * .2, size.height * .78)
-      ..lineTo(size.width * .2, size.height * .22)
-      ..lineTo(size.width * .5, size.height * .50)
-      ..lineTo(size.width * .8, size.height * .22)
-      ..lineTo(size.width * .8, size.height * .78);
-    canvas.drawPath(m, stroke);
-    final play = Path()
-      ..moveTo(size.width * .43, size.height * .55)
-      ..lineTo(size.width * .43, size.height * .76)
-      ..lineTo(size.width * .63, size.height * .655)
-      ..close();
-    canvas.drawPath(play, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BrandTitle extends StatelessWidget {
@@ -590,10 +562,17 @@ class LivePage extends StatelessWidget {
   final LocalLibraryStore store;
   final List<ConfiguredTvChannel> channels;
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => LayoutBuilder(builder:(context,bounds) {
+    if(bounds.maxHeight<420) {
+      return SingleChildScrollView(child:SizedBox(height:720,child:_content(context)));
+    }
+    return _content(context);
+  });
+  Widget _content(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Expanded(
+      SizedBox(
+        height:(260+80*(MediaQuery.textScalerOf(context).scale(14)/14-1).clamp(0,1)).toDouble(),
         child: MatchesPage(api: api, store: store),
       ),
       Padding(
@@ -603,11 +582,7 @@ class LivePage extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
       ),
-      if (channels.isEmpty)
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: Text('لا توجد قنوات مباشرة مهيأة حاليًا'),
-        ),
+      if (channels.isEmpty) Expanded(child:_DiscoveredChannels(api:api,store:store)),
       if (channels.isNotEmpty)
         Expanded(
           child: ListView(
@@ -650,6 +625,49 @@ class LivePage extends StatelessWidget {
         ),
     ],
   );
+}
+
+class _DiscoveredChannels extends StatefulWidget {
+  const _DiscoveredChannels({required this.api,required this.store});
+  final MitvApi api;
+  final LocalLibraryStore store;
+  @override
+  State<_DiscoveredChannels> createState()=>_DiscoveredChannelsState();
+}
+class _DiscoveredChannelsState extends State<_DiscoveredChannels> {
+  late Future<List<CatalogItem>> future;
+  @override
+  void initState(){super.initState();future=widget.api.liveChannels();}
+  @override
+  Widget build(BuildContext context)=>FutureBuilder<List<CatalogItem>>(
+    future:future,builder:(context,snapshot) {
+      if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
+      if(snapshot.hasError) { return Center(child:TextButton.icon(
+        onPressed:()=>setState(()=>future=widget.api.liveChannels()),
+        icon:const Icon(Icons.refresh),label:const Text('تعذر تحميل القنوات — إعادة المحاولة'))); }
+      final rows=snapshot.data??const <CatalogItem>[];
+      if(rows.isEmpty) { return const Align(alignment:Alignment.topCenter,
+        child:Padding(padding:EdgeInsets.all(16),child:Text('لا توجد قنوات مباشرة مهيأة حاليًا'))); }
+      return LayoutBuilder(builder:(context,bounds)=>GridView.builder(
+        padding:const EdgeInsets.all(12),
+        gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount:AdaptiveCatalogGrid.columnsFor(bounds.maxWidth),mainAxisExtent:112+40*MediaQuery.textScalerOf(context).scale(14)/14,
+          crossAxisSpacing:12,mainAxisSpacing:12),
+        itemCount:rows.length,itemBuilder:(context,index) {
+          final row=rows[index];
+          return FocusHighlight(child:Card(child:InkWell(
+            onTap:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>PlayerPage(
+              api:widget.api,store:widget.store,item:row,title:row.title,sourceRef:row.ref,isLive:true))),
+            child:Padding(padding:const EdgeInsets.all(12),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+              if(row.poster.isEmpty)const Icon(Icons.live_tv,size:32)
+              else Image.network(row.poster,width:48,height:40,fit:BoxFit.contain,
+                errorBuilder:(_,_,_)=>const Icon(Icons.live_tv,size:32)),
+              const SizedBox(height:8),Text(row.title,maxLines:2,overflow:TextOverflow.ellipsis,textAlign:TextAlign.center),
+            ])),
+          )));
+        },
+      ));
+    });
 }
 
 class SettingsPage extends StatefulWidget {
@@ -1138,12 +1156,19 @@ class _CatalogPageState extends State<CatalogPage> {
   void initState() {
     super.initState();
     controller.addListener(_onScroll);
+    widget.api.sourceMetadataChanges.addListener(_sourceLabelsChanged);
+    unawaited(_loadSourceLabels());
     _loadMore();
   }
 
+  void _sourceLabelsChanged() {if(mounted)setState((){});}
+  Future<void> _loadSourceLabels() async {
+    try {await widget.api.searchProviders();} catch (_) { /* General browsing remains available. */ }
+  }
   @override
   void dispose() {
     requestGeneration += 1;
+    widget.api.sourceMetadataChanges.removeListener(_sourceLabelsChanged);
     controller.dispose();
     super.dispose();
   }
@@ -1302,6 +1327,7 @@ class _CatalogPageState extends State<CatalogPage> {
               final item = items[i];
               return _CatalogCard(
                 item: item,
+                sourceLabel:widget.api.sourceDisplayLabel(item),
                 onTap: () =>
                     openDetails(context, widget.api, widget.store, item),
               );

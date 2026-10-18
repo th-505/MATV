@@ -23,3 +23,19 @@ with tempfile.TemporaryDirectory() as directory:
     branding.apply_windows(root)
     assert (runner / 'Runner.rc').read_text(encoding='utf-8') == first
 print('native branding identity and Windows resource output are stable and idempotent')
+
+import json
+import struct
+with tempfile.TemporaryDirectory() as directory:
+    root=Path(directory)
+    (root/'android').mkdir()
+    branding.apply_android(root)
+    banner=root/'android/app/src/main/res/drawable/tv_banner.png'
+    assert struct.unpack('>II',banner.read_bytes()[16:24]) == (320,180)
+    for platform in ('ios','macos'):
+        icons=root/platform/'Runner/Assets.xcassets/AppIcon.appiconset'
+        icons.mkdir(parents=True)
+        (icons/'Contents.json').write_text(json.dumps({'images':[{'size':'16x16','scale':'2x','filename':'icon32.png'}]}))
+        getattr(branding,'apply_'+platform)(root)
+        assert struct.unpack('>II',(icons/'icon32.png').read_bytes()[16:24]) == (32,32)
+print('iOS/macOS icon generation and 320×180 Android TV banner dimensions passed')

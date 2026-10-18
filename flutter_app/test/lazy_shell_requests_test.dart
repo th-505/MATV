@@ -9,6 +9,8 @@ import 'package:mitv/src/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RequestCountingApi extends MitvApi {
+  @override
+  Future<List<CatalogItem>> liveChannels() async => [];
   int matchesRequests = 0;
   int newsRequests = 0;
   int closeCalls = 0;

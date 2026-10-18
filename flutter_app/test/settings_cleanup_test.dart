@@ -9,6 +9,8 @@ import 'package:mitv/src/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _CleanupApi extends MitvApi {
+  @override
+  Future<List<CatalogItem>> liveChannels() async => [];
   final categories = <String>[];
   int clears = 0;
   @override
