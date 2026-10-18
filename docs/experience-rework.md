@@ -9,7 +9,9 @@ source selector; building a client alone cannot add that server route.
 - [x] Shared Flutter catalog/search grid uses actual parent constraints and 2/4/6/8/10 columns.
 - [x] Matching responsive web grids and larger desktop content area.
 - [x] Responsive details header, optional duration/season/episode metadata; removed invented web metadata.
-- [ ] Consistent refreshed logo/theme across all six build targets.
+- [x] Shared refreshed logo asset/native generator, including macOS icons and a real Android TV banner.
+- [x] Web header/navigation wraps without horizontal overflow at 320–1920px.
+- [x] Home uses the existing TMDb trending contract; work selection starts real source exploration.
 
 ## 2. Search, sources and browsing
 
@@ -21,7 +23,8 @@ source selector; building a client alone cannot add that server route.
 - [x] Coalesced hourly in-memory cache, bounded concurrency/deadlines and continued paging after sixty works.
 - [x] Private Supabase feed persistence, one-hour expiry and hourly purge; RLS/grants verified remotely.
 - [x] Aggregate per-work open counters and last-open time; no user/device identifier.
-- [ ] Validate owned Akwam/live replacement before retiring obsolete upstream dependencies.
+- [x] Live channel catalog uses existing live-capable adapters, with retry/loading/empty states.
+- [ ] Validate owned Akwam/live on real devices before retiring obsolete upstream dependencies.
 - [ ] Deploy backend and clients together after the complete regression gate.
 
 ## 3. Player and shared frame
@@ -51,3 +54,9 @@ open counter. The SQL transaction regression incremented a temporary fixture twi
 verified the count and rolled it back (zero fixture rows left). anon/authenticated
 cannot read/write the table or execute the RPC. The feed and activity migrations
 are already applied; application code remains under review on PR #2.
+
+Current native regression corrections include deferred shared-source notifications
+and synchronous setState callbacks for async retry operations. The expanded browser
+suite checks the actual column count and document width at 320/768/1024/1440/1920px.
+A 78px horizontal overflow found at 320px was repaired by wrapping the header/search
+and constraining the seven-button mobile navigation.

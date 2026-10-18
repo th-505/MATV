@@ -54,7 +54,7 @@ void main() {
               textDirection: TextDirection.rtl,
               child: Shell(api: api, store: store))));
       await tester.pumpAndSettle();
-      expect(api.requests, ['3isk-latest:1']);
+      expect(api.requests, ['home-trending:1']);
       expect(find.byType(HomePage), findsOneWidget);
       expect(find.text('الأخبار'), findsNothing);
       if (!isTvTarget && dimensions.width < 900) {
@@ -118,7 +118,7 @@ void main() {
           tester.widget<CatalogPage>(find.byType(CatalogPage)).mediaKind, kind);
     }
     expect(api.requests, [
-      '3isk-latest:1',
+      'home-trending:1',
       'browse-movies:1',
       'browse-series:1',
       'browse-anime:1'

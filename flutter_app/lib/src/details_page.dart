@@ -86,7 +86,7 @@ class _DetailsPageState extends State<DetailsPage> {
     super.dispose();
   }
 
-  void retry() => setState(() => future = widget.api.details(widget.item.ref));
+  void retry() => setState(() { future = widget.api.details(widget.item.ref); });
 
   FocusNode _episodeFocus(EpisodeItem episode) {
     final key = '${episode.id}:${episode.number}';

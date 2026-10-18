@@ -97,6 +97,8 @@ header.app-header {
 .header-inner {
   max-width: 1920px;
   margin: 0 auto;
+  flex-wrap: wrap;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -154,6 +156,8 @@ header.app-header {
 }
 
 .desktop-nav {
+  flex-wrap: wrap;
+  min-width: 0;
   display: none;
   align-items: center;
   gap: 4px;
@@ -196,8 +200,9 @@ header.app-header {
   border-radius: 12px;
   padding: 6px 14px;
   gap: 8px;
-  flex: 1;
-  max-width: 260px;
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 100%;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .search-box:focus-within {
@@ -215,7 +220,7 @@ header.app-header {
 }
 #searchProvider { max-width: 150px; min-width: 0; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--gold-border); border-radius: 8px; padding: 6px; }
 .search-box { flex-wrap: wrap; }
-.search-box input { min-width: 120px; }
+.search-box input { min-width: 0; flex: 1 1 120px; }
 #searchProviderState { font-size: 12px; color: var(--text-secondary); }
 .search-box input::placeholder { color: var(--text-muted); }
 .search-btn {
@@ -256,6 +261,8 @@ nav.mobile-nav {
   nav.mobile-nav { display: none; }
 }
 .mob-btn {
+  min-width: 0;
+  min-height: 44px;
   background: transparent;
   border: 0;
   color: var(--text-secondary);
@@ -279,6 +286,8 @@ nav.mobile-nav {
 .mob-btn.active svg {
   filter: drop-shadow(0 2px 8px var(--gold-glow));
 }
+
+@media(max-width:360px){nav.mobile-nav{left:4px;right:4px;padding:8px 0}.mob-btn{font-size:.55rem}}
 
 /* Main Container */
 main.container {
@@ -1110,9 +1119,9 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
         <span class="hero-badge">✦ الأكثر شهرة ورواجاً اليوم • MA TV</span>
         <h1 class="hero-title" id="heroTitle">جاري تجهيز المنصة السينمائية…</h1>
         <div class="hero-tags" id="heroTags">
-          <span class="rating-pill" id="heroRatingPill">★ 8.9</span>
-          <span id="heroYearPill">2025</span>
-          <span id="heroTypePill">4K UHD</span>
+          <span class="rating-pill" id="heroRatingPill"></span>
+          <span id="heroYearPill"></span>
+          <span id="heroTypePill"></span>
         </div>
         <p class="hero-desc" id="heroDesc">استمتع بتجربة بث سينمائية مباشرة بدون إعلانات وبأعلى جودة متوفرة عبر العقل المركزي الموحد MA-NEXUS.</p>
         <div class="hero-actions">
@@ -1727,7 +1736,7 @@ export function renderMediaCard(rawItem) {
   const item = registerWorkItem(rawItem);
   const itemId = item.id || item.href;
   const isTv = item.mediaType === 'tv' || item.type === 'series' || item.is_series;
-  const typeLabel = item.typeLabel || (isTv ? 'مسلسل' : 'فيلم');
+  const typeLabel = item.typeLabel || (item.type==='anime' ? 'أنمي' : isTv ? 'مسلسل' : item.type==='movie' ? 'فيلم' : 'عمل');
   const year = String(item.year || '').slice(0, 4);
   const durationText = item.durationText || formatRuntimeArabic(item.runtime, isTv ? 'tv' : 'movie');
   const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '';

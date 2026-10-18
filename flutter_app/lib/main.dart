@@ -416,8 +416,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final Future<List<CatalogItem>> _latest = widget.api.category(
-    '3isk-latest',
+  late Future<List<CatalogItem>> _latest = widget.api.category(
+    'home-trending',
   );
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -428,8 +428,15 @@ class _HomePageState extends State<HomePage> {
         FutureBuilder<List<CatalogItem>>(
           future: _latest,
           builder: (context, snapshot) {
+            if (snapshot.connectionState!=ConnectionState.done) {
+              return const SizedBox(height:180,child:Center(child:CircularProgressIndicator()));
+            }
+            if(snapshot.hasError) {
+              return TextButton.icon(onPressed:()=>setState((){_latest=widget.api.category('home-trending');}),
+                icon:const Icon(Icons.refresh),label:const Text('تعذر تحميل الرئيسية — إعادة المحاولة'));
+            }
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const SizedBox.shrink();
+              return const Padding(padding:EdgeInsets.all(24),child:Text('لا توجد أعمال متاحة في الرئيسية حالياً'));
             }
             final item = snapshot.data!.first;
             return FocusHighlight(
@@ -463,7 +470,7 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('أحدث الإضافات'),
+                              const Text('الرائج الآن'),
                               const SizedBox(height: 8),
                               Text(
                                 item.title,
@@ -475,14 +482,11 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(height: 12),
                               FilledButton.icon(
-                                onPressed: () => openDetails(
-                                  context,
-                                  widget.api,
-                                  widget.store,
-                                  item,
-                                ),
-                                icon: const Icon(Icons.play_arrow),
-                                label: const Text('التفاصيل والتشغيل'),
+                                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                                  builder:(_)=>Scaffold(appBar:AppBar(title:const Text('استكشاف')),
+                                    body:SearchPage(api:widget.api,store:widget.store,initialQuery:item.title)))),
+                                icon: const Icon(Icons.search),
+                                label: const Text('استكشاف العمل'),
                               ),
                             ],
                           ),
@@ -643,7 +647,7 @@ class _DiscoveredChannelsState extends State<_DiscoveredChannels> {
     future:future,builder:(context,snapshot) {
       if(snapshot.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
       if(snapshot.hasError) { return Center(child:TextButton.icon(
-        onPressed:()=>setState(()=>future=widget.api.liveChannels()),
+        onPressed:()=>setState((){future=widget.api.liveChannels();}),
         icon:const Icon(Icons.refresh),label:const Text('تعذر تحميل القنوات — إعادة المحاولة'))); }
       final rows=snapshot.data??const <CatalogItem>[];
       if(rows.isEmpty) { return const Align(alignment:Alignment.topCenter,
@@ -1430,7 +1434,8 @@ class _CatalogCard extends StatelessWidget {
 }
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key, required this.api, required this.store});
+  const SearchPage({super.key, required this.api, required this.store,this.initialQuery=''});
+  final String initialQuery;
   final MitvApi api;
   final LocalLibraryStore store;
   @override
@@ -1454,6 +1459,10 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     loadProviders();
+    if(widget.initialQuery.trim().isNotEmpty) {
+      query.text=widget.initialQuery;
+      WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)run();});
+    }
   }
 
   Future<void> loadProviders() async {

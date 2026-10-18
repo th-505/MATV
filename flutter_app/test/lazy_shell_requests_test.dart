@@ -56,12 +56,12 @@ void main() {
 
     expect(api.matchesRequests, 0);
     expect(api.newsRequests, 0);
-    expect(api.categoryRequests, ['3isk-latest:1']);
+    expect(api.categoryRequests, ['home-trending:1']);
     expect(find.byType(CatalogPage, skipOffstage: false), findsNothing);
 
     await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
-    expect(api.categoryRequests, ['3isk-latest:1', 'browse-movies:1']);
+    expect(api.categoryRequests, ['home-trending:1', 'browse-movies:1']);
     final cinemaState = tester.state(find.byType(CatalogPage));
 
     await tester.tap(find.text('الإعدادات'));
@@ -72,7 +72,7 @@ void main() {
     await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
     expect(tester.state(find.byType(CatalogPage)), same(cinemaState));
-    expect(api.categoryRequests, ['3isk-latest:1', 'browse-movies:1']);
+    expect(api.categoryRequests, ['home-trending:1', 'browse-movies:1']);
 
     await tester.tap(find.text('المباشر'));
     await tester.pumpAndSettle();
@@ -80,7 +80,7 @@ void main() {
     await tester.tap(find.text('الرئيسية'));
     await tester.pumpAndSettle();
     expect(api.matchesRequests, 1);
-    expect(api.categoryRequests, ['3isk-latest:1', 'browse-movies:1']);
+    expect(api.categoryRequests, ['home-trending:1', 'browse-movies:1']);
     expect(api.newsRequests, 0);
     expect(find.text('الأخبار'), findsNothing);
 

@@ -5,6 +5,16 @@ import 'package:http/testing.dart';
 import 'package:mitv/src/api_client.dart';
 
 void main() {
+  test('home reads the implemented TMDb trending contract', () async {
+    final api=MitvApi(client:MockClient((request) async {
+      expect(request.url.path,'/api/v1/tmdb/trending');
+      expect(request.url.queryParameters['type'],'all');
+      return http.Response(jsonEncode({'status':'success','data':[{'id':'42','ref':'tmdb:movie:42','title':'Fixture','type':'movie','source':'tmdb'}]}),200);
+    }));
+    addTearDown(api.close);
+    expect((await api.category('home-trending')).single.ref,'tmdb:movie:42');
+  });
+
   test('actual details opens record only the original reference; prefetch does not', () async {
     final opens=<Uri>[];
     final api=MitvApi(client:MockClient((request) async {

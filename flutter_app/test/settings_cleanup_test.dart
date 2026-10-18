@@ -65,7 +65,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('الأفلام'));
       await tester.pumpAndSettle();
-      expect(api.categories, ['3isk-latest', 'browse-movies']);
+      expect(api.categories, ['home-trending', 'browse-movies']);
       await tester.tap(find.text('الإعدادات'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('مسح الكاش المحلي'));
@@ -91,7 +91,7 @@ void main() {
       expect(store.resumePosition(item.ref), const Duration(seconds: 15));
       await tester.tap(find.text('الرئيسية'));
       await tester.pumpAndSettle();
-      expect(api.categories, ['3isk-latest', 'browse-movies', '3isk-latest']);
+      expect(api.categories, ['home-trending', 'browse-movies', 'home-trending']);
       await tester.tap(find.text('الأفلام'));
       await tester.pumpAndSettle();
       expect(api.categories.last, 'browse-movies');
@@ -163,10 +163,10 @@ void main() {
     await tester.tap(find.text('الأفلام'));
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
-    expect(api.categories, ['3isk-latest', 'browse-movies']);
+    expect(api.categories, ['home-trending', 'browse-movies']);
     pending.complete();
     await tester.pumpAndSettle();
-    expect(api.categories, ['3isk-latest', 'browse-movies', 'browse-movies']);
+    expect(api.categories, ['home-trending', 'browse-movies', 'browse-movies']);
     expect(api.clears, 1);
     await tester.tap(find.text('الإعدادات'));
     await tester.pumpAndSettle();

@@ -33,7 +33,7 @@ export function normalizeCatalogItem(item={}) {
   const result = {
     id:asText(item.id||item.ref||item.href||item.link), title:asText(item.title||item.name)||'بدون عنوان',
     poster:asText(item.poster||item.img||item.image),
-    type:['movie','series','episode','anime'].includes(declaredType) ? declaredType : item.is_series===false ? 'movie' : 'series',
+    type:['movie','series','episode','anime','live','program','unknown'].includes(declaredType) ? declaredType : item.is_series===false ? 'movie' : item.is_series===true ? 'series' : 'unknown',
     year:asNumber(item.year), ref:asText(item.ref||item.href||item.link),
     ...(item.source ? {source:asText(item.source)} : {}),
   };

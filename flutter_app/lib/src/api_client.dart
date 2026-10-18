@@ -283,7 +283,9 @@ class MitvApi implements MediaRepository {
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
     final generation = _cacheGeneration;
-    final json = _useEdge && categoryId.startsWith('laroza-')
+    final json = categoryId == 'home-trending'
+        ? await _getJson('/api/v1/tmdb/trending',{'type':'all'})
+        : _useEdge && categoryId.startsWith('laroza-')
         ? await _edgeJson('/v1/laroza/category', {
             'section': categoryId.substring(7),
             'page': '$page',

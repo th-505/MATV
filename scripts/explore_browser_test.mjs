@@ -92,6 +92,14 @@ try {
     // General search must remain usable before the metadata retry succeeds.
     await input.fill('general-before-retry'); await input.press('Enter');
     await page.waitForFunction(id => document.querySelector(id)?.textContent.includes('Result general-before-retry'), main?'#moviesGrid':'#mediaGrid');
+    for (const [width,columns] of [[320,2],[768,4],[1024,6],[1440,8],[1920,10]]) {
+      await page.setViewportSize({width,height:844});
+      const layout=await grid.evaluate(element=>({columns:getComputedStyle(element).gridTemplateColumns.split(' ').length,
+        width:element.getBoundingClientRect().width,scroll:document.documentElement.scrollWidth,viewport:innerWidth}));
+      assert.equal(layout.columns,columns,`${file} responsive columns at ${width}`);
+      assert.ok(layout.scroll<=layout.viewport+1,`${file} horizontal overflow at ${width}: ${JSON.stringify(layout)}`);
+    }
+    await page.setViewportSize({width:390,height:844});
     assert.equal(providerLoads, 1);
     await retry.evaluate(button => { button.click(); button.click(); });
     assert.match(await page.locator(main?'#searchProviderState':'#sourcesState').textContent(), /جارٍ تحميل/);
