@@ -219,89 +219,10 @@ export async function probeAndRankServers(rawServers = []) {
 
 const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
 
-// توليد السيرفرات السحابية الاحتياطية فائقة السرعة عند تعذر القواشط المباشرة
-export function generateCloudFallbackServers(tmdbId, isTv, season = 1, episode = 1) {
-  const safeId = String(tmdbId || '550').trim();
-  const s = Math.max(1, Number(season) || 1);
-  const ep = Math.max(1, Number(episode) || 1);
-  return [
-    {
-      provider: 'vidlink',
-      code: 'VL-1',
-      kind: 'embed',
-      url: `https://vidlink.pro/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}`,
-      ms: 60,
-      alive: true,
-      tier: 1,
-      emoji: '⚡',
-      label: '60ms فائق',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.22)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'vidsrc',
-      code: 'VC-1',
-      kind: 'embed',
-      url: `https://vidsrc.cc/v2/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}?autoPlay=true`,
-      ms: 75,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '75ms سريع',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.20)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'vidsrcto',
-      code: 'VT-1',
-      kind: 'embed',
-      url: `https://vidsrc.to/embed/${isTv ? 'tv' : 'movie'}/${safeId}${isTv ? `/${s}/${ep}` : ''}`,
-      ms: 90,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '90ms ممتاز',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'multiembed',
-      code: 'MD-1',
-      kind: 'embed',
-      url: `https://multiembed.mov/?video_id=${safeId}&tmdb=1${isTv ? `&s=${s}&e=${ep}` : ''}`,
-      ms: 110,
-      alive: true,
-      tier: 1,
-      emoji: '🟢',
-      label: '110ms سحابي',
-      badgeColor: '#10b981',
-      bgColor: 'rgba(16,185,129,0.18)',
-      borderColor: '#10b981'
-    },
-    {
-      provider: 'vidsrcme',
-      code: 'VM-1',
-      kind: 'embed',
-      url: `https://vidsrc.me/embed/${isTv ? 'tv' : 'movie'}?tmdb=${safeId}${isTv ? `&season=${s}&episode=${ep}` : ''}`,
-      ms: 130,
-      alive: true,
-      tier: 2,
-      emoji: '🟢',
-      label: '130ms احتياطي',
-      badgeColor: '#4ade80',
-      bgColor: 'rgba(74,222,128,0.16)',
-      borderColor: '#4ade80'
-    }
-  ];
-}
-
-// بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة (القواشط الـ 18 + السيرفرات السحابية)
+// بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة من القواشط المحلية النقية (Direct Media 0 Ads 0 Embed)
 export async function resolveUnifiedServersForItem(item, season = 1, episode = 1, apiBase = '') {
   const servers = [];
-  const backendBase = apiBase || (typeof ProviderEndpoints !== 'undefined' ? ProviderEndpoints?.backend : '') || '';
+  const backendBase = apiBase || (typeof ProviderEndpoints !== 'undefined' ? ProviderEndpoints?.backend : '') || 'https://matv.onrender.com';
   const isTv = item?.mediaType === 'tv' || item?.type === 'series' || item?.is_series;
   let tmdbId = item?.tmdbId || item?.tmdb_id || '';
   if (!tmdbId && String(item?.id || '').startsWith('tmdb:')) {
@@ -311,14 +232,24 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     tmdbId = String(item.id);
   }
 
-  // إذا كان العمل يحتوي على روابط مباشرة في بياناته
+  // 1. إذا كان العمل يحتوي على روابط مباشرة في بياناته
   if (Array.isArray(item?.servers)) {
     for (const s of item.servers) {
-      if (s?.url) servers.push({ provider: s.provider || s.name || 'akwam', url: s.url, kind: s.kind, downloadUrl: s.downloadUrl || s.url });
+      if (s?.url && (s.url.includes('.mp4') || s.url.includes('.m3u8') || s.kind === 'direct')) {
+        const prov = s.provider || s.name || 'akwam';
+        servers.push({
+          provider: prov,
+          code: s.code || encodeProviderServerName(prov, servers.length + 1),
+          url: s.url,
+          kind: 'direct',
+          downloadUrl: s.downloadUrl || s.url,
+          quality: s.quality || 'HD'
+        });
+      }
     }
   }
 
-  // 1. جلب السيرفرات المستخرجة من القواشط الـ 18 عبر Edge Worker أو السيرفر الخلفي
+  // 2. جلب السيرفرات المستخرجة من القواشط عبر Cloudflare Edge Resolver
   const candidateRefs = [
     ...(Array.isArray(item?.mergedRefs) ? item.mergedRefs : []),
     item?.episodeRef,
@@ -333,17 +264,20 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
       const refParam = refVal.includes(':')
         ? `ref=${encodeURIComponent(refVal)}`
         : `episode_id=${encodeURIComponent(refVal)}`;
-      const edgeRes = await fetch(`${EDGE_RESOLVER_BASE}/v1/resolve?${refParam}`);
+      const edgeRes = await fetch(`${EDGE_RESOLVER_BASE}/v1/resolve?${refParam}`, { signal: AbortSignal.timeout(8000) });
       if (edgeRes.ok) {
         const edgeJson = await edgeRes.json();
         if (Array.isArray(edgeJson?.sources)) {
           for (const s of edgeJson.sources) {
-            if (s?.url) {
+            if (s?.url && (s.url.includes('.mp4') || s.url.includes('.m3u8') || s.kind === 'direct')) {
+              const prov = s.provider || s.provider_id || '3isk';
               servers.push({
-                provider: s.provider || s.provider_id || '3isk',
+                provider: prov,
+                code: encodeProviderServerName(prov, servers.length + 1),
                 url: s.url,
-                kind: s.format === 'hls' || /\.(m3u8|mp4)(?:$|\?)/i.test(s.url) ? 'direct' : 'embed',
-                downloadUrl: s.url
+                kind: 'direct',
+                downloadUrl: s.url,
+                quality: s.quality || 'HD'
               });
             }
           }
@@ -352,77 +286,72 @@ export async function resolveUnifiedServersForItem(item, season = 1, episode = 1
     } catch (_) {}
   }
 
-  try {
-    const q = new URLSearchParams({
-      id: item?.id || '',
-      title: item?.title || item?.name || item?.originalTitle || '',
-      year: item?.year || '',
-      season: String(season),
-      episode: String(episode)
-    });
-    const candidateBases = [backendBase, 'http://127.0.0.1:3000'].filter(Boolean);
-    for (const base of candidateBases) {
+  // 3. استخراج البث المباشر الخام من القواشط المحلية المعتمدة (أكوام، ماي سيما، إيجي ديد، عرب سيد، سيما ناو، أنمي فور أب، قصة عشق…)
+  const candidateBases = [
+    backendBase,
+    'https://matv.onrender.com',
+    'http://127.0.0.1:3000'
+  ].filter(Boolean);
+  const uniqueBases = Array.from(new Set(candidateBases));
+
+  const cleanRawTitle = String(item?.title || item?.name || item?.originalTitle || '')
+    .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الموسم\s*\d+|الحلقة\s*\d+|\b\d{4}\b)/gi, '')
+    .replace(/[-:_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const titleVariants = [
+    item?.title || item?.name,
+    cleanRawTitle,
+    item?.originalTitle
+  ].filter(t => t && String(t).trim().length >= 2);
+  const uniqueTitles = Array.from(new Set(titleVariants));
+
+  for (const base of uniqueBases) {
+    if (servers.length > 0) break;
+
+    for (const titleQuery of uniqueTitles) {
+      if (servers.length > 0) break;
       try {
-        const res = await fetch(`${base}/api/v1/resolve?${q.toString()}`, { signal: AbortSignal.timeout(6000) });
+        const q = new URLSearchParams({
+          id: item?.id || '',
+          title: titleQuery,
+          year: item?.year || '',
+          season: String(season),
+          episode: String(episode)
+        });
+        const res = await fetch(`${base}/api/v1/resolve?${q.toString()}`, { signal: AbortSignal.timeout(20000) });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data?.servers) && data.servers.length > 0) {
             for (const s of data.servers) {
-              if (s?.url) servers.push({ provider: s.provider || s.source || 'akwam', code: s.code, kind: s.kind || 'direct', url: s.url, headers: s.headers || {}, downloadUrl: s.downloadUrl || s.url });
+              if (s?.url && (s.url.includes('.mp4') || s.url.includes('.m3u8') || s.kind === 'direct')) {
+                const prov = s.provider || s.source || 'akwam';
+                servers.push({
+                  provider: prov,
+                  code: s.code || encodeProviderServerName(prov, servers.length + 1),
+                  kind: 'direct',
+                  url: s.url,
+                  headers: s.headers || {},
+                  downloadUrl: s.downloadUrl || s.url,
+                  quality: s.quality || 'HD'
+                });
+              }
             }
-            break;
-          } else if (data?.url) {
-            servers.push({ provider: data.provider || 'akwam', code: data.code, kind: data.kind || 'direct', url: data.url, headers: data.headers || {}, downloadUrl: data.downloadUrl || data.url });
-            break;
           }
         }
       } catch (_) {}
     }
-  } catch (_) {}
-
-  // إن لم يكن لدينا tmdbId رقمي للعمل (مثل الأعمال القادمة من القواشط العربية)، نبحث عنه تلقائياً في TMDb
-  if (!tmdbId || !/^\d+$/.test(String(tmdbId))) {
-    const cleanQuery = String(item?.originalTitle || item?.title || '')
-      .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الحلقة\s*\d+|الموسم\s*\d+|\b\d{4}\b)/gi, '')
-      .trim();
-    if (cleanQuery.length >= 2) {
-      try {
-        const searchData = await tmdbFetch(`/search/${isTv ? 'tv' : 'movie'}`, { query: cleanQuery });
-        const firstHit = searchData?.results?.[0];
-        if (firstHit?.id) {
-          tmdbId = String(firstHit.id);
-        } else {
-          const multiData = await tmdbFetch('/search/multi', { query: cleanQuery });
-          const multiHit = (multiData?.results || []).find(r => r.media_type === 'movie' || r.media_type === 'tv');
-          if (multiHit?.id) tmdbId = String(multiHit.id);
-        }
-      } catch (_) {}
-    }
   }
 
-  if (!tmdbId) {
-    const digits = String(item?.id || '').match(/\d+/);
-    if (digits) tmdbId = digits[0];
-  }
-
-  // 2. تصفية وتصنيف السيرفرات المباشرة النقية (m3u8 / mp4) إن توفرت
+  // 4. تصفية صارمة نهائية: حظر أي رابط إعلاني أو إطار خارجي واقتصار القائمة 100% على الروابط المباشرة من قواشطنا
   const cleanDirect = servers.filter(s => {
     const u = String(s.url || '').toLowerCase();
-    return s.kind === 'direct' || u.includes('.m3u8') || u.includes('.mp4') ||
-      ['akwam', 'mycima', 'egydead', 'arabseed', 'cimanow', 'anime4up', 'witanime', '3isk', 'akoam', 'alooy', 'laroza'].includes(String(s.provider).toLowerCase());
+    if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) return false;
+    return s.kind === 'direct' || u.includes('.m3u8') || u.includes('.mp4');
   });
 
-  // 3. تجهيز السيرفرات السحابية الموثوقة دائماً لضمان عمل كافة الأفلام والمسلسلات على الهواتف
-  const cloudFallbacks = generateCloudFallbackServers(tmdbId || '550', isTv, season, episode);
-
-  // دمج المجموعتين: الروابط المباشرة في المقدمة دائماً، تليها السيرفرات السحابية السريعة
-  const unifiedPool = [];
-  if (cleanDirect.length > 0) {
-    unifiedPool.push(...cleanDirect);
-  }
-  unifiedPool.push(...cloudFallbacks);
-
-  return probeAndRankServers(unifiedPool);
+  return probeAndRankServers(cleanDirect);
 }
 
 // محرك البحث الموحد (Search-Fusion Engine) الذي يصفي ويدمج النتائج من القواشط + TMDb

@@ -1414,13 +1414,12 @@ import {
   nexusUnifiedSearch,
   formatRuntimeArabic,
   normalizeEpisodesList,
-  probeAndRankServers,
-  generateCloudFallbackServers
-} from './web/core/ma-nexus.js?v=1.0.48';
+  probeAndRankServers
+} from './web/core/ma-nexus.js?v=1.0.49';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=1.0.48').catch(console.warn);
+  navigator.serviceWorker.register('./sw.js?v=1.0.49').catch(console.warn);
 }
 
 // Global State & In-Memory Work Registry
@@ -2573,7 +2572,12 @@ function renderServersButtons(servers, chosenIdx = 0) {
   currentWatchServers = safeServers;
 
   if (safeServers.length === 0) {
-    serversWrap.innerHTML = '<div style="color: #e8bd75; padding: 12px; font-weight: bold; font-size: 0.85rem;">⚡ جاري تجهيز سيرفرات المشاهدة...</div>';
+    serversWrap.innerHTML = `
+      <div style="color:#e8bd75; padding:12px; font-weight:bold; font-size:0.85rem; display:flex; align-items:center; gap:10px;">
+        <span>⚠️ جاري تجهيز واستخراج روابط البث من القواشط لهذا العمل...</span>
+        <button class="tool-btn" onclick="location.reload()" style="padding:4px 10px; font-size:0.75rem;">🔄 إعادة المحاولة</button>
+      </div>
+    `;
     return;
   }
 
@@ -2585,14 +2589,14 @@ function renderServersButtons(servers, chosenIdx = 0) {
     btn.className = 'srv-ping-btn' + (idx === validIdx ? ' active' : '');
     btn.dataset.url = srv.url || '';
     btn.dataset.code = srv.code || '';
-    btn.style.background = srv.bgColor || (isDirect ? 'rgba(16,185,129,0.22)' : 'rgba(59,130,246,0.18)');
-    btn.style.border = `1.5px solid ${srv.borderColor || (isDirect ? '#10b981' : '#3b82f6')}`;
-    const badgeText = srv.label || (isDirect ? 'مباشر 0 إعلانات' : (srv.ms ? `${srv.ms}ms` : 'سحابي'));
-    btn.innerHTML = `<span>${srv.emoji || (isDirect ? '🟢' : '⚡')}</span><span>${srv.code || ('SRV-' + (idx + 1))}</span><span style="font-size:0.74rem;opacity:0.95;color:${srv.badgeColor || (isDirect ? '#10b981' : '#60a5fa')};">• ${badgeText}</span>`;
+    btn.style.background = srv.bgColor || 'rgba(16,185,129,0.20)';
+    btn.style.border = `1.5px solid ${srv.borderColor || '#10b981'}`;
+    const badgeText = srv.label || (srv.ms ? `${srv.ms}ms` : 'مباشر 0 إعلانات');
+    btn.innerHTML = `<span>${srv.emoji || '🟢'}</span><span>${srv.code || ('SRV-' + (idx + 1))}</span><span style="font-size:0.74rem;opacity:0.95;color:${srv.badgeColor || '#10b981'};">• ${badgeText}</span>`;
     btn.onclick = () => {
       serversWrap.querySelectorAll('.srv-ping-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      toast(`تم التبديل إلى السيرفر ${srv.code || (idx + 1)}`);
+      toast(`تم التبديل إلى سيرفر القشط المباشر ${srv.code || (idx + 1)}`);
       activateServerOnStage(srv, currentWatchItem, currentWatchSeason, currentWatchEpisode);
     };
     serversWrap.appendChild(btn);
@@ -2654,7 +2658,7 @@ async function renderPlayerWatchPage(params) {
   // Server Bar Loading Indicator
   const serversWrap = document.getElementById('playerServersWrap') || document.getElementById('serversListContainer');
   if (serversWrap) {
-    serversWrap.innerHTML = '<span style="color:var(--gold-light);font-size:0.82rem;">⚡ جاري فحص سرعة السيرفرات المباشرة للقواشط (Ping ms)…</span>';
+    serversWrap.innerHTML = '<span style="color:var(--gold-primary);font-size:0.85rem;font-weight:bold;">⚡ جاري سحب روابط البث المباشر من قواشط أكوام، ماي سيما، إيجي ديد، عرب سيد…</span>';
   }
 
   let rankedServers = [];
@@ -2662,13 +2666,6 @@ async function renderPlayerWatchPage(params) {
     rankedServers = await probeAndRankServers(item.servers);
   } else {
     rankedServers = await resolveUnifiedServersForItem(item, season, epNum);
-  }
-
-  // صمام أمان فوري لضمان عدم بقاء الشاشة سوداء أو فارغة نهائياً (خاصة على الهواتف بدون سيرفر محلي)
-  if (!rankedServers || rankedServers.length === 0) {
-    let tmdbClean = item.tmdbId || (String(id).startsWith('tmdb:') ? String(id).split(':').pop() : '');
-    if (!tmdbClean && /^\d+$/.test(String(id))) tmdbClean = String(id);
-    rankedServers = generateCloudFallbackServers(tmdbClean || '550', isTv, season, epNum);
   }
 
   // رسم أزرار السيرفرات وتشغيل السيرفر المختار تلقائياً
