@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'ma-tv-web-v1.0.47';
+const CACHE_NAME = 'ma-tv-web-v1.0.48';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
