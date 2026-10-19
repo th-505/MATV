@@ -143,6 +143,13 @@ export function createMitvRuntimeServer({
 }
 
 export function startMitvRuntimeServer({ port = Number(process.env.PORT || 3000) } = {}) {
+  process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT_EXCEPTION]', err?.message || err);
+  });
+  process.on('unhandledRejection', (reason) => {
+    console.error('[UNHANDLED_REJECTION]', reason?.message || reason);
+  });
+
   const server = createMitvRuntimeServer();
   return server.listen(port, "0.0.0.0", () => {
     console.log(`MITV backend listening on ${port}`);
