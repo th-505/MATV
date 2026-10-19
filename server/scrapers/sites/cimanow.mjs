@@ -797,7 +797,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
         for (let i = 0; i < parsedServers.length; i++) {
           const s = parsedServers[i];
           const sName = s.name || `Server ${i + 1}`;
-          const placeholderUrl = `${activeOrigin}/watch/resolve#server=${encodeURIComponent(sName)}&index=${i}&key=${key}`;
+          const placeholderUrl = `${activeOrigin}/watch/resolve#server=${encodeURIComponent(sName)}&index=${i}&key=${encodeURIComponent(key)}&csrf=${encodeURIComponent(csrfToken)}&watchUrl=${encodeURIComponent(watchUrl)}`;
 
           if (!seenUrls.has(placeholderUrl)) {
             seenUrls.add(placeholderUrl);
@@ -915,7 +915,8 @@ export async function scrapeServers(urlOrRef, options = {}) {
 }
 
 export async function resolveStream(urlOrRef, options = {}) {
-  const rawUrl = String(urlOrRef || '').trim();
+  const rawInput = typeof urlOrRef === 'object' && urlOrRef !== null ? (urlOrRef.url || '') : urlOrRef;
+  const rawUrl = String(rawInput || '').trim();
   if (!rawUrl) {
     throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL, 'Stream URL is required');
   }
@@ -960,7 +961,70 @@ export async function resolveStream(urlOrRef, options = {}) {
     } catch (_) {}
   }
 
-  // 4. Handle CimaNow `/watch/resolve#...` or embed unwrapping
+  // 4. Handle CimaNow `/watch/resolve#...` authenticated resolution
+  if (rawUrl.includes('/watch/resolve#')) {
+    try {
+      const hashPart = rawUrl.split('#')[1] || '';
+      const params = new URLSearchParams(hashPart);
+      const key = params.get('key');
+      const indexStr = params.get('index');
+      const csrf = params.get('csrf');
+      const origin = new URL(rawUrl).origin;
+      const watchUrl = params.get('watchUrl') || `${origin}/`;
+
+      if (key && indexStr !== null && csrf) {
+        const postRes = await fetch(`${origin}/watch/resolve`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrf,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+            Referer: watchUrl
+          },
+          body: JSON.stringify({
+            key,
+            index: parseInt(indexStr, 10)
+          }),
+          signal: AbortSignal.timeout(options.timeoutMs || 8000)
+        });
+
+        if (postRes.ok) {
+          const json = await postRes.json();
+          if (json?.ok && typeof json.url === 'string' && json.url.trim()) {
+            const resolvedTarget = json.url.trim();
+            const unwrapped = await unwrapEmbedToDirectStreams(resolvedTarget, watchUrl);
+            if (unwrapped && unwrapped.length > 0) {
+              const top = unwrapped[0];
+              return {
+                ok: true,
+                providerId: PROVIDER_META.id,
+                url: top.url,
+                type: top.streamType || top.type || 'mp4',
+                streamType: top.streamType || top.type || 'mp4',
+                quality: top.quality || 'HD',
+                verified: false,
+                headers: top.headers || { Referer: watchUrl }
+              };
+            }
+            return {
+              ok: true,
+              providerId: PROVIDER_META.id,
+              url: resolvedTarget,
+              type: resolvedTarget.includes('.m3u8') ? 'm3u8' : resolvedTarget.includes('.mp4') ? 'mp4' : 'embed',
+              streamType: resolvedTarget.includes('.m3u8') ? 'm3u8' : resolvedTarget.includes('.mp4') ? 'mp4' : 'embed',
+              quality: 'HD',
+              verified: false,
+              headers: { Referer: watchUrl }
+            };
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 5. Handle generic embed unwrapping
   try {
     const unwrapped = await unwrapEmbedToDirectStreams(rawUrl, `${CIMANOW_CONFIG.baseUrl}/`);
     if (unwrapped && unwrapped.length > 0) {

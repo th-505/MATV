@@ -56,14 +56,18 @@ export function isCloudflareOrAccessBlock(status, html = '', headers = null) {
 
   const body = String(html || '');
   if (
-    /Just a moment\.\.\.|Attention Required! \| Cloudflare|cf-browser-verification|cf_chl_opt|challenge-platform\/h\/[bg]\/orchestrate|Enable JavaScript and cookies to continue|DDoS-Guard/i.test(
+    /Just a moment\.\.\.|Attention Required! \| Cloudflare|cf-browser-verification|cf_chl_opt|challenge-platform\/h\/[bg]\/orchestrate|Enable JavaScript and cookies to continue|DDoS-Guard|_Incapsula_Resource|Request unsuccessful\. Incapsula|incident_id=|alliance4creativity\.com|seized by/i.test(
       body
     )
   ) {
     return true;
   }
 
-  if ((status === 403 || status === 503 || status === 429) && /cloudflare|captcha|access denied|security check/i.test(body)) {
+  if (getHeader('x-iinfo') && /_Incapsula_Resource|incident_id/i.test(body)) {
+    return true;
+  }
+
+  if ((status === 403 || status === 503 || status === 429) && /cloudflare|captcha|access denied|security check|incapsula/i.test(body)) {
     return true;
   }
 
