@@ -548,6 +548,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
       }
       if (url.pathname === '/api/v1/discovery/status') {
+        if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         try { return sendJson(req,res,200,{status:'success',data:discovery.status({
           ref:url.searchParams.get('ref') || '', season:url.searchParams.get('season') || 0,
           episode:url.searchParams.get('episode') || 0 })}); }
