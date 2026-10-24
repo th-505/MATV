@@ -74,7 +74,7 @@ def main():
         if "generated" in path.parts or "node_modules" in path.parts:
             continue
         content = path.read_text(encoding="utf-8", errors="replace")
-        provider_ids = re.findall(r"(?:PROVIDER_ID|providerId)\\s*=\\s*[\u0027\"]([^\u0027\"]+)[\u0027\"]", content)
+        provider_ids = re.findall(r"""(?:PROVIDER_ID|providerId)[ ]*=[ ]*['"]([^'"]+)['"]""", content)
         discovered.append({"path": path.as_posix(), "provider_ids": sorted(set(provider_ids)), "bytes": path.stat().st_size})
     destination = output / "provider-diagnostics.json"
     destination.write_text(json.dumps({"checked_at": datetime.now(timezone.utc).isoformat(),
