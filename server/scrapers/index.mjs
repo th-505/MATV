@@ -243,6 +243,21 @@ function cloneItems(items) {
   return Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
 }
 
+// Source-pinned exploration must never silently fall back to another scraper.
+export async function scrapePinnedSource(query, provider) {
+  const q = String(query || '').trim().replace(/\s+/g, ' ');
+  if (q.length < 2 || q.length > 120) throw Error('INVALID_QUERY');
+  const searchers = {
+    mycima: () => searchMyCima(q),
+    akoam: () => searchAkwam(q),
+  };
+  if (!Object.hasOwn(searchers, provider)) throw Error('SOURCE_NOT_SUPPORTED');
+  const items = await withConcurrencyQueue(searchers[provider]);
+  return (Array.isArray(items) ? items : []).filter(item =>
+    String(item.title || '').toLocaleLowerCase('ar').includes(q.toLocaleLowerCase('ar'))
+  );
+}
+
 export async function scrapeRealSearch(query) {
   if (typeof query !== 'string') return [];
   const q = query.trim().replace(/\s+/g, ' ');
