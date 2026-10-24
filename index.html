@@ -2982,7 +2982,8 @@ if (exploreSelect) {
   for (const source of exploreSources) {
     const option = document.createElement('option');
     option.value = source;
-    option.textContent = renamedProvider(source) + ' - ' + renamedProvider(source);
+    const arabic = {akoam:'أكوام',alooy:'ألوي',mycima:'ماي سيما',wecima:'وي سيما',cimanow:'سيما ناو',shahid4u:'شاهد فور يو',moviztime:'موفيز تايم',shii4u:'شي فور يو',egydead:'إيجي ديد',ipauniverse:'آي بي إيه', '3isk':'قصة عشق','3cktv':'ثري سيك',anime4up:'أنمي فور أب',qfilm:'كيو فيلم',ristoanime:'ريستو أنمي',mewsry:'مصري',arabseed:'عرب سيد',witanime:'ويت أنمي',laroza:'لاروزا'};
+    option.textContent = renamedProvider(source) + ' - ' + renamedProvider(arabic[source] || source);
     exploreSelect.appendChild(option);
   }
 }
