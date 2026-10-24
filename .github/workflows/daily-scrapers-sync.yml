@@ -23,7 +23,7 @@ jobs:
           node --check server/tmdb-runtime.mjs
           node --check server/fallback-providers.mjs
           node --check server/discovery-coordinator.mjs
-          node --test tests/discovery-coordinator.test.mjs
+          node --test tests/discovery-coordinator.test.mjs tests/tmdb-failover.test.mjs
       - name: Install analyzer dependencies
         run: python -m pip install requests
       - name: Inspect configured secret names (never print values)
