@@ -4,6 +4,7 @@ import argparse
 import ipaddress
 import json
 import os
+import re
 import socket
 import sys
 from datetime import datetime, timezone
@@ -61,15 +62,23 @@ def main():
                         help="Compatibility flag; key expiry is not inferred from network failures")
     args = parser.parse_args()
     providers = json.loads(Path(args.registry).read_text(encoding="utf-8"))["providers"]
-    if len(providers) != 18 or len({p["id"] for p in providers}) != 18:
-        parser.error("Expected exactly 18 unique providers")
+    if len({p["id"] for p in providers}) != len(providers):
+        parser.error("Duplicate provider IDs")
     output = Path(args.out_dir)
     output.mkdir(parents=True, exist_ok=True)
     with requests.Session() as session:
         report = [inspect(session, provider) for provider in providers if provider.get("enabled")]
+    scraper_root = Path(args.registry).parent
+    discovered = []
+    for path in sorted(scraper_root.rglob("*.mjs")):
+        if "generated" in path.parts or "node_modules" in path.parts:
+            continue
+        content = path.read_text(encoding="utf-8", errors="replace")
+        provider_ids = re.findall(r"(?:PROVIDER_ID|providerId)\\s*=\\s*[\u0027\"]([^\u0027\"]+)[\u0027\"]", content)
+        discovered.append({"path": path.as_posix(), "provider_ids": sorted(set(provider_ids)), "bytes": path.stat().st_size})
     destination = output / "provider-diagnostics.json"
     destination.write_text(json.dumps({"checked_at": datetime.now(timezone.utc).isoformat(),
-                                        "providers": report}, ensure_ascii=False, indent=2) + "\n",
+                                        "providers": report, "repository_scraper_modules": discovered}, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
     print(f"Checked {len(report)} providers; reachable={sum(p['status']=='reachable' for p in report)}")
     print(f"Report: {destination}")
