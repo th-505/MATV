@@ -52,7 +52,7 @@ function applyCors(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
   res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,Content-Disposition");
 }
@@ -552,9 +552,18 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       if (url.pathname === '/api/v1/discovery/status') {
         if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
-        try { return sendJson(req,res,200,{status:'success',data:discovery.status({
-          ref:url.searchParams.get('ref') || '', season:url.searchParams.get('season') || 0,
-          episode:url.searchParams.get('episode') || 0 })}); }
+        try {
+          const input = { ref:url.searchParams.get('ref') || '', season:url.searchParams.get('season') || 0,
+            episode:url.searchParams.get('episode') || 0 };
+          let state = discovery.status(input);
+          if (state.state === 'missing' && discoveryStore) {
+            const key = [input.ref, Number(input.season) || 0, Number(input.episode) || 0].join(':');
+            const cached = await discoveryStore.get(key).catch(() => null);
+            if (cached?.payload && new Date(cached.expires_at).getTime() > Date.now())
+              state = {key,state:'ready',result:cached.payload,expiresAt:new Date(cached.expires_at).getTime()};
+          }
+          return sendJson(req,res,200,{status:'success',data:state});
+        }
         catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
