@@ -55,5 +55,12 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
     const job = jobs.get(keyOf(input));
     return job ? { ...snapshot(job), ...(job.state === 'ready' ? { result: job.result } : {}) } : { state: 'missing' };
   }
-  return { enqueue, status, metrics: () => ({ active, queued: queue.length, cached: jobs.size }) };
+  function evictExpired() {
+    const current = now();
+    for (const [key, job] of jobs) {
+      if (job.state === 'ready' && job.expiresAt <= current) jobs.delete(key);
+      if (job.state === 'failed' && !queue.includes(job)) jobs.delete(key);
+    }
+  }
+  return { enqueue, status, evictExpired, metrics: () => ({ active, queued: queue.length, cached: jobs.size }) };
 }
