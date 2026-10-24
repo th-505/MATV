@@ -11,7 +11,7 @@ function installBrandTheme(){
   if(typeof document==='undefined')return;
   const themeMeta=document.querySelector('meta[name="theme-color"]');
   if(themeMeta)themeMeta.setAttribute('content','#07090b');
-  document.title='MA TV OFFICIAL • LUXURY CINEMA';
+  document.title='T-A-TV';
   document.documentElement.style.colorScheme='dark';
 }
 installBrandTheme();
