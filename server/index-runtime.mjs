@@ -12,6 +12,7 @@ const ALLOWED_ORIGINS = new Set([
 
 const TMDB_ROUTES = new Set([
   "/api/v1/tmdb/status",
+  "/api/v1/tmdb/catalog",
   "/api/v1/tmdb/search",
   "/api/v1/tmdb/details",
   "/api/v1/tmdb/season",
@@ -50,6 +51,8 @@ function sendJson(req, res, status, payload) {
 function errorStatus(message) {
   if (message === "TMDB_NOT_CONFIGURED") return 503;
   if (message === "TMDB_TIMEOUT") return 504;
+  if (["TMDB_BAD_CATALOG_PATH", "TMDB_BAD_CATALOG_PARAMS"].includes(message)) return 400;
+  if (["TMDB_RATE_LIMITED", "TMDB_BUSY"].includes(message)) return 429;
   if (["TMDB_BAD_REFERENCE", "TMDB_BAD_SEASON", "TMDB_SEASON_REQUIRES_SERIES"].includes(message)) return 400;
   if (["INVALID_TMDB_ID", "INVALID_MEDIA_TYPE", "INVALID_SEASON", "INVALID_EPISODE", "BAD_FALLBACK_REFERENCE", "BAD_FALLBACK_RANGE"].includes(message)) return 400;
   if (message === "FALLBACK_REFERENCE_EXPIRED" || message === "EMBEDDED_FALLBACK_DISABLED") return 410;
@@ -93,6 +96,14 @@ export function createMitvRuntimeServer({
       }
       if (req.method !== "GET") return sendJson(req, res, 405, { status: "error", message: "METHOD_NOT_ALLOWED" });
       try {
+        if (url.pathname === "/api/v1/tmdb/catalog") {
+          const params = Object.create(null);
+          for (const [key, value] of url.searchParams) {
+            if (url.searchParams.getAll(key).length !== 1) throw Error('TMDB_BAD_CATALOG_PARAMS');
+            if (key !== 'path') params[key] = value;
+          }
+          return sendJson(req, res, 200, await tmdbRuntime.catalog(url.searchParams.get('path'), params));
+        }
         if (url.pathname === "/api/v1/tmdb/status") return sendJson(req, res, 200, tmdbRuntime.status());
         if (url.pathname === "/api/v1/tmdb/search") {
           const query = String(url.searchParams.get("q") || "").trim();
@@ -127,7 +138,7 @@ export function createMitvRuntimeServer({
       if (req.method !== "GET") return sendJson(req, res, 405, { status: "error", message: "METHOD_NOT_ALLOWED" });
       try {
         if (url.pathname === "/api/v1/fallback/status") return sendJson(req, res, 200, fallbackRuntime.status());
-        if (url.pathname === "/api/v1/fallback/resolve") return sendJson(req, res, 200, fallbackRuntime.resolve(fallbackIdentity(url)));
+        if (url.pathname === "/api/v1/fallback/resolve") return sendJson(req, res, 200, await fallbackRuntime.resolve(fallbackIdentity(url)));
         const ref = String(url.searchParams.get("ref") || "").trim();
         if (url.pathname === "/api/v1/fallback/probe") return sendJson(req, res, 200, await fallbackRuntime.probe(ref));
         return sendJson(req, res, 200, fallbackRuntime.recordFailure(ref));

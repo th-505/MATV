@@ -1,3 +1,7 @@
+import { createConcurrencyQueue } from './shared/concurrency.mjs';
+import { createContentDiscovery } from './content-discovery.mjs';
+import { PROVIDERS_MAP } from './registry.mjs';
+import { searchSource, searchAllSources } from './source-registry.mjs';
 // =====================================================================
 // MA TV SUPREME REAL SCRAPERS MASTER ENGINE (ZERO IFRAMES DIRECT RESOLUTION)
 // =====================================================================
@@ -20,19 +24,8 @@ export { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches };
 const TMDB_API_KEYS = [...new Set([process.env.TMDB_API_KEY || process.env.TMDB_API_KEY_OL, process.env.TMDB_API_KEY_BP].map(value => String(value || '').trim()).filter(Boolean))];
 const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
-const MAX_CONCURRENT_REQUESTS = 6;
-const MAX_QUEUE_SIZE = 30;
-let activeRequests = 0;
-const waitQueue = [];
-async function withConcurrencyQueue(task) {
-  if (activeRequests >= MAX_CONCURRENT_REQUESTS) {
-    if (waitQueue.length >= MAX_QUEUE_SIZE) throw new Error('SERVER_BUSY_QUEUE_FULL');
-    await new Promise(resolve => waitQueue.push(resolve));
-  }
-  activeRequests++;
-  try { return await task(); }
-  finally { activeRequests--; const next = waitQueue.shift(); if (next) next(); }
-}
+const requestQueue = createConcurrencyQueue({ concurrency: 6, maxQueued: 30 });
+const withConcurrencyQueue = requestQueue.run;
 
 const searchCache = new Map();
 const searchInFlight = new Map();
@@ -216,27 +209,8 @@ export async function scrapeRealCategory(category, page = 1) {
  * Executes a real search query across top scraping engines concurrently
  */
 async function scrapeRealSearchUncached(q) {
-  try {
-    const [mycimaRes, akwamRes, egydeadRes, animeRes] = await Promise.allSettled([
-      searchMyCima(q),
-      searchAkwam(q),
-      scrapeEgyDeadCategory('movies', 1),
-      scrapeAnime4UpCategory('anime_series', 1)
-    ]);
-
-    const combined = [
-      ...(mycimaRes.status === 'fulfilled' ? mycimaRes.value : []),
-      ...(akwamRes.status === 'fulfilled' ? akwamRes.value : []),
-      ...(egydeadRes.status === 'fulfilled' ? egydeadRes.value : []),
-      ...(animeRes.status === 'fulfilled' ? animeRes.value : [])
-    ];
-
-    const filtered = combined.filter(it => it.title && it.title.toLowerCase().includes(q.toLowerCase()));
-    return enrichCatalogWithTmdb(filtered.length > 0 ? filtered : combined.slice(0, 15));
-  } catch (err) {
-    console.warn('Scraping search error:', err);
-    return [];
-  }
+  const items = await searchAllSources(q);
+  return enrichCatalogWithTmdb(items);
 }
 
 function cloneItems(items) {
@@ -245,17 +219,7 @@ function cloneItems(items) {
 
 // Source-pinned exploration must never silently fall back to another scraper.
 export async function scrapePinnedSource(query, provider) {
-  const q = String(query || '').trim().replace(/\s+/g, ' ');
-  if (q.length < 2 || q.length > 120) throw Error('INVALID_QUERY');
-  const searchers = {
-    mycima: () => searchMyCima(q),
-    akoam: () => searchAkwam(q),
-  };
-  if (!Object.hasOwn(searchers, provider)) throw Error('SOURCE_NOT_SUPPORTED');
-  const items = await withConcurrencyQueue(searchers[provider]);
-  return (Array.isArray(items) ? items : []).filter(item =>
-    String(item.title || '').toLocaleLowerCase('ar').includes(q.toLocaleLowerCase('ar'))
-  );
+  return withConcurrencyQueue(() => searchSource(query, provider));
 }
 
 export async function scrapeRealSearch(query) {
@@ -446,171 +410,14 @@ export async function scrapeRealDetails(refOrUrl) {
   return null;
 }
 
-// ---------------------------------------------------------------------
-// Unified Scraper Runners for activateAllScrapersForContent
-// ---------------------------------------------------------------------
-
-export async function runMyCimaScraper(title, season = 1, episode = 1) {
-  if (!title) return [];
-  try {
-    const hits = await searchMyCima(title);
-    if (!Array.isArray(hits) || hits.length === 0) return [];
-    const hit = hits[0];
-    const details = await extractMyCimaStreamsAndEpisodes(hit.url);
-    let targetUrl = hit.url;
-    if (Array.isArray(details?.episodes) && details.episodes.length > 0) {
-      const epMatch = details.episodes.find(e => Number(e.number) === Number(episode)) || details.episodes[0];
-      if (epMatch?.url) targetUrl = epMatch.url;
-    }
-    const streams = targetUrl !== hit.url ? (await extractMyCimaStreamsAndEpisodes(targetUrl)) : details;
-    return (streams?.servers || []).map((s, idx) => ({
-      provider: 'mycima',
-      code: `MA-${idx + 1}`,
-      kind: 'direct',
-      url: s.url,
-      quality: s.quality || 'HD',
-      headers: s.headers || {}
-    }));
-  } catch (_) {
-    return [];
-  }
-}
-
-export async function runAkwamScraper(title, season = 1, episode = 1) {
-  if (!title) return [];
-  try {
-    const hits = await searchAkwam(title);
-    if (!Array.isArray(hits) || hits.length === 0) return [];
-    const hit = hits[0];
-    const details = await extractAkwamStreamsAndEpisodes(hit.url);
-    let targetUrl = hit.url;
-    if (Array.isArray(details?.episodes) && details.episodes.length > 0) {
-      const epMatch = details.episodes.find(e => Number(e.number) === Number(episode)) || details.episodes[0];
-      if (epMatch?.url) targetUrl = epMatch.url;
-    }
-    const streams = targetUrl !== hit.url ? (await extractAkwamStreamsAndEpisodes(targetUrl)) : details;
-    return (streams?.servers || []).map((s, idx) => ({
-      provider: 'akwam',
-      code: `AK-${idx + 1}`,
-      kind: 'direct',
-      url: s.url,
-      quality: s.quality || 'HD',
-      headers: s.headers || {}
-    }));
-  } catch (_) {
-    return [];
-  }
-}
-
-export async function runEgyDeadScraper(title, season = 1, episode = 1) {
-  if (!title) return [];
-  try {
-    const movies = await scrapeEgyDeadCategory('movies_foreign', 1);
-    const hit = movies.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || movies[0];
-    if (!hit) return [];
-    const details = await extractEgyDeadStreamsAndEpisodes(hit.url);
-    return (details?.servers || []).map((s, idx) => ({
-      provider: 'egydead',
-      code: `ED-${idx + 1}`,
-      kind: s.kind || 'direct',
-      url: s.url,
-      quality: s.quality || 'HD',
-      headers: s.headers || {}
-    }));
-  } catch (_) {
-    return [];
-  }
-}
-
-export async function runArabSeedScraper(title, season = 1, episode = 1) {
-  if (!title) return [];
-  try {
-    const movies = await scrapeArabSeedCategory('movies_foreign', 1);
-    const hit = movies.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || movies[0];
-    if (!hit) return [];
-    const details = await extractArabSeedStreamsAndEpisodes(hit.url);
-    return (details?.servers || []).map((s, idx) => ({
-      provider: 'arabseed',
-      code: `AD-${idx + 1}`,
-      kind: s.kind || 'direct',
-      url: s.url,
-      quality: s.quality || 'HD',
-      headers: s.headers || {}
-    }));
-  } catch (_) {
-    return [];
-  }
-}
-
-export async function runCimanowScraper(title, season = 1, episode = 1) {
-  if (!title) return [];
-  try {
-    const movies = await scrapeCimaNowCategory('movies_foreign', 1);
-    const hit = movies.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || movies[0];
-    if (!hit) return [];
-    const details = await extractCimaNowStreamsAndEpisodes(hit.url);
-    return (details?.servers || []).map((s, idx) => ({
-      provider: 'cimanow',
-      code: `CW-${idx + 1}`,
-      kind: s.kind || 'direct',
-      url: s.url,
-      quality: s.quality || 'HD',
-      headers: s.headers || {}
-    }));
-  } catch (_) {
-    return [];
-  }
-}
-
-export async function runAnime4upScraper(title, season = 1, episode = 1) {
-  if (!title) return [];
-  try {
-    const anime = await scrapeAnime4UpCategory('anime_series', 1);
-    const hit = anime.find(m => m.title && m.title.toLowerCase().includes(title.toLowerCase())) || anime[0];
-    if (!hit) return [];
-    const details = await extractAnime4UpStreamsAndEpisodes(hit.url);
-    return (details?.servers || []).map((s, idx) => ({
-      provider: 'anime4up',
-      code: `AP-${idx + 1}`,
-      kind: s.kind || 'direct',
-      url: s.url,
-      quality: s.quality || 'HD',
-      headers: s.headers || {}
-    }));
-  } catch (_) {
-    return [];
-  }
-}
-
-// تفعيل وتشغيل جميع القواشط المحلية لجلب الروابط المباشرة النقية (0 إعلانات، 0 تكلفة)
-export async function activateAllScrapersForContent(title, season = 1, episode = 1) {
-  console.log("جاري تشغيل قواشط MA-NEXUS المجاورة لجلب روابط البث المباشر...");
-  
-  const scrapers = [
-    runMyCimaScraper,
-    runAkwamScraper,
-    runEgyDeadScraper,
-    runArabSeedScraper,
-    runCimanowScraper,
-    runAnime4upScraper
-  ];
-
-  let directStreams = [];
-
-  for (const scraper of scrapers) {
-    try {
-      const results = await scraper(title, season, episode);
-      if (results && results.length > 0) {
-        for (const res of results) {
-          if (res.url && (res.url.includes('.mp4') || res.url.includes('.m3u8') || res.kind === 'direct')) {
-            directStreams.push(res);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("تخطى قاشط معين بسبب خطأ مؤقت، جاري متابعة البقية...", err.message);
-    }
-  }
-
-  return directStreams;
-}
+// All registered providers with real search and details capabilities participate.
+const contentDiscovery = createContentDiscovery({ entries: [...PROVIDERS_MAP.values()] });
+const runRegistered = (id, title, season, episode, options) =>
+  contentDiscovery.runProvider(PROVIDERS_MAP.get(id), title, season, episode, options).catch(() => []);
+export const runMyCimaScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('mycima', title, season, episode, options);
+export const runAkwamScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('akwam', title, season, episode, options);
+export const runEgyDeadScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('egydead', title, season, episode, options);
+export const runArabSeedScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('arabseed', title, season, episode, options);
+export const runCimanowScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('cimanow', title, season, episode, options);
+export const runAnime4upScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('anime4up', title, season, episode, options);
+export const activateAllScrapersForContent = contentDiscovery.discover;

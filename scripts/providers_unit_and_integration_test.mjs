@@ -1,126 +1,135 @@
-// scripts/providers_unit_and_integration_test.mjs
-// Comprehensive Unit & Integration Verification Suite for all 21 MATV scrapers & providers
+// Offline contract and fixture parsing checks. No live-provider claims.
+import assert from 'node:assert/strict';
+import dns from 'node:dns';
+import net from 'node:net';
+import tls from 'node:tls';
+import http from 'node:http';
+import https from 'node:https';
+import { syncBuiltinESMExports } from 'node:module';
 
-import { PROVIDERS_MAP, listProviders } from '../server/scrapers/registry.mjs';
-import { SCRAPER_ERROR_CODES, ScraperError } from '../server/scrapers/shared/errors.mjs';
-import { assertSafeScraperUrl } from '../server/scrapers/shared/http.mjs';
+const originals = [];
+let networkAttempts = 0;
+function denyNetwork(target, key) {
+  originals.push([target, key, target[key]]);
+  target[key] = () => {
+    networkAttempts++;
+    throw Error(`OFFLINE_TEST_NETWORK_FORBIDDEN:${key}`);
+  };
+}
+// Install before importing provider modules, including built-in named imports.
+denyNetwork(globalThis, 'fetch');
+for (const target of [http, https]) for (const key of ['request', 'get']) denyNetwork(target, key);
+for (const key of ['connect', 'createConnection']) denyNetwork(net, key);
+denyNetwork(net.Socket.prototype, 'connect');
+denyNetwork(tls, 'connect');
+for (const target of [dns, dns.promises]) for (const key of ['lookup', 'resolve', 'resolve4', 'resolve6']) denyNetwork(target, key);
+syncBuiltinESMExports();
 
-const ALL_EXPECTED_IDS = [
-  'mycima', 'akwam', 'cimanow', 'shahid4u', 'moviztime', 'shii4u',
-  'egydead', 'ipauniverse', '3cktv', 'anime4up', 'qfilm', 'ristoanime',
-  'arabseed', 'mewsry', 'anime4up_rest', 'witanime', 'egydead_live',
-  'yallashoot', '3isk', 'alooy', 'laroza'
-];
-
-async function runTests() {
-  console.log('=== STARTING 21-PROVIDER COMPREHENSIVE INTEGRATION TEST SUITE ===');
-  let passedCount = 0;
-  let failedCount = 0;
-
-  console.log(`Checking registry size: ${PROVIDERS_MAP.size} registered providers.`);
-  if (PROVIDERS_MAP.size !== 21) {
-    console.error(`FAIL: Expected 21 providers in registry, found ${PROVIDERS_MAP.size}`);
-    process.exit(1);
-  }
-
-  for (const expectedId of ALL_EXPECTED_IDS) {
-    const entry = PROVIDERS_MAP.get(expectedId);
-    if (!entry) {
-      console.error(`FAIL: Provider ${expectedId} missing from PROVIDERS_MAP!`);
-      failedCount++;
-      continue;
-    }
-
-    const { meta, module } = entry;
-    console.log(`\n[PROVIDER TEST] ${meta.name} (id: ${meta.id}, code: ${meta.code})`);
-
-    // 1. Verify Standard Exports
-    const requiredExports = ['PROVIDER_META', 'scrapeCatalog', 'scrapeSearch', 'scrapeDetails', 'scrapeEpisodes', 'scrapeServers', 'resolveStream'];
-    for (const exp of requiredExports) {
-      if (typeof module[exp] !== 'function' && exp !== 'PROVIDER_META') {
-        console.error(`  FAIL: Missing function export ${exp}`);
-        failedCount++;
-      }
-    }
-
-    // 2. Load Real Fixture
-    let fixtureMod = null;
-    try {
-      fixtureMod = await import(`./fixtures/providers/${expectedId}.fixture.mjs`);
-      if (!fixtureMod.FIXTURE_META) {
-        console.error(`  FAIL: Fixture missing FIXTURE_META`);
-        failedCount++;
-      } else {
-        console.log(`  ✓ Fixture loaded (${fixtureMod.FIXTURE_META.providerId}, real: ${fixtureMod.FIXTURE_META.isRealLiveSample}, fetchedAt: ${fixtureMod.FIXTURE_META.fetchedAt || 'N/A'})`);
-      }
-    } catch (err) {
-      console.error(`  FAIL: Could not import fixture for ${expectedId}:`, err.message);
-      failedCount++;
-    }
-
-    // 3. Test Offline Capabilities via Fixture / Mock
-    try {
-      if (meta.capabilities.catalog) {
-        const catRes = await module.scrapeCatalog('movies', 1, { fixtureOnly: true, timeoutMs: 1500 });
-        if (Array.isArray(catRes)) {
-          console.log(`  ✓ scrapeCatalog returned ${catRes.length} items`);
-        } else {
-          console.error(`  FAIL: scrapeCatalog did not return an array`);
-          failedCount++;
-        }
-      }
-
-      if (meta.capabilities.search) {
-        const searchRes = await module.scrapeSearch('batman', 1, { fixtureOnly: true, timeoutMs: 1500 });
-        if (Array.isArray(searchRes)) {
-          console.log(`  ✓ scrapeSearch returned ${searchRes.length} items`);
-        } else {
-          console.error(`  FAIL: scrapeSearch did not return an array`);
-          failedCount++;
-        }
-      } else {
-        // Should handle unsupported search cleanly
-        const searchRes = await module.scrapeSearch('test', 1, { fixtureOnly: true });
-        if (Array.isArray(searchRes) && searchRes.length === 0) {
-          console.log(`  ✓ scrapeSearch gracefully handled unsupported capability`);
-        }
-      }
-
-      passedCount++;
-    } catch (err) {
-      console.error(`  FAIL: Error during capability execution for ${expectedId}:`, err.message);
-      failedCount++;
-    }
-  }
-
-  // 4. Test Error Classification
-  console.log('\n[SHARED ERRORS & SSRF TEST]');
+let passed = 0;
+let failed = 0;
+async function check(label, action) {
+  const before = networkAttempts;
   try {
-    let ssrfCaught = false;
-    try {
-      assertSafeScraperUrl('http://169.254.169.254/latest/meta-data');
-    } catch (e) {
-      ssrfCaught = (e.code === SCRAPER_ERROR_CODES.UNSAFE_URL);
-    }
-    if (ssrfCaught) {
-      console.log('  ✓ AWS metadata endpoint safely blocked with UNSAFE_URL');
-      passedCount++;
-    } else {
-      console.error('  FAIL: AWS metadata endpoint was not blocked properly!');
-      failedCount++;
-    }
-  } catch (err) {
-    console.error('  FAIL: Error during SSRF checks:', err);
-    failedCount++;
-  }
-
-  console.log(`\n=== TEST SUITE COMPLETED: ${passedCount} tests passed, ${failedCount} failures ===`);
-  if (failedCount > 0) {
-    process.exit(1);
+    await action();
+    assert.equal(networkAttempts, before, 'Network was attempted and possibly swallowed by the scraper');
+    passed++;
+    console.log(`PASS ${label}`);
+  } catch (error) {
+    failed++;
+    console.error(`FAIL ${label}: ${error.message}`);
   }
 }
 
-runTests().catch(err => {
-  console.error('Fatal test error:', err);
-  process.exit(1);
-});
+function requireItems(result) {
+  assert.ok(Array.isArray(result), 'Expected an array');
+  assert.ok(result.length > 0, `Fixture produced no items (${result?._meta?.errorCode || 'no diagnostic'}: ${result?._meta?.errorMessage || ''})`);
+  assert.notEqual(result._meta?.ok, false, 'Scraper attached a failed diagnostic');
+  for (const item of result) {
+    assert.ok(item && typeof item === 'object', 'Expected catalog item object');
+    assert.ok(String(item.title || item.name || '').trim(), 'Missing item title');
+    assert.ok(item.ref || item.url || item.id, 'Missing item reference');
+  }
+}
+
+function queryFor(fixture) {
+  const raw = fixture.FIXTURE_META.urls?.search;
+  if (raw) {
+    const url = new URL(raw);
+    for (const key of ['s', 'q', 'query', 'keywords', 'term', 'find']) {
+      if (url.searchParams.get(key)) return url.searchParams.get(key);
+    }
+    const pathQuery = url.pathname.match(/(?:Searching|search)\/([^/]+)/i)?.[1];
+    if (pathQuery) return decodeURIComponent(pathQuery);
+  }
+  return 'batman';
+}
+
+try {
+  const { PROVIDERS_MAP } = await import('../server/scrapers/registry.mjs');
+  const { SCRAPER_ERROR_CODES } = await import('../server/scrapers/shared/errors.mjs');
+  const { assertSafeScraperUrl } = await import('../server/scrapers/shared/http.mjs');
+  await check('registry contains unique provider IDs', () => {
+    assert.ok(PROVIDERS_MAP.size > 0);
+    for (const [id, { meta, module }] of PROVIDERS_MAP) {
+      assert.equal(meta.id, id);
+      assert.equal(module.PROVIDER_META, meta);
+      for (const name of ['scrapeCatalog', 'scrapeSearch', 'scrapeDetails', 'scrapeEpisodes', 'scrapeServers', 'resolveStream']) {
+        assert.equal(typeof module[name], 'function', `${id} missing ${name}`);
+      }
+    }
+  });
+
+  for (const [id, { meta, module }] of PROVIDERS_MAP) {
+    let fixture;
+    await check(`${id}: fixture metadata`, async () => {
+      fixture = await import(`./fixtures/providers/${id}.fixture.mjs`);
+      assert.equal(fixture.FIXTURE_META?.providerId, id);
+      // Fixture provenance is a repository declaration, not independently verified here.
+    });
+    if (!fixture) continue;
+
+    if (meta.capabilities.catalog) await check(`${id}: nonempty catalog fixture`, async () => {
+      const fixtureHtml = fixture.CATALOG_HTML ?? fixture.CATALOG_TODAY_HTML ?? fixture.REAL_MATCHES_TODAY_HTML;
+      assert.equal(typeof fixtureHtml, 'string', 'Catalog fixture missing');
+      const options = { fixtureHtml, strict: true };
+      if (id === 'ipauniverse') {
+        assert.ok(fixture.REAL_TMDB_CATALOG_JSON, 'TMDB catalog fixture missing');
+        options.fixtureTmdbJson = fixture.REAL_TMDB_CATALOG_JSON;
+      }
+      const category = ['mewsry', 'yallashoot'].includes(id) ? 'today' : id === 'egydead_live' ? 'live' : 'movies';
+      requireItems(await module.scrapeCatalog(category, 1, options));
+    });
+
+    if (meta.capabilities.search) await check(`${id}: nonempty search fixture`, async () => {
+      const fixtureHtml = fixture.SEARCH_HTML ?? fixture.SEARCH_JSON ?? fixture.REAL_SEARCH_HTML ?? (id === 'ipauniverse' ? fixture.HOME_HTML : undefined);
+      assert.equal(typeof fixtureHtml, 'string', 'Search fixture missing');
+      const options = { fixtureHtml, strict: true };
+      if (id === 'ipauniverse') {
+        assert.ok(fixture.REAL_TMDB_SEARCH_JSON, 'TMDB search fixture missing');
+        options.fixtureTmdbJson = fixture.REAL_TMDB_SEARCH_JSON;
+      }
+      requireItems(await module.scrapeSearch(queryFor(fixture), 1, options));
+    });
+    else await check(`${id}: explicit unsupported search`, async () => {
+      try {
+        const result = await module.scrapeSearch('test', 1, { fixtureHtml: '', strict: true });
+        assert.ok(Array.isArray(result));
+        assert.equal(result.length, 0);
+        assert.equal(result._meta?.errorCode, SCRAPER_ERROR_CODES.UNSUPPORTED_CAPABILITY);
+      } catch (error) {
+        if (error.code !== SCRAPER_ERROR_CODES.UNSUPPORTED_CAPABILITY) throw error;
+      }
+    });
+  }
+
+  await check('SSRF metadata endpoint blocked', () => {
+    assert.throws(() => assertSafeScraperUrl('http://169.254.169.254/latest/meta-data'),
+      error => error.code === SCRAPER_ERROR_CODES.UNSAFE_URL);
+  });
+  await check('no network attempted by fixture suite', () => assert.equal(networkAttempts, 0));
+} finally {
+  for (const [target, key, value] of originals.reverse()) target[key] = value;
+  syncBuiltinESMExports();
+}
+console.log(`Offline fixture checks: ${passed} passed, ${failed} failed; ${networkAttempts} network attempts blocked.`);
+if (failed) process.exitCode = 1;

@@ -1,3 +1,4 @@
+import { directCandidate } from './scrapers/content-discovery.mjs';
 // Staging-safe fallback registry. Providers are not considered playable until
 // a real direct media resolver has been independently verified.
 const verified = new Map();
@@ -18,7 +19,7 @@ export async function resolveFallbackStreams(id, input) {
   if (!p) return { status:'unavailable', source:id, data:{ playback_unavailable:true, media_sources:[] } };
   const result = await p.resolve(input);
   const sources = (Array.isArray(result?.media_sources) ? result.media_sources : [])
-    .filter(s => s && s.verified === true && s.kind === 'direct' && /^https:\/\//i.test(s.url || ''));
+    .filter(s => s && s.verified === true && s.kind === 'direct' && directCandidate(s));
   return { status:sources.length ? 'available':'unavailable', source:id, data:{ playback_unavailable:!sources.length, media_sources:sources } };
 }
 export class FallbackProviderPool {

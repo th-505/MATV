@@ -3,6 +3,36 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_CACHE_TTL_MS = 5 * 60_000;
 const MAX_CACHE_ENTRIES = 100;
 
+
+// This is a catalog adapter, never an arbitrary URL/API proxy.
+export function validateTmdbCatalogRequest(path, params = {}) {
+  if (typeof path !== 'string' || path.length > 150 || !/^\/(?:trending\/(?:all|movie|tv)\/(?:day|week)|movie\/(?:popular|top_rated|[1-9]\d{0,11}(?:\/(?:recommendations|similar))?)|tv\/(?:popular|[1-9]\d{0,11}(?:\/season\/(?:0|[1-9]\d?|100)|\/(?:recommendations|similar))?)|discover\/(?:movie|tv)|search\/(?:movie|tv|multi))$/.test(path))
+    throw Error('TMDB_BAD_CATALOG_PATH');
+  if (!params || typeof params !== 'object' || Array.isArray(params) || Object.keys(params).length > 12)
+    throw Error('TMDB_BAD_CATALOG_PARAMS');
+  const validators = {
+    language: value => /^(?:ar-SA|en-US)$/.test(value),
+    page: value => /^(?:[1-9]|[1-9]\d|[1-4]\d{2}|500)$/.test(value),
+    query: value => value.length >= 2 && value.length <= 120 && !/[\u0000-\u001f\u007f]/.test(value),
+    with_genres: value => /^\d{1,5}(?:[,|]\d{1,5}){0,9}$/.test(value),
+    with_original_language: value => /^[a-z]{2}$/.test(value),
+    sort_by: value => /^(?:popularity|vote_average|vote_count|primary_release_date|first_air_date)\.(?:asc|desc)$/.test(value),
+    append_to_response: value => /^(?:credits|similar|recommendations|external_ids)(?:,(?:credits|similar|recommendations|external_ids)){0,3}$/.test(value),
+    include_adult: value => value === 'false',
+    year: value => /^(?:18|19|20|21)\d{2}$/.test(value),
+    primary_release_year: value => /^(?:18|19|20|21)\d{2}$/.test(value),
+    first_air_date_year: value => /^(?:18|19|20|21)\d{2}$/.test(value),
+  };
+  const safe = { language: 'ar-SA', include_adult: 'false' };
+  for (const key of Object.keys(params).sort()) {
+    const value = params[key];
+    if (!Object.hasOwn(validators, key) || !['string', 'number', 'boolean'].includes(typeof value) || !validators[key](String(value)))
+      throw Error('TMDB_BAD_CATALOG_PARAMS');
+    safe[key] = String(value);
+  }
+  return { path, params: Object.fromEntries(Object.entries(safe).sort(([a], [b]) => a.localeCompare(b))) };
+}
+
 function text(value) {
   return String(value ?? "").trim();
 }
@@ -146,9 +176,29 @@ export function createTmdbRuntime({
   timeoutMs = DEFAULT_TIMEOUT_MS,
   cacheTtlMs = DEFAULT_CACHE_TTL_MS,
   now = () => Date.now(),
+  maxConcurrentRequests = 4, maxQueuedRequests = 32, maxRequestsPerMinute = 120,
 } = {}) {
   const cache = new Map();
   const pending = new Map();
+  const queue = [];
+  let activeRequests = 0, minute = Math.floor(now() / 60000), minuteRequests = 0;
+  const concurrency = Math.max(1, Math.min(16, Number(maxConcurrentRequests) || 4));
+  const queueLimit = Math.max(0, Math.min(100, Number(maxQueuedRequests) || 0));
+  const perMinute = Math.max(0, Math.min(10000, Number(maxRequestsPerMinute) || 0));
+  function reserveQuota() {
+    const current = Math.floor(now() / 60000);
+    if (minute !== current) { minute = current; minuteRequests = 0; }
+    if (minuteRequests >= perMinute) throw Error('TMDB_RATE_LIMITED');
+    minuteRequests++;
+  }
+  async function request(path, params = {}) {
+    if (activeRequests >= concurrency) {
+      if (queue.length >= queueLimit) throw Error('TMDB_BUSY');
+      await new Promise(resolve => queue.push(resolve));
+    } else activeRequests++;
+    try { return await requestUnbounded(path, params); }
+    finally { const next = queue.shift(); if (next) next(); else activeRequests--; }
+  }
 
   function configured() {
     return Boolean(text(apiKey) || text(backupApiKey) || text(bearerToken));
@@ -170,7 +220,7 @@ export function createTmdbRuntime({
     while (cache.size > MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value);
   }
 
-  async function request(path, params = {}) {
+  async function requestUnbounded(path, params = {}) {
     if (!configured()) throw new Error("TMDB_NOT_CONFIGURED");
     if (typeof fetchImpl !== "function") throw new Error("TMDB_FETCH_UNAVAILABLE");
     const url = new URL(path, TMDB_ORIGIN);
@@ -185,6 +235,7 @@ export function createTmdbRuntime({
       : credentials.map(key => ({ key }));
     let lastError;
     for (const credential of attempts) {
+      reserveQuota();
       const attemptUrl = new URL(url);
       const headers = { Accept: "application/json" };
       if (credential.bearer) headers.Authorization = `Bearer ${credential.bearer}`;
@@ -193,7 +244,7 @@ export function createTmdbRuntime({
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const response = await fetchImpl(attemptUrl, {
-          method: "GET", headers, signal: controller.signal, redirect: "follow",
+          method: "GET", headers, signal: controller.signal, redirect: "error",
         });
         // Only switch credentials for credential/quota errors, not general outages.
         if ([401, 403, 429].includes(response.status)) {
@@ -202,11 +253,12 @@ export function createTmdbRuntime({
         }
         if (!response.ok) throw new Error(`TMDB_HTTP_${response.status}`);
         const body = await response.json();
-        if (!body || typeof body !== "object") throw new Error("TMDB_INVALID_JSON");
+        if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("TMDB_INVALID_JSON");
         return body;
       } catch (error) {
         if (error?.name === "AbortError") throw new Error("TMDB_TIMEOUT");
-        throw error;
+        if (/^TMDB_(?:HTTP_\d{3}|INVALID_JSON)$/.test(String(error?.message))) throw error;
+        throw new Error("TMDB_NETWORK_ERROR");
       } finally {
         clearTimeout(timer);
       }
@@ -281,7 +333,14 @@ export function createTmdbRuntime({
     });
   }
 
-  return Object.freeze({ status, search, details, season, trending });
+  async function catalog(path, params = {}) {
+    const valid = validateTmdbCatalogRequest(path, params);
+    const key = `catalog:${valid.path}:${JSON.stringify(valid.params)}`;
+    // Callers may reshape catalog objects, so never expose mutable cache objects.
+    return structuredClone(await cachedRequest(key, () => request(`/3${valid.path}`, valid.params)));
+  }
+
+  return Object.freeze({ status, search, details, season, trending, catalog });
 }
 
 export const __tmdbTest = Object.freeze({

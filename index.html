@@ -1099,7 +1099,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
         <h1 class="hero-title" id="heroTitle">جاري تجهيز المنصة السينمائية…</h1>
         <div class="hero-tags" id="heroTags">
           <span class="rating-pill" id="heroRatingPill">★ 8.9</span>
-          <span id="heroYearPill">2025</span>
+          <span id="heroYearPill">—</span>
           <span id="heroTypePill">4K UHD</span>
         </div>
         <p class="hero-desc" id="heroDesc">استمتع بتجربة بث سينمائية مباشرة بدون إعلانات وبأعلى جودة متوفرة عبر العقل المركزي الموحد MA-NEXUS.</p>
@@ -1426,7 +1426,8 @@ import {
   nexusUnifiedSearch,
   formatRuntimeArabic,
   normalizeEpisodesList,
-  probeAndRankServers
+  probeAndRankServers,
+  metadataYear, metadataRating, escapeHtml, safeImageUrl, selectTmdbMatch
 } from './web/core/ma-nexus.js?v=1.0.49';
 
 // Service Worker Registration
@@ -1482,8 +1483,8 @@ function getRegisteredWorkItem(id, fallbackTitle = '', fallbackType = 'movie') {
     type: isTv ? 'series' : 'movie',
     typeLabel: isTv ? 'مسلسل' : 'فيلم',
     title: fallbackTitle || 'عمل سينمائي',
-    year: '2025',
-    rating: '8.5',
+    year: null,
+    rating: null,
     durationText: formatRuntimeArabic(null, isTv ? 'tv' : 'movie')
   };
 }
@@ -1602,8 +1603,8 @@ window.toggleFavorite = function(item) {
       mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
       type: item.type || (item.is_series ? 'series' : 'movie'),
       typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
-      year: item.year || '2025',
-      rating: item.rating || '8.5',
+      year: metadataYear(item.year),
+      rating: metadataRating(item.rating),
       durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType)
     });
     toast('تمت الإضافة إلى المفضلة ♥');
@@ -1632,8 +1633,8 @@ function saveContinueWatching(item, currentTime, duration, season = 1, episode =
     mediaType: item.mediaType || (item.is_series ? 'tv' : 'movie'),
     type: item.type || (item.is_series ? 'series' : 'movie'),
     typeLabel: item.typeLabel || (item.mediaType === 'tv' || item.is_series ? 'مسلسل' : 'فيلم'),
-    year: item.year || '2025',
-    rating: item.rating || '8.5',
+    year: metadataYear(item.year),
+    rating: metadataRating(item.rating),
     durationText: item.durationText || formatRuntimeArabic(item.runtime, item.mediaType),
     season,
     episode,
@@ -1726,9 +1727,9 @@ export function renderMediaCard(rawItem) {
   const itemId = item.id || item.href;
   const isTv = item.mediaType === 'tv' || item.type === 'series' || item.is_series;
   const typeLabel = item.typeLabel || (isTv ? 'مسلسل' : 'فيلم');
-  const year = String(item.year || '2025').slice(0, 4);
+  const year = metadataYear(item.year) || '—';
   const durationText = item.durationText || formatRuntimeArabic(item.runtime, isTv ? 'tv' : 'movie');
-  const rating = item.rating && Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : '8.4';
+  const rating = metadataRating(item.rating) || '—';
   const poster = item.poster || item.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
   const favActive = isFavorite(itemId);
 
@@ -1740,16 +1741,16 @@ export function renderMediaCard(rawItem) {
 
   card.innerHTML = `
     <div class="poster-wrap">
-      <img src="${poster}" loading="lazy" alt="${item.title || ''}" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
-      <span class="poster-type">${typeLabel}</span>
-      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${itemId}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
+      <img src="${escapeHtml(safeImageUrl(poster))}" loading="lazy" alt="${escapeHtml(item.title || '')}" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
+      <span class="poster-type">${escapeHtml(typeLabel)}</span>
+      <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${escapeHtml(itemId)}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
         ${favActive ? '♥' : '♡'}
       </button>
     </div>
     <div class="card-info">
-      <div class="card-title">${item.title}</div>
+      <div class="card-title">${escapeHtml(item.title)}</div>
       <div class="card-sub">
-        <span>${year} • ${durationText}</span>
+        <span>${year} • ${escapeHtml(durationText)}</span>
         <span class="badge-gold-sm">★ ${rating}</span>
       </div>
     </div>
@@ -1928,7 +1929,7 @@ async function loadHomeShelves() {
       document.getElementById('heroBackdrop').style.backgroundImage = `url(${heroItem.backdrop || heroItem.poster})`;
       document.getElementById('heroDesc').textContent = heroItem.overview || '';
       document.getElementById('heroRatingPill').textContent = `★ ${heroItem.rating || '8.8'}`;
-      document.getElementById('heroYearPill').textContent = heroItem.year || '2025';
+      document.getElementById('heroYearPill').textContent = metadataYear(heroItem.year) || '—';
       document.getElementById('heroTypePill').textContent = `${heroItem.typeLabel || 'فيلم'} • ${heroItem.durationText || '4K UHD'}`;
       document.getElementById('heroPlayBtn').onclick = () => openTitlePage(heroItem);
       const favBtn = document.getElementById('heroFavBtn');
@@ -2135,16 +2136,12 @@ async function renderTitleDetailPage(params) {
     if (cleanQ.length >= 2) {
       try {
         const sRes = await tmdbFetch(`/search/${mediaType}`, { query: cleanQ });
-        if (sRes?.results?.[0]?.id) {
-          tmdbId = String(sRes.results[0].id);
-        } else {
+        let hit = selectTmdbMatch(sRes?.results, { ...baseItem, title: cleanQ }, mediaType);
+        if (!hit) {
           const mRes = await tmdbFetch('/search/multi', { query: cleanQ });
-          const hit = (mRes?.results || []).find(r => r.media_type === 'tv' || r.media_type === 'movie');
-          if (hit?.id) {
-            tmdbId = String(hit.id);
-            mediaType = hit.media_type === 'tv' ? 'tv' : 'movie';
-          }
+          hit = selectTmdbMatch(mRes?.results, { ...baseItem, title: cleanQ }, mediaType);
         }
+        if (hit) tmdbId = String(hit.id);
       } catch (_) {}
     }
   }
@@ -2187,11 +2184,11 @@ async function renderTitleDetailPage(params) {
     ? currentDetailItem.genres.join(' • ')
     : (mediaType === 'tv' ? 'دراما وتشويق' : 'سينما عالمية');
   pillsWrap.innerHTML = `
-    <span class="meta-pill">★ ${currentDetailItem.rating || '8.6'} TMDb</span>
-    <span class="meta-pill">${currentDetailItem.year || '2025'}</span>
-    <span class="meta-pill">${currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType)}</span>
+    <span class="meta-pill">★ ${metadataRating(currentDetailItem.rating) || '—'} TMDb</span>
+    <span class="meta-pill">${metadataYear(currentDetailItem.year) || '—'}</span>
+    <span class="meta-pill">${escapeHtml(currentDetailItem.durationText || formatRuntimeArabic(currentDetailItem.runtime, mediaType))}</span>
     <span class="meta-pill">${mediaType === 'tv' ? 'مسلسل' : 'فيلم'}</span>
-    <span class="meta-pill">${genresText}</span>
+    <span class="meta-pill">${escapeHtml(genresText)}</span>
   `;
 
   // Cast Row
@@ -2204,10 +2201,10 @@ async function renderTitleDetailPage(params) {
       const chip = document.createElement('div');
       chip.className = 'cast-chip';
       chip.innerHTML = `
-        ${c.photo ? `<img src="${c.photo}" alt="${c.name}">` : ''}
+        ${c.photo ? `<img src="${escapeHtml(safeImageUrl(c.photo))}" alt="${escapeHtml(c.name)}">` : ''}
         <div>
-          <div style="font-weight:800;color:#fff;">${c.name}</div>
-          ${c.character ? `<div style="font-size:0.72rem;color:var(--text-secondary);">${c.character}</div>` : ''}
+          <div style="font-weight:800;color:#fff;">${escapeHtml(c.name)}</div>
+          ${c.character ? `<div style="font-size:0.72rem;color:var(--text-secondary);">${escapeHtml(c.character)}</div>` : ''}
         </div>
       `;
       castRow.appendChild(chip);
@@ -2970,23 +2967,36 @@ async function performSearch(query) {
 }
 
 // T-A-TV discovery: explicit opt-in, hidden provider selector until exploration is opened.
-const exploreSources = ['akoam','alooy','mycima','wecima','cimanow','shahid4u','moviztime','shii4u','egydead','ipauniverse','3isk','3cktv','anime4up','qfilm','ristoanime','mewsry','arabseed','witanime','laroza'];
+const exploreSources = [];
 function renamedProvider(name) {
   const original = String(name || '').trim();
-  if (!original) return '';
-  return 'ظ' + original.slice(1);
+  return original ? 'ظ' + original.slice(1) : '';
 }
 const exploreSelect = document.getElementById('exploreProvider');
-if (exploreSelect) {
-  const all = document.createElement('option'); all.value = ''; all.textContent = 'جميع المصادر'; exploreSelect.appendChild(all);
-  for (const source of exploreSources) {
-    const option = document.createElement('option');
-    option.value = source;
-    const arabic = {akoam:'أكوام',alooy:'ألوي',mycima:'ماي سيما',wecima:'وي سيما',cimanow:'سيما ناو',shahid4u:'شاهد فور يو',moviztime:'موفيز تايم',shii4u:'شي فور يو',egydead:'إيجي ديد',ipauniverse:'آي بي إيه', '3isk':'قصة عشق','3cktv':'ثري سيك',anime4up:'أنمي فور أب',qfilm:'كيو فيلم',ristoanime:'ريستو أنمي',mewsry:'مصري',arabseed:'عرب سيد',witanime:'ويت أنمي',laroza:'لاروزا'};
-    option.textContent = renamedProvider(source) + ' - ' + renamedProvider(arabic[source] || source);
-    exploreSelect.appendChild(option);
+async function loadExploreSources() {
+  if (!exploreSelect) return;
+  const placeholder = document.createElement('option');
+  placeholder.value = ''; placeholder.textContent = 'اختر المصدر';
+  exploreSelect.replaceChildren(placeholder);
+  exploreSelect.disabled = true;
+  try {
+    const response = await fetch('https://matv.onrender.com/api/v1/explore/sources');
+    if (!response.ok) throw Error('SOURCE_LIST_UNAVAILABLE');
+    const payload = await response.json();
+    const arabic = {akwam:'أكوام',alooy:'ألوي',mycima:'ماي سيما',cimanow:'سيما ناو',shahid4u:'شاهد فور يو',moviztime:'موفيز تايم',shii4u:'شي فور يو',egydead:'إيجي ديد',ipauniverse:'آي بي إيه', '3isk':'قصة عشق','3cktv':'ثري سيك',anime4up:'أنمي فور أب',anime4up_rest:'أنمي فور أب البديل',qfilm:'كيو فيلم',ristoanime:'ريستو أنمي',mewsry:'مصري',arabseed:'عرب سيد',witanime:'ويت أنمي',laroza:'لاروزا'};
+    for (const source of Array.isArray(payload.data) ? payload.data : []) {
+      if (!source.search || !/^[a-z0-9_-]{2,30}$/.test(source.id)) continue;
+      exploreSources.push(source.id);
+      const option = document.createElement('option'); option.value = source.id;
+      option.textContent = renamedProvider(source.id) + ' - ' + renamedProvider(arabic[source.id] || source.id);
+      exploreSelect.appendChild(option);
+    }
+    exploreSelect.disabled = false;
+  } catch {
+    placeholder.textContent = 'تعذر تحميل المصادر، أعد المحاولة لاحقًا';
   }
 }
+loadExploreSources();
 const EXPLORE_SAVED_KEY = 'tatv_explore_saved_v1';
 const EXPLORE_IDLE_MS = 7 * 86400_000;
 function getExploreSaved() {
@@ -3023,7 +3033,7 @@ function renderExploreSaved() {
     });
     const age = document.createElement('span');
     age.style.color = 'var(--text-secondary)';
-    age.textContent = Date.now() - Number(entry.lastActiveAt || 0) > EXPLORE_IDLE_MS ? 'يحتاج تحديث الروابط' : 'محفوظ';
+    age.textContent = Date.now() - Number(entry.lastWatchedAt || entry.savedAt || entry.lastActiveAt || 0) > EXPLORE_IDLE_MS ? 'يحتاج تحديث الروابط' : 'محفوظ';
     row.append(name,age,remove);
     target.appendChild(row);
   }
@@ -3051,7 +3061,9 @@ document.getElementById('exploreRun')?.addEventListener('click', async () => {
       save.textContent = '☆ حفظ في استكشافي';
       save.addEventListener('click', () => {
         const entries = getExploreSaved().filter(x => x.provider !== provider || x.title !== item.title);
-        entries.unshift({provider,title:item.title,lastActiveAt:Date.now()});
+        entries.unshift({provider: item.selected_source || provider, ref:item.ref || item.id, title:item.title,
+          savedAt:entries.find(x => x.provider === provider && x.ref === (item.ref || item.id))?.savedAt || Date.now(),
+          lastWatchedAt:null, season:0,episode:0,position:0});
         saveExplore(entries.slice(0,100));
         renderExploreSaved();
         toast('تم حفظ العمل في قائمة الاستكشاف');

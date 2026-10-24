@@ -99,6 +99,46 @@ export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الح�
   });
 }
 
+// Missing metadata remains missing; it must never become an invented year or score.
+export function metadataYear(value) {
+  const year = String(value ?? '').trim().match(/^(\d{4})(?:-|$)/)?.[1];
+  return year || null;
+}
+
+export function metadataRating(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const rating = Number(value);
+  return Number.isFinite(rating) && rating >= 0 && rating <= 10 ? rating.toFixed(1) : null;
+}
+
+export function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+export function safeImageUrl(value) {
+  try {
+    const url = new URL(String(value || ''), 'https://tatv.invalid');
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
+}
+
+export function selectTmdbMatch(results, item, mediaType) {
+  const expectedType = mediaType === 'series' ? 'tv' : mediaType;
+  const names = [item.title, item.original_title, item.original_name, item.name]
+    .map(normalizeTitleKey).filter(Boolean);
+  const year = metadataYear(item.year);
+  const matches = (Array.isArray(results) ? results : []).filter(candidate => {
+    if (!candidate || !Number.isInteger(Number(candidate.id)) || Number(candidate.id) <= 0) return false;
+    if (candidate.media_type && candidate.media_type !== expectedType) return false;
+    const candidateYear = metadataYear(candidate.release_date || candidate.first_air_date);
+    if (year && year !== candidateYear) return false;
+    return [candidate.title, candidate.original_title, candidate.name, candidate.original_name]
+      .map(normalizeTitleKey).some(name => name && names.includes(name));
+  });
+  const unique = [...new Map(matches.map(candidate => [String(candidate.id), candidate])).values()];
+  return unique.length === 1 ? unique[0] : null;
+}
+
 // دمج الأعمال المتكررة من القواشط المختلفة في بطاقة عمل واحدة موحدة
 export function deduplicateAndMergeCatalog(items = []) {
   const map = new Map();
@@ -109,8 +149,8 @@ export function deduplicateAndMergeCatalog(items = []) {
 
     const mediaType = (raw.mediaType === 'tv' || raw.type === 'series' || raw.type === 'tv' || raw.is_series) ? 'tv' : 'movie';
     const typeLabel = mediaType === 'tv' ? 'مسلسل' : 'فيلم';
-    const year = String(raw.year || '').slice(0, 4) || '2025';
-    const rating = raw.rating && Number(raw.rating) > 0 ? Number(raw.rating).toFixed(1) : '8.4';
+    const year = metadataYear(raw.year);
+    const rating = metadataRating(raw.rating);
     const durationText = raw.durationText || formatRuntimeArabic(raw.runtime, mediaType);
     const poster = raw.poster || raw.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
     const itemId = raw.id || raw.href || raw.ref || `work:${cleanKey}`;

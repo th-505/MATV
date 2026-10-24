@@ -390,7 +390,10 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             continue;
           }
 
-          const text = await res.text();
+          // A HEAD probe must never consume a body, even from a broken upstream.
+          let text = '';
+          if (method === 'HEAD') await res.body?.cancel();
+          else text = await res.text();
 
           if (isCloudflareOrAccessBlock(res.status, text, res.headers)) {
             throw new ScraperError(

@@ -1,3 +1,7 @@
+import { createMediaAuditor } from './media-audit.mjs';
+import { listSourceCapabilities } from './scrapers/source-registry.mjs';
+import { directCandidate } from './scrapers/content-discovery.mjs';
+import { createDiscoveryAudit } from './discovery-audit.mjs';
 import { createDiscoveryCoordinator } from './discovery-coordinator.mjs';
 import http from "node:http";
 import { directSource, probeDirectMedia, filterBrowserSources } from "./direct-media.mjs";
@@ -493,14 +497,24 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       return {...data,episodes:wrapEpisodes(data.episodes || [])};
     })});
   const discoveryStore = createSupabaseDiscoveryStore();
+  const discoveryAudit = createDiscoveryAudit({ auditor: createMediaAuditor({
+    persist: async record => {
+      if (!discoveryStore) throw Error('AUDIT_STORE_NOT_CONFIGURED');
+      await discoveryStore.put('audit-v1:' + record.result.id, record, record.result.expiresAt);
+    },
+  }) });
   const discovery = createDiscoveryCoordinator({
-    load: async key => discoveryStore?.get(key) || null,
-    persist: async ({key,result,expiresAt}) => discoveryStore?.put(key,result,expiresAt),
-    maxConcurrent: 3, maxQueued: 40,
-    discover: async ({ title, season, episode }) => {
-      const candidates = await activateAllScrapersForContent(title, season || 1, episode || 1);
+    load: async key => discoveryStore?.get('audited-v1:' + key) || null,
+    persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v1:' + key,result,expiresAt),
+    maxConcurrent: 3, maxQueued: 40, ttlMs: 60_000,
+    discover: async ({ ref, title, year, season, episode }) => {
+      const candidates = await activateAllScrapersForContent(title, season || 1, episode || 1,
+        { ref, year, type: ref.startsWith('tmdb:tv:') ? 'series' : 'movie' });
+      const reviewed = await discoveryAudit.review(candidates, { title, year,
+        season: ref.startsWith('tmdb:tv:') ? season || 1 : null,
+        episode: ref.startsWith('tmdb:tv:') ? episode || 1 : null });
       const seen = new Set();
-      return (Array.isArray(candidates) ? candidates : []).filter(item => {
+      return reviewed.approved.filter(item => {
         try {
           const url = new URL(String(item.url || item.media_path || ''));
           if (url.protocol !== 'https:' || !url.pathname.match(/\.(mp4|m3u8)$/i)) return false;
@@ -530,6 +544,10 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
+      if (url.pathname === '/api/v1/explore/sources') {
+        if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,200,{status:'success',data:listSourceCapabilities()});
+      }
       if (url.pathname === "/api/v1/providers") return sendJson(req, res, 200, { status: 'success', data: [{ provider: 'akoam' }, iskRuntime.status(), alooyRuntime.status(), larozaRuntime.status()] });
       if (url.pathname.startsWith('/api/v1/3isk/')) {
         if (req.method !== 'GET') return sendJson(req, res, 405, { status: 'error', message: 'METHOD_NOT_ALLOWED' });
@@ -558,7 +576,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           let state = discovery.status(input);
           if (state.state === 'missing' && discoveryStore) {
             const key = [input.ref, Number(input.season) || 0, Number(input.episode) || 0].join(':');
-            const cached = await discoveryStore.get(key).catch(() => null);
+            const cached = await discoveryStore.get('audited-v1:' + key).catch(() => null);
             if (cached?.payload && new Date(cached.expires_at).getTime() > Date.now())
               state = {key,state:'ready',result:cached.payload,expiresAt:new Date(cached.expires_at).getTime()};
           }
@@ -571,7 +589,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (req.method !== "GET") return sendJson(req,res,405,{status:"error",message:"METHOD_NOT_ALLOWED"});
         const q = (url.searchParams.get("q") || "").trim();
         const provider = (url.searchParams.get("provider") || "").trim().toLowerCase();
-        if (q.length < 2 || q.length > 120 || !/^[a-z0-9-]{2,30}$/.test(provider))
+        if (q.length < 2 || q.length > 120 || !/^[a-z0-9_-]{2,30}$/.test(provider))
           return sendJson(req,res,400,{status:"error",message:"INVALID_EXPLORE_INPUT"});
         try {
           const items = await scrapePinnedSource(q,provider);
@@ -630,63 +648,24 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         }
 
         // إذا لم نجد مصادر بالـ ref أو كان المطلوب عبر title، نقوم بتفعيل وتشغيل جميع القواشط المحلية
-        if (rawServers.length === 0 && title) {
+        if (rawServers.length === 0 && title && (!ref || ref.startsWith('tmdb:'))) {
           try {
-            const activated = await activateAllScrapersForContent(title, season, episode);
-            if (Array.isArray(activated) && activated.length > 0) {
-              for (const s of activated) {
+            const activated = await activateAllScrapersForContent(title, season, episode, { ref, year: url.searchParams.get('year') || '',
+              type: ref.startsWith('tmdb:tv:') ? 'series' : ref.startsWith('tmdb:movie:') ? 'movie' : undefined });
+            const reviewed = await discoveryAudit.review(activated, { title, year: url.searchParams.get('year') || null,
+              season: ref.startsWith('tmdb:tv:') ? season : null, episode: ref.startsWith('tmdb:tv:') ? episode : null });
+            if (reviewed.approved.length > 0) {
+              for (const s of reviewed.approved) {
                 rawServers.push(s);
               }
             }
           } catch (_) {}
 
-          if (rawServers.length === 0) {
-            try {
-              const hits = await scrapeRealSearch(title);
-              if (hits.length > 0) {
-                for (const hit of hits.slice(0, 3)) {
-                  const details = await scrapeRealDetails(hit.id);
-                  if (details) {
-                    let targetEpisodeRef = hit.id;
-                    if (Array.isArray(details.episodes) && details.episodes.length > 0) {
-                      const epMatch = details.episodes.find(e => Number(e.number) === episode) || details.episodes[0];
-                      if (epMatch?.url || epMatch?.id) targetEpisodeRef = epMatch.url || epMatch.id;
-                    }
-                    const epDetails = targetEpisodeRef !== hit.id ? (await scrapeRealDetails(targetEpisodeRef) || details) : details;
-                    const sources = epDetails?.media_sources || epDetails?.servers || [];
-                    for (const s of sources) {
-                      const u = s.url || s.media_path;
-                      if (u) {
-                        rawServers.push({
-                          provider: s.provider || epDetails?.source || hit.source || "akwam",
-                          code: s.code,
-                          kind: s.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(u) ? "direct" : "embed"),
-                          url: u,
-                          headers: s.headers || {},
-                          streamType: s.streamType,
-                          quality: s.quality
-                        });
-                      }
-                    }
-                    if (rawServers.length > 0) break;
-                  }
-                }
-              }
-            } catch (_) {}
-          }
         }
 
         // 2. الفلترة الصارمة (Zero-Ads / Zero-Iframe Filter)
         // منع أي رابط يحتوي على إطار مدمج أو إعلانات، والتركيز فقط على الروابط المباشرة الخام
-        let cleanServers = rawServers.filter(srv => {
-          const u = String(srv.url || srv.embedUrl || '').toLowerCase();
-          // استبعاد أي مشغل خارجي معروف بالإعلانات أو الـ Iframes العشوائية
-          if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) {
-            return false;
-          }
-          // السماح فقط بالروابط المباشرة أو سيرفرات السورسات الأصلية النقية
-          return u.includes('.m3u8') || u.includes('.mp4') || u.includes('wecima') || u.includes('akwam') || srv.kind === 'direct';
-        });
+        let cleanServers = rawServers.filter(directCandidate);
 
         // 3. إذا لم نجد روابط مباشرة نقية، نقوم بفكها عميقاً عبر stream-unwrapper
         if (cleanServers.length === 0 && rawServers.length > 0) {
@@ -710,7 +689,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         return sendJson(req, res, 200, {
           status: "success",
           success: true,
-          servers: cleanServers.length > 0 ? cleanServers : rawServers
+          servers: cleanServers.filter(directCandidate)
         });
       }
       if (url.pathname === "/api/v1/category") {

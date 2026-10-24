@@ -1,0 +1,850 @@
+{
+  "schema_version": 1,
+  "scope": "static repository declarations; no network requests",
+  "counts": {
+    "site_modules_with_metadata": 21,
+    "registered_modules": 21,
+    "explicit_mirrors": 2,
+    "not_marked_as_mirror": 19,
+    "ui_spellings": 19,
+    "static_ui_array_entries": 0,
+    "pinned_search_modules": 19,
+    "seed_only_entries": 6
+  },
+  "ui_delivery": {
+    "mode": "capability_endpoint",
+    "endpoint": "/api/v1/explore/sources",
+    "live_endpoint_validation": "not_run"
+  },
+  "pinned_search_mode": "capability_registry",
+  "aliases": {
+    "akoam": "akwam",
+    "wecima": "mycima"
+  },
+  "units": [
+    {
+      "id": "3cktv",
+      "name": "3ckTV",
+      "code": "3V",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/3cktv.mjs",
+      "metadata_line": 35,
+      "source_sha256": "7c588c046fe6f76d19fb1eebe58e035c4898f13a0314f8df95a5eb28821bb7ed",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "3cktv"
+      ],
+      "pinned_search_spellings": [
+        "3cktv"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "3isk",
+      "name": "قصة عشق الأصلي (3isk)",
+      "code": "3K",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/3isk.mjs",
+      "metadata_line": 56,
+      "source_sha256": "f2e3888ec8a8bebbefc767234c7fb0e92b96e843b6d5358c759e77d314a1f705",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "3isk"
+      ],
+      "pinned_search_spellings": [
+        "3isk"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "akwam",
+      "name": "أكوام (Akwam)",
+      "code": "AK",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/akwam.mjs",
+      "metadata_line": 33,
+      "source_sha256": "c39ea07f317b8af2f84a85ef22489aa640f871cb7401bd33ffa42626771a7f78",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "akwam"
+      ],
+      "pinned_search_spellings": [
+        "akwam",
+        "akoam"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "alooy",
+      "name": "علوي تي في (Alooy TV)",
+      "code": "AY",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/alooy.mjs",
+      "metadata_line": 52,
+      "source_sha256": "d60859f6c91faf817b72fcc5ae4b8fe9758a4b8e156d44cf91df5b6343b95763",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "alooy"
+      ],
+      "pinned_search_spellings": [
+        "alooy"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "anime4up",
+      "name": "Anime4Up",
+      "code": "AP",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/anime4up.mjs",
+      "metadata_line": 50,
+      "source_sha256": "3e359e158e4d382c1bd147503cd9b812dfcb74fe0f7ce31a06d2c4c6b35a6ef0",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "anime4up"
+      ],
+      "pinned_search_spellings": [
+        "anime4up"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "anime4up_rest",
+      "name": "أنمي فور اب ريست (Anime4Up Rest)",
+      "code": "AP",
+      "mirror_of": "anime4up",
+      "path": "server/scrapers/sites/anime4up_rest.mjs",
+      "metadata_line": 20,
+      "source_sha256": "bf368fae95c6a9b95d9e4de2e4354f7d7b4c332d404b76ad3658e810b69800ef",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "anime4up_rest"
+      ],
+      "pinned_search_spellings": [
+        "anime4up_rest"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "arabseed",
+      "name": "عرب سيد (ArabSeed)",
+      "code": "AD",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/arabseed.mjs",
+      "metadata_line": 34,
+      "source_sha256": "4e05e61253a8baea03c37b76fdceafc47afe07b663bb3a9876553e1a7e550b03",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "arabseed"
+      ],
+      "pinned_search_spellings": [
+        "arabseed"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "cimanow",
+      "name": "سيما ناو (CimaNow)",
+      "code": "CW",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/cimanow.mjs",
+      "metadata_line": 32,
+      "source_sha256": "f0d7b979f168531392d32f4fd8187cffad41c27c04a4cf2cd3e86e56944d2a29",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "cimanow"
+      ],
+      "pinned_search_spellings": [
+        "cimanow"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "egydead",
+      "name": "إيجي ديد (EgyDead)",
+      "code": "ED",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/egydead.mjs",
+      "metadata_line": 50,
+      "source_sha256": "7219d8299ca4fcad9a561aa84f1c21f12c974859cad80645c4222681f40e8be4",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "egydead"
+      ],
+      "pinned_search_spellings": [
+        "egydead"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "egydead_live",
+      "name": "إيجي ديد لايف (EgyDead Live TV)",
+      "code": "EL",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/egydead_live.mjs",
+      "metadata_line": 37,
+      "source_sha256": "23f4d936175ee30105f91d1a4b2847a3942294c4a8e1934202c7d8014cba3cdc",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": false,
+        "details": true,
+        "episodes": false,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "ipauniverse",
+      "name": "IPA Universe",
+      "code": "IE",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/ipauniverse.mjs",
+      "metadata_line": 54,
+      "source_sha256": "55e453129ba4cc446017ce4c0a9cdf3504eca42db1a9d95ae1a3cf0656e1c895",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": false,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "ipauniverse"
+      ],
+      "pinned_search_spellings": [
+        "ipauniverse"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "laroza",
+      "name": "لاروزا (Laroza)",
+      "code": "LZ",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/laroza.mjs",
+      "metadata_line": 60,
+      "source_sha256": "1c29983c26c13d9972e794346e869476df51faac05286f37d162233a1eda50a3",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "laroza"
+      ],
+      "pinned_search_spellings": [
+        "laroza"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "mewsry",
+      "name": "سوريا لايف (Mewsry / Syria Live)",
+      "code": "MY",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/mewsry.mjs",
+      "metadata_line": 51,
+      "source_sha256": "b186c60c6ecebbabb4349080843a196fa2a84616f4d23aa5a40408ee7baed481",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": false,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "mewsry"
+      ],
+      "pinned_search_spellings": [
+        "mewsry"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "moviztime",
+      "name": "Moviz Time",
+      "code": "ME",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/moviztime.mjs",
+      "metadata_line": 31,
+      "source_sha256": "8ab19933047d789f0963387b16064499128a5745706d861346e106a9ab33e555",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "moviztime"
+      ],
+      "pinned_search_spellings": [
+        "moviztime"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "mycima",
+      "name": "ماي سيما (MyCima / WeCima)",
+      "code": "MA",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/mycima.mjs",
+      "metadata_line": 47,
+      "source_sha256": "51925e85b7a8498af29f28cd102f5447c7355e25e0a959048d3efc7f1a3611b1",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "mycima"
+      ],
+      "pinned_search_spellings": [
+        "mycima",
+        "wecima"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "qfilm",
+      "name": "كيو فيلم (QFilm)",
+      "code": "QM",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/qfilm.mjs",
+      "metadata_line": 38,
+      "source_sha256": "403bed67af7d7a412b6735ef9446363b0493d51a7991a5344cf4be60619a80cf",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "qfilm"
+      ],
+      "pinned_search_spellings": [
+        "qfilm"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "ristoanime",
+      "name": "RistoAnime",
+      "code": "RE",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/ristoanime.mjs",
+      "metadata_line": 24,
+      "source_sha256": "9b5863327d373889a408365206fe622f2eadd27cf0410d6e15b74051700f4a94",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "ristoanime"
+      ],
+      "pinned_search_spellings": [
+        "ristoanime"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "shahid4u",
+      "name": "شاهد فور يو (Shahid4U)",
+      "code": "SU",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/shahid4u.mjs",
+      "metadata_line": 47,
+      "source_sha256": "b8e1dfbfb9c9f03477abf89fe681248e3fc54c59b5f2bd9d66c4ee7e60d7ec27",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "shahid4u"
+      ],
+      "pinned_search_spellings": [
+        "shahid4u"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "shii4u",
+      "name": "شي فور يو (Shii4U)",
+      "code": "SH",
+      "mirror_of": "shahid4u",
+      "path": "server/scrapers/sites/shii4u.mjs",
+      "metadata_line": 23,
+      "source_sha256": "a7d1e45dd5c9be50c41ec64c8580f5067c3985e0a022d57d14d53850de51b579",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [
+        "shii4u"
+      ],
+      "pinned_search_spellings": [
+        "shii4u"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "witanime",
+      "name": "WitAnime",
+      "code": "WE",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/witanime.mjs",
+      "metadata_line": 52,
+      "source_sha256": "ced43ac369ac35bedb66dc2a3c7534f14c819b6788f7d29fd3ca8cbfb4572e6f",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [
+        "witanime"
+      ],
+      "pinned_search_spellings": [
+        "witanime"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "yallashoot",
+      "name": "يلا شوت (Yalla Shoot)",
+      "code": "YS",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/yallashoot.mjs",
+      "metadata_line": 30,
+      "source_sha256": "a761f1564b8bc2eff0331ea5c2d65fc086a79f73f23101b94831cfe2f4061668",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": false,
+        "details": true,
+        "episodes": false,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [],
+      "live_validation": "not_run"
+    }
+  ],
+  "seed_only": [
+    {
+      "id": "faselhd",
+      "url": "https://faselhd.center",
+      "enabled": true
+    },
+    {
+      "id": "cima4u",
+      "url": "https://cima4u.actor",
+      "enabled": true
+    },
+    {
+      "id": "fushaar",
+      "url": "https://fushaar.link",
+      "enabled": true
+    },
+    {
+      "id": "cinemana",
+      "url": "https://cinemana.vip",
+      "enabled": true
+    },
+    {
+      "id": "tukif",
+      "url": "https://tukif.show",
+      "enabled": true
+    },
+    {
+      "id": "kooralive",
+      "url": "https://koora.live",
+      "enabled": true
+    }
+  ],
+  "duplicate_codes": {
+    "AP": [
+      "anime4up",
+      "anime4up_rest"
+    ]
+  },
+  "server_adapters": [
+    {
+      "path": "server/providers/3isk.mjs",
+      "canonical_id": "3isk",
+      "count_as_additional_provider": false
+    },
+    {
+      "path": "server/providers/akoam.mjs",
+      "canonical_id": "akwam",
+      "count_as_additional_provider": false
+    },
+    {
+      "path": "server/providers/alooy.mjs",
+      "canonical_id": "alooy",
+      "count_as_additional_provider": false
+    },
+    {
+      "path": "server/providers/laroza.mjs",
+      "canonical_id": "laroza",
+      "count_as_additional_provider": false
+    }
+  ],
+  "edge_config_files": [
+    "edge/config/3isk.jsonc",
+    "edge/config/akoam.jsonc",
+    "edge/config/alooy.jsonc",
+    "edge/config/laroza.jsonc",
+    "edge/config/matches.jsonc",
+    "edge/config/providers.json"
+  ],
+  "supervisor_facades": [
+    "server/scrapers/supervisor1-mycima.mjs",
+    "server/scrapers/supervisor2-shahid-moviz.mjs",
+    "server/scrapers/supervisor3-egydead-ipa.mjs",
+    "server/scrapers/supervisor4-anime4up.mjs",
+    "server/scrapers/supervisor5-arabseed.mjs",
+    "server/scrapers/supervisor6-witanime-live.mjs"
+  ],
+  "playback_helpers": [
+    "server/providers/3isk-playback/contract.mjs",
+    "server/providers/3isk-playback/miravd.mjs",
+    "server/providers/3isk-playback/router.mjs",
+    "server/providers/3isk-playback/ukrcdn.mjs"
+  ],
+  "compatibility_entrypoints": [
+    "server/basri-source.mjs",
+    "server/match-production.mjs"
+  ],
+  "aggregation_modules": [
+    "server/scrapers/sites/specialized-portals.mjs"
+  ],
+  "warnings": [
+    "Metadata describes intended capabilities, not verified success.",
+    "Modules without mirrorOf are not proof of independent upstream ownership.",
+    "Edge configs and server adapters are additional execution layers, not extra counted sites.",
+    "Seed entries without a registered module are not active providers."
+  ]
+}

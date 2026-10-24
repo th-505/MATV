@@ -6,10 +6,6 @@ const MAX_CACHE_ENTRY_BYTES = 512 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
 const pendingRequests = new Map();
 
-const DEFAULT_V3_A = ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('');
-const DEFAULT_V3_B = ['9aa9620e', '381a7159', '82a765f9', 'e9f57d42'].join('');
-let keyIndex = 0;
-
 export function getUserTmdbKey() {
   try {
     const custom = localStorage.getItem('matv_user_tmdb_key');
@@ -18,13 +14,19 @@ export function getUserTmdbKey() {
   return '';
 }
 
-function getEffectiveBrowserKeys() {
-  const userKey = getUserTmdbKey();
-  if (userKey) return [userKey];
-  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    return [DEFAULT_V3_A, DEFAULT_V3_B];
-  }
-  return [];
+function browserCatalogUrl(path, query) {
+  // Project credentials stay on the backend. BYOK remains an explicit personal option.
+  if (typeof window === 'undefined' || typeof document === 'undefined') return null;
+  const configured = document.querySelector?.('meta[name="matv-api-base"]')?.content || '';
+  const local = typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)
+    ? 'http://127.0.0.1:3000' : '';
+  try {
+    const url = new URL('/api/v1/tmdb/catalog', configured || local || 'https://matv.onrender.com');
+    if (url.protocol !== 'https:' && !(/^http:$/.test(url.protocol) && ['localhost', '127.0.0.1'].includes(url.hostname))) return null;
+    url.searchParams.set('path', path);
+    query.forEach((value, key) => url.searchParams.set(key, value));
+    return url;
+  } catch { return null; }
 }
 
 function pruneCache(now = Date.now()) {
@@ -50,12 +52,14 @@ function pruneCache(now = Date.now()) {
 }
 
 function validPath(path) {
-  return typeof path === 'string' && /^\/(?:trending\/(?:all|movie|tv)\/(?:day|week)|movie\/(?:top_rated|\d+(?:\/(?:recommendations|similar))?)|tv\/(?:popular|\d+(?:\/season\/\d+|\/(?:recommendations|similar))?)|discover\/(?:movie|tv)|search\/(?:movie|tv|multi))$/.test(path);
+  return typeof path === 'string' && /^\/(?:trending\/(?:all|movie|tv)\/(?:day|week)|movie\/(?:popular|top_rated|\d+(?:\/(?:recommendations|similar))?)|tv\/(?:popular|\d+(?:\/season\/\d+|\/(?:recommendations|similar))?)|discover\/(?:movie|tv)|search\/(?:movie|tv|multi))$/.test(path);
 }
 
 export async function tmdbFetch(path, params = {}) {
   if (!validPath(path)) return { results: [] };
-  const safeParams = Object.fromEntries(Object.entries(params || {}).filter(([, value]) => value !== undefined && value !== null));
+  const allowedParams = new Set(['language', 'page', 'query', 'with_genres', 'with_original_language', 'sort_by', 'append_to_response', 'include_adult', 'year', 'primary_release_year', 'first_air_date_year']);
+  if (!params || typeof params !== 'object' || Array.isArray(params) || Object.keys(params).some(key => !allowedParams.has(key))) return { results: [] };
+  const safeParams = Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null));
   const query = new URLSearchParams({ language: 'ar-SA', ...safeParams });
   const cacheKey = `${CACHE_PREFIX}${path}?${query.toString()}`;
   const now = Date.now();
@@ -71,51 +75,34 @@ export async function tmdbFetch(path, params = {}) {
     }
   } catch (_) {}
 
-  const activeKeys = getEffectiveBrowserKeys();
-  if (activeKeys.length === 0) return { results: [] };
+  const userKey = getUserTmdbKey();
+  const backendUrl = userKey ? null : browserCatalogUrl(path, query);
+  if (!userKey && !backendUrl) return { results: [] };
   if (pendingRequests.has(cacheKey)) return pendingRequests.get(cacheKey);
 
   const request = (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      for (let i = 0; i < activeKeys.length; i++) {
-        const activeKey = activeKeys[(keyIndex + i) % activeKeys.length];
-        const url = new URL(`https://api.themoviedb.org/3${path}`);
-        query.forEach((v, k) => url.searchParams.set(k, v));
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-        try {
-          const headers = { Accept: 'application/json' };
-          if (activeKey.startsWith('eyJ')) headers.Authorization = `Bearer ${activeKey}`;
-          else url.searchParams.set('api_key', activeKey);
-          const res = await fetch(url.toString(), {
-            headers,
-            signal: controller.signal,
-            redirect: 'error'
-          });
-          clearTimeout(timer);
-          if (res.status === 429 || res.status === 401) {
-            keyIndex = (keyIndex + 1) % activeKeys.length;
-            continue;
-          }
-          if (!res.ok) continue;
-          const data = await res.json();
-          if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
-          const serialized = JSON.stringify({ ts: Date.now(), data });
-          if (new TextEncoder().encode(serialized).byteLength <= MAX_CACHE_ENTRY_BYTES) {
-            pruneCache();
-            try { localStorage.setItem(cacheKey, serialized); } catch (_) {}
-          }
-          return data;
-        } catch (_) {
-          clearTimeout(timer);
-          keyIndex = (keyIndex + 1) % activeKeys.length;
-        }
+      const headers = { Accept: 'application/json' };
+      const url = backendUrl || new URL(`https://api.themoviedb.org/3${path}`);
+      if (userKey) {
+        query.forEach((value, key) => url.searchParams.set(key, value));
+        if (userKey.startsWith('eyJ')) headers.Authorization = `Bearer ${userKey}`;
+        else url.searchParams.set('api_key', userKey);
       }
-      return { results: [] };
-    } finally {
-      pendingRequests.delete(cacheKey);
-    }
+      const response = await fetch(url.toString(), { headers, signal: controller.signal, redirect: 'error' });
+      if (!response.ok) return { results: [] };
+      const data = await response.json();
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return { results: [] };
+      const serialized = JSON.stringify({ ts: Date.now(), data });
+      if (new TextEncoder().encode(serialized).byteLength <= MAX_CACHE_ENTRY_BYTES) {
+        pruneCache();
+        try { localStorage.setItem(cacheKey, serialized); } catch (_) {}
+      }
+      return data;
+    } catch { return { results: [] }; }
+    finally { clearTimeout(timer); pendingRequests.delete(cacheKey); }
   })();
   pendingRequests.set(cacheKey, request);
   return request;

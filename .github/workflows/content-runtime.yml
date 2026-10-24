@@ -41,3 +41,6 @@ jobs:
           node scripts/category_infinite_scroll_test.mjs
           node scripts/news_runtime_test.mjs
           node scripts/production_entry_test.mjs
+
+      - name: Run dialogue requirements regressions
+        run: npm run test:continuation
