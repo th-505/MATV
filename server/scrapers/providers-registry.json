@@ -1,0 +1,95 @@
+{
+  "description": "Unverified seed URLs from handover guide; staging only",
+  "providers": [
+    {
+      "id": "mycima",
+      "url": "https://wecima.show",
+      "enabled": true
+    },
+    {
+      "id": "akwam",
+      "url": "https://ak.sv",
+      "enabled": true
+    },
+    {
+      "id": "cimanow",
+      "url": "https://cimanow.cc",
+      "enabled": true
+    },
+    {
+      "id": "egydead",
+      "url": "https://egydead.live",
+      "enabled": true
+    },
+    {
+      "id": "arabseed",
+      "url": "https://arabseed.show",
+      "enabled": true
+    },
+    {
+      "id": "shahid4u",
+      "url": "https://shahid4u.ltd",
+      "enabled": true
+    },
+    {
+      "id": "moviztime",
+      "url": "https://moviz-time.land",
+      "enabled": true
+    },
+    {
+      "id": "anime4up",
+      "url": "https://anime4up.rest",
+      "enabled": true
+    },
+    {
+      "id": "witanime",
+      "url": "https://witanime.cyou",
+      "enabled": true
+    },
+    {
+      "id": "3isk",
+      "url": "https://3isk.biz",
+      "enabled": true
+    },
+    {
+      "id": "faselhd",
+      "url": "https://faselhd.center",
+      "enabled": true
+    },
+    {
+      "id": "cima4u",
+      "url": "https://cima4u.actor",
+      "enabled": true
+    },
+    {
+      "id": "laroza",
+      "url": "https://laroza.now",
+      "enabled": true
+    },
+    {
+      "id": "fushaar",
+      "url": "https://fushaar.link",
+      "enabled": true
+    },
+    {
+      "id": "cinemana",
+      "url": "https://cinemana.vip",
+      "enabled": true
+    },
+    {
+      "id": "tukif",
+      "url": "https://tukif.show",
+      "enabled": true
+    },
+    {
+      "id": "yallashoot",
+      "url": "https://yallashoot.today",
+      "enabled": true
+    },
+    {
+      "id": "kooralive",
+      "url": "https://koora.live",
+      "enabled": true
+    }
+  ]
+}

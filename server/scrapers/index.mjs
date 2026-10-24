@@ -17,10 +17,23 @@ import { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches } from './supervisor
 
 export { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches };
 
-const TMDB_API_KEY = String(process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join('')).trim();
+const TMDB_API_KEYS = [...new Set([process.env.TMDB_API_KEY || process.env.TMDB_API_KEY_OL, process.env.TMDB_API_KEY_BP].map(value => String(value || '').trim()).filter(Boolean))];
 const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
-const SEARCH_MAX_IN_FLIGHT = 2;
+const MAX_CONCURRENT_REQUESTS = 6;
+const MAX_QUEUE_SIZE = 30;
+let activeRequests = 0;
+const waitQueue = [];
+async function withConcurrencyQueue(task) {
+  if (activeRequests >= MAX_CONCURRENT_REQUESTS) {
+    if (waitQueue.length >= MAX_QUEUE_SIZE) throw new Error('SERVER_BUSY_QUEUE_FULL');
+    await new Promise(resolve => waitQueue.push(resolve));
+  }
+  activeRequests++;
+  try { return await task(); }
+  finally { activeRequests--; const next = waitQueue.shift(); if (next) next(); }
+}
+
 const searchCache = new Map();
 const searchInFlight = new Map();
 const categoryCache = new Map();
@@ -30,7 +43,7 @@ const categoryInFlight = new Map();
  * Searches TMDb to enrich scraped catalog items with official high-res posters and metadata
  */
 export async function enrichCatalogWithTmdb(items = []) {
-  if (!Array.isArray(items) || items.length === 0 || !TMDB_API_KEY) return items;
+  if (!Array.isArray(items) || items.length === 0 || !TMDB_API_KEYS.length) return items;
 
   const promises = items.slice(0, 8).map(async (item) => {
     // If item already has a good TMDb poster, skip
@@ -44,16 +57,26 @@ export async function enrichCatalogWithTmdb(items = []) {
 
     try {
       const type = (item.type === 'series' || item.is_series || item.category === 'series') ? 'tv' : 'movie';
-      const searchUrl = new URL(`https://api.themoviedb.org/3/search/${type}`);
-      searchUrl.searchParams.set('api_key', TMDB_API_KEY);
-      searchUrl.searchParams.set('language', 'ar-SA');
-      searchUrl.searchParams.set('query', cleanTitle);
-      const res = await fetch(searchUrl, {
-        signal: AbortSignal.timeout(4000)
+      let json = null;
+      for (const key of TMDB_API_KEYS) {
+        const searchUrl = new URL(`https://api.themoviedb.org/3/search/${type}`);
+        searchUrl.searchParams.set('api_key', key);
+        searchUrl.searchParams.set('language', 'ar-SA');
+        searchUrl.searchParams.set('query', cleanTitle);
+        const res = await fetch(searchUrl, { signal: AbortSignal.timeout(4000) });
+        if ([401, 403, 429].includes(res.status)) continue;
+        if (!res.ok) break;
+        json = await res.json();
+        break;
+      }
+      if (!json) return item;
+      const normalized = v => String(v || '').normalize('NFKC').toLocaleLowerCase('ar').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+      const itemYear = String(item.year || '').match(/\d{4}/)?.[0];
+      const match = (json.results || []).find(candidate => {
+        const title = candidate.title || candidate.name || candidate.original_title || candidate.original_name;
+        const year = String(candidate.release_date || candidate.first_air_date || '').slice(0, 4);
+        return normalized(title) === normalized(cleanTitle) && (!itemYear || itemYear === year);
       });
-      if (!res.ok) return item;
-      const json = await res.json();
-      const match = json.results?.[0];
 
       if (match) {
         return {
@@ -65,7 +88,7 @@ export async function enrichCatalogWithTmdb(items = []) {
           backdrop: match.backdrop_path ? `https://image.tmdb.org/t/p/original${match.backdrop_path}` : '',
           overview: match.overview || item.overview || '',
           year: item.year || (match.release_date || match.first_air_date || '').substring(0, 4) || null,
-          rating: match.vote_average ? Number(match.vote_average.toFixed(1)) : 8.5
+          rating: Number.isFinite(Number(match.vote_average)) && match.vote_count > 0 ? Number(Number(match.vote_average).toFixed(1)) : null
         };
       }
     } catch (_) {}
@@ -104,6 +127,7 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeMyCimaCategory('movies', p);
       break;
 
+    case 'laroza-movies':
     case '3isk-movies':
     case 'turkish-movies':
       results = await scrape3cktvCategory('movies', p);
@@ -111,6 +135,12 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeArabSeedCategory('movies', p);
       break;
 
+    case 'movie-turkish':
+      results = await scrape3cktvCategory('movies', p);
+      if (results.length === 0) results = await scrapeArabSeedCategory('movies', p);
+      break;
+
+    case 'series-asian':
     case 'series-foreign':
       results = await scrapeShahid4uCategory('series', p);
       if (results.length === 0) results = await scrapeEgyDeadCategory('series', p);
@@ -126,6 +156,9 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeCimaNowCategory('series', p);
       break;
 
+    case 'laroza-latest':
+    case 'laroza-series':
+    case 'alooy-series':
     case 'series-turkish':
     case '3isk-latest':
     case '3isk-turkish':
@@ -135,6 +168,7 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeArabSeedCategory('series', p);
       break;
 
+    case 'laroza-anime':
     case 'movie-anime':
       results = await scrapeAnime4UpCategory('anime_movies', p);
       if (results.length === 0) results = await scrapeWitAnimeCategory('anime_movies', p);
@@ -166,9 +200,7 @@ export async function scrapeRealCategory(category, page = 1) {
   if (cached) categoryCache.delete(key);
   const pending = categoryInFlight.get(key);
   if (pending) return cloneItems(await pending);
-  if (categoryInFlight.size >= 2) return [];
-
-  const task = scrapeRealCategoryUncached(normalizedCategory, p);
+  const task = withConcurrencyQueue(() => scrapeRealCategoryUncached(normalizedCategory, p));
   categoryInFlight.set(key, task);
   try {
     const items = await task;
@@ -222,9 +254,7 @@ export async function scrapeRealSearch(query) {
   if (cached) searchCache.delete(key);
   const pending = searchInFlight.get(key);
   if (pending) return cloneItems(await pending);
-  if (searchInFlight.size >= SEARCH_MAX_IN_FLIGHT) return [];
-
-  const task = scrapeRealSearchUncached(q);
+  const task = withConcurrencyQueue(() => scrapeRealSearchUncached(q));
   searchInFlight.set(key, task);
   try {
     const items = await task;

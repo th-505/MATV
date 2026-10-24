@@ -80,3 +80,43 @@ export function createSupabaseCatalogStore({ url = process.env.SUPABASE_URL,
     },
   };
 }
+
+// Shared discovery results use the existing private provider cache table.
+// Credentials remain on the server; clients never receive database access.
+export function createSupabaseDiscoveryStore({
+  url = process.env.SUPABASE_URL,
+  key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  if (!url || !key) return null;
+  const base = new URL(url);
+  if (base.protocol !== 'https:' || !base.hostname.endsWith('.supabase.co') ||
+      base.username || base.password || base.port || base.pathname !== '/') throw Error('SUPABASE_BAD_URL');
+  if (key.startsWith('sb_publishable_')) throw Error('SUPABASE_SERVER_KEY_REQUIRED');
+  const headers = { apikey: key, 'Content-Type': 'application/json',
+    ...(key.startsWith('sb_secret_') ? {} : { Authorization: `Bearer ${key}` }) };
+  async function request(params, method = 'GET', body) {
+    const target = new URL('/rest/v1/matv_provider_cache', base);
+    for (const [name, value] of Object.entries(params)) target.searchParams.set(name, value);
+    const response = await fetchImpl(target, { method, headers: {
+      ...headers, ...(method === 'POST' ? { Prefer: 'resolution=merge-duplicates,return=minimal' } : {}) },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(5000), redirect: 'error' });
+    if (!response.ok) { await response.body?.cancel(); throw Error(`DISCOVERY_STORE_HTTP_${response.status}`); }
+    if (method !== 'GET') { await response.body?.cancel(); return null; }
+    return response.json();
+  }
+  return {
+    async get(cacheKey) {
+      const rows = await request({ provider:'eq.discovery', cache_key:`eq.${cacheKey}`,
+        expires_at:`gt.${new Date().toISOString()}`, select:'payload,expires_at', limit:'1' });
+      return rows[0] || null;
+    },
+    async put(cacheKey, payload, expiresAt) {
+      await request({on_conflict:'provider,cache_key'},'POST',{
+        provider:'discovery',cache_key:cacheKey,payload,expires_at:new Date(expiresAt).toISOString(),
+        updated_at:new Date().toISOString(),
+      });
+    },
+  };
+}

@@ -1,3 +1,4 @@
+import { fallbackProviderCount, listFallbackProviders, resolveFallbackStreams } from './fallback-providers.mjs';
 // Embedded third-party players are intentionally disabled. Only a provider
 // resolver with a verified direct media URL may offer playback to clients.
 function positiveInt(value, field) {
@@ -15,10 +16,17 @@ function normalizeIdentity({ tmdbId, type, season, episode } = {}) {
 
 export class FallbackPlaybackRuntime {
   status() {
-    return { status:'ok', configured:false, providers:0, media_proxy:false, reason:'EMBEDDED_FALLBACK_DISABLED' };
+    return { status:'ok', configured:fallbackProviderCount() > 0, providers:fallbackProviderCount(), media_proxy:false, reason:fallbackProviderCount() ? 'VERIFIED_DIRECT_ONLY' : 'NO_VERIFIED_DIRECT_PROVIDER' };
   }
-  resolve(input) {
+  async resolve(input) {
     const identity = normalizeIdentity(input);
+    const providers = listFallbackProviders();
+    for (const provider of providers) {
+      try {
+        const result = await resolveFallbackStreams(provider.id, { ...input, ...identity });
+        if (result.status === 'available' && result.data.media_sources.length) return result;
+      } catch (_) { /* Try next independently verified provider. */ }
+    }
     return { status:'unavailable', source:'fallback', data:{
       ...identity, playback_unavailable:true, playback_reason:'NO_VERIFIED_DIRECT_PROVIDER', media_sources:[],
     } };
