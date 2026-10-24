@@ -1,0 +1,32 @@
+name: MATV nightly provider diagnostics
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 21 * * *'
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install analyzer dependencies
+        run: python -m pip install beautifulsoup4 requests google-genai
+      - name: Run provider analyzer in staging only
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_BACKUP: ${{ secrets.GEMINI_API_KEY_BACKUP }}
+        run: |
+          python scripts/matv_provider_analyzer.py --registry server/scrapers/providers-registry.json --out-dir server/scrapers/generated
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: provider-diagnostics
+          path: |
+            server/scrapers/providers-registry.json
+            server/scrapers/generated/
+          if-no-files-found: warn
