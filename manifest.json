@@ -18,5 +18,26 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "id": "/MATV/",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": [
+    "entertainment",
+    "video"
+  ],
+  "shortcuts": [
+    {
+      "name": "MA TV",
+      "short_name": "الرئيسية",
+      "url": "./",
+      "icons": [
+        {
+          "src": "app/icons/Icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }
