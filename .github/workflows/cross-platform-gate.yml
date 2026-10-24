@@ -1,0 +1,49 @@
+name: MATV cross-platform source gate
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web-and-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check web and server
+        run: |
+          node --check server/app.mjs
+          node --check server/discovery-coordinator.mjs
+          node --check server/provider-store.mjs
+          node --check web/core/ma-nexus.js
+      - name: Run background discovery and TMDB tests
+        run: node --test tests/discovery-coordinator.test.mjs tests/tmdb-failover.test.mjs
+      - name: Validate web install manifest
+        run: |
+          node --input-type=module -e "import fs from 'node:fs';const p=JSON.parse(fs.readFileSync('manifest.json'));if(!p.name||!p.start_url||!p.icons?.length)process.exit(1)"
+  native-source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report native target readiness without claiming builds
+        shell: bash
+        run: |
+          for target in android ios windows macos linux; do
+            if [ -d "app/$target" ]; then
+              echo "$target: app source present"
+            elif [ -d "$target" ]; then
+              echo "$target: root source present"
+            else
+              echo "::warning::$target native source not detected at standard paths"
+            fi
+          done
+          if [ -f app/pubspec.yaml ] || [ -f pubspec.yaml ]; then
+            echo "Flutter pubspec detected"
+          else
+            echo "::warning::Flutter pubspec missing from standard paths; no native build asserted"
+          fi
