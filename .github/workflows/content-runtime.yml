@@ -44,3 +44,11 @@ jobs:
 
       - name: Run dialogue requirements regressions
         run: npm run test:continuation
+
+      - name: Build the production container with complete runtime imports
+        run: docker build -t matv-runtime:ci .
+      - name: Smoke test the production image without upstream access
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,src=${{ github.workspace }}/scripts/container_runtime_smoke.mjs,dst=/tmp/container-smoke.mjs,readonly" \
+            matv-runtime:ci node /tmp/container-smoke.mjs
