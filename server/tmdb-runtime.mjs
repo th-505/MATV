@@ -140,6 +140,7 @@ function normalizeSeason(body = {}, id, seasonNumber) {
 
 export function createTmdbRuntime({
   apiKey = process.env.TMDB_API_KEY || '',
+  backupApiKey = process.env.TMDB_API_KEY_BP || '',
   bearerToken = process.env.TMDB_V4_TOKEN || '',
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
@@ -150,7 +151,7 @@ export function createTmdbRuntime({
   const pending = new Map();
 
   function configured() {
-    return Boolean(text(apiKey) || text(bearerToken));
+    return Boolean(text(apiKey) || text(backupApiKey) || text(bearerToken));
   }
 
   function status() {
@@ -178,28 +179,39 @@ export function createTmdbRuntime({
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key, String(value));
     }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
+    const credentials = [...new Set([text(apiKey), text(backupApiKey)].filter(Boolean))];
+    const attempts = text(bearerToken)
+      ? [{ bearer: text(bearerToken) }, ...credentials.map(key => ({ key }))]
+      : credentials.map(key => ({ key }));
+    let lastError;
+    for (const credential of attempts) {
+      const attemptUrl = new URL(url);
       const headers = { Accept: "application/json" };
-      if (text(bearerToken)) headers.Authorization = `Bearer ${text(bearerToken)}`;
-      else url.searchParams.set("api_key", text(apiKey));
-      const response = await fetchImpl(url, {
-        method: "GET",
-        headers,
-        signal: controller.signal,
-        redirect: "follow",
-      });
-      if (!response.ok) throw new Error(`TMDB_HTTP_${response.status}`);
-      const body = await response.json();
-      if (!body || typeof body !== "object") throw new Error("TMDB_INVALID_JSON");
-      return body;
-    } catch (error) {
-      if (error?.name === "AbortError") throw new Error("TMDB_TIMEOUT");
-      throw error;
-    } finally {
-      clearTimeout(timer);
+      if (credential.bearer) headers.Authorization = `Bearer ${credential.bearer}`;
+      else attemptUrl.searchParams.set("api_key", credential.key);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetchImpl(attemptUrl, {
+          method: "GET", headers, signal: controller.signal, redirect: "follow",
+        });
+        // Only switch credentials for credential/quota errors, not general outages.
+        if ([401, 403, 429].includes(response.status)) {
+          lastError = new Error(`TMDB_HTTP_${response.status}`);
+          continue;
+        }
+        if (!response.ok) throw new Error(`TMDB_HTTP_${response.status}`);
+        const body = await response.json();
+        if (!body || typeof body !== "object") throw new Error("TMDB_INVALID_JSON");
+        return body;
+      } catch (error) {
+        if (error?.name === "AbortError") throw new Error("TMDB_TIMEOUT");
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
     }
+    throw lastError || new Error("TMDB_NOT_CONFIGURED");
   }
 
   async function cachedRequest(key, resolver) {
