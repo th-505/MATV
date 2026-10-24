@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#07090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MA TV">
-<meta name="description" content="MA TV — منصتك العربية الموحدة للأفلام، المسلسلات، الأنمي، والبث المباشر بدون إعلانات وببث مباشر من المصدر.">
-<title>MA TV OFFICIAL — منصة البث السينمائي الفاخرة</title>
+<meta name="apple-mobile-web-app-title" content="T-A-TV">
+<meta name="description" content="T-A-TV — منصتك العربية الموحدة للأفلام، المسلسلات، الأنمي، والبث المباشر بدون إعلانات وببث مباشر من المصدر.">
+<title>T-A-TV — منصة البث السينمائي الفاخرة</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307090b'/%3E%3Cpath d='M9 46 24 15h10l-4 9H21l-4 9h10l-4 8h-9l-2 5H9Zm21 0V15h13c8 0 12 4 12 9 0 4-2 6-5 8 4 2 6 4 6 7 0 5-4 7-12 7H30Zm9-19h4c2 0 3-1 3-2 0-2-1-2-3-2h-4v4Zm0 11h5c2 0 3-1 3-2s-1-2-3-2h-5v4Z' fill='%23e7b86e'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="app/favicon.png">
@@ -458,7 +458,7 @@ main.container {
   box-shadow: 0 0 12px var(--gold-glow);
 }
 
-/* MA TV Luxury Media Cards */
+/* T-A-TV Luxury Media Cards */
 .media-card {
   flex: 0 0 152px;
   background: var(--bg-card);
@@ -1056,13 +1056,13 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
 <header class="app-header">
   <div class="header-inner">
     <div class="brand-wrap" id="brandBtn">
-      <div class="brand-badge">MA</div>
+      <div class="brand-badge">TA</div>
       <div class="brand-name-wrap">
         <div class="brand-name">
-          <span class="white-text">MA</span>
+          <span class="white-text">T-A-</span>
           <span class="gold-text">TV</span>
-          <span class="gold-sep">•</span>
-          <span class="gold-text" style="font-size:0.82em;">OFFICIAL</span>
+          
+          
         </div>
         <div class="brand-sub">MA-NEXUS v8.0 • ZERO ADS</div>
       </div>
@@ -1074,6 +1074,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
       <button class="nav-btn" data-tab="series">مسلسلات</button>
       <button class="nav-btn" data-tab="anime">أنمي</button>
       <button class="nav-btn" data-tab="turkish">تركي</button>
+      <button class="nav-btn" data-tab="explore">🔭 استكشاف</button>
       <button class="nav-btn" data-tab="live">البث المباشر</button>
       <button class="nav-btn" data-tab="favorites">المفضلة</button>
       <button class="nav-btn" data-tab="settings">الإعدادات</button>
@@ -1094,7 +1095,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div class="hero-banner" id="homeHero">
       <div class="hero-backdrop" id="heroBackdrop"></div>
       <div class="hero-content">
-        <span class="hero-badge">✦ الأكثر شهرة ورواجاً اليوم • MA TV</span>
+        <span class="hero-badge">✦ الأكثر شهرة ورواجاً اليوم • T-A-TV</span>
         <h1 class="hero-title" id="heroTitle">جاري تجهيز المنصة السينمائية…</h1>
         <div class="hero-tags" id="heroTags">
           <span class="rating-pill" id="heroRatingPill">★ 8.9</span>
@@ -1138,6 +1139,17 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     <div id="homeDynamicShelves"></div>
   </section>
 
+  <section id="tab-explore" class="tab-view">
+    <div class="shelf-header"><h2 class="shelf-title">🔭 استكشاف المصادر</h2></div>
+    <p style="color:var(--text-secondary);margin:12px 0">ابحث عن عمل، ثم اختر المصدر الذي ترغب باستكشاف نتائجه.</p>
+    <div class="filter-bar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <input type="search" id="exploreQuery" placeholder="ابحث عن فيلم أو مسلسل أو أنمي" aria-label="بحث الاستكشاف" style="flex:1;min-width:180px;padding:12px;border-radius:10px;background:var(--bg-card);color:white;border:1px solid var(--gold-border)">
+      <select id="exploreProvider" aria-label="اختر القاشط" style="padding:12px;border-radius:10px;background:var(--bg-card);color:white;border:1px solid var(--gold-border)"></select>
+      <button class="btn-gold" id="exploreRun">استكشاف</button>
+    </div>
+    <p id="exploreStatus" role="status" aria-live="polite" style="color:var(--text-secondary);margin:12px 0"></p>
+    <div class="media-grid" id="exploreGrid"></div>
+  </section>
   <!-- TAB 2: MOVIES -->
   <section id="tab-movies" class="tab-view">
     <div class="filter-bar" id="moviesFilters"></div>
@@ -1262,7 +1274,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
     </div>
 
     <div style="text-align:center;color:var(--gold-primary);opacity:0.8;font-size:0.82rem;margin-top:24px;font-weight:700;">
-      MA TV OFFICIAL • MA-NEXUS v8.0 • Zero-Cost & Zero-Ads Architecture
+      T-A-TV • MA-NEXUS v8.0 • Zero-Cost & Zero-Ads Architecture
     </div>
   </section>
 
@@ -1270,7 +1282,7 @@ video#cinemaVideo.fit-cover { object-fit: cover; }
   <section id="pageTitleDetail" class="tab-view">
     <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
       <button class="tool-btn" id="detailBackBtn">→ العودة للقائمة السابقة</button>
-      <span style="color:var(--gold-primary);font-size:0.82rem;font-weight:700;">صفحة العمل المستقلة • MA TV</span>
+      <span style="color:var(--gold-primary);font-size:0.82rem;font-weight:700;">صفحة العمل المستقلة • T-A-TV</span>
     </div>
 
     <div class="full-page-banner">
@@ -1824,6 +1836,7 @@ window.switchTab = function(tabId, updateHash = true) {
   if (activeView) activeView.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  if (tabId === 'explore') document.getElementById('exploreQuery')?.focus();
   if (tabId === 'home' && !homeLoaded) loadHomeShelves();
   if (tabId === 'movies' && !moviesLoaded) loadMoviesTab();
   if (tabId === 'series' && !seriesLoaded) loadSeriesTab();
@@ -2167,7 +2180,7 @@ async function renderTitleDetailPage(params) {
   document.getElementById('detailTitle').textContent = currentDetailItem.title;
   document.getElementById('detailPoster').src = currentDetailItem.poster || currentDetailItem.img;
   document.getElementById('detailBackdrop').style.backgroundImage = `url(${currentDetailItem.backdrop || currentDetailItem.poster})`;
-  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'عمل سينمائي ودرامي متوفر بجودة فائقة عبر منصة MA TV.';
+  document.getElementById('detailStory').textContent = currentDetailItem.overview || 'عمل سينمائي ودرامي متوفر بجودة فائقة عبر منصة T-A-TV.';
 
   const pillsWrap = document.getElementById('detailMetaPills');
   const genresText = Array.isArray(currentDetailItem.genres) && currentDetailItem.genres.length
@@ -2955,6 +2968,45 @@ async function performSearch(query) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--danger);">تعذر إتمام البحث حالياً.</div>';
   }
 }
+
+// T-A-TV discovery: explicit opt-in, hidden provider selector until exploration is opened.
+const exploreSources = ['akoam','alooy','mycima','wecima','cimanow','shahid4u','moviztime','shii4u','egydead','ipauniverse','3isk','3cktv','anime4up','qfilm','ristoanime','mewsry','arabseed','witanime','laroza'];
+function renamedProvider(name) {
+  const original = String(name || '').trim();
+  if (!original) return '';
+  return 'ظ' + original.slice(1);
+}
+const exploreSelect = document.getElementById('exploreProvider');
+if (exploreSelect) {
+  const all = document.createElement('option'); all.value = ''; all.textContent = 'جميع المصادر'; exploreSelect.appendChild(all);
+  for (const source of exploreSources) {
+    const option = document.createElement('option');
+    option.value = source;
+    option.textContent = renamedProvider(source) + ' - ' + renamedProvider(source);
+    exploreSelect.appendChild(option);
+  }
+}
+document.getElementById('exploreRun')?.addEventListener('click', async () => {
+  const q = document.getElementById('exploreQuery').value.trim();
+  const provider = exploreSelect.value;
+  const grid = document.getElementById('exploreGrid');
+  const status = document.getElementById('exploreStatus');
+  if (!q) { status.textContent = 'اكتب اسم العمل أولاً'; return; }
+  grid.replaceChildren();
+  status.textContent = 'جاري استكشاف النتائج…';
+  try {
+    const items = await nexusUnifiedSearch(q);
+    const filtered = provider ? items.filter(item => {
+      const sources = [item.provider, item.source, item.sourceId, ...(Array.isArray(item.sources) ? item.sources.map(s => typeof s === 'string' ? s : s.provider || s.source) : [])];
+      return sources.some(v => String(v || '').toLowerCase().includes(provider));
+    }) : items;
+    filtered.forEach(item => grid.appendChild(renderMediaCard(item)));
+    status.textContent = filtered.length ? 'عدد النتائج: ' + filtered.length : 'لا توجد نتائج موثقة لهذا المصدر. البحث لا يدعم استدعاء قاشط محدد مباشرة بعد.';
+  } catch (_) { status.textContent = 'تعذر إكمال الاستكشاف حاليًا'; }
+});
+document.getElementById('exploreQuery')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('exploreRun')?.click();
+});
 
 const searchInput = document.getElementById('globalSearch');
 const searchTriggerBtn = document.getElementById('searchTriggerBtn');
