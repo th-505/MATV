@@ -17,7 +17,7 @@ import { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches } from './supervisor
 
 export { scrapeEgyDeadLiveChannels, scrapeYallaShootMatches };
 
-const TMDB_API_KEY = String(process.env.TMDB_API_KEY || '').trim();
+const TMDB_API_KEYS = [...new Set([process.env.TMDB_API_KEY || process.env.TMDB_API_KEY_OL, process.env.TMDB_API_KEY_BP].map(value => String(value || '').trim()).filter(Boolean))];
 const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
 const MAX_CONCURRENT_REQUESTS = 6;
@@ -43,7 +43,7 @@ const categoryInFlight = new Map();
  * Searches TMDb to enrich scraped catalog items with official high-res posters and metadata
  */
 export async function enrichCatalogWithTmdb(items = []) {
-  if (!Array.isArray(items) || items.length === 0 || !TMDB_API_KEY) return items;
+  if (!Array.isArray(items) || items.length === 0 || !TMDB_API_KEYS.length) return items;
 
   const promises = items.slice(0, 8).map(async (item) => {
     // If item already has a good TMDb poster, skip
@@ -57,15 +57,19 @@ export async function enrichCatalogWithTmdb(items = []) {
 
     try {
       const type = (item.type === 'series' || item.is_series || item.category === 'series') ? 'tv' : 'movie';
-      const searchUrl = new URL(`https://api.themoviedb.org/3/search/${type}`);
-      searchUrl.searchParams.set('api_key', TMDB_API_KEY);
-      searchUrl.searchParams.set('language', 'ar-SA');
-      searchUrl.searchParams.set('query', cleanTitle);
-      const res = await fetch(searchUrl, {
-        signal: AbortSignal.timeout(4000)
-      });
-      if (!res.ok) return item;
-      const json = await res.json();
+      let json = null;
+      for (const key of TMDB_API_KEYS) {
+        const searchUrl = new URL(`https://api.themoviedb.org/3/search/${type}`);
+        searchUrl.searchParams.set('api_key', key);
+        searchUrl.searchParams.set('language', 'ar-SA');
+        searchUrl.searchParams.set('query', cleanTitle);
+        const res = await fetch(searchUrl, { signal: AbortSignal.timeout(4000) });
+        if ([401, 403, 429].includes(res.status)) continue;
+        if (!res.ok) break;
+        json = await res.json();
+        break;
+      }
+      if (!json) return item;
       const normalized = v => String(v || '').normalize('NFKC').toLocaleLowerCase('ar').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
       const itemYear = String(item.year || '').match(/\d{4}/)?.[0];
       const match = (json.results || []).find(candidate => {
