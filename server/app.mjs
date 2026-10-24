@@ -1,3 +1,4 @@
+import { createDiscoveryCoordinator } from './discovery-coordinator.mjs';
 import http from "node:http";
 import { directSource, probeDirectMedia, filterBrowserSources } from "./direct-media.mjs";
 import {
@@ -491,6 +492,23 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       const data=await akoamMetadata(assertSourceUrl(decodeURIComponent(ref.slice(7))).href);
       return {...data,episodes:wrapEpisodes(data.episodes || [])};
     })});
+  const discovery = createDiscoveryCoordinator({
+    maxConcurrent: 3, maxQueued: 40,
+    discover: async ({ title, season, episode }) => {
+      const candidates = await activateAllScrapersForContent(title, season || 1, episode || 1);
+      const seen = new Set();
+      return (Array.isArray(candidates) ? candidates : []).filter(item => {
+        try {
+          const url = new URL(String(item.url || item.media_path || ''));
+          if (url.protocol !== 'https:' || !url.pathname.match(/\.(mp4|m3u8)$/i)) return false;
+          if (seen.has(url.href)) return false;
+          seen.add(url.href);
+          return true;
+        } catch { return false; }
+      }).map(item => ({ provider: item.provider || 'unknown', quality: item.quality || null,
+        kind: 'direct', url: item.url || item.media_path }));
+    },
+  });
   return http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
@@ -519,6 +537,21 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (url.pathname === '/api/v1/3isk/resolve') return sendJson(req, res, 200, publicDetails(await iskRuntime.resolve(ref, { refresh: url.searchParams.get('refresh') === '1' }), url.searchParams.get('platform') === 'web'));
         if (url.pathname === '/api/v1/3isk/details') return sendJson(req, res, 200, publicDetails(await iskRuntime.details(ref, { refresh: url.searchParams.get('refresh') === '1' }), url.searchParams.get('platform') === 'web'));
         return sendJson(req, res, 404, { status: 'error', message: 'NOT_FOUND' });
+      }
+      if (url.pathname === '/api/v1/discovery/start') {
+        if (req.method !== 'POST') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        const input = { ref:url.searchParams.get('ref') || '', title:url.searchParams.get('title') || '',
+          year:url.searchParams.get('year') || '', season:url.searchParams.get('season') || 0,
+          episode:url.searchParams.get('episode') || 0 };
+        if (input.title.length < 2 || input.title.length > 250) return sendJson(req,res,400,{status:'error',message:'INVALID_TITLE'});
+        try { return sendJson(req,res,202,{status:'accepted',data:discovery.enqueue(input)}); }
+        catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
+      }
+      if (url.pathname === '/api/v1/discovery/status') {
+        try { return sendJson(req,res,200,{status:'success',data:discovery.status({
+          ref:url.searchParams.get('ref') || '', season:url.searchParams.get('season') || 0,
+          episode:url.searchParams.get('episode') || 0 })}); }
+        catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
