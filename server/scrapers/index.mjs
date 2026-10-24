@@ -123,6 +123,7 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeMyCimaCategory('movies', p);
       break;
 
+    case 'laroza-movies':
     case '3isk-movies':
     case 'turkish-movies':
       results = await scrape3cktvCategory('movies', p);
@@ -130,6 +131,12 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeArabSeedCategory('movies', p);
       break;
 
+    case 'movie-turkish':
+      results = await scrape3cktvCategory('movies', p);
+      if (results.length === 0) results = await scrapeArabSeedCategory('movies', p);
+      break;
+
+    case 'series-asian':
     case 'series-foreign':
       results = await scrapeShahid4uCategory('series', p);
       if (results.length === 0) results = await scrapeEgyDeadCategory('series', p);
@@ -145,6 +152,9 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeCimaNowCategory('series', p);
       break;
 
+    case 'laroza-latest':
+    case 'laroza-series':
+    case 'alooy-series':
     case 'series-turkish':
     case '3isk-latest':
     case '3isk-turkish':
@@ -154,6 +164,7 @@ async function scrapeRealCategoryUncached(category, p) {
       if (results.length === 0) results = await scrapeArabSeedCategory('series', p);
       break;
 
+    case 'laroza-anime':
     case 'movie-anime':
       results = await scrapeAnime4UpCategory('anime_movies', p);
       if (results.length === 0) results = await scrapeWitAnimeCategory('anime_movies', p);
