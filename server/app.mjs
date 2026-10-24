@@ -22,7 +22,7 @@ import { createSupabaseCatalogStore, createSupabaseDiscoveryStore } from './prov
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
-import { scrapeRealCategory, scrapeRealSearch, scrapeRealDetails, activateAllScrapersForContent } from "./scrapers/index.mjs";
+import { scrapeRealCategory, scrapeRealSearch, scrapePinnedSource, scrapeRealDetails, activateAllScrapersForContent } from "./scrapers/index.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
 
 const MATCHES = "https://api.albasritv1.workers.dev/";
@@ -567,6 +567,21 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
       }
       if (url.pathname === "/api/v1/matches") return sendJson(req, res, 200, await runtimeService.matches());
+      if (url.pathname === "/api/v1/explore") {
+        if (req.method !== "GET") return sendJson(req,res,405,{status:"error",message:"METHOD_NOT_ALLOWED"});
+        const q = (url.searchParams.get("q") || "").trim();
+        const provider = (url.searchParams.get("provider") || "").trim().toLowerCase();
+        if (q.length < 2 || q.length > 120 || !/^[a-z0-9-]{2,30}$/.test(provider))
+          return sendJson(req,res,400,{status:"error",message:"INVALID_EXPLORE_INPUT"});
+        try {
+          const items = await scrapePinnedSource(q,provider);
+          return sendJson(req,res,200,{status:"success",provider,items});
+        } catch (error) {
+          if (error?.message === "SOURCE_NOT_SUPPORTED")
+            return sendJson(req,res,422,{status:"error",message:"SOURCE_NOT_SUPPORTED",provider});
+          return sendJson(req,res,503,{status:"error",message:"SOURCE_TEMPORARILY_UNAVAILABLE",provider});
+        }
+      }
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
       if (url.pathname === "/api/v1/resolve") {
         const ref = (url.searchParams.get("ref") || url.searchParams.get("id") || "").trim();
