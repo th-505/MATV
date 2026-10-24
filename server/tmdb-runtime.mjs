@@ -16,7 +16,7 @@ function yearFrom(value) {
 
 function ratingFrom(value) {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  if (value === null || value === undefined || value === '' || !Number.isFinite(parsed) || parsed < 0) return null;
   return Math.round(parsed * 10) / 10;
 }
 
@@ -139,7 +139,7 @@ function normalizeSeason(body = {}, id, seasonNumber) {
 }
 
 export function createTmdbRuntime({
-  apiKey = process.env.TMDB_API_KEY || ['f562845c', '2beca65e', '1028ff2e', '31ccaff1'].join(''),
+  apiKey = process.env.TMDB_API_KEY || '',
   bearerToken = process.env.TMDB_V4_TOKEN || '',
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
