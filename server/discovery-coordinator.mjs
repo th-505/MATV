@@ -1,6 +1,6 @@
 // Background discovery coordinator: bounded, deduplicated, independent of HTTP lifetime.
 // A persistent queue (Supabase/worker) is required before relying on this across restarts.
-export function createDiscoveryCoordinator({ discover, persist = async () => {}, now = Date.now,
+export function createDiscoveryCoordinator({ discover, persist = async () => {}, load = async () => null, now = Date.now,
   ttlMs = 7 * 86400_000, maxConcurrent = 3, maxQueued = 100 } = {}) {
   if (typeof discover !== 'function') throw Error('DISCOVERY_HANDLER_REQUIRED');
   const jobs = new Map();
@@ -16,11 +16,17 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
       if (job.state !== 'queued') continue;
       active++;
       job.state = 'running';
-      Promise.resolve().then(() => discover(job.input)).then(async result => {
+      Promise.resolve().then(async () => {
+        const saved = await load(job.key).catch(() => null);
+        if (saved?.payload && new Date(saved.expires_at).getTime() > now())
+          return { result: saved.payload, expiresAt: new Date(saved.expires_at).getTime() };
+        return { result: await discover(job.input), expiresAt: now() + ttlMs };
+      }).then(async ({ result, expiresAt }) => {
         job.result = result;
-        job.expiresAt = now() + ttlMs;
+        job.expiresAt = expiresAt;
         job.state = 'ready';
-        await persist({ key: job.key, input: job.input, result, expiresAt: job.expiresAt });
+        try { await persist({ key: job.key, input: job.input, result, expiresAt: job.expiresAt }); }
+        catch { /* cache persistence failure must not discard usable discovery results */ }
       }).catch(error => {
         job.state = 'failed';
         job.error = String(error?.message || error);
