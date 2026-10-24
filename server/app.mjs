@@ -18,7 +18,7 @@ import { createLarozaProvider, LAROZA_CATEGORIES, assertLarozaRef } from './prov
 import { ISK_CATEGORIES, decode3iskRef } from "./providers/3isk.mjs";
 import { decodeAlooyRef } from './providers/alooy.mjs';
 import { createCatalogMetadataCache } from './catalog-metadata-cache.mjs';
-import { createSupabaseCatalogStore } from './provider-store.mjs';
+import { createSupabaseCatalogStore, createSupabaseDiscoveryStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
 import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
@@ -492,7 +492,10 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       const data=await akoamMetadata(assertSourceUrl(decodeURIComponent(ref.slice(7))).href);
       return {...data,episodes:wrapEpisodes(data.episodes || [])};
     })});
+  const discoveryStore = createSupabaseDiscoveryStore();
   const discovery = createDiscoveryCoordinator({
+    load: async key => discoveryStore?.get(key) || null,
+    persist: async ({key,result,expiresAt}) => discoveryStore?.put(key,result,expiresAt),
     maxConcurrent: 3, maxQueued: 40,
     discover: async ({ title, season, episode }) => {
       const candidates = await activateAllScrapersForContent(title, season || 1, episode || 1);
