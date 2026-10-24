@@ -34,6 +34,7 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
     }
   }
   function enqueue(input) {
+    evictExpired();
     const key = keyOf(input);
     const previous = jobs.get(key);
     if (previous && (previous.state === 'queued' || previous.state === 'running' ||
