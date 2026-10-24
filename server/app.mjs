@@ -546,7 +546,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         const input = { ref:url.searchParams.get('ref') || '', title:url.searchParams.get('title') || '',
           year:url.searchParams.get('year') || '', season:url.searchParams.get('season') || 0,
           episode:url.searchParams.get('episode') || 0 };
-        if (input.title.length < 2 || input.title.length > 250) return sendJson(req,res,400,{status:'error',message:'INVALID_TITLE'});
+        if (input.title.length < 2 || input.title.length > 250 || !/^tmdb:(movie|tv):[0-9]+$/.test(input.ref) || !/^[0-9]{0,4}$/.test(input.year) || !/^[0-9]{1,3}$/.test(String(input.season)) || !/^[0-9]{1,6}$/.test(String(input.episode)) || Number(input.season) > 100 || Number(input.episode) > 100000) return sendJson(req,res,400,{status:'error',message:'INVALID_DISCOVERY_INPUT'});
         try { return sendJson(req,res,202,{status:'accepted',data:discovery.enqueue(input)}); }
         catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
       }
