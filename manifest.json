@@ -1,12 +1,12 @@
 {
-  "name": "MA TV OFFICIAL",
-  "short_name": "MA TV",
+  "name": "T-A-TV",
+  "short_name": "T-A-TV",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#07090b",
   "theme_color": "#07090b",
-  "description": "MA TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
+  "description": "T-A-TV — أفلام ومسلسلات وأنمي وبث مباشر",
   "icons": [
     {
       "src": "app/icons/Icon-192.png",
@@ -28,7 +28,7 @@
   ],
   "shortcuts": [
     {
-      "name": "MA TV",
+      "name": "T-A-TV",
       "short_name": "الرئيسية",
       "url": "./",
       "icons": [
