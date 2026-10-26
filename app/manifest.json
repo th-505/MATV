@@ -1,11 +1,11 @@
 {
-  "name": "MA TV OFFICIAL",
-  "short_name": "MA TV",
+  "name": "T-A-TV",
+  "short_name": "T-A-TV",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#07090b",
   "theme_color": "#07090b",
-  "description": "MA TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
+  "description": "T-A-TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
   "orientation": "any",
   "prefer_related_applications": false,
   "icons": [
