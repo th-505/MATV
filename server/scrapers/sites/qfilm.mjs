@@ -52,8 +52,8 @@ export const PROVIDER_META = Object.freeze({
   }),
   searchSpec: Object.freeze({
     method: 'GET',
-    pathTemplate: '/?s={query}',
-    queryParam: 's',
+    pathTemplate: '/search.php?keywords={query}',
+    queryParam: 'keywords',
     encoding: 'utf-8',
     pagination: true
   }),
@@ -128,7 +128,7 @@ function parseCatalogCards($, baseUrl = PRIMARY_BASE_URL, defaultType = 'movie')
   const items = [];
   const seenUrls = new Set();
 
-  const cardSelector = '.item, .card, .movie-item, .film-item, article.post, .type-post';
+  const cardSelector = '.item, .card, .movie-item, .film-item, article.post, .type-post, .pm-video-thumb';
 
   $(cardSelector).each((_, el) => {
     const node = $(el);
@@ -147,7 +147,7 @@ function parseCatalogCards($, baseUrl = PRIMARY_BASE_URL, defaultType = 'movie')
 
     const img = node.find('img').first();
     const rawPoster =
-      img.attr('data-src') ||
+      img.attr('data-echo') || img.attr('data-src') ||
       img.attr('data-lazy-src') ||
       img.attr('src') ||
       '';
@@ -463,9 +463,9 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
   }
 
   const safePage = Math.max(1, Number(page) || 1);
-  let targetUrl = `${PRIMARY_BASE_URL}/?s=${encodeURIComponent(cleanQuery)}`;
+  let targetUrl = `${PRIMARY_BASE_URL}/search.php?keywords=${encodeURIComponent(cleanQuery)}`;
   if (safePage > 1) {
-    targetUrl = `${PRIMARY_BASE_URL}/page/${safePage}/?s=${encodeURIComponent(cleanQuery)}`;
+    targetUrl = `${PRIMARY_BASE_URL}/search.php?keywords=${encodeURIComponent(cleanQuery)}&page=${safePage}`;
   }
 
   try {
@@ -563,7 +563,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
     const img = $('.poster img, .entry-thumb img, .thumb img, .cover img').first();
     const poster = resolveSafeUrl(
-      img.attr('data-src') || img.attr('data-lazy-src') || img.attr('src') || '',
+      img.attr('data-echo') || img.attr('data-src') || img.attr('data-lazy-src') || img.attr('src') || '',
       pageUrl,
       { allowHttp: true }
     );

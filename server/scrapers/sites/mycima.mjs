@@ -36,8 +36,9 @@ import { buildAntiBanHeaders, generateAntiBanHeaders } from '../anti-ban.mjs';
 export const PROVIDER_ID = 'mycima';
 export const PROVIDER_NAME = 'ماي سيما (MyCima / WeCima)';
 export const PROVIDER_CODE = 'MA';
-export const PRIMARY_BASE_URL = 'https://mycima.gripe';
+export const PRIMARY_BASE_URL = 'https://mycima.gdn';
 export const MIRROR_DOMAINS = Object.freeze([
+  'https://mycima.gripe',
   'https://wecima.show',
   'https://mywecima.casa',
   'https://wecima.tube',
@@ -61,8 +62,8 @@ export const PROVIDER_META = Object.freeze({
   }),
   searchSpec: Object.freeze({
     method: 'GET',
-    pathTemplate: '/AjaxCenter/Searching/{query}/',
-    queryParam: 'query',
+    pathTemplate: '/filtering?keywords={query}',
+    queryParam: 'keywords',
     encoding: 'utf-8',
     pagination: false
   }),
@@ -189,7 +190,7 @@ export async function scrapeSearch(query, page = 1, options = {}) {
     return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'Empty search query');
   }
 
-  const searchUrl = `${PRIMARY_BASE_URL}/AjaxCenter/Searching/${encodeURIComponent(q)}/`;
+  const searchUrl = `${PRIMARY_BASE_URL}/filtering?keywords=${encodeURIComponent(q)}`;
   try {
     const { html: raw } = await fetchProviderHtml(searchUrl, {
       ...options,

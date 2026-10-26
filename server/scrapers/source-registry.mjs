@@ -1,3 +1,4 @@
+import { searchTraceEvent } from '../diagnostics/search-trace.mjs';
 import { listProviders, getProvider } from './registry.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 
@@ -18,7 +19,7 @@ export function getSource(provider) {
 }
 
 function normalizeTitle(value) {
-  return String(value || '').normalize('NFKC').toLocaleLowerCase('ar').replace(/[\u064B-\u065F\u0670]/gu, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  return String(value || '').normalize('NFKC').toLocaleLowerCase('ar').replace(/[\u064B-\u065F\u0670]/gu, '').replace(/[أإآٱ]/gu, 'ا').replace(/ى/gu, 'ي').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 }
 
 export function titleMatchesQuery(title, query) {
@@ -37,16 +38,29 @@ export function createSourceSearch({ loadModule = source => getProvider(source.i
     if (typeof scraper.scrapeSearch !== 'function') throw Error('SOURCE_NOT_SUPPORTED');
     // Never consult another provider when this source fails or returns no results.
     const items = await scraper.scrapeSearch(q, 1, { strict: true });
-    return (Array.isArray(items) ? items : [])
+    const meta = items?._meta;
+    searchTraceEvent('parser_result', { raw_count: Array.isArray(items) ? items.length : 0, reason: meta?.errorCode || null, url: meta?.url, titles: Array.isArray(items) ? items.map(x => x.title) : [] });
+    if (meta?.errorCode && meta.errorCode !== 'EMPTY_RESULT') {
+      const error = new Error(meta.errorCode); error.code = meta.errorCode; throw error;
+    }
+    if (!Array.isArray(items)) { const error = new Error('STRUCTURE_CHANGED'); error.code = 'STRUCTURE_CHANGED'; throw error; }
+    const result = items
       .filter(item => item && titleMatchesQuery(item.title, q))
       .map(item => ({ ...item, selected_source: source.id }));
+    searchTraceEvent('title_filter', { raw_count: items.length, kept_count: result.length, reason: items.length && !result.length ? 'TITLE_FILTER_REJECTED_ALL' : null });
+    return result;
   };
 }
 
 export const searchSource = createSourceSearch();
 
+const SOURCE_NAMES = {mycima:'ماي سيما',akwam:'أكوام',cimanow:'سيما ناو',shahid4u:'شاهد فور يو',moviztime:'موفيز تايم',shii4u:'شي فور يو',egydead:'إيجي ديد',ipauniverse:'آي بي إيه يونيفرس','3cktv':'قصة عشق',anime4up:'أنمي فور أب',qfilm:'كيو فيلم',ristoanime:'ريستو أنمي',arabseed:'عرب سيد',mewsry:'مصري',anime4up_rest:'أنمي فور أب البديل',witanime:'ويت أنمي','3isk':'قصة عشق',alooy:'ألوي',laroza:'لاروزا'};
 export function listSourceCapabilities() {
-  return SOURCE_REGISTRY.map(({ id, aliases, search }) => ({ id, aliases: [...aliases], search }));
+  return SOURCE_REGISTRY.map(({ id, aliases, search }) => {
+    const meta = getProvider(id).meta;
+    return { id, aliases: [...aliases], search, name_ar:SOURCE_NAMES[id] || meta.name,
+      domain:new URL((getProvider(meta.mirrorOf)?.meta || meta).domains[0]).hostname };
+  });
 }
 
 export function createMultiSourceSearch({

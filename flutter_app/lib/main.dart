@@ -1608,31 +1608,7 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  String _sourceLabel(String id) {
-    const names = <String, String>{
-      'akwam': 'أكوام',
-      'akoam': 'أكوام',
-      'mycima': 'ماي سيما',
-      'cimanow': 'سيما ناو',
-      'shahid4u': 'شاهد فور يو',
-      'moviztime': 'موفيز تايم',
-      'egydead': 'إيجي ديد',
-      'arabseed': 'عرب سيد',
-      'anime4up': 'أنمي فور أب',
-      'witanime': 'ويت أنمي',
-      '3isk': 'قصة عشق',
-      'alooy': 'ألوي',
-      'laroza': 'لاروزا',
-      '3cktv': 'ثري سيك',
-      'qfilm': 'كيو فيلم',
-      'ristoanime': 'ريستو أنمي',
-      'ipauniverse': 'آي بي إيه',
-      'mewsry': 'مصري',
-    };
-    String rename(String value) =>
-        value.isEmpty ? '' : 'ظ${value.substring(1)}';
-    return '${rename(id)} - ${rename(names[id] ?? id)}';
-  }
+  String _sourceLabel(String id) => widget.api.explorationSourceLabel(id);
 
   Timer? debounce;
   int generation = 0;
@@ -1692,7 +1668,9 @@ class _SearchPageState extends State<SearchPage> {
       setState(() {
         items = const [];
         loading = false;
-        error = 'تعذر البحث حاليًا. أعد المحاولة.';
+        error =
+            '${widget.api.lastSearchStage == 'client_no_response' ? 'لم يصل رد للتطبيق؛ قد يكون انقطاع اتصال أو مهلة.' : 'تعذر البحث حاليًا. أعد المحاولة.'}'
+            '${widget.api.lastSearchTrace != null ? ' رقم التشخيص: ${widget.api.lastSearchTrace}' : ''}';
       });
     }
   }
@@ -1785,7 +1763,13 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 )
               : submitted && !loading && items.isEmpty
-              ? const Center(child: Text('لا توجد نتائج لهذا البحث حاليًا'))
+              ? Center(
+                  child: Text(
+                    advanced
+                        ? 'لم يستخرج القاشط نتائج؛ لا يؤكد ذلك غياب العمل من الموقع.\nرقم التشخيص: ${widget.api.lastSearchTrace ?? 'غير متاح'}'
+                        : 'لا توجد نتائج لهذا البحث حاليًا',
+                  ),
+                )
               : !submitted
               ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للبحث'))
               : GridView.builder(

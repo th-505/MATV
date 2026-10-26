@@ -80,7 +80,7 @@ void main() {
       expect(api.sourceCalls, 1);
       await tester.tap(find.byKey(const Key('search-explore-source')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('ظkwam - ظكوام').last);
+      await tester.tap(find.text('akwam').last);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('search-submit')));
       await tester.pumpAndSettle();

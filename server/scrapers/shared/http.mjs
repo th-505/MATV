@@ -1,3 +1,4 @@
+import { searchTraceEvent, searchTraceHtml } from '../../diagnostics/search-trace.mjs';
 // server/scrapers/shared/http.mjs
 // SSRF-safe HTTP client with redirect validation, IPv6/IPv4 normalization, DNS rebinding protection, rate limiting, and anti-ban headers
 import net from 'node:net';
@@ -346,12 +347,14 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
 
     try {
       while (redirects <= maxRedirects) {
+        searchTraceEvent('upstream_prepare', { url: hopUrl, method, attempt });
         const parsedHop = assertSafeScraperUrl(hopUrl, { allowHttp, allowedHosts });
         // Enforce DNS resolution SSRF check at initial request and every redirect hop
         // (unless a custom mock fetchImpl is injected without dnsLookupImpl in offline unit tests)
         const shouldCheckDns = dnsLookupImpl !== null || (fetchImpl === globalThis.fetch && !skipDnsResolution);
         if (shouldCheckDns) {
           await assertSafeResolvedHost(parsedHop.hostname, { dnsLookupImpl, skipDnsResolution });
+          searchTraceEvent('dns_resolved',{url:hopUrl});
         }
 
         const releaseSlot = await acquireHostSlot(parsedHop.hostname);
@@ -366,6 +369,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           };
           if (cookies) reqHeaders['Cookie'] = cookies;
 
+          searchTraceEvent('upstream_sent', { url: hopUrl, method: redirects > 0 && method === 'POST' ? 'GET' : method });
           const res = await fetchImpl(hopUrl, {
             method: redirects > 0 && method === 'POST' ? 'GET' : method,
             headers: reqHeaders,
@@ -376,6 +380,8 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
 
           if ([301, 302, 303, 307, 308].includes(res.status)) {
             const location = res.headers?.get?.('location') || '';
+            searchTraceEvent('upstream_redirect', { url: hopUrl, status: res.status, location: location ? new URL(location, hopUrl).href : null });
+            await res.body?.cancel();
             if (!location) {
               throw new ScraperError(SCRAPER_ERROR_CODES.ACCESS_BLOCKED, `REDIRECT_WITHOUT_LOCATION_${res.status}`, {
                 providerId,
@@ -395,6 +401,14 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           if (method === 'HEAD') await res.body?.cancel();
           else text = await res.text();
 
+          searchTraceEvent('upstream_response', { url: hopUrl, status: res.status, bytes: Buffer.byteLength(text), content_type: res.headers?.get?.('content-type') || '', challenge: isCloudflareOrAccessBlock(res.status, text, res.headers), html_title: text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g, '').trim() || '' });
+          searchTraceHtml(text,hopUrl);
+          const suspended = /Account Suspended|Domain (?:for sale|expired)/i.test(text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '') || /\/suspendedpage\.cgi$/i.test(new URL(hopUrl).pathname);
+          const login = /\/(?:signin|login)\/?$/i.test(new URL(hopUrl).pathname);
+          if (suspended || login) {
+            searchTraceEvent('source_unavailable',{url:hopUrl,reason:suspended?'DOMAIN_SUSPENDED':'LOGIN_REQUIRED',status:res.status});
+            throw new ScraperError(SCRAPER_ERROR_CODES.ACCESS_BLOCKED,suspended?'DOMAIN_SUSPENDED':'LOGIN_REQUIRED',{providerId,url:hopUrl,status:res.status});
+          }
           if (isCloudflareOrAccessBlock(res.status, text, res.headers)) {
             throw new ScraperError(
               SCRAPER_ERROR_CODES.ACCESS_BLOCKED,
@@ -435,6 +449,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
       });
     } catch (err) {
       const classified = classifyNetworkError(err, { providerId, url: hopUrl });
+      searchTraceEvent('upstream_error', { url: hopUrl, reason: classified.code, status: classified.status });
       const isRetryable =
         attempt < maxRetries &&
         classified.code === SCRAPER_ERROR_CODES.NETWORK_TIMEOUT &&

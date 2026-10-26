@@ -515,8 +515,8 @@
       "code": "MA",
       "mirror_of": null,
       "path": "server/scrapers/sites/mycima.mjs",
-      "metadata_line": 47,
-      "source_sha256": "51925e85b7a8498af29f28cd102f5447c7355e25e0a959048d3efc7f1a3611b1",
+      "metadata_line": 48,
+      "source_sha256": "062257cf1b29f65aeaa402c650b4e92cca4a470b66ba02b0f68b0c9f1663d470",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -552,7 +552,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/qfilm.mjs",
       "metadata_line": 38,
-      "source_sha256": "403bed67af7d7a412b6735ef9446363b0493d51a7991a5344cf4be60619a80cf",
+      "source_sha256": "17780f48de78c25735a51d1439df83e5c506893480dc7e936aee93f3475f71b6",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -622,7 +622,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/shahid4u.mjs",
       "metadata_line": 47,
-      "source_sha256": "b8e1dfbfb9c9f03477abf89fe681248e3fc54c59b5f2bd9d66c4ee7e60d7ec27",
+      "source_sha256": "718993a1834a663c3e13a2454c38bc622d6aa181323525e63e954123f4cd19ff",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

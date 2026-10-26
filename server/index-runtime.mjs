@@ -1,3 +1,4 @@
+import { searchTraceEvent } from './diagnostics/search-trace.mjs';
 import { pathToFileURL } from "node:url";
 import { createProductionServer } from "./index.mjs";
 import { createTmdbRuntime } from "./tmdb-runtime.mjs";
@@ -35,7 +36,7 @@ function applyCors(req, res) {
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
-  res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,X-MITV-Container");
+  res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,X-MITV-Container,X-Trace-Id");
 }
 
 function sendJson(req, res, status, payload) {
@@ -108,7 +109,16 @@ export function createMitvRuntimeServer({
         if (url.pathname === "/api/v1/tmdb/search") {
           const query = String(url.searchParams.get("q") || "").trim();
           if (query.length < 2) return sendJson(req, res, 200, { status: "success", source: "tmdb", data: [] });
-          return sendJson(req, res, 200, await tmdbRuntime.search(query));
+          if (query.length > 120) return sendJson(req,res,400,{status:'error',message:'INVALID_QUERY'});
+          const traces = baseServer.searchTraceStore;
+          if (!traces) return sendJson(req,res,200,await tmdbRuntime.search(query));
+          const session=url.searchParams.get('diagnostic_session')||'';
+          const supplied=url.searchParams.get('platform')||'';
+          const trace=traces.start({provider:'tmdb',query,platform:['tv','mobile','ios','desktop','web'].includes(supplied)?supplied:/Dart/i.test(req.headers['user-agent']||'')?'native-unknown':req.headers.origin?'web':'unknown',session:/^[a-f0-9-]{20,64}$/i.test(session)?session:null});
+          res.setHeader('X-Trace-Id',trace.id);
+          let payload;
+          const items=await traces.run(trace,async()=>{payload=await tmdbRuntime.search(query);searchTraceEvent('parser_result',{raw_count:payload.data?.length||0});return payload.data||[];});
+          return sendJson(req,res,200,{...payload,trace_id:trace.id,search_outcome:items.length?'results':'empty_unconfirmed'});
         }
         if (url.pathname === "/api/v1/tmdb/trending") {
           const type = String(url.searchParams.get("type") || "movie").trim();

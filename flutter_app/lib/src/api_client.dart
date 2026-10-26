@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+import 'app_target.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'media_repository.dart';
@@ -8,6 +10,14 @@ import 'unified_media.dart';
 
 class MitvApi implements MediaRepository {
   final sourceRouter = SourceRouter();
+  final _sourceLabels = <String, String>{};
+  final String _diagnosticSession = List.generate(
+    24,
+    (_) => Random.secure().nextInt(16).toRadixString(16),
+  ).join();
+  String? lastSearchTrace;
+  String lastSearchStage = 'not_started';
+  String explorationSourceLabel(String id) => _sourceLabels[id] ?? id;
   MitvApi({http.Client? client, Uri? baseUri, Uri? edgeUri, bool? useEdge})
     : _client = client ?? http.Client(),
       _useEdge = useEdge ?? (edgeUri != null || client == null),
@@ -340,6 +350,14 @@ class MitvApi implements MediaRepository {
   /// Server capabilities are authoritative; unsupported sources are not offered.
   Future<List<String>> explorationSources() async {
     final json = await _getJson('/api/v1/explore/sources');
+    for (final source in _list(json['data'])) {
+      if (source['id'] is String &&
+          source['name_ar'] is String &&
+          source['domain'] is String) {
+        _sourceLabels[source['id'] as String] =
+            '${source['name_ar']} — ${source['domain']}';
+      }
+    }
     return _list(json['data'])
         .where((source) => source['search'] == true && source['id'] is String)
         .map((source) => source['id'] as String)
@@ -356,9 +374,12 @@ class MitvApi implements MediaRepository {
         !RegExp(r'^[a-z0-9][a-z0-9_-]{1,29}$').hasMatch(provider)) {
       throw const ApiException('INVALID_EXPLORE_INPUT');
     }
+    lastSearchTrace = null;
     final json = await _getJson('/api/v1/explore', {
       'q': q,
       'provider': provider,
+      'diagnostic_session': _diagnosticSession,
+      'platform': appTargetValue,
     });
     _ensureGeneration(generation);
     // A source-pinned search must not merge results with another provider.
@@ -388,7 +409,12 @@ class MitvApi implements MediaRepository {
     final generation = _cacheGeneration;
     final value = query.trim();
     if (value.length < 2) return const [];
-    final json = await _getJson('/api/v1/tmdb/search', {'q': value});
+    lastSearchTrace = null;
+    final json = await _getJson('/api/v1/tmdb/search', {
+      'q': value,
+      'platform': appTargetValue,
+      'diagnostic_session': _diagnosticSession,
+    });
     _ensureGeneration(generation);
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
   }
@@ -982,18 +1008,30 @@ class MitvApi implements MediaRepository {
   ]) async {
     final generation = _cacheGeneration;
     final uri = _baseUri.replace(path: path, queryParameters: query);
-    final response =
-        await (method == 'POST'
-                ? _client.post(
-                    uri,
-                    headers: const {'accept': 'application/json'},
-                  )
-                : _client.get(
-                    uri,
-                    headers: const {'accept': 'application/json'},
-                  ))
-            .timeout(timeout);
+    final isSearch = path == '/api/v1/explore' || path == '/api/v1/tmdb/search';
+    if (isSearch) lastSearchStage = 'sending';
+    late http.Response response;
+    try {
+      response =
+          await (method == 'POST'
+                  ? _client.post(
+                      uri,
+                      headers: const {'accept': 'application/json'},
+                    )
+                  : _client.get(
+                      uri,
+                      headers: const {'accept': 'application/json'},
+                    ))
+              .timeout(timeout);
+    } catch (_) {
+      if (isSearch) lastSearchStage = 'client_no_response';
+      rethrow;
+    }
     _ensureGeneration(generation);
+    if (path == '/api/v1/explore' || path == '/api/v1/tmdb/search') {
+      lastSearchTrace = response.headers['x-trace-id'];
+      lastSearchStage = 'http_${response.statusCode}';
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException('HTTP ${response.statusCode}');
     }
@@ -1008,6 +1046,7 @@ class MitvApi implements MediaRepository {
         !(method == 'POST' && decoded['status'] == 'accepted')) {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
     }
+    if (isSearch) lastSearchStage = 'response_parsed';
     return decoded;
   }
 

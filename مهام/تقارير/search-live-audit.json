@@ -1,0 +1,604 @@
+{
+  "at": "2026-10-26T18:50:11.756Z",
+  "environment": "managed workspace network; Render production retest is separate",
+  "scope": "actual search requests for all 19 registrations, not physical device or media playback certification",
+  "notes": [
+    "Some registrations are aliases/mirrors; counts do not mean independent websites.",
+    "Known-positive examples come from catalogue pages; blocked catalogues use explicitly unverified test queries.",
+    "Zero extracted results never proves a title is absent from a site."
+  ],
+  "rows": [
+    {
+      "provider": "akwam",
+      "known_title": "The Paradise",
+      "query": "The Paradise",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://akwam.ss/movies",
+        "https://akwam.ss/search?q=The%20Paradise"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 6190,
+        "status": 200,
+        "bytes": 80146,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "البحث | اكوام",
+        "url": "https://akwam.ss/search?q=The%20Paradise"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "mycima",
+      "known_title": "مشاهدة فيلم الست لما (فيتو)     ( 2026  )",
+      "query": "الست لما",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://mycima.gdn/movies/",
+        "https://mycima.gdn/filtering?keywords=%D8%A7%D9%84%D8%B3%D8%AA%20%D9%84%D9%85%D8%A7",
+        "https://mycima.gdn/filtering/?keywords=%D8%A7%D9%84%D8%B3%D8%AA%20%D9%84%D9%85%D8%A7"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 11512,
+        "status": 200,
+        "bytes": 222771,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "ماي سيما mycima وي سيما wecima | شاهد احدث الافلام والمسلسلات العربية والاجنبية",
+        "url": "https://mycima.gdn/filtering/?keywords=%D8%A7%D9%84%D8%B3%D8%AA%20%D9%84%D9%85%D8%A7"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "shahid4u",
+      "known_title": "فيلم La Bola Negra 2026",
+      "query": "La Bola Negra 2026",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://shahidfu.cam/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "https://shahidfu.cam/search?q=La%20Bola%20Negra%202026"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 5804,
+        "status": 200,
+        "bytes": 62162,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "نتائج البحث: La Bola Negra 2026 - شاهد فور يو Shahid4u | مشاهدة افلام و مسلسلات اون لاين",
+        "url": "https://shahidfu.cam/search?q=La%20Bola%20Negra%202026"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "shii4u",
+      "known_title": "فيلم La Bola Negra 2026",
+      "query": "La Bola Negra 2026",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://shahidfu.cam/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "https://shahidfu.cam/search?q=La%20Bola%20Negra%202026"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 256,
+        "status": 200,
+        "bytes": 62162,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "نتائج البحث: La Bola Negra 2026 - شاهد فور يو Shahid4u | مشاهدة افلام و مسلسلات اون لاين",
+        "url": "https://shahidfu.cam/search?q=La%20Bola%20Negra%202026"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "cimanow",
+      "known_title": null,
+      "query": "Interstellar",
+      "outcome": "EMPTY_WITHOUT_KNOWN_POSITIVE",
+      "count": 0,
+      "reason": null,
+      "requested_urls": [
+        "https://cimanow.me/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "https://cimanow.name/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "https://vip.cimanowinc.com/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A",
+        "https://vip.cimanowinc.com/signin/",
+        "https://cimanow.me/search?s=Interstellar",
+        "https://cimanow.name/search?s=Interstellar",
+        "https://vip.cimanowinc.com/search?s=Interstellar"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 12406,
+        "status": 200,
+        "bytes": 47291,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "",
+        "url": "https://vip.cimanowinc.com/signin/"
+      },
+      "reason_events": [
+        {
+          "stage": "upstream_error",
+          "at_ms": 11651,
+          "status": 403,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://cimanow.me/search?s=Interstellar"
+        },
+        {
+          "stage": "upstream_error",
+          "at_ms": 11887,
+          "status": 403,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://cimanow.me/search?s=Interstellar"
+        },
+        {
+          "stage": "parser_result",
+          "at_ms": 12409,
+          "raw_count": 0,
+          "reason": "EMPTY_RESULT",
+          "url": "https://vip.cimanowinc.com/signin/",
+          "titles": []
+        }
+      ]
+    },
+    {
+      "provider": "moviztime",
+      "known_title": "فيلم The Dog Stars 2026 مترجم",
+      "query": "The Dog Stars 2026",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://moviz-time.quest/category/%d8%a3%d9%81%d9%84%d8%a7%d9%85-%d8%a3%d8%ac%d9%86%d8%a8%d9%8a%d8%a9/",
+        "https://moviz-time.world/category/%D8%A3%D9%81%D9%84%D8%A7%D9%85-%D8%A3%D8%AC%D9%86%D8%A8%D9%8A%D8%A9/",
+        "https://moviz-time.land/category/%D8%A3%D9%81%D9%84%D8%A7%D9%85-%D8%A3%D8%AC%D9%86%D8%A8%D9%8A%D8%A9/",
+        "https://moviz-time.quest/?s=The%20Dog%20Stars%202026",
+        "https://moviz-time.world/?s=The%20Dog%20Stars%202026",
+        "https://moviz-time.land/?s=The%20Dog%20Stars%202026"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1586,
+        "status": 200,
+        "bytes": 43970,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "You searched for The Dog Stars 2026 - وقت الافلام",
+        "url": "https://moviz-time.land/?s=The%20Dog%20Stars%202026"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "3cktv",
+      "known_title": null,
+      "query": "مرعشلي",
+      "outcome": "SEARCH_ERROR",
+      "count": null,
+      "reason": "ACCESS_BLOCKED",
+      "requested_urls": [
+        "https://e.3cktv.com/episodes/",
+        "https://e.3cktv.com/?s=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A"
+      ],
+      "last_response": null,
+      "reason_events": [
+        {
+          "stage": "upstream_error",
+          "at_ms": 285,
+          "status": null,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://ei.3cktv.com/"
+        },
+        {
+          "stage": "parser_result",
+          "at_ms": 285,
+          "raw_count": 0,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://e.3cktv.com/?s=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A",
+          "titles": []
+        },
+        {
+          "stage": "search_failed",
+          "at_ms": 285,
+          "reason": "ACCESS_BLOCKED"
+        }
+      ]
+    },
+    {
+      "provider": "anime4up",
+      "known_title": "Watashi no Shiawase na Kekkon Special",
+      "query": "Watashi no Shiawase na Kekkon Special",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://4g.7jcsvwa.shop/anime-type/tv2/",
+        "https://w1.anime4up.rest/anime-type/tv2/",
+        "https://4g.7jcsvwa.shop/?s=Watashi+no+Shiawase+na+Kekkon+Special",
+        "https://w1.anime4up.rest/?s=Watashi+no+Shiawase+na+Kekkon+Special"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1141,
+        "status": 200,
+        "bytes": 275621,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "You searched for Watashi no Shiawase na Kekkon Special - Anime4up",
+        "url": "https://w1.anime4up.rest/?s=Watashi+no+Shiawase+na+Kekkon+Special"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "ipauniverse",
+      "known_title": "Spider-Man: Brand New Day",
+      "query": "Spider-Man: Brand New Day",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 2,
+      "reason": null,
+      "requested_urls": [
+        "https://api.themoviedb.org/3/movie/popular?page=1",
+        "https://api.themoviedb.org/3/search/movie?query=Spider-Man%3A+Brand+New+Day&page=1"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 2798,
+        "status": 200,
+        "bytes": 1125,
+        "challenge": false,
+        "content_type": "application/json;charset=utf-8",
+        "html_title": "",
+        "url": "https://api.themoviedb.org/3/search/movie?query=Spider-Man%3A+Brand+New+Day&page=1"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "qfilm",
+      "known_title": "فيلم Influencers 2025 مترجم",
+      "query": "Influencers 2025",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://a.qfilm.tv/category/movies/",
+        "https://a.qfilm.tv/",
+        "https://a.qfilm.tv/search.php?keywords=Influencers%202025"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 621,
+        "status": 200,
+        "bytes": 63538,
+        "challenge": false,
+        "content_type": "text/html; charset=utf-8",
+        "html_title": "نتائج البحث: &quot;Influencers 2025&quot; - الصفحة 1 - كيو فيلم",
+        "url": "https://a.qfilm.tv/search.php?keywords=Influencers%202025"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "egydead",
+      "known_title": null,
+      "query": "Interstellar",
+      "outcome": "SEARCH_ERROR",
+      "count": null,
+      "reason": "NETWORK_TIMEOUT",
+      "requested_urls": [
+        "https://w1.egydead.top/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a/",
+        "https://w1.egydead.top/?s=Interstellar"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 3321,
+        "status": 503,
+        "bytes": 216,
+        "challenge": false,
+        "content_type": "text/plain",
+        "html_title": "",
+        "url": "https://w1.egydead.top/?s=Interstellar"
+      },
+      "reason_events": [
+        {
+          "stage": "upstream_error",
+          "at_ms": 2581,
+          "status": 503,
+          "reason": "NETWORK_TIMEOUT",
+          "url": "https://w1.egydead.top/?s=Interstellar"
+        },
+        {
+          "stage": "upstream_error",
+          "at_ms": 3322,
+          "status": 503,
+          "reason": "NETWORK_TIMEOUT",
+          "url": "https://w1.egydead.top/?s=Interstellar"
+        },
+        {
+          "stage": "search_failed",
+          "at_ms": 3322,
+          "reason": "NETWORK_TIMEOUT"
+        }
+      ]
+    },
+    {
+      "provider": "ristoanime",
+      "known_title": "انمي Karasu wa Aruji wo Erabanai",
+      "query": "انمي Karasu wa Aruji wo Erabanai",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://ristoanime.me/series/",
+        "https://ristoanime.me/?s=%D8%A7%D9%86%D9%85%D9%8A%20Karasu%20wa%20Aruji%20wo%20Erabanai"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 592,
+        "status": 200,
+        "bytes": 324572,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "لقد بحثت عن انمي Karasu wa Aruji wo Erabanai | RistoAnime | RistoAnime",
+        "url": "https://ristoanime.me/?s=%D8%A7%D9%86%D9%85%D9%8A%20Karasu%20wa%20Aruji%20wo%20Erabanai"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "arabseed",
+      "known_title": null,
+      "query": "Interstellar",
+      "outcome": "SEARCH_ERROR",
+      "count": null,
+      "reason": "ACCESS_BLOCKED",
+      "requested_urls": [
+        "https://www.arabseed.wine/category/foreign-movies/",
+        "https://www.arabseed.wine/cgi-sys/suspendedpage.cgi",
+        "https://arabseed.show/category/foreign-movies/",
+        "https://asd.homes/category/foreign-movies/",
+        "https://www.arabseed.wine/find/",
+        "https://arabseed.show/find/",
+        "https://asd.homes/find/"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 13474,
+        "status": 520,
+        "bytes": 7310,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "asd.homes | 520: Web server is returning an unknown error",
+        "url": "https://asd.homes/find/"
+      },
+      "reason_events": [
+        {
+          "stage": "upstream_error",
+          "at_ms": 13477,
+          "status": 520,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://asd.homes/find/"
+        },
+        {
+          "stage": "parser_result",
+          "at_ms": 13477,
+          "raw_count": 0,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://www.arabseed.wine/find/",
+          "titles": []
+        },
+        {
+          "stage": "search_failed",
+          "at_ms": 13477,
+          "reason": "ACCESS_BLOCKED"
+        }
+      ]
+    },
+    {
+      "provider": "anime4up_rest",
+      "known_title": "Watashi no Shiawase na Kekkon Special",
+      "query": "Watashi no Shiawase na Kekkon Special",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://4g.7jcsvwa.shop/anime-type/tv2/",
+        "https://w1.anime4up.rest/anime-type/tv2/",
+        "https://4g.7jcsvwa.shop/?s=Watashi+no+Shiawase+na+Kekkon+Special",
+        "https://w1.anime4up.rest/?s=Watashi+no+Shiawase+na+Kekkon+Special"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 761,
+        "status": 200,
+        "bytes": 275621,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "You searched for Watashi no Shiawase na Kekkon Special - Anime4up",
+        "url": "https://w1.anime4up.rest/?s=Watashi+no+Shiawase+na+Kekkon+Special"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "witanime",
+      "known_title": null,
+      "query": "Naruto",
+      "outcome": "SEARCH_ERROR",
+      "count": null,
+      "reason": "ACCESS_BLOCKED",
+      "requested_urls": [
+        "https://witanime.site/browse",
+        "https://witanime.site/search?q=Naruto"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 252,
+        "status": 403,
+        "bytes": 6562,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Just a moment...",
+        "url": "https://witanime.site/search?q=Naruto"
+      },
+      "reason_events": [
+        {
+          "stage": "upstream_error",
+          "at_ms": 252,
+          "status": 403,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://witanime.site/search?q=Naruto"
+        },
+        {
+          "stage": "parser_result",
+          "at_ms": 252,
+          "raw_count": 0,
+          "reason": "ACCESS_BLOCKED",
+          "url": "https://witanime.site/search?q=Naruto",
+          "titles": []
+        },
+        {
+          "stage": "search_failed",
+          "at_ms": 252,
+          "reason": "ACCESS_BLOCKED"
+        }
+      ]
+    },
+    {
+      "provider": "mewsry",
+      "known_title": "القوة الجوية ضد باختاكور",
+      "query": "القوة الجوية ضد باختاكور",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://www.manasorya.site/",
+        "https://www.manasorya.site/?s=%D8%A7%D9%84%D9%82%D9%88%D8%A9%20%D8%A7%D9%84%D8%AC%D9%88%D9%8A%D8%A9%20%D8%B6%D8%AF%20%D8%A8%D8%A7%D8%AE%D8%AA%D8%A7%D9%83%D9%88%D8%B1"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1114,
+        "status": 200,
+        "bytes": 37072,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Syria Live | سوريا لايف بث مباشر مباريات اليوم بدون تقطيع",
+        "url": "https://www.manasorya.site/"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "alooy",
+      "known_title": "قسمة و نصيب : العروس و الحماة",
+      "query": "قسمة و نصيب : العروس و الحماة",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 1,
+      "reason": null,
+      "requested_urls": [
+        "https://fa.alooytv16.xyz/tv-series.html",
+        "https://fa.alooytv16.xyz/home/autocompleteajax"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 580,
+        "status": 200,
+        "bytes": 324,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "",
+        "url": "https://fa.alooytv16.xyz/home/autocompleteajax"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "3isk",
+      "known_title": "مسلسل قلب شجاع مترجم",
+      "query": "قلب شجاع",
+      "outcome": "RESULTS_FOR_KNOWN_TITLE",
+      "count": 2,
+      "reason": null,
+      "requested_urls": [
+        "https://ww4.3ick.club/w-srs/",
+        "https://3iskk.xyz/w-srs/",
+        "https://ww4.3ick.club/?s=%D9%82%D9%84%D8%A8%20%D8%B4%D8%AC%D8%A7%D8%B9",
+        "https://3iskk.xyz/?s=%D9%82%D9%84%D8%A8%20%D8%B4%D8%AC%D8%A7%D8%B9",
+        "https://3iskk.xyz/search/%D9%82%D9%84%D8%A8%20%D8%B4%D8%AC%D8%A7%D8%B9/"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 830,
+        "status": 200,
+        "bytes": 71735,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "نتائج البحث عن &#8220;قلب شجاع&#8221; &#8211; قصة عشق",
+        "url": "https://3iskk.xyz/search/%D9%82%D9%84%D8%A8%20%D8%B4%D8%AC%D8%A7%D8%B9/"
+      },
+      "reason_events": []
+    },
+    {
+      "provider": "laroza",
+      "known_title": null,
+      "query": "مرعشلي",
+      "outcome": "SEARCH_ERROR",
+      "count": null,
+      "reason": "NETWORK_TIMEOUT",
+      "requested_urls": [
+        "https://larooza.beer/newvideos1.php?page=1",
+        "https://larozza.study/newvideos1.php?page=1",
+        "https://llaroza.casa/newvideos1.php?page=1",
+        "https://larroza.beer/newvideos1.php?page=1",
+        "https://laaroza.rest/newvideos1.php?page=1",
+        "https://laaroza.casa/newvideos1.php?page=1",
+        "https://laroza.net/newvideos1.php?page=1",
+        "https://matv-edge-resolver.dada1000100.workers.dev/v1/laroza/category?page=1",
+        "https://larooza.beer/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://larozza.study/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://llaroza.casa/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://larroza.beer/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://laaroza.rest/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://laaroza.casa/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://laroza.net/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+        "https://matv-edge-resolver.dada1000100.workers.dev/v1/laroza/search?q=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1"
+      ],
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 25127,
+        "status": 503,
+        "bytes": 31,
+        "challenge": false,
+        "content_type": "application/json",
+        "html_title": "",
+        "url": "https://matv-edge-resolver.dada1000100.workers.dev/v1/laroza/search?q=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1"
+      },
+      "reason_events": [
+        {
+          "stage": "upstream_error",
+          "at_ms": 25128,
+          "status": 503,
+          "reason": "NETWORK_TIMEOUT",
+          "url": "https://matv-edge-resolver.dada1000100.workers.dev/v1/laroza/search?q=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1"
+        },
+        {
+          "stage": "parser_result",
+          "at_ms": 25128,
+          "raw_count": 0,
+          "reason": "NETWORK_TIMEOUT",
+          "url": "https://larooza.beer/search.php?keywords=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1",
+          "titles": []
+        },
+        {
+          "stage": "search_failed",
+          "at_ms": 25128,
+          "reason": "NETWORK_TIMEOUT"
+        }
+      ]
+    }
+  ]
+}

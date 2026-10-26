@@ -1,3 +1,4 @@
+import { searchTraceEvent } from './diagnostics/search-trace.mjs';
 const TMDB_ORIGIN = "https://api.themoviedb.org";
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_CACHE_TTL_MS = 5 * 60_000;
@@ -243,10 +244,12 @@ export function createTmdbRuntime({
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
+        searchTraceEvent('upstream_sent',{url:attemptUrl.href,method:'GET'});
         const response = await fetchImpl(attemptUrl, {
           method: "GET", headers, signal: controller.signal, redirect: "error",
         });
         // Only switch credentials for credential/quota errors, not general outages.
+        searchTraceEvent('upstream_response',{url:attemptUrl.href,status:response.status});
         if ([401, 403, 429].includes(response.status)) {
           lastError = new Error(`TMDB_HTTP_${response.status}`);
           continue;

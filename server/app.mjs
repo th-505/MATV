@@ -1,3 +1,5 @@
+import { createSearchTraces, diagnosticsAuthorized } from './diagnostics/search-trace.mjs';
+import { diagnosticsHtml, diagnosticsJs } from './diagnostics/dashboard.mjs';
 import { BROWSE_SECTIONS, browseCatalog } from './catalog-browser.mjs';
 import { createPinnedPlayback } from './pinned-playback.mjs';
 import { getProvider } from './scrapers/registry.mjs';
@@ -62,7 +64,7 @@ function applyCors(req, res) {
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
-  res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,Content-Disposition");
+  res.setHeader("Access-Control-Expose-Headers", "Content-Type,Content-Length,Content-Range,Accept-Ranges,Content-Disposition,X-Trace-Id");
 }
 
 function appendVary(res, value) {
@@ -490,6 +492,7 @@ export function assertCatalogReference(ref) {
 }
 
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
+  traceStore=createSearchTraces({logger:data=>log(data.event,data)}), searchPinned=scrapePinnedSource,
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now,
   catalogLoader=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
@@ -549,7 +552,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       return {servers:approved,reason:approved.length?null:rejected?'IDENTITY_NOT_VERIFIED':'NO_PLAYABLE_SOURCE'};
     },
   });
-  return http.createServer(async (req, res) => {
+  const server = http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
     const url = new URL(req.url, "http://localhost");
@@ -564,6 +567,20 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     }
     res.setHeader("X-RateLimit-Remaining", String(rate.remaining));
     try {
+      if (url.pathname === '/diagnostics' || url.pathname === '/diagnostics/app.js') {
+        if (req.method !== 'GET') return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        res.setHeader('Cache-Control','no-store');
+        res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+        res.setHeader('X-Content-Type-Options','nosniff');
+        res.setHeader('Referrer-Policy','no-referrer');
+        res.setHeader('Content-Type',url.pathname.endsWith('.js')?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+        return res.end(url.pathname.endsWith('.js')?diagnosticsJs:diagnosticsHtml);
+      }
+      if (url.pathname === '/api/v1/diagnostics/searches') {
+        if (!diagnosticsAuthorized(req)) return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
+        if (req.method !== 'GET') return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,200,{items:traceStore.list({provider:url.searchParams.get('provider')||'',query:url.searchParams.get('q')||'',id:url.searchParams.get('id')||''}),retention_seconds:traceStore.retention_seconds});
+      }
       if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
@@ -634,13 +651,21 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         const provider = (url.searchParams.get("provider") || "").trim().toLowerCase();
         if (q.length < 2 || q.length > 120 || !/^[a-z0-9_-]{2,30}$/.test(provider))
           return sendJson(req,res,400,{status:"error",message:"INVALID_EXPLORE_INPUT"});
+        const session = url.searchParams.get('diagnostic_session') || '';
+        const suppliedPlatform = url.searchParams.get('platform') || '';
+        const platform = ['tv','mobile','ios','desktop','web'].includes(suppliedPlatform) ? suppliedPlatform : /Dart/i.test(req.headers['user-agent'] || '') ? 'native-unknown' : req.headers.origin ? 'web' : 'unknown';
+        const trace = traceStore.start({provider,query:q,platform,session:/^[a-f0-9-]{20,64}$/i.test(session)?session:null});
+        res.setHeader('X-Trace-Id',trace.id);
+        // HTTP completion is observable; it does not prove the client rendered the results.
+        res.once('finish',()=>trace.events.length<100&&trace.events.push({stage:'response_finished',status:res.statusCode,at_ms:Date.now()-trace.started_ms}));
+        res.once('close',()=>!res.writableFinished&&trace.events.length<100&&trace.events.push({stage:'client_disconnected',at_ms:Date.now()-trace.started_ms}));
         try {
-          const items = await scrapePinnedSource(q,provider);
-          return sendJson(req,res,200,{status:"success",provider,items});
+          const items = await traceStore.run(trace,()=>searchPinned(q,provider));
+          return sendJson(req,res,200,{status:"success",provider,items,trace_id:trace.id,search_outcome:items.length?'results':'empty_unconfirmed'});
         } catch (error) {
           if (error?.message === "SOURCE_NOT_SUPPORTED")
-            return sendJson(req,res,422,{status:"error",message:"SOURCE_NOT_SUPPORTED",provider});
-          return sendJson(req,res,503,{status:"error",message:"SOURCE_TEMPORARILY_UNAVAILABLE",provider});
+            return sendJson(req,res,422,{status:"error",message:"SOURCE_NOT_SUPPORTED",provider,trace_id:trace.id});
+          return sendJson(req,res,503,{status:"error",message:"SOURCE_TEMPORARILY_UNAVAILABLE",provider,trace_id:trace.id,reason:trace.reason});
         }
       }
       if (url.pathname === "/api/v1/search") return sendJson(req, res, 200, await runtimeService.search((url.searchParams.get("q") || "").trim()));
@@ -780,4 +805,6 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       return sendJson(req, res, 502, { status: "error", message: String(error?.message || "UPSTREAM_FAILED") });
     }
   });
+  server.searchTraceStore = traceStore;
+  return server;
 }

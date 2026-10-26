@@ -2657,10 +2657,8 @@ async function performSearch(query) {
 
 // T-A-TV discovery: explicit opt-in, hidden provider selector until exploration is opened.
 const exploreSources = [];
-function renamedProvider(name) {
-  const original = String(name || '').trim();
-  return original ? 'ظ' + original.slice(1) : '';
-}
+const sourceLabels = new Map();
+function renamedProvider(id) { return sourceLabels.get(id) || String(id || ''); }
 const exploreSelect = document.getElementById('exploreProvider');
 async function loadExploreSources() {
   if (!exploreSelect) return;
@@ -2677,7 +2675,8 @@ async function loadExploreSources() {
       if (!source.search || !/^[a-z0-9_-]{2,30}$/.test(source.id)) continue;
       exploreSources.push(source.id);
       const option = document.createElement('option'); option.value = source.id;
-      option.textContent = renamedProvider(source.id) + ' - ' + renamedProvider(arabic[source.id] || source.id);
+      sourceLabels.set(source.id, (source.name_ar || arabic[source.id] || source.id) + ' — ' + (source.domain || ''));
+      option.textContent = renamedProvider(source.id);
       exploreSelect.appendChild(option);
     }
     exploreSelect.disabled = false;
@@ -2736,10 +2735,12 @@ document.getElementById('exploreRun')?.addEventListener('click', async () => {
   grid.replaceChildren();
   status.textContent = 'جاري البحث في المصدر المحدد فقط…';
   try {
-    const response = await fetch('https://matv.onrender.com/api/v1/explore?q=' + encodeURIComponent(q) + '&provider=' + encodeURIComponent(provider));
+    let session = sessionStorage.getItem('tatv_diagnostic_session');
+    if (!session) { session = crypto.randomUUID(); sessionStorage.setItem('tatv_diagnostic_session',session); }
+    const response = await fetch('https://matv.onrender.com/api/v1/explore?platform=web&diagnostic_session=' + encodeURIComponent(session) + '&q=' + encodeURIComponent(q) + '&provider=' + encodeURIComponent(provider));
     const payload = await response.json();
     if (!response.ok) {
-      status.textContent = payload.message === 'SOURCE_NOT_SUPPORTED' ? 'هذا المصدر لم يُربط بالبحث المباشر بعد' : 'المصدر غير متاح حاليًا';
+      status.textContent = (payload.message === 'SOURCE_NOT_SUPPORTED' ? 'هذا المصدر لم يُربط بالبحث المباشر بعد' : 'تعذر البحث في المصدر؛ لا يعني ذلك غياب العمل') + ' · رقم التشخيص: ' + (payload.trace_id || 'غير متاح');
       return;
     }
     const items = Array.isArray(payload.items) ? payload.items : [];
@@ -2761,7 +2762,7 @@ document.getElementById('exploreRun')?.addEventListener('click', async () => {
       wrap.append(card,save);
       grid.appendChild(wrap);
     }
-    status.textContent = items.length ? 'نتائج ' + renamedProvider(provider) + ': ' + items.length : 'لا توجد نتائج في المصدر المختار';
+    status.textContent = (items.length ? 'نتائج ' + renamedProvider(provider) + ': ' + items.length : 'لم يستخرج القاشط نتائج؛ لا يؤكد ذلك غياب العمل من الموقع') + ' · رقم التشخيص: ' + (payload.trace_id || 'غير متاح');
   } catch (_) { status.textContent = 'تعذر الاتصال بالمصدر حاليًا'; }
 });
 renderExploreSaved();

@@ -61,8 +61,8 @@ export const PROVIDER_META = Object.freeze({
   }),
   searchSpec: Object.freeze({
     method: 'GET',
-    pathTemplate: '/search?s={query}',
-    queryParam: 's',
+    pathTemplate: '/search?q={query}',
+    queryParam: 'q',
     encoding: 'utf-8',
     pagination: false
   }),
@@ -111,14 +111,14 @@ export function extractShahid4uCardsFromHtml(html = '', baseUrl = PRIMARY_BASE_U
   const items = [];
   const seen = new Set();
 
-  $('.content-box, .media-card, .show-card, article.post').each((_, el) => {
+  $('.content-box, .media-card, .show-card, article.post, article.br-card').each((_, el) => {
     const anchor = $(el).find('a').first();
     const rawHref = anchor.attr('href') || '';
     const targetUrl = resolveShahid4uTargetUrl(rawHref, baseUrl);
     if (!targetUrl || seen.has(targetUrl)) return;
 
     const rawTitle =
-      $(el).find('.title, h3, h4').first().text().trim() ||
+      $(el).find('.title, h3, h4, .br-card-title').first().text().trim() ||
       anchor.attr('title') ||
       '';
     if (!rawTitle) return;
@@ -136,7 +136,7 @@ export function extractShahid4uCardsFromHtml(html = '', baseUrl = PRIMARY_BASE_U
       id: ref,
       ref,
       title: cleanTitle,
-      year: extractYear(rawTitle) || '2025',
+      year: extractYear(rawTitle) || null,
       poster: resolveSafeUrl(poster, baseUrl),
       image: resolveSafeUrl(poster, baseUrl),
       url: targetUrl,
@@ -184,7 +184,7 @@ export async function scrapeSearch(query, page = 1, options = {}) {
     return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'Empty search query');
   }
 
-  const searchUrl = `${PRIMARY_BASE_URL}/search?s=${encodeURIComponent(q)}`;
+  const searchUrl = `${PRIMARY_BASE_URL}/search?q=${encodeURIComponent(q)}`;
   try {
     const { html } = await fetchProviderHtml(searchUrl, {
       ...options,
