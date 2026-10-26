@@ -1,4 +1,3 @@
-import { load } from 'cheerio';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID, timingSafeEqual, createHash } from 'node:crypto';
 const context = new AsyncLocalStorage();
@@ -25,15 +24,7 @@ export function searchTraceEvent(stage, data = {}) {
   if (Array.isArray(data.fields)) event.fields=data.fields.slice(0,15).map(x=>String(x).slice(0,60));
   trace.events.push(event);
 }
-export function searchTraceHtml(html, pageUrl) {
-  if (!context.getStore()) return;
-  const $ = load(String(html).slice(0,1500000));
-  $('form').slice(0,20).each((_,form)=>{
-    const fields=$(form).find('input[name],select[name]').map((_,el)=>$(el).attr('name')).get();
-    if (!fields.some(name=>/^(s|q|search|query|search_query|keyword|keywords|story)$/i.test(name))) return;
-    try { searchTraceEvent('search_form',{url:new URL($(form).attr('action')||pageUrl,pageUrl).href,method:($(form).attr('method')||'GET').toUpperCase(),fields}); } catch {}
-  });
-}
+export function hasSearchTrace() { return Boolean(context.getStore()); }
 export function diagnosticsAuthorized(req, token = process.env.DIAGNOSTICS_TOKEN || '') {
   if (token.length < 24) return false;
   const supplied = String(req.headers.authorization || '').replace(/^Bearer /, '');

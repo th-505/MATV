@@ -1,4 +1,5 @@
-import { searchTraceEvent, searchTraceHtml } from '../../diagnostics/search-trace.mjs';
+import { searchTraceEvent } from '../../diagnostics/search-trace.mjs';
+import { searchTraceHtml } from '../../diagnostics/search-forms.mjs';
 // server/scrapers/shared/http.mjs
 // SSRF-safe HTTP client with redirect validation, IPv6/IPv4 normalization, DNS rebinding protection, rate limiting, and anti-ban headers
 import net from 'node:net';
