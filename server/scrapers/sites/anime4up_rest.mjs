@@ -1,3 +1,4 @@
+import { attachResultMeta } from '../shared/errors.mjs';
 // server/scrapers/sites/anime4up_rest.mjs
 // Standalone provider module for أنمي فور اب ريست (Anime4Up Rest, code: AP)
 // Explicit mirror / gateway module of Anime4Up (anime4up, code: AP)
@@ -56,12 +57,12 @@ export async function scrapeCatalog(category = 'anime_series', page = 1, options
     ...options,
     providerId: PROVIDER_ID
   });
-  return items.map((it) => ({
+  return attachResultMeta(items.map((it) => ({
     ...it,
     source: PROVIDER_ID,
     id: it.id?.replace('anime4up:', 'anime4up_rest:') || it.id,
     ref: it.ref?.replace('anime4up:', 'anime4up_rest:') || it.ref
-  }));
+  })), { ...items._meta, providerId: PROVIDER_ID });
 }
 
 export async function scrapeSearch(query, page = 1, options = {}) {
@@ -69,12 +70,12 @@ export async function scrapeSearch(query, page = 1, options = {}) {
     ...options,
     providerId: PROVIDER_ID
   });
-  return items.map((it) => ({
+  return attachResultMeta(items.map((it) => ({
     ...it,
     source: PROVIDER_ID,
     id: it.id?.replace('anime4up:', 'anime4up_rest:') || it.id,
     ref: it.ref?.replace('anime4up:', 'anime4up_rest:') || it.ref
-  }));
+  })), { ...items._meta, providerId: PROVIDER_ID });
 }
 
 export async function scrapeDetails(urlOrRef, options = {}) {

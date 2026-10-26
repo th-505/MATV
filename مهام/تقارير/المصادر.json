@@ -204,8 +204,8 @@
       "code": "AP",
       "mirror_of": "anime4up",
       "path": "server/scrapers/sites/anime4up_rest.mjs",
-      "metadata_line": 20,
-      "source_sha256": "bf368fae95c6a9b95d9e4de2e4354f7d7b4c332d404b76ad3658e810b69800ef",
+      "metadata_line": 21,
+      "source_sha256": "da994616c73a2cc0047c796ece8347b0772d4ed500c866dd357489a487604477",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -657,7 +657,7 @@
       "mirror_of": "shahid4u",
       "path": "server/scrapers/sites/shii4u.mjs",
       "metadata_line": 23,
-      "source_sha256": "a7d1e45dd5c9be50c41ec64c8580f5067c3985e0a022d57d14d53850de51b579",
+      "source_sha256": "f1e56fc9828fdd6e33c5e6e665763b045e1322fbcc36447d0092b45838b2e885",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

@@ -1,0 +1,358 @@
+{
+  "environment": "live Render API, distinct from managed-workspace audit",
+  "note": "These are search results only, not playback or independent website certification. Network-specific WAF behavior differs.",
+  "rows": [
+    {
+      "provider": "akwam",
+      "query": "The Paradise",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "ae0c7641-1a48-4a70-a6ed-3fa50e3e566f",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 2550,
+        "status": 200,
+        "bytes": 79779,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "البحث | اكوام",
+        "url": "https://akwam.ss/search?q=The%20Paradise"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "mycima",
+      "query": "الست لما",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "b775fb8c-8323-43bc-be7c-8da253aadf03",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 3641,
+        "status": 200,
+        "bytes": 222404,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "ماي سيما mycima وي سيما wecima | شاهد احدث الافلام والمسلسلات العربية والاجنبية",
+        "url": "https://mycima.gdn/filtering/?keywords=%D8%A7%D9%84%D8%B3%D8%AA%20%D9%84%D9%85%D8%A7"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "shahid4u",
+      "query": "La Bola Negra 2026",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "9fc920f9-e7a4-4aff-9ae3-869adcc04f10",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 742,
+        "status": 200,
+        "bytes": 61795,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "نتائج البحث: La Bola Negra 2026 - شاهد فور يو Shahid4u | مشاهدة افلام و مسلسلات اون لاين",
+        "url": "https://shahidfu.cam/search?q=La%20Bola%20Negra%202026"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "shii4u",
+      "query": "La Bola Negra 2026",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "3fef8427-6a67-4c26-a421-2fcf34a48a98",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1699,
+        "status": 200,
+        "bytes": 61795,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "نتائج البحث: La Bola Negra 2026 - شاهد فور يو Shahid4u | مشاهدة افلام و مسلسلات اون لاين",
+        "url": "https://shahidfu.cam/search?q=La%20Bola%20Negra%202026"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "cimanow",
+      "query": "Interstellar",
+      "http_status": 503,
+      "count": 0,
+      "reason": "ACCESS_BLOCKED",
+      "trace_id": "cc991054-f50b-4284-9d59-5ae82282614a",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 2697,
+        "status": 403,
+        "bytes": 6193,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Just a moment...",
+        "url": "https://cimanow.cc/search?s=Interstellar"
+      },
+      "outcome": "error"
+    },
+    {
+      "provider": "moviztime",
+      "query": "The Dog Stars 2026",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "92b40093-fe8d-4a0a-a52f-f4455542e7e5",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1503,
+        "status": 200,
+        "bytes": 43603,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "You searched for The Dog Stars 2026 - وقت الافلام",
+        "url": "https://moviz-time.land/?s=The%20Dog%20Stars%202026"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "3cktv",
+      "query": "مرعشلي",
+      "http_status": 503,
+      "count": 0,
+      "reason": "ACCESS_BLOCKED",
+      "trace_id": "f8d4c2a0-9134-45fc-b267-220cecd97fa1",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 353,
+        "status": 403,
+        "bytes": 4544,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Attention Required! | Cloudflare",
+        "url": "https://e.3cktv.com/?s=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A"
+      },
+      "outcome": "error"
+    },
+    {
+      "provider": "anime4up",
+      "query": "Watashi no Shiawase na Kekkon Special",
+      "http_status": 503,
+      "count": 0,
+      "reason": "ACCESS_BLOCKED",
+      "trace_id": "0d2c5a4b-df1f-48b3-b5c7-74bdaee8a378",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 2018,
+        "status": 403,
+        "bytes": 6339,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Just a moment...",
+        "url": "https://w1.anime4up.rest/?search_param=animes&s=Watashi%20no%20Shiawase%20na%20Kekkon%20Special"
+      },
+      "outcome": "error"
+    },
+    {
+      "provider": "ipauniverse",
+      "query": "Spider-Man: Brand New Day",
+      "http_status": 200,
+      "count": 2,
+      "reason": null,
+      "trace_id": "8d7143a3-b5d2-4723-b78c-5212b324af19",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 198,
+        "status": 200,
+        "bytes": 1125,
+        "challenge": false,
+        "content_type": "application/json;charset=utf-8",
+        "html_title": "",
+        "url": "https://api.themoviedb.org/3/search/movie?query=Spider-Man%3A+Brand+New+Day&page=1"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "qfilm",
+      "query": "Influencers 2025",
+      "http_status": 503,
+      "count": 0,
+      "reason": "ACCESS_BLOCKED",
+      "trace_id": "6498588d-2b37-4a7e-a880-f0cfc5ccc912",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 217,
+        "status": 403,
+        "bytes": 6138,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Just a moment...",
+        "url": "https://a.qfilm.tv/search.php?keywords=Influencers%202025"
+      },
+      "outcome": "error"
+    },
+    {
+      "provider": "egydead",
+      "query": "Interstellar",
+      "http_status": 503,
+      "count": 0,
+      "reason": "NETWORK_TIMEOUT",
+      "trace_id": "84724d0c-fec1-4ffa-a4f3-20edaeaecd0c",
+      "last_response": null,
+      "outcome": "error"
+    },
+    {
+      "provider": "ristoanime",
+      "query": "انمي Karasu wa Aruji wo Erabanai",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "c1db68e1-3226-41f2-aaa4-52435a7234c5",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1317,
+        "status": 200,
+        "bytes": 324205,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "لقد بحثت عن انمي Karasu wa Aruji wo Erabanai | RistoAnime | RistoAnime",
+        "url": "https://ristoanime.me/?s=%D8%A7%D9%86%D9%85%D9%8A%20Karasu%20wa%20Aruji%20wo%20Erabanai"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "arabseed",
+      "query": "Interstellar",
+      "http_status": 503,
+      "count": 0,
+      "reason": "ACCESS_BLOCKED",
+      "trace_id": "c61d3b49-d3c3-4b88-8622-6f8f4460ba2f",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 889,
+        "status": 403,
+        "bytes": 6070,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Just a moment...",
+        "url": "https://asd.homes/find/"
+      },
+      "outcome": "error"
+    },
+    {
+      "provider": "anime4up_rest",
+      "query": "Watashi no Shiawase na Kekkon Special",
+      "http_status": 200,
+      "count": 0,
+      "reason": null,
+      "trace_id": "b29ea8f9-dd30-45f2-b4d1-996139d35e01",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 3805,
+        "status": 200,
+        "bytes": 18501,
+        "challenge": false,
+        "content_type": "text/html",
+        "html_title": "Anime4up - انمي فور اب | مشاهدة وتحميل الانمي المترجم اون لاين",
+        "url": "https://www.anime4up.bond/"
+      },
+      "outcome": "empty_unconfirmed"
+    },
+    {
+      "provider": "witanime",
+      "query": "Naruto",
+      "http_status": 503,
+      "count": 0,
+      "reason": "ACCESS_BLOCKED",
+      "trace_id": "d5467276-2b39-4507-9fb5-5b474abd9392",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 405,
+        "status": 403,
+        "bytes": 6071,
+        "challenge": true,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Just a moment...",
+        "url": "https://witanime.site/search?q=Naruto"
+      },
+      "outcome": "error"
+    },
+    {
+      "provider": "mewsry",
+      "query": "القوة الجوية ضد باختاكور",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "2f4b0ee6-8e3b-4f84-85e4-65b46df7c330",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 1142,
+        "status": 200,
+        "bytes": 36952,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "Syria Live | سوريا لايف بث مباشر مباريات اليوم بدون تقطيع",
+        "url": "https://www.manasorya.site/"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "alooy",
+      "query": "قسمة و نصيب : العروس و الحماة",
+      "http_status": 200,
+      "count": 1,
+      "reason": null,
+      "trace_id": "2195a4af-faa5-48fd-b41f-8fbbdae19e9a",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 900,
+        "status": 200,
+        "bytes": 324,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "",
+        "url": "https://fa.alooytv16.xyz/home/autocompleteajax"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "3isk",
+      "query": "قلب شجاع",
+      "http_status": 200,
+      "count": 2,
+      "reason": null,
+      "trace_id": "511eb279-c088-4ceb-b8a8-7979d32ec802",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 941,
+        "status": 200,
+        "bytes": 71783,
+        "challenge": false,
+        "content_type": "text/html; charset=UTF-8",
+        "html_title": "نتائج البحث عن &#8220;قلب شجاع&#8221; &#8211; قصة عشق",
+        "url": "https://ww4.3ick.club/search/%D9%82%D9%84%D8%A8%20%D8%B4%D8%AC%D8%A7%D8%B9/"
+      },
+      "outcome": "results"
+    },
+    {
+      "provider": "laroza",
+      "query": "مرعشلي",
+      "http_status": 503,
+      "count": 0,
+      "reason": "NETWORK_TIMEOUT",
+      "trace_id": "f61639d6-14b3-4ddb-bfb9-1610f557779c",
+      "last_response": {
+        "stage": "upstream_response",
+        "at_ms": 22901,
+        "status": 503,
+        "bytes": 31,
+        "challenge": false,
+        "content_type": "application/json",
+        "html_title": "",
+        "url": "https://matv-edge-resolver.dada1000100.workers.dev/v1/laroza/search?q=%D9%85%D8%B1%D8%B9%D8%B4%D9%84%D9%8A&page=1"
+      },
+      "outcome": "error"
+    }
+  ]
+}

@@ -59,13 +59,13 @@ export async function scrapeCatalog(category = 'movies_foreign', page = 1, optio
     ...options,
     providerId: PROVIDER_ID
   });
-  return items.map((it) => ({
+  return attachResultMeta(items.map((it) => ({
     ...it,
     source: PROVIDER_ID,
     serverPrefix: PROVIDER_CODE,
     id: it.id?.replace('shahid4u:', 'shii4u:') || it.id,
     ref: it.ref?.replace('shahid4u:', 'shii4u:') || it.ref
-  }));
+  })), { ...items._meta, providerId: PROVIDER_ID });
 }
 
 export async function scrapeSearch(query, page = 1, options = {}) {
@@ -73,13 +73,13 @@ export async function scrapeSearch(query, page = 1, options = {}) {
     ...options,
     providerId: PROVIDER_ID
   });
-  return items.map((it) => ({
+  return attachResultMeta(items.map((it) => ({
     ...it,
     source: PROVIDER_ID,
     serverPrefix: PROVIDER_CODE,
     id: it.id?.replace('shahid4u:', 'shii4u:') || it.id,
     ref: it.ref?.replace('shahid4u:', 'shii4u:') || it.ref
-  }));
+  })), { ...items._meta, providerId: PROVIDER_ID });
 }
 
 export async function scrapeDetails(urlOrRef, options = {}) {

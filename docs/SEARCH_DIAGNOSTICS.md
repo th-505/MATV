@@ -13,3 +13,10 @@ Retention: **memory only, up to 400 traces for one hour, cleared on process rest
 The report `مهام/تقارير/search-live-audit.json` records all 19 real search attempts and their limitations. It is not a claim that all sources or playback paths work. MyCima, Shahid4u and QFilm were corrected from live page forms and card markup. No search is silently rerouted to another provider.
 
 Checks: `node --test tests/search-diagnostics.test.mjs`, `npm run test:continuation`, `npm run check`, full Flutter tests/analyze. Repeatable network audit: `NODE_USE_ENV_PROXY=1 node scripts/audit_source_searches.mjs /tmp/source-audit.json` (requires internet; failures are recorded, not treated as success).
+
+
+## Production verification
+
+The dashboard was opened in Chromium against Render, authenticated, and rendered a trace with no JavaScript errors. All 19 registered searches were requested from the production API; results differ from the workspace because of WAF/IP restrictions. See `مهام/تقارير/search-production-audit.json`. Of those requests, 10 returned results, 8 returned explicit failures and one remained an unconfirmed empty extraction. Those are registrations, including mirrors, not 19 independent operational websites.
+
+The user-provided exact `3cktv` query `وادي الذئاب` reached Render and was sent to `https://e.3cktv.com/?s=...`; the origin returned HTTP403 with title `Attention Required! | Cloudflare` before any result page. This is a server-origin WAF rejection, not evidence the series is absent. In the workspace the same site instead redirected302 to `https://ei.3cktv.com/` without preserving the query, then the network failed. Both observations are environment-specific. No access-control bypass was implemented.

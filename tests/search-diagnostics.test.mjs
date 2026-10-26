@@ -58,3 +58,10 @@ test('a 200 login or suspended page is not a successful empty catalogue',async()
 });
 
 test('served dashboard JavaScript parses independently of its template module',()=>{assert.doesNotThrow(()=>new Script(diagnosticsJs));});
+test('mirror remapping preserves blocked-source metadata instead of silently returning empty success',async()=>{
+ for(const id of ['anime4up_rest','shii4u']){
+  const mod=await import('../server/scrapers/sites/'+id+'.mjs');
+  try {const items=await mod.scrapeSearch('Naruto',1,{fixtureHtml:'<title>Just a moment...</title>'});assert.equal(items._meta?.errorCode,'ACCESS_BLOCKED',id)}
+  catch(error){assert.equal(error.code,'ACCESS_BLOCKED',id)}
+ }
+});
