@@ -1,3 +1,5 @@
+import { Script } from 'node:vm';
+import { diagnosticsJs } from '../server/diagnostics/dashboard.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSearchTraces, searchTraceEvent, safeSearchUrl } from '../server/diagnostics/search-trace.mjs';
@@ -54,3 +56,5 @@ test('a 200 login or suspended page is not a successful empty catalogue',async()
   await assert.rejects(fetchSafeResponse(url,{maxRetries:0,fetchImpl:async()=>new Response(html,{status:200})}),{code:'ACCESS_BLOCKED'});
  }
 });
+
+test('served dashboard JavaScript parses independently of its template module',()=>{assert.doesNotThrow(()=>new Script(diagnosticsJs));});
