@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: mitv-release-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}

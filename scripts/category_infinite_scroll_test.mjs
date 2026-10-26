@@ -9,8 +9,8 @@ assert.match(api, /getCinemaCategory\(type,name,categoryId="",page=1\)/, "cinema
 assert.match(api, /\/api\/v1\/category\?ref=/, "cinema category API must use the versioned runtime route");
 assert.match(api, /[&?]p=/, "cinema category API must forward page to backend");
 assert.doesNotMatch(config, /https:\/\/akwam\.ss/i, "browser category config must not expose Basri source URLs");
-assert.match(config, /series-foreign/, "browser category config must use opaque category IDs");
-assert.match(config, /movie-anime/, "browser category config must include opaque movie category IDs");
+assert.match(config, /catalog:tv:all/, "browser category config must use opaque category IDs");
+assert.match(config, /catalog:anime:movie/, "browser category config must include opaque movie category IDs");
 assert.match(html, /IntersectionObserver/, "category view must use viewport-driven incremental loading");
 assert.match(html, /loadNextCategoryPage/, "category view must have a bounded next-page loader");
 assert.match(html, /currentCategoryPage\+1/, "category loader must advance one page at a time");
