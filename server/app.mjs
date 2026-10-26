@@ -1,3 +1,7 @@
+import { BROWSE_SECTIONS, browseCatalog } from './catalog-browser.mjs';
+import { createPinnedPlayback } from './pinned-playback.mjs';
+import { getProvider } from './scrapers/registry.mjs';
+import { createTmdbRuntime } from './tmdb-runtime.mjs';
 import { createMediaAuditor } from './media-audit.mjs';
 import { listSourceCapabilities } from './scrapers/source-registry.mjs';
 import { directCandidate } from './scrapers/content-discovery.mjs';
@@ -496,6 +500,17 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       const data=await akoamMetadata(assertSourceUrl(decodeURIComponent(ref.slice(7))).href);
       return {...data,episodes:wrapEpisodes(data.episodes || [])};
     })});
+  const pinnedPlayback=createPinnedPlayback({loadDetails:async({provider,ref,phase})=>{
+    const runtime=provider==='3isk'?iskRuntime:provider==='alooy'?alooyRuntime:provider==='laroza'?larozaRuntime:null;
+    if(runtime){
+      if(phase==='metadata' && typeof runtime.metadata==='function')return runtime.metadata(ref);
+      return runtime.details(ref,{platform:'web'});
+    }
+    const scraper=getProvider(provider)?.module;
+    if(!scraper?.scrapeDetails)throw Error('PINNED_SOURCE_NOT_SUPPORTED');
+    return scraper.scrapeDetails(ref,{strict:true,timeoutMs:6000,maxRetries:0});
+  }});
+  const discoveryMetadata = createTmdbRuntime();
   const discoveryStore = createSupabaseDiscoveryStore();
   const discoveryAudit = createDiscoveryAudit({ auditor: createMediaAuditor({
     persist: async record => {
@@ -504,26 +519,34 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     },
   }) });
   const discovery = createDiscoveryCoordinator({
-    load: async key => discoveryStore?.get('audited-v1:' + key) || null,
-    persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v1:' + key,result,expiresAt),
+    load: async key => discoveryStore?.get('audited-v2:' + key) || null,
+    persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v2:' + key,result,expiresAt),
     maxConcurrent: 3, maxQueued: 40, ttlMs: 60_000,
-    discover: async ({ ref, title, year, season, episode }) => {
-      const candidates = await activateAllScrapersForContent(title, season || 1, episode || 1,
-        { ref, year, type: ref.startsWith('tmdb:tv:') ? 'series' : 'movie' });
-      const reviewed = await discoveryAudit.review(candidates, { title, year,
-        season: ref.startsWith('tmdb:tv:') ? season || 1 : null,
-        episode: ref.startsWith('tmdb:tv:') ? episode || 1 : null });
-      const seen = new Set();
-      return reviewed.approved.filter(item => {
-        try {
-          const url = new URL(String(item.url || item.media_path || ''));
-          if (url.protocol !== 'https:' || !url.pathname.match(/\.(mp4|m3u8)$/i)) return false;
-          if (seen.has(url.href)) return false;
-          seen.add(url.href);
-          return true;
-        } catch { return false; }
-      }).map(item => ({ provider: item.provider || 'unknown', quality: item.quality || null,
-        kind: 'direct', url: item.url || item.media_path }));
+    discover: async ({ ref, season, episode }, publish) => {
+      // The canonical TMDB identity is authoritative, never caller-supplied title/year.
+      const metadata=(await discoveryMetadata.details(ref)).data;
+      const series=ref.startsWith('tmdb:tv:');
+      if(series){
+        const episodes=(await discoveryMetadata.season(ref,season || 1)).data?.episodes || [];
+        if(!episodes.some(row=>Number(row.episode_number)===Number(episode || 1)))throw Error('EPISODE_NOT_FOUND');
+      }
+      const expected={title:metadata.title,aliases:[metadata.original_title],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};
+      const approved=[],seen=new Set();let rejected=0;
+      await activateAllScrapersForContent(metadata.title, season || 1, episode || 1, {
+        ref,year:metadata.year,type:series?'series':'movie',titleVariants:[metadata.original_title],
+        onSources:async candidates=>{
+          const reviewed=await discoveryAudit.review(candidates,expected);
+          rejected+=reviewed.quarantine.length;
+          for(const source of reviewed.approved){
+            if(seen.has(source.url))continue;
+            seen.add(source.url);
+            approved.push({provider:source.provider,quality:source.quality || null,kind:'direct',url:source.url,
+              headers:source.headers || {},identity_verified:source.identity_verified,verification_basis:source.verification_basis,audit_pending:source.audit_pending});
+          }
+          if(approved.length)publish({servers:[...approved],reason:null});
+        },
+      });
+      return {servers:approved,reason:approved.length?null:rejected?'IDENTITY_NOT_VERIFIED':'NO_PLAYABLE_SOURCE'};
     },
   });
   return http.createServer(async (req, res) => {
@@ -544,6 +567,26 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
+      if(url.pathname==='/api/v1/catalog/sections')return sendJson(req,res,200,{status:'success',data:BROWSE_SECTIONS});
+      if(url.pathname==='/api/v1/catalog'){
+        if(req.method!=='GET')return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        try{return sendJson(req,res,200,await browseCatalog(discoveryMetadata,url.searchParams.get('ref'),Number(url.searchParams.get('page') || 1)));}
+        catch(error){return sendJson(req,res,error.message==='INVALID_CATALOG_SECTION'?400:503,{status:'error',message:error.message==='INVALID_CATALOG_SECTION'?error.message:'CATALOG_UNAVAILABLE'});}
+      }
+      if(url.pathname==='/api/v1/playback'){
+        if(req.method!=='GET')return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        let ref=url.searchParams.get('ref') || '';
+        try{
+          if(ref.startsWith('legacy:'))ref='akwam:'+Buffer.from(assertSourceUrl(decodeURIComponent(ref.slice(7))).href).toString('base64url');
+          const result=await pinnedPlayback.resolve({provider:ref.split(':')[0],seriesRef:ref,
+            type:url.searchParams.get('type') || 'movie',season:url.searchParams.get('season') || 1,
+            episode:url.searchParams.get('episode') || 1,platform:url.searchParams.get('platform') || 'web'});
+          return sendJson(req,res,200,{...result,reason:result.playback_reason});
+        }catch(error){
+          const message=String(error?.message || 'PINNED_SOURCE_UNAVAILABLE');
+          return sendJson(req,res,400,{status:'error',message:/^PINNED_[A-Z_]+$/.test(message)?message:'PINNED_SOURCE_UNAVAILABLE'});
+        }
+      }
       if (url.pathname === '/api/v1/explore/sources') {
         if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         return sendJson(req,res,200,{status:'success',data:listSourceCapabilities()});
@@ -576,7 +619,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           let state = discovery.status(input);
           if (state.state === 'missing' && discoveryStore) {
             const key = [input.ref, Number(input.season) || 0, Number(input.episode) || 0].join(':');
-            const cached = await discoveryStore.get('audited-v1:' + key).catch(() => null);
+            const cached = await discoveryStore.get('audited-v2:' + key).catch(() => null);
             if (cached?.payload && new Date(cached.expires_at).getTime() > Date.now())
               state = {key,state:'ready',result:cached.payload,expiresAt:new Date(cached.expires_at).getTime()};
           }

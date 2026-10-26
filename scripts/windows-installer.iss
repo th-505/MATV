@@ -9,11 +9,11 @@
 #endif
 [Setup]
 AppId={{49F9B50D-B1EE-49BD-BEBE-EF6FF8B6DE5B}
-AppName=MA TV
+AppName=T-A-TV
 AppVersion={#AppVersion}
-AppPublisher=MA TV
-DefaultDirName={localappdata}\Programs\MA TV
-DefaultGroupName=MA TV
+AppPublisher=T-A-TV
+DefaultDirName={localappdata}\Programs\T-A-TV
+DefaultGroupName=T-A-TV
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
@@ -30,7 +30,7 @@ Source: "{#SourceRoot}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Tasks]
 Name: desktopicon; Description: "Create a desktop shortcut"; Flags: unchecked
 [Icons]
-Name: "{autoprograms}\MA TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"
-Name: "{autodesktop}\MA TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\T-A-TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"
+Name: "{autodesktop}\T-A-TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 [Run]
-Filename: "{app}\mitv.exe"; Description: "Launch MA TV"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\mitv.exe"; Description: "Launch T-A-TV"; Flags: nowait postinstall skipifsilent

@@ -20,3 +20,14 @@ test('only direct approved streams survive; rejected provider cannot discard ano
   const result=await review.review([candidate,{url:'https://example.com/player?file=.mp4'}],{});
   assert.equal(result.approved.length,1);assert.equal(result.approved[0].identity_verified,true);
 });
+
+test('AI outage does not block a technically valid exact metadata match, but never overrides a mismatch',async()=>{
+ const source={...candidate,observed_identity:{title:'Example',year:2025,season:2,episode:4}};
+ const expected={title:'Example',year:2025,season:2,episode:4};
+ const auditor={status:()=>({}),audit:async()=>({eligible:false,aiReviewed:false,reasons:['AI_NOT_CONFIGURED']})};
+ const review=createDiscoveryAudit({probe:async()=>({playable:true,statusCode:200,container:'mp4'}),auditor});
+ const result=await review.review([source],expected);assert.equal(result.approved.length,1);assert.equal(result.approved[0].identity_verified,false);assert.equal(result.approved[0].audit_pending,true);
+ assert.equal((await review.review([{...source,observed_identity:{...source.observed_identity,episode:3}}],expected)).approved.length,0);
+ const veto=createDiscoveryAudit({probe:async()=>({playable:true}),auditor:{status:()=>({}),audit:async()=>({eligible:false,aiReviewed:true,decision:'mismatch',reasons:['wrong content']})}});
+ assert.equal((await veto.review([source],expected)).approved.length,0);
+});

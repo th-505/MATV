@@ -1,4 +1,4 @@
-"""Verify all six MA TV release targets and their common source provenance."""
+"""Verify all six T-A-TV release targets and their common source provenance."""
 import hashlib
 import json
 import plistlib
@@ -49,7 +49,7 @@ def record(path, target, architecture):
 def verify_manifest(path, target):
     manifest = json.loads(path.read_text(encoding='utf-8'))
     assert manifest.get('schema_version') == 1
-    assert manifest.get('product') == 'MA TV OFFICIAL'
+    assert manifest.get('product') == 'T-A-TV'
     assert manifest.get('version') == version
     assert manifest.get('build') == build
     assert manifest.get('api_base', '').rstrip('/') == api
@@ -89,7 +89,7 @@ with zipfile.ZipFile(ipa) as archive:
     info = plistlib.loads(archive.read(app + 'Info.plist'))
     assert info['CFBundleShortVersionString'] == version
     assert info['CFBundleVersion'] == str(build)
-    assert info['CFBundleDisplayName'] == 'MA TV'
+    assert info['CFBundleDisplayName'] == 'T-A-TV'
     assert info['CFBundleIdentifier'] == 'com.mitv.mitv'
     assert info.get('UIFileSharingEnabled') is True
     assert info.get('NSAppTransportSecurity', {}).get('NSAllowsLocalNetworking') is True
@@ -128,7 +128,7 @@ verify_manifest(windows_zip.parent / 'source-manifest.json', 'windows-x64')
 mac_dmg = unique_file('MA-TV-macOS-Unsigned.dmg')
 mac_report_path = unique_file('macOS-report.json')
 mac_report = json.loads(mac_report_path.read_text(encoding='utf-8'))
-assert mac_report.get('product') == 'MA TV OFFICIAL'
+assert mac_report.get('product') == 'T-A-TV'
 assert mac_report.get('version') == version and str(mac_report.get('build')) == str(build)
 assert mac_report.get('dmg') == mac_dmg.name
 assert mac_report.get('sha256') == hashlib.sha256(mac_dmg.read_bytes()).hexdigest()
@@ -159,7 +159,7 @@ required_targets = {
 }
 assert set(targets) == required_targets, f'Incomplete target manifests: {sorted(targets)}'
 print(json.dumps({
-    'product': 'MA TV OFFICIAL',
+    'product': 'T-A-TV',
     'version': version,
     'build': build,
     'source_commit': source_sha,

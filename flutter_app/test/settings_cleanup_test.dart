@@ -1,3 +1,4 @@
+import 'support/shell_navigation.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -61,10 +62,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('الأفلام'));
+      await selectShellDestination(tester, 'movies');
       await tester.pumpAndSettle();
-      expect(api.categories, ['3isk-latest', 'movie-foreign']);
-      await tester.tap(find.text('الإعدادات'));
+      expect(api.categories, ['catalog:movie:all', 'catalog:movie:all']);
+      await selectShellDestination(tester, 'settings');
       await tester.pumpAndSettle();
       await tester.tap(find.text('مسح الكاش المحلي'));
       await tester.pumpAndSettle();
@@ -87,12 +88,16 @@ void main() {
       }
       expect(store.isFavorite(item.ref), isTrue);
       expect(store.resumePosition(item.ref), const Duration(seconds: 15));
-      await tester.tap(find.text('الرئيسية'));
+      await selectShellDestination(tester, 'home');
       await tester.pumpAndSettle();
-      expect(api.categories, ['3isk-latest', 'movie-foreign', '3isk-latest']);
-      await tester.tap(find.text('الأفلام'));
+      expect(api.categories, [
+        'catalog:movie:all',
+        'catalog:movie:all',
+        'catalog:movie:all',
+      ]);
+      await selectShellDestination(tester, 'movies');
       await tester.pumpAndSettle();
-      expect(api.categories.last, 'movie-foreign');
+      expect(api.categories.last, 'catalog:movie:all');
       expect(api.categories.length, 4);
       await tester.pumpWidget(const SizedBox());
     },
@@ -119,7 +124,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('الإعدادات'));
+      await selectShellDestination(tester, 'settings');
       await tester.pumpAndSettle();
       await tester.tap(find.text('حذف الملفات المحمّلة'));
       await tester.pumpAndSettle();
@@ -151,22 +156,26 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('الإعدادات'));
+    await selectShellDestination(tester, 'settings');
     await tester.pumpAndSettle();
     final settingsState = tester.state(find.byType(SettingsPage));
     await tester.tap(find.text('مسح الكاش المحلي'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('حذف'));
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.text('الأفلام'));
+    await selectShellDestination(tester, 'movies');
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
-    expect(api.categories, ['3isk-latest', 'movie-foreign']);
+    expect(api.categories, ['catalog:movie:all', 'catalog:movie:all']);
     pending.complete();
     await tester.pumpAndSettle();
-    expect(api.categories, ['3isk-latest', 'movie-foreign', 'movie-foreign']);
+    expect(api.categories, [
+      'catalog:movie:all',
+      'catalog:movie:all',
+      'catalog:movie:all',
+    ]);
     expect(api.clears, 1);
-    await tester.tap(find.text('الإعدادات'));
+    await selectShellDestination(tester, 'settings');
     await tester.pumpAndSettle();
     expect(tester.state(find.byType(SettingsPage)), same(settingsState));
     await tester.pumpWidget(const SizedBox());

@@ -334,11 +334,13 @@ class TitleDetails {
     this.workIdentityVerified = false,
     this.attachedSubtitles = const [],
     this.sourceRefs = const {},
+    this.availableSeasons = const [],
   });
 
   final String title;
   final String poster;
   final List<EpisodeItem> episodes;
+  final List<int> availableSeasons;
   final String mediaPath;
   final String mediaType;
   final bool playbackUnavailable;
@@ -367,6 +369,7 @@ class TitleDetails {
     String? title,
     String? poster,
     List<EpisodeItem>? episodes,
+    List<int>? availableSeasons,
     String? mediaPath,
     String? mediaType,
     bool? playbackUnavailable,
@@ -394,6 +397,9 @@ class TitleDetails {
     title: title ?? this.title,
     poster: poster ?? this.poster,
     episodes: List.unmodifiable(episodes ?? this.episodes),
+    availableSeasons: List.unmodifiable(
+      availableSeasons ?? this.availableSeasons,
+    ),
     mediaPath: mediaPath ?? this.mediaPath,
     mediaType: mediaType ?? this.mediaType,
     playbackUnavailable: playbackUnavailable ?? this.playbackUnavailable,
@@ -436,6 +442,12 @@ class TitleDetails {
               .toList(growable: false)
         : const <EpisodeItem>[];
     return TitleDetails(
+      availableSeasons: (json['available_seasons'] is List
+          ? (json['available_seasons'] as List)
+                .whereType<int>()
+                .where((n) => n > 0)
+                .toList()
+          : const []),
       title: '${json['movie_title'] ?? json['title'] ?? 'التفاصيل'}',
       poster: '${json['poster'] ?? ''}',
       episodes: episodes,

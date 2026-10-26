@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'src/ui_contract.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'src/api_client.dart';
 import 'src/app_target.dart';
@@ -18,11 +20,11 @@ import 'src/unified_media.dart';
 import 'src/storage_cleanup.dart';
 import 'src/cloud_library.dart';
 
-const _brandBg = Color(0xFF07090B);
-const _brandPanel = Color(0xFF121416);
-const _brandAccent = Color(0xFFE8BD75);
-const _brandAccentMuted = Color(0xFF8C6C3C);
-const _brandAccentLight = Color(0xFFF3D7A0);
+const _brandBg = TatvUi.background;
+const _brandPanel = TatvUi.surface;
+const _brandAccent = TatvUi.accent;
+const _brandAccentMuted = TatvUi.accentDark;
+const _brandAccentLight = TatvUi.accentLight;
 
 void main() => runApp(const MitvApp());
 
@@ -61,7 +63,7 @@ class _MitvAppState extends State<MitvApp> {
     final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MA TV',
+      title: TatvUi.brand,
       builder: (context, child) => isTvTarget
           ? VirtualPointerScope(controller: _pointer, child: child!)
           : child!,
@@ -89,27 +91,6 @@ class _MitvAppState extends State<MitvApp> {
           secondary: _brandAccentLight,
           surface: _brandPanel,
           brightness: Brightness.dark,
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFF101214),
-          indicatorColor: const Color(0x55E8BD75),
-          iconTheme: WidgetStateProperty.resolveWith(
-            (states) => IconThemeData(
-              color: states.contains(WidgetState.selected)
-                  ? _brandAccentLight
-                  : const Color(0xFFC7CED8),
-            ),
-          ),
-          labelTextStyle: WidgetStateProperty.resolveWith(
-            (states) => TextStyle(
-              color: states.contains(WidgetState.selected)
-                  ? _brandAccentLight
-                  : const Color(0xFFD0D5DD),
-              fontWeight: states.contains(WidgetState.selected)
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-            ),
-          ),
         ),
         visualDensity: isTvTarget
             ? VisualDensity.comfortable
@@ -195,7 +176,7 @@ class _BrandTitle extends StatelessWidget {
       _MPlayMark(size: 38),
       SizedBox(width: 10),
       Text(
-        'MA TV',
+        TatvUi.brand,
         style: TextStyle(
           color: _brandAccentLight,
           fontWeight: FontWeight.w800,
@@ -238,11 +219,17 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
-  int index = 1;
+  int index = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _menuFocus = FocusNode(debugLabel: 'open-navigation');
+  final _navFocus = List.generate(
+    TatvUi.pageIds.length,
+    (i) => FocusNode(debugLabel: 'nav-${TatvUi.pageIds[i]}'),
+  );
   int _pageGeneration = 0;
   late final MitvApi api;
   late final bool _ownsApi;
-  final _pages = List<Widget?>.filled(6, null);
+  final _pages = List<Widget?>.filled(TatvUi.pageIds.length, null);
   @override
   void initState() {
     super.initState();
@@ -272,6 +259,10 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
+    _menuFocus.dispose();
+    for (final node in _navFocus) {
+      node.dispose();
+    }
     if (_ownsApi) api.close();
     super.dispose();
   }
@@ -285,11 +276,11 @@ class _ShellState extends State<Shell> {
     setState(() {
       _pageGeneration++;
       for (var i = 0; i < _pages.length; i++) {
-        if (i != 5) _pages[i] = null;
+        if (i != 8) _pages[i] = null;
       }
       // Settings owns the confirmation/action in progress. If navigation
       // changed while it was awaiting, recreate only the newly visible tab.
-      if (index != 5) _pages[index] = _createPage(index);
+      if (index != 8) _pages[index] = _createPage(index);
     });
   }
 
@@ -302,33 +293,43 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _createPage(int page) => switch (page) {
-    0 => LivePage(api: api, store: widget.store, channels: widget.channels),
-    1 => HomePage(api: api, store: widget.store),
-    2 => CatalogPage(
+    0 => HomePage(api: api, store: widget.store, onNavigate: _selectPage),
+    1 => CatalogPage(
       api: api,
       store: widget.store,
       title: 'الأفلام',
-      categoryId: 'movie-foreign',
+      categoryId: 'catalog:movie:all',
       mediaKind: 'movie',
+      unified: true,
+    ),
+    2 => CatalogPage(
+      api: api,
+      store: widget.store,
+      title: 'المسلسلات',
+      categoryId: 'catalog:tv:all',
+      mediaKind: 'series',
       unified: true,
     ),
     3 => CatalogPage(
       api: api,
       store: widget.store,
-      title: 'المسلسلات',
-      categoryId: 'series-foreign',
-      mediaKind: 'series',
+      title: 'الأنمي',
+      categoryId: 'catalog:anime:movie',
+      mediaKind: 'anime',
       unified: true,
     ),
     4 => CatalogPage(
       api: api,
       store: widget.store,
-      title: 'الأنمي',
-      categoryId: 'movie-anime',
-      mediaKind: 'anime',
+      title: 'التركي',
+      categoryId: 'catalog:turkish:tv',
+      mediaKind: 'turkish',
       unified: true,
     ),
-    5 => SettingsPage(
+    5 => SearchPage(api: api, store: widget.store),
+    6 => LivePage(api: api, store: widget.store, channels: widget.channels),
+    7 => LibraryPage(api: api, store: widget.store),
+    8 => SettingsPage(
       api: api,
       store: widget.store,
       pointer: widget.pointer,
@@ -348,95 +349,216 @@ class _ShellState extends State<Shell> {
     });
   }
 
-  static const _labels = [
-    'المباشر',
-    'الرئيسية',
-    'الأفلام',
-    'المسلسلات',
-    'الأنمي',
-    'الإعدادات',
-  ];
-  static const _icons = [
-    Icons.live_tv,
-    Icons.home_outlined,
-    Icons.movie_outlined,
-    Icons.video_library_outlined,
-    Icons.animation,
-    Icons.settings_outlined,
-  ];
-  @override
-  Widget build(BuildContext context) => AdaptiveViewport(
-    builder: (context, viewport) {
-      final content = IndexedStack(
-        index: index,
-        children: List.generate(_pages.length, (page) {
-          final child = _pages[page];
-          return child == null
-              ? const SizedBox.shrink()
-              : KeyedSubtree(
-                  key: ValueKey((page, page == 5 ? 0 : _pageGeneration)),
-                  child: child,
-                );
-        }),
-      );
-      final side = isTvTarget || viewport.usesSideNavigation || isDesktopTarget;
-      return Scaffold(
-        appBar: AppBar(title: const _BrandTitle()),
-        body: SafeArea(
-          top: false,
-          child: side
-              ? FocusTraversalGroup(
-                  child: Row(
-                    children: [
-                      NavigationRail(
-                        extended: viewport.size.width >= 700,
-                        selectedIndex: index,
-                        onDestinationSelected: _selectPage,
-                        destinations: List.generate(
-                          _labels.length,
-                          (i) => NavigationRailDestination(
-                            icon: Icon(_icons[i]),
-                            label: Text(_labels[i]),
+  void _closeNavigation() {
+    _scaffoldKey.currentState?.closeDrawer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _menuFocus.canRequestFocus) _menuFocus.requestFocus();
+    });
+  }
+
+  Widget _navigation({required bool drawer}) => Material(
+    key: const Key('tatv-right-sidebar'),
+    color: _brandPanel,
+    child: SafeArea(
+      child: SizedBox(
+        width: 232,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Expanded(child: _BrandTitle()),
+                  if (drawer)
+                    IconButton(
+                      tooltip: 'إغلاق القائمة',
+                      onPressed: _closeNavigation,
+                      icon: const Icon(Icons.close),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FocusTraversalGroup(
+                policy: OrderedTraversalPolicy(),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  itemCount: TatvUi.pageIds.length,
+                  itemBuilder: (context, i) => FocusTraversalOrder(
+                    order: NumericFocusOrder(i.toDouble()),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Focus(
+                        canRequestFocus: false,
+                        onKeyEvent: (node, event) {
+                          if (event is! KeyDownEvent) {
+                            return KeyEventResult.ignored;
+                          }
+                          if (event.logicalKey ==
+                                  LogicalKeyboardKey.arrowDown ||
+                              event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                            final next =
+                                (i +
+                                    (event.logicalKey ==
+                                            LogicalKeyboardKey.arrowDown
+                                        ? 1
+                                        : -1)) %
+                                _navFocus.length;
+                            _navFocus[next].requestFocus();
+                            return KeyEventResult.handled;
+                          }
+                          if (event.logicalKey == LogicalKeyboardKey.select) {
+                            _selectPage(i);
+                            if (drawer) _closeNavigation();
+                            return KeyEventResult.handled;
+                          }
+                          return KeyEventResult.ignored;
+                        },
+                        child: FocusHighlight(
+                          child: TextButton(
+                            key: ValueKey('nav-${TatvUi.pageIds[i]}'),
+                            focusNode: _navFocus[i],
+                            autofocus: !drawer && i == index,
+                            style: TextButton.styleFrom(
+                              alignment: Alignment.centerRight,
+                              minimumSize: const Size.fromHeight(50),
+                              foregroundColor: i == index
+                                  ? _brandAccentLight
+                                  : TatvUi.secondaryText,
+                              backgroundColor: i == index
+                                  ? _brandAccent.withAlpha(26)
+                                  : Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                            ),
+                            onPressed: () {
+                              _selectPage(i);
+                              if (drawer) _closeNavigation();
+                            },
+                            child: Row(
+                              children: [
+                                Icon(TatvUi.icons[i]),
+                                const SizedBox(width: 12),
+                                Expanded(child: Text(TatvUi.labels[i])),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                      const VerticalDivider(width: 1),
-                      Expanded(child: content),
-                    ],
-                  ),
-                )
-              : content,
-        ),
-        bottomNavigationBar: side
-            ? null
-            : NavigationBar(
-                selectedIndex: index,
-                onDestinationSelected: _selectPage,
-                destinations: List.generate(
-                  _labels.length,
-                  (i) => NavigationDestination(
-                    icon: Icon(_icons[i]),
-                    label: _labels[i],
+                    ),
                   ),
                 ),
               ),
-      );
-    },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) => Directionality(
+    textDirection: TextDirection.rtl,
+    child: AdaptiveViewport(
+      builder: (context, viewport) {
+        final content = IndexedStack(
+          index: index,
+          children: List.generate(_pages.length, (page) {
+            final child = _pages[page];
+            return child == null
+                ? const SizedBox.shrink()
+                : KeyedSubtree(
+                    key: ValueKey((page, page == 8 ? 0 : _pageGeneration)),
+                    child: child,
+                  );
+          }),
+        );
+        final side =
+            isTvTarget ||
+            viewport.size.width >= TatvUi.sidebarBreakpoint ||
+            isDesktopTarget;
+        return Shortcuts(
+          shortcuts: const {
+            SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
+          },
+          child: Actions(
+            actions: <Type, Action<Intent>>{
+              DismissIntent: CallbackAction<DismissIntent>(
+                onInvoke: (_) {
+                  if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+                    _closeNavigation();
+                  }
+                  return null;
+                },
+              ),
+            },
+            child: Scaffold(
+              key: _scaffoldKey,
+              // In RTL, the start drawer opens on the physical right.
+              drawer: side
+                  ? null
+                  : Drawer(width: 272, child: _navigation(drawer: true)),
+              onDrawerChanged: (open) {
+                if (open) {
+                  _navFocus[index].requestFocus();
+                } else if (!side) {
+                  _menuFocus.requestFocus();
+                }
+              },
+              body: SafeArea(
+                child: side
+                    ? Row(
+                        textDirection: TextDirection.rtl,
+                        children: [
+                          _navigation(drawer: false),
+                          const VerticalDivider(width: 1),
+                          Expanded(child: content),
+                        ],
+                      )
+                    : Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 58),
+                              child: content,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 12,
+                            child: FilledButton.tonalIcon(
+                              key: const Key('tatv-open-navigation'),
+                              focusNode: _menuFocus,
+                              onPressed: () =>
+                                  _scaffoldKey.currentState?.openDrawer(),
+                              icon: const Icon(Icons.menu),
+                              label: const Text('القائمة'),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        );
+      },
+    ),
   );
 }
 
-void _openLibrary(BuildContext context, MitvApi api, LocalLibraryStore store) =>
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text('مكتبتي والتنزيلات')),
-          body: LibraryPage(api: api, store: store),
-        ),
-      ),
-    );
-
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.api, required this.store});
+  const HomePage({
+    super.key,
+    required this.api,
+    required this.store,
+    this.onNavigate,
+  });
+  final ValueChanged<int>? onNavigate;
   final MitvApi api;
   final LocalLibraryStore store;
   @override
@@ -445,7 +567,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final Future<List<CatalogItem>> _latest = widget.api.category(
-    '3isk-latest',
+    'catalog:movie:all',
   );
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -529,19 +651,12 @@ class _HomePageState extends State<HomePage> {
           runSpacing: 8,
           children: [
             FilledButton.tonalIcon(
-              onPressed: () => _openLibrary(context, widget.api, widget.store),
+              onPressed: () => widget.onNavigate?.call(7),
               icon: const Icon(Icons.bookmark_outline),
               label: const Text('مكتبتي والتنزيلات'),
             ),
             FilledButton.tonalIcon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => Scaffold(
-                    appBar: AppBar(title: const Text('البحث')),
-                    body: SearchPage(api: widget.api, store: widget.store),
-                  ),
-                ),
-              ),
+              onPressed: () => widget.onNavigate?.call(5),
               icon: const Icon(Icons.search),
               label: const Text('البحث'),
             ),
@@ -714,14 +829,21 @@ class _SettingsPageState extends State<SettingsPage> {
     padding: const EdgeInsets.all(16),
     children: [
       const ListTile(
-        title: Text('MA TV'),
+        title: Text(TatvUi.brand),
         subtitle: Text('المظهر السينمائي الأسود والذهبي'),
       ),
       FocusHighlight(
         child: ListTile(
           title: const Text('مكتبتي والتنزيلات'),
           leading: const Icon(Icons.video_library_outlined),
-          onTap: () => _openLibrary(context, widget.api, widget.store),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: AppBar(title: const Text('المفضلة والتنزيلات')),
+                body: LibraryPage(api: widget.api, store: widget.store),
+              ),
+            ),
+          ),
         ),
       ),
       if (isTvTarget && widget.pointer != null)
@@ -1087,7 +1209,7 @@ class _CatalogPageState extends State<CatalogPage> {
     '3isk-dubbed': 'مسلسلات مدبلجة (مدبلج فقط)',
     '3isk-movies': 'جميع الأفلام',
   };
-  Map<String, String> get _categories {
+  Map<String, String> get _legacyCategories {
     switch (widget.mediaKind) {
       case 'movie':
         return {
@@ -1122,8 +1244,41 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
+  Map<String, String> get _categories {
+    if (!widget.categoryId.startsWith('catalog:')) {
+      return _legacyCategories;
+    }
+    return switch (widget.mediaKind) {
+      'movie' => {
+        'catalog:movie:all': 'الكل',
+        'catalog:movie:en': 'أجنبي',
+        'catalog:movie:ar': 'عربي',
+        'catalog:movie:hi': 'هندي',
+        'catalog:movie:ko': 'آسيوي',
+        'catalog:movie:tr': 'تركي',
+      },
+      'series' => {
+        'catalog:tv:all': 'الكل',
+        'catalog:tv:en': 'أجنبي',
+        'catalog:tv:ar': 'عربي',
+        'catalog:tv:tr': 'تركي',
+        'catalog:tv:ko': 'آسيوي',
+      },
+      'anime' => {
+        'catalog:anime:movie': 'أفلام أنمي',
+        'catalog:anime:tv': 'مسلسلات أنمي',
+      },
+      'turkish' => {
+        'catalog:turkish:tv': 'مسلسلات تركية',
+        'catalog:turkish:movie': 'أفلام تركية',
+      },
+      _ => {widget.categoryId: widget.title},
+    };
+  }
+
   bool _matchesKind(CatalogItem item) {
-    return widget.mediaKind == null ||
+    return selectedCategory.startsWith('catalog:') ||
+        widget.mediaKind == null ||
         MediaTaxonomy.classify(item) == widget.mediaKind;
   }
 
@@ -1412,6 +1567,73 @@ class _SearchPageState extends State<SearchPage> {
   bool loading = false;
   bool submitted = false;
   String? error;
+  bool advanced = false;
+  List<String> sources = const [];
+  String? selectedSource;
+  String? sourceError;
+  bool loadingSources = false;
+
+  Future<void> _setAdvanced(bool value) async {
+    debounce?.cancel();
+    generation += 1;
+    setState(() {
+      advanced = value;
+      items = const [];
+      submitted = false;
+      loading = false;
+      error = null;
+    });
+    if (!value || sources.isNotEmpty || loadingSources) return;
+    setState(() {
+      loadingSources = true;
+      sourceError = null;
+    });
+    try {
+      final available = await widget.api.explorationSources();
+      if (!mounted) return;
+      setState(() {
+        sources = available;
+        loadingSources = false;
+        sourceError = available.isEmpty
+            ? 'لا توجد مصادر بحث متاحة حاليًا'
+            : null;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          loadingSources = false;
+          sourceError = 'تعذر تحميل المصادر. أعد المحاولة.';
+        });
+      }
+    }
+  }
+
+  String _sourceLabel(String id) {
+    const names = <String, String>{
+      'akwam': 'أكوام',
+      'akoam': 'أكوام',
+      'mycima': 'ماي سيما',
+      'cimanow': 'سيما ناو',
+      'shahid4u': 'شاهد فور يو',
+      'moviztime': 'موفيز تايم',
+      'egydead': 'إيجي ديد',
+      'arabseed': 'عرب سيد',
+      'anime4up': 'أنمي فور أب',
+      'witanime': 'ويت أنمي',
+      '3isk': 'قصة عشق',
+      'alooy': 'ألوي',
+      'laroza': 'لاروزا',
+      '3cktv': 'ثري سيك',
+      'qfilm': 'كيو فيلم',
+      'ristoanime': 'ريستو أنمي',
+      'ipauniverse': 'آي بي إيه',
+      'mewsry': 'مصري',
+    };
+    String rename(String value) =>
+        value.isEmpty ? '' : 'ظ${value.substring(1)}';
+    return '${rename(id)} - ${rename(names[id] ?? id)}';
+  }
+
   Timer? debounce;
   int generation = 0;
 
@@ -1442,7 +1664,14 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> run([String? requested]) async {
     final q = (requested ?? query.text).trim();
-    if (q.isEmpty) return;
+    if (q.length < 2 || q.length > 120) return;
+    if (advanced && selectedSource == null) {
+      setState(() {
+        error = 'حدد المصدر أولًا للبحث المتقدم';
+        submitted = true;
+      });
+      return;
+    }
     final request = ++generation;
     setState(() {
       loading = true;
@@ -1450,7 +1679,9 @@ class _SearchPageState extends State<SearchPage> {
       error = null;
     });
     try {
-      final result = await widget.api.search(q);
+      final result = advanced
+          ? await widget.api.explore(q, selectedSource!)
+          : await widget.api.searchTmdb(q);
       if (!mounted || request != generation || q != query.text.trim()) return;
       setState(() {
         items = result;
@@ -1479,11 +1710,63 @@ class _SearchPageState extends State<SearchPage> {
           decoration: InputDecoration(
             hintText: 'ابحث عن فيلم أو مسلسل',
             suffixIcon: IconButton(
+              key: const Key('search-submit'),
               onPressed: loading ? null : () => run(),
               icon: const Icon(Icons.search),
             ),
           ),
         ),
+        const SizedBox(height: 10),
+        SwitchListTile.adaptive(
+          key: const Key('search-advanced-toggle'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('بحث متقدم — استكشاف'),
+          subtitle: const Text('البحث من مصدر تختاره'),
+          value: advanced,
+          onChanged: _setAdvanced,
+        ),
+        if (advanced) ...[
+          if (loadingSources) const LinearProgressIndicator(),
+          if (sourceError != null)
+            Row(
+              children: [
+                Expanded(child: Text(sourceError!)),
+                TextButton(
+                  onPressed: () => _setAdvanced(true),
+                  child: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ),
+          if (sources.isNotEmpty)
+            DropdownButtonFormField<String>(
+              key: const Key('search-explore-source'),
+              initialValue: selectedSource,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'المصدر'),
+              items: sources
+                  .map(
+                    (source) => DropdownMenuItem(
+                      value: source,
+                      child: Text(
+                        _sourceLabel(source),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                debounce?.cancel();
+                generation += 1;
+                setState(() {
+                  selectedSource = value;
+                  items = const [];
+                  submitted = false;
+                  loading = false;
+                  error = null;
+                });
+              },
+            ),
+        ],
         if (loading) const LinearProgressIndicator(),
         const SizedBox(height: 10),
         Expanded(

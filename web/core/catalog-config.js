@@ -1,34 +1,8 @@
-// =====================================================================
-// MA TV SUPREME CATEGORIES CONFIGURATION (Clean & Standardized)
-// =====================================================================
-
+// Canonical TMDB browse sections; capability-specific source browsing lives in advanced search.
 export const CinemaCategories = Object.freeze({
-  movies: Object.freeze([
-    { title: "الكل", url: "movie-foreign" },
-    { title: "أجنبي", url: "movie-foreign" },
-    { title: "عربي", url: "movie-arabic" },
-    { title: "هندي", url: "movie-indian" },
-    { title: "آسيوي", url: "movie-asian" },
-    { title: "تركي", url: "3isk-movies" },
-  ]),
-  series: Object.freeze([
-    { title: "الكل", url: "series-foreign" },
-    { title: "أجنبية", url: "series-foreign" },
-    { title: "عربية", url: "series-arabic" },
-    { title: "تركية", url: "series-turkish" },
-    { title: "آسيوية", url: "series-asian" },
-    { title: "رمضان", url: "series-ramadan" },
-  ]),
-  turkish: Object.freeze([
-    { title: "الكل", url: "3isk-latest" },
-    { title: "أحدث الحلقات (تركي)", url: "3isk-latest" },
-    { title: "مسلسلات تركية مترجمة", url: "3isk-turkish" },
-    { title: "مسلسلات تركية مدبلجة", url: "3isk-dubbed" },
-    { title: "أفلام تركية", url: "3isk-movies" },
-  ]),
-  anime: Object.freeze([
-    { title: "الكل", url: "movie-anime" },
-    { title: "أفلام أنمي", url: "movie-anime" },
-    { title: "مسلسلات أنمي", url: "series-anime" },
-  ]),
+  movies:[['catalog:movie:all','الكل'],['catalog:movie:en','أجنبي'],['catalog:movie:ar','عربي'],['catalog:movie:hi','هندي'],['catalog:movie:ko','آسيوي'],['catalog:movie:tr','تركي']],
+  series:[['catalog:tv:all','الكل'],['catalog:tv:en','أجنبي'],['catalog:tv:ar','عربي'],['catalog:tv:tr','تركي'],['catalog:tv:ko','آسيوي']],
+  anime:[['catalog:anime:movie','أفلام أنمي'],['catalog:anime:tv','مسلسلات أنمي']],
+  turkish:[['catalog:turkish:tv','مسلسلات تركية'],['catalog:turkish:movie','أفلام تركية']],
 });
+for(const key of Object.keys(CinemaCategories))CinemaCategories[key].splice(0,CinemaCategories[key].length,...CinemaCategories[key].map(([url,title])=>Object.freeze({url,title})));

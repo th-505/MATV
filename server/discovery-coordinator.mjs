@@ -27,7 +27,7 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
         const saved = await load(job.key).catch(() => null);
         if (saved?.payload && new Date(saved.expires_at).getTime() > now())
           return { result: saved.payload, expiresAt: new Date(saved.expires_at).getTime() };
-        return { result: await discover(job.input), expiresAt: now() + ttlMs };
+        return { result: await discover(job.input, partial => { job.partialResult = partial; }), expiresAt: now() + ttlMs };
       }).then(async ({ result, expiresAt }) => {
         job.result = result;
         job.expiresAt = expiresAt;
@@ -58,12 +58,13 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
   }
   function snapshot(job) {
     return { key: job.key, state: job.state, expiresAt: job.expiresAt || null,
-      ...(job.state === 'failed' ? { error: job.error } : {}) };
+      ...(job.state === 'failed' ? { error: job.error } : {}),
+      ...(job.state === 'ready' ? {result:job.result} : job.partialResult ? {result:job.partialResult} : {}) };
   }
   function status(input) {
     evictExpired();
     const job = jobs.get(keyOf(input));
-    return job ? { ...snapshot(job), ...(job.state === 'ready' ? { result: job.result } : {}) } : { state: 'missing' };
+    return job ? { ...snapshot(job), ...(job.state === 'ready' ? { result: job.result } : job.partialResult ? { result: job.partialResult } : {}) } : { state: 'missing' };
   }
   function evictExpired() {
     const current = now();

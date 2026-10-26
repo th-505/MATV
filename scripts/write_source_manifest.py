@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write provenance metadata beside a MA TV release artifact."""
+"""Write provenance metadata beside a T-A-TV release artifact."""
 import argparse
 import json
 import re
@@ -30,7 +30,7 @@ def main() -> None:
     version, build = match.groups()
     record = {
         "schema_version": 1,
-        "product": "MA TV OFFICIAL",
+        "product": "T-A-TV",
         "version": version,
         "build": int(build),
         "target": args.target,

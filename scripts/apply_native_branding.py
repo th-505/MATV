@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate deterministic MA TV OFFICIAL native, desktop and web branding after `flutter create`.
+"""Generate deterministic T-A-TV native, desktop and web branding after `flutter create`.
 
-The approved MA TV identity uses charcoal surfaces and a gold M/play mark.
+The approved T-A-TV identity uses charcoal surfaces and a gold M/play mark.
 No bundled font or third-party image dependency is required.
 """
 from __future__ import annotations
@@ -142,7 +142,7 @@ def apply_android(root: Path):
 <domain-config cleartextTrafficPermitted="true"><domain includeSubdomains="false">127.0.0.1</domain><domain includeSubdomains="false">localhost</domain></domain-config>
 </network-security-config>''', encoding="utf-8")
         text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
-        text = re.sub(r'android:label="[^"]*"', 'android:label="MA TV"', text, count=1)
+        text = re.sub(r'android:label="[^"]*"', 'android:label="T-A-TV"', text, count=1)
         manifest.write_text(text, encoding="utf-8")
 
 
@@ -188,8 +188,8 @@ def apply_ios(root: Path):
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
         data.setdefault("NSAppTransportSecurity", {})["NSAllowsLocalNetworking"] = True
-        data["CFBundleDisplayName"] = "MA TV"
-        data["CFBundleName"] = "MA TV"
+        data["CFBundleDisplayName"] = "T-A-TV"
+        data["CFBundleName"] = "T-A-TV"
         data["UIFileSharingEnabled"] = True
         data["LSSupportsOpeningDocumentsInPlace"] = True
         with plist.open("wb") as fh:
@@ -207,11 +207,11 @@ def apply_web(root: Path):
     if manifest.exists():
         data = json.loads(manifest.read_text(encoding="utf-8"))
         data.update({
-            "name": "MA TV OFFICIAL",
-            "short_name": "MA TV",
+            "name": "T-A-TV",
+            "short_name": "T-A-TV",
             "background_color": "#07090b",
             "theme_color": "#07090b",
-            "description": "MA TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
+            "description": "T-A-TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
         })
         manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -229,14 +229,14 @@ def apply_windows(root: Path):
     main=windows/'runner/main.cpp'
     if main.exists():
         text=main.read_text()
-        text=re.sub(r'(?m)^([ \t]*if \(!window\.Create\().*?\)\)\s*\{',r'\1L"MA TV", origin, size)) {',text,count=1)
+        text=re.sub(r'(?m)^([ \t]*if \(!window\.Create\().*?\)\)\s*\{',r'\1L"T-A-TV", origin, size)) {',text,count=1)
         main.write_text(text)
     rc=windows/'runner/Runner.rc'
     if rc.exists():
         text=rc.read_text()
         for key in ('CompanyName','FileDescription','ProductName'):
             pattern=r'(?m)^([ \t]*VALUE "'+re.escape(key)+r'", ).*$'
-            text=re.sub(pattern,lambda match: match.group(1)+'"MA TV" "\\0"',text)
+            text=re.sub(pattern,lambda match: match.group(1)+'"T-A-TV" "\\0"',text)
         rc.write_text(text)
 
 
@@ -248,8 +248,8 @@ def apply_macos(root: Path):
     if plist.exists():
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
-        data["CFBundleDisplayName"] = "MA TV"
-        data["CFBundleName"] = "MA TV"
+        data["CFBundleDisplayName"] = "T-A-TV"
+        data["CFBundleName"] = "T-A-TV"
         with plist.open("wb") as fh:
             plistlib.dump(data, fh, sort_keys=False)
 

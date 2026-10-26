@@ -35,6 +35,7 @@ class DetailsPage extends StatefulWidget {
 
 class _DetailsPageState extends State<DetailsPage> {
   late Future<TitleDetails> future;
+  int selectedSeason = 1;
   late final DownloadService _downloads;
   late final bool _ownsDownloads;
   final Set<String> _activeDownloads = <String>{};
@@ -336,6 +337,30 @@ class _DetailsPageState extends State<DetailsPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                if (details.availableSeasons.length > 1 &&
+                    widget.item.ref.startsWith('tmdb:tv:'))
+                  DropdownButton<int>(
+                    key: const Key('title-season-selector'),
+                    value: details.availableSeasons.contains(selectedSeason)
+                        ? selectedSeason
+                        : details.availableSeasons.first,
+                    items: [
+                      for (final number in details.availableSeasons)
+                        DropdownMenuItem(
+                          value: number,
+                          child: Text('الموسم $number'),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        selectedSeason = value;
+                        future = widget.api.details(
+                          '${widget.item.ref}:s$value:e1',
+                        );
+                      });
+                    },
+                  ),
                 if (details.hasEpisodes) ...[
                   Text(
                     'الحلقات',
@@ -364,7 +389,8 @@ class _DetailsPageState extends State<DetailsPage> {
                       onCancelDownload: () => _cancelDownload(key),
                     );
                   }),
-                ] else if (details.canPlay) ...[
+                ] else if (details.canPlay ||
+                    widget.item.ref.startsWith('tmdb:movie:')) ...[
                   Card(
                     child: ListTile(
                       focusNode: _directPlayFocus,

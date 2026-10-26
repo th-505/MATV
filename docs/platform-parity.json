@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "product": "T-A-TV",
+  "scope": "source_contract_not_release_certification",
+  "navigation": [
+    {
+      "id": "home",
+      "label": "الرئيسية",
+      "web_hash": "#home"
+    },
+    {
+      "id": "movies",
+      "label": "أفلام",
+      "web_hash": "#movies"
+    },
+    {
+      "id": "series",
+      "label": "مسلسلات",
+      "web_hash": "#series"
+    },
+    {
+      "id": "anime",
+      "label": "أنمي",
+      "web_hash": "#anime"
+    },
+    {
+      "id": "turkish",
+      "label": "تركي",
+      "web_hash": "#turkish"
+    },
+    {
+      "id": "search",
+      "label": "البحث",
+      "web_hash": "#search"
+    },
+    {
+      "id": "live",
+      "label": "البث المباشر",
+      "web_hash": "#live"
+    },
+    {
+      "id": "favorites",
+      "label": "المفضلة",
+      "web_hash": "#favorites"
+    },
+    {
+      "id": "settings",
+      "label": "الإعدادات",
+      "web_hash": "#settings"
+    }
+  ],
+  "aliases": {
+    "explore": {
+      "destination": "search",
+      "open_advanced": true
+    }
+  },
+  "navigation_layout": {
+    "rtl": true,
+    "sidebar_side": "right",
+    "permanent_min_width": 900,
+    "native_tv_and_desktop_permanent": true,
+    "narrow": "right_drawer_with_floating_menu_button",
+    "topbar": false,
+    "bottom_navigation": false,
+    "search_own_page": true,
+    "explore_inside_search_advanced": true
+  },
+  "theme": {
+    "background": "#07090b",
+    "surface": "#0d1117",
+    "elevated": "#121824",
+    "accent": "#e8bd75",
+    "accent_light": "#f7d594",
+    "accent_dark": "#b88b3e",
+    "text": "#ffffff",
+    "secondary_text": "#94a3b8"
+  },
+  "features": {
+    "catalog": "tmdb_metadata",
+    "source_discovery": "background_bounded_parallel",
+    "search": "dedicated_page",
+    "advanced_explore": "explicit_single_source",
+    "source_pinning": "no_silent_provider_switch",
+    "favorites": "user_private",
+    "watch_activity_retention_days": 7
+  },
+  "playback": {
+    "primary_formats": [
+      "mp4",
+      "hls"
+    ],
+    "hls_extension": "m3u8",
+    "direct_media_required": true,
+    "iframe_as_direct_media": false,
+    "native_engine": "media_kit",
+    "web_engine": "browser_mp4_or_hls",
+    "signed_urls_in_frontend_config": false,
+    "server_only_credentials": [
+      "GEMINI_API_KEY",
+      "GEMINI_API_KEY_BACKUP",
+      "SUPABASE_SECRET_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY"
+    ]
+  },
+  "shared_contract_sources": {
+    "web": "web/core/ui-contract.js",
+    "flutter": "flutter_app/lib/src/ui_contract.dart"
+  },
+  "platforms": [
+    {
+      "id": "web",
+      "source": "index.html",
+      "scaffold": "manifest.json",
+      "delivery": "static_html_pwa",
+      "build_recipe": null,
+      "artifact_present": true,
+      "artifact": "index.html",
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "flutter_web",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": "flutter_app/web/index.html",
+      "delivery": "generated_web_bundle",
+      "build_recipe": ".github/workflows/flutter-web.yml",
+      "artifact_present": true,
+      "artifact": "app/main.dart.js",
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "android_mobile",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": null,
+      "delivery": "generated_scaffold_apk",
+      "build_recipe": ".github/workflows/mobile-trial.yml",
+      "target_define": "mobile",
+      "artifact_present": false,
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "android_tv",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": null,
+      "delivery": "generated_scaffold_apk",
+      "build_recipe": ".github/workflows/mobile-trial.yml",
+      "target_define": "tv",
+      "manifest_transform": "scripts/configure_tv_manifest.py",
+      "artifact_present": false,
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "ios",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": null,
+      "delivery": "generated_scaffold_unsigned_ipa",
+      "build_recipe": ".github/workflows/mobile-trial.yml",
+      "target_define": "ios",
+      "artifact_present": false,
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "windows",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": "flutter_app/windows/CMakeLists.txt",
+      "delivery": "native_exe_installer_zip",
+      "build_recipe": ".github/workflows/mobile-trial.yml",
+      "target_define": "desktop",
+      "artifact_present": false,
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "macos",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": null,
+      "delivery": "generated_scaffold_unsigned_dmg",
+      "build_recipe": ".github/workflows/mobile-trial.yml",
+      "target_define": "desktop",
+      "artifact_present": false,
+      "installed_or_live_verified": false
+    },
+    {
+      "id": "linux",
+      "source": "flutter_app/lib/main.dart",
+      "scaffold": null,
+      "delivery": "not_configured",
+      "build_recipe": null,
+      "target_define": "desktop",
+      "artifact_present": false,
+      "installed_or_live_verified": false
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "NAV-DESKTOP",
+      "targets": [
+        "web",
+        "windows",
+        "macos"
+      ],
+      "steps": "At width 1440, right sidebar shows every route once; keyboard Enter opens its destination without a topbar/bottom navigation."
+    },
+    {
+      "id": "NAV-MOBILE",
+      "targets": [
+        "web",
+        "android_mobile",
+        "ios"
+      ],
+      "steps": "At width 390, floating menu opens right drawer; choosing search closes it; Escape/back closes drawer and returns focus to menu."
+    },
+    {
+      "id": "NAV-TV",
+      "targets": [
+        "android_tv"
+      ],
+      "steps": "Using only D-pad and Select, reach every sidebar destination; focus is visible and remains reachable after returning from player."
+    },
+    {
+      "id": "SEARCH-OWN-PAGE",
+      "targets": [
+        "web",
+        "android_mobile",
+        "android_tv",
+        "ios",
+        "windows",
+        "macos"
+      ],
+      "steps": "Search is a standalone page; normal search does not require choosing a provider; advanced exploration expands inside it."
+    },
+    {
+      "id": "EXPLORE-PIN",
+      "targets": [
+        "web",
+        "android_mobile",
+        "android_tv",
+        "ios",
+        "windows",
+        "macos"
+      ],
+      "steps": "Choose one source in advanced exploration; a failure shows that source unavailable; no results from another source appear."
+    },
+    {
+      "id": "PLAYER-RESUME",
+      "targets": [
+        "web",
+        "android_mobile",
+        "android_tv",
+        "ios",
+        "windows",
+        "macos"
+      ],
+      "steps": "Play an authorized MP4 and HLS fixture; switch quality/source explicitly, preserve title/season/episode and timeline; reject iframe-only candidate as direct media."
+    },
+    {
+      "id": "THEME-RTL",
+      "targets": [
+        "web",
+        "android_mobile",
+        "android_tv",
+        "ios",
+        "windows",
+        "macos"
+      ],
+      "steps": "Compare dark surfaces/gold highlights and RTL order at phone, desktop and TV sizes; no horizontal overflow; reduced motion and visible focus remain usable."
+    }
+  ],
+  "release_gate": {
+    "requires": [
+      "same_source_commit",
+      "same_api_base",
+      "artifact_checksum",
+      "architecture_validation",
+      "device_or_browser_acceptance"
+    ],
+    "source_checks_are_build_proof": false,
+    "old_app_bundle_rebuilt_in_this_task": false
+  }
+}

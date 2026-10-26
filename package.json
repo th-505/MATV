@@ -11,7 +11,8 @@
     "test:phase2": "node scripts/phase2_provider_test.mjs",
     "test:alooy": "node scripts/alooy_provider_test.mjs",
     "test:edge": "node scripts/edge_resolver_test.mjs && node scripts/edge_registry.mjs && node scripts/match_edge_test.mjs && node scripts/match_edge_facade_test.mjs && node scripts/laroza_edge_test.mjs && node scripts/edge_attached_subtitle_test.mjs",
-    "test:continuation": "node --test tests/content-discovery.test.mjs tests/discovery-audit.test.mjs tests/discovery-coordinator.test.mjs tests/exploration-library.test.mjs tests/exploration-store.test.mjs tests/tmdb-failover.test.mjs && node scripts/media_audit_test.mjs && node scripts/pinned_source_test.mjs && python3 scripts/provider_inventory.py --check && node scripts/tmdb_catalog_security_test.mjs && node scripts/explore_http_test.mjs && node scripts/providers_unit_and_integration_test.mjs"
+    "test:continuation": "node --test tests/content-discovery.test.mjs tests/discovery-audit.test.mjs tests/discovery-coordinator.test.mjs tests/exploration-library.test.mjs tests/exploration-store.test.mjs tests/tmdb-failover.test.mjs && node scripts/media_audit_test.mjs && node scripts/pinned_source_test.mjs && python3 scripts/provider_inventory.py --check && node scripts/tmdb_catalog_security_test.mjs && node scripts/explore_http_test.mjs && node scripts/providers_unit_and_integration_test.mjs",
+    "test:unified": "node --test tests/*.test.mjs && node scripts/ui_shell_test.mjs && node scripts/metadata_ui_test.mjs && python3 scripts/platform_parity_test.py"
   },
   "engines": {
     "node": ">=22"

@@ -1,3 +1,4 @@
+import 'support/shell_navigation.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -43,107 +44,140 @@ class _RequestCountingApi extends MitvApi {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('only selected sections request data and revisits preserve state',
-      (tester) async {
-    final api = _RequestCountingApi();
-    final store = await LocalLibraryStore.create();
-    addTearDown(api.close);
-    addTearDown(store.dispose);
-    await tester.pumpWidget(MaterialApp(home: Shell(store: store, api: api)));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'only selected sections request data and revisits preserve state',
+    (tester) async {
+      final api = _RequestCountingApi();
+      final store = await LocalLibraryStore.create();
+      addTearDown(api.close);
+      addTearDown(store.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Shell(store: store, api: api),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(api.matchesRequests, 0);
-    expect(api.newsRequests, 0);
-    expect(api.categoryRequests, ['3isk-latest:1']);
-    expect(find.byType(CatalogPage, skipOffstage: false), findsNothing);
+      expect(api.matchesRequests, 0);
+      expect(api.newsRequests, 0);
+      expect(api.categoryRequests, ['catalog:movie:all:1']);
+      expect(find.byType(CatalogPage, skipOffstage: false), findsNothing);
 
-    await tester.tap(find.text('الأفلام'));
-    await tester.pumpAndSettle();
-    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
-    final cinemaState = tester.state(find.byType(CatalogPage));
+      await selectShellDestination(tester, 'movies');
+      await tester.pumpAndSettle();
+      expect(api.categoryRequests, [
+        'catalog:movie:all:1',
+        'catalog:movie:all:1',
+      ]);
+      final cinemaState = tester.state(find.byType(CatalogPage));
 
-    await tester.tap(find.text('الإعدادات'));
-    await tester.pumpAndSettle();
-    expect(api.matchesRequests, 0);
-    expect(api.newsRequests, 0);
+      await selectShellDestination(tester, 'settings');
+      await tester.pumpAndSettle();
+      expect(api.matchesRequests, 0);
+      expect(api.newsRequests, 0);
 
-    await tester.tap(find.text('الأفلام'));
-    await tester.pumpAndSettle();
-    expect(tester.state(find.byType(CatalogPage)), same(cinemaState));
-    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
+      await selectShellDestination(tester, 'movies');
+      await tester.pumpAndSettle();
+      expect(tester.state(find.byType(CatalogPage)), same(cinemaState));
+      expect(api.categoryRequests, [
+        'catalog:movie:all:1',
+        'catalog:movie:all:1',
+      ]);
 
-    await tester.tap(find.text('المباشر'));
-    await tester.pumpAndSettle();
-    expect(api.matchesRequests, 1);
-    await tester.tap(find.text('الرئيسية'));
-    await tester.pumpAndSettle();
-    expect(api.matchesRequests, 1);
-    expect(api.categoryRequests, ['3isk-latest:1', 'movie-foreign:1']);
-    expect(api.newsRequests, 0);
-    expect(find.text('الأخبار'), findsNothing);
+      await selectShellDestination(tester, 'live');
+      await tester.pumpAndSettle();
+      expect(api.matchesRequests, 1);
+      await selectShellDestination(tester, 'home');
+      await tester.pumpAndSettle();
+      expect(api.matchesRequests, 1);
+      expect(api.categoryRequests, [
+        'catalog:movie:all:1',
+        'catalog:movie:all:1',
+      ]);
+      expect(api.newsRequests, 0);
+      expect(find.text('الأخبار'), findsNothing);
 
-    await tester.tap(find.text('المسلسلات'));
-    await tester.pumpAndSettle();
-    expect(api.categoryRequests.last, 'series-foreign:1');
-    await tester.tap(find.text('الأنمي'));
-    await tester.pumpAndSettle();
-    expect(api.categoryRequests.last, 'movie-anime:1');
-    expect(api.categoryRequests.length, 4);
-    await tester.tap(find.text('المسلسلات'));
-    await tester.pumpAndSettle();
-    expect(api.categoryRequests.length, 4);
+      await selectShellDestination(tester, 'series');
+      await tester.pumpAndSettle();
+      expect(api.categoryRequests.last, 'catalog:tv:all:1');
+      await selectShellDestination(tester, 'anime');
+      await tester.pumpAndSettle();
+      expect(api.categoryRequests.last, 'catalog:anime:movie:1');
+      expect(api.categoryRequests.length, 4);
+      await selectShellDestination(tester, 'series');
+      await tester.pumpAndSettle();
+      expect(api.categoryRequests.length, 4);
 
-    await tester.pumpWidget(const SizedBox());
-    expect(api.closeCalls, 0,
-        reason: 'the injected client belongs to its caller');
-  });
+      await tester.pumpWidget(const SizedBox());
+      expect(
+        api.closeCalls,
+        0,
+        reason: 'the injected client belongs to its caller',
+      );
+    },
+  );
 
-  testWidgets('match requests survive parent rebuilds while pending and ready',
-      (tester) async {
-    final api = _RequestCountingApi();
-    final pending = Completer<List<MatchItem>>();
-    api.matchesResponse = (_) => pending.future;
-    final store = await LocalLibraryStore.create();
-    addTearDown(api.close);
-    addTearDown(store.dispose);
+  testWidgets(
+    'match requests survive parent rebuilds while pending and ready',
+    (tester) async {
+      final api = _RequestCountingApi();
+      final pending = Completer<List<MatchItem>>();
+      api.matchesResponse = (_) => pending.future;
+      final store = await LocalLibraryStore.create();
+      addTearDown(api.close);
+      addTearDown(store.dispose);
 
-    Widget page() =>
-        MaterialApp(home: Scaffold(body: MatchesPage(api: api, store: store)));
-    await tester.pumpWidget(page());
-    await tester.pumpWidget(page());
-    expect(api.matchesRequests, 1);
+      Widget page() => MaterialApp(
+        home: Scaffold(
+          body: MatchesPage(api: api, store: store),
+        ),
+      );
+      await tester.pumpWidget(page());
+      await tester.pumpWidget(page());
+      expect(api.matchesRequests, 1);
 
-    pending.complete([]);
-    await tester.pumpAndSettle();
-    await tester.pumpWidget(page());
-    await tester.pumpAndSettle();
-    expect(api.matchesRequests, 1);
-    expect(find.text('لا توجد مباريات متاحة الآن'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-  });
+      pending.complete([]);
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(page());
+      await tester.pumpAndSettle();
+      expect(api.matchesRequests, 1);
+      expect(find.text('لا توجد مباريات متاحة الآن'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
-  testWidgets('match refresh is explicit and recovers a failed cached request',
-      (tester) async {
-    final api = _RequestCountingApi();
-    api.matchesResponse = (request) => request == 1
-        ? Future.error(const ApiException('FIXTURE_NETWORK_FAILURE'))
-        : Future.value([]);
-    final store = await LocalLibraryStore.create();
-    addTearDown(api.close);
-    addTearDown(store.dispose);
-    await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: MatchesPage(api: api, store: store))));
-    await tester.pumpAndSettle();
-    expect(find.text('تعذر تحميل المباريات حاليًا'), findsOneWidget);
-    expect(api.matchesRequests, 1);
+  testWidgets(
+    'match refresh is explicit and recovers a failed cached request',
+    (tester) async {
+      final api = _RequestCountingApi();
+      api.matchesResponse = (request) => request == 1
+          ? Future.error(const ApiException('FIXTURE_NETWORK_FAILURE'))
+          : Future.value([]);
+      final store = await LocalLibraryStore.create();
+      addTearDown(api.close);
+      addTearDown(store.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MatchesPage(api: api, store: store),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('تعذر تحميل المباريات حاليًا'), findsOneWidget);
+      expect(api.matchesRequests, 1);
 
-    await tester.tap(find.byKey(const Key('matches-refresh')));
-    await tester.pumpAndSettle();
-    expect(api.matchesRequests, 2);
-    expect(find.text('لا توجد مباريات متاحة الآن'), findsOneWidget);
-    await tester.pump(const Duration(minutes: 1));
-    expect(api.matchesRequests, 2,
-        reason: 'no background polling or retry loop');
-    await tester.pumpWidget(const SizedBox());
-  });
+      await tester.tap(find.byKey(const Key('matches-refresh')));
+      await tester.pumpAndSettle();
+      expect(api.matchesRequests, 2);
+      expect(find.text('لا توجد مباريات متاحة الآن'), findsOneWidget);
+      await tester.pump(const Duration(minutes: 1));
+      expect(
+        api.matchesRequests,
+        2,
+        reason: 'no background polling or retry loop',
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 }

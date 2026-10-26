@@ -1,4 +1,4 @@
-name: MA TV unified six-target release
+name: T-A-TV unified six-target release
 
 on:
   push:
@@ -34,6 +34,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run test:continuation
+      - run: node --test tests/*.test.mjs
       - run: python3 scripts/native_network_config_test.py
 
   verify-api:
@@ -121,7 +123,7 @@ jobs:
           grep -q networkSecurityConfig /tmp/mitv-manifest.txt
           "$AAPT" dump badging "$APK" > /tmp/mitv-badging.txt
           grep -q "package: name='com.mitv.mitv'" /tmp/mitv-badging.txt
-          grep -q "application-label:'MA TV'" /tmp/mitv-badging.txt
+          grep -q "application-label:'T-A-TV'" /tmp/mitv-badging.txt
           grep -qx "native-code: '$EXPECTED_ABI'" /tmp/mitv-badging.txt || { cat /tmp/mitv-badging.txt; exit 1; }
           if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/mitv-badging.txt; fi
           python3 - <<'PY'
@@ -376,9 +378,9 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"MA TV {version} (build {build}), Master Sprint v2.9.\n\n"
-              "Six targets verified from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
-              "MA TV charcoal-and-gold six-tab UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
+              f"T-A-TV {version} (build {build}), Unified navigation and playback release.\n\n"
+              "Six targets packaged and checked from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
+              "T-A-TV charcoal-and-gold nine-section UI, unified native media_kit player, direct edge-resolved sources including safe Laroza extraction, timeline-aware switching, anonymous private library sync, cache cleanup and external subtitles with encoding detection and native delay controls. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
               "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
               "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"
               f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n\n"
@@ -388,4 +390,4 @@ jobs:
           VERSION="$(cat /tmp/mitv-release-version)"
           shopt -s nullglob
           ASSETS=(device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.dmg device-artifacts/*/*.sha256 device-artifacts/*/macOS-report.json device-verification.json)
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "MA TV $VERSION" --notes-file /tmp/release-notes.md "${ASSETS[@]}"
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "T-A-TV $VERSION" --notes-file /tmp/release-notes.md "${ASSETS[@]}"

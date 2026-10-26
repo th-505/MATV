@@ -1,3 +1,4 @@
+import { playbackClient, browserDirectSource } from './playback-client.js';
 import { fetchNetflixHomeShelves, fetchFullTmdbDetails, tmdbFetch, normalizeTmdbItem } from './tmdb-service.js';
 import { ProviderEndpoints } from './api-client.js';
 
@@ -209,215 +210,28 @@ export function classifyLatencyTier(ms, alive = true) {
 
 // فحص سرعة السيرفرات الحية (Ping / Latency Probe) وترتيبها من الأسرع للأبطأ
 export async function probeAndRankServers(rawServers = []) {
-  const counterByPrefix = {};
-  const normalized = rawServers.slice(0, 12).map((srv) => {
-    const providerKey = srv.provider || srv.source || srv.name || srv.url || 'ma';
-    const basePrefix = encodeProviderServerName(providerKey, 1).split('-')[0];
-    counterByPrefix[basePrefix] = (counterByPrefix[basePrefix] || 0) + 1;
-    const code = srv.code || `${basePrefix}-${counterByPrefix[basePrefix]}`;
-    const urlStr = String(srv.url || srv.embedUrl || '');
-    return {
-      ...srv,
-      code,
-      url: urlStr,
-      kind: srv.kind || (/\.(m3u8|mp4)(?:$|\?)/i.test(urlStr) ? 'direct' : 'embed')
-    };
-  }).filter(s => {
-    try {
-      const url = new URL(s.url);
-      return url.protocol === 'https:' && !url.username && !url.password && !url.port;
-    } catch (_) {
-      return false;
-    }
-  });
-
-  const probed = await Promise.all(normalized.map(async (srv) => {
-    const start = performance.now();
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2400);
-    try {
-      const targetOrigin = new URL(srv.url).origin;
-      await fetch(targetOrigin, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
-      clearTimeout(timer);
-      const ms = Math.max(28, Math.round(performance.now() - start));
-      return { ...srv, ms, alive: true, ...classifyLatencyTier(ms, true) };
-    } catch (_) {
-      clearTimeout(timer);
-      const fallbackMs = srv.ms && srv.ms < 1000 ? srv.ms : 85;
-      return { ...srv, ms: fallbackMs, alive: true, ...classifyLatencyTier(fallbackMs, true) };
-    }
+  // Origin-level no-cors requests cannot prove media health or playback speed.
+  // Preserve only measured metadata; an unmeasured server is not marked alive.
+  return rawServers.map(browserDirectSource).filter(Boolean).slice(0,12).map((srv,index)=>({
+    ...srv,code:srv.code || encodeProviderServerName(srv.provider || srv.source,index+1),
+    ms:Number.isFinite(srv.latency_ms) ? srv.latency_ms : null,
+    label:Number.isFinite(srv.latency_ms) ? `${Math.round(srv.latency_ms)}ms` : 'رابط مباشر',
   }));
-
-  // ترتيب السيرفرات بحيث التدفقات المباشرة أولاً ثم الأسرع (الأخضر)
-  return probed.sort((a, b) => {
-    const aDirect = (a.kind === 'direct' || String(a.url).includes('.m3u8') || String(a.url).includes('.mp4')) ? 0 : 1;
-    const bDirect = (b.kind === 'direct' || String(b.url).includes('.m3u8') || String(b.url).includes('.mp4')) ? 0 : 1;
-    if (aDirect !== bDirect) return aDirect - bDirect;
-    return a.ms - b.ms;
-  });
 }
-
-const EDGE_RESOLVER_BASE = 'https://matv-edge-resolver.dada1000100.workers.dev';
-
-// بناء مصفوفة السيرفرات المدمجة للعمل أو الحلقة من القواشط المحلية النقية (Direct Media 0 Ads 0 Embed)
-export async function resolveUnifiedServersForItem(item, season = 1, episode = 1, apiBase = '') {
-  const servers = [];
-  const backendBase = apiBase || (typeof ProviderEndpoints !== 'undefined' ? ProviderEndpoints?.backend : '') || 'https://matv.onrender.com';
-  const isTv = item?.mediaType === 'tv' || item?.type === 'series' || item?.is_series;
-  let tmdbId = item?.tmdbId || item?.tmdb_id || '';
-  if (!tmdbId && String(item?.id || '').startsWith('tmdb:')) {
-    tmdbId = String(item.id).split(':').pop();
-  }
-  if (!tmdbId && /^\d+$/.test(String(item?.id || ''))) {
-    tmdbId = String(item.id);
-  }
-
-  // 1. إذا كان العمل يحتوي على روابط مباشرة في بياناته
-  if (Array.isArray(item?.servers)) {
-    for (const s of item.servers) {
-      if (s?.url && (s.url.includes('.mp4') || s.url.includes('.m3u8') || s.kind === 'direct')) {
-        const prov = s.provider || s.name || 'akwam';
-        servers.push({
-          provider: prov,
-          code: s.code || encodeProviderServerName(prov, servers.length + 1),
-          url: s.url,
-          kind: 'direct',
-          downloadUrl: s.downloadUrl || s.url,
-          quality: s.quality || 'HD'
-        });
-      }
-    }
-  }
-
-  // 2. جلب السيرفرات المستخرجة من القواشط عبر Cloudflare Edge Resolver
-  const candidateRefs = [
-    ...(Array.isArray(item?.mergedRefs) ? item.mergedRefs : []),
-    item?.episodeRef,
-    item?.id,
-    item?.href,
-    item?.ref
-  ].filter(r => r && !String(r).startsWith('tmdb:') && !String(r).startsWith('work:'));
-
-  if (candidateRefs.length > 0) {
-    try {
-      const refVal = String(candidateRefs[0]).trim();
-      const refParam = refVal.includes(':')
-        ? `ref=${encodeURIComponent(refVal)}`
-        : `episode_id=${encodeURIComponent(refVal)}`;
-      const edgeRes = await fetch(`${EDGE_RESOLVER_BASE}/v1/resolve?${refParam}`, { signal: AbortSignal.timeout(8000) });
-      if (edgeRes.ok) {
-        const edgeJson = await edgeRes.json();
-        if (Array.isArray(edgeJson?.sources)) {
-          for (const s of edgeJson.sources) {
-            if (s?.url && (s.url.includes('.mp4') || s.url.includes('.m3u8') || s.kind === 'direct')) {
-              const prov = s.provider || s.provider_id || '3isk';
-              servers.push({
-                provider: prov,
-                code: encodeProviderServerName(prov, servers.length + 1),
-                url: s.url,
-                kind: 'direct',
-                downloadUrl: s.url,
-                quality: s.quality || 'HD'
-              });
-            }
-          }
-        }
-      }
-    } catch (_) {}
-  }
-
-  // 3. استخراج البث المباشر الخام من القواشط المحلية المعتمدة (أكوام، ماي سيما، إيجي ديد، عرب سيد، سيما ناو، أنمي فور أب، قصة عشق…)
-  const candidateBases = [
-    backendBase,
-    'https://matv.onrender.com',
-    'http://127.0.0.1:3000'
-  ].filter(Boolean);
-  const uniqueBases = Array.from(new Set(candidateBases));
-
-  const cleanRawTitle = String(item?.title || item?.name || item?.originalTitle || '')
-    .replace(/(فيلم|مسلسل|انمي|أنمي|مترجم|مدبلج|كامل|مشاهدة|الموسم\s*\d+|الحلقة\s*\d+|\b\d{4}\b)/gi, '')
-    .replace(/[-:_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const titleVariants = [
-    item?.title || item?.name,
-    cleanRawTitle,
-    item?.originalTitle
-  ].filter(t => t && String(t).trim().length >= 2);
-  const uniqueTitles = Array.from(new Set(titleVariants));
-
-  for (const base of uniqueBases) {
-    if (servers.length > 0) break;
-
-    for (const titleQuery of uniqueTitles) {
-      if (servers.length > 0) break;
-      try {
-        const q = new URLSearchParams({
-          id: item?.id || '',
-          title: titleQuery,
-          year: item?.year || '',
-          season: String(season),
-          episode: String(episode)
-        });
-        const res = await fetch(`${base}/api/v1/resolve?${q.toString()}`, { signal: AbortSignal.timeout(20000) });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data?.servers) && data.servers.length > 0) {
-            for (const s of data.servers) {
-              if (s?.url && (s.url.includes('.mp4') || s.url.includes('.m3u8') || s.kind === 'direct')) {
-                const prov = s.provider || s.source || 'akwam';
-                servers.push({
-                  provider: prov,
-                  code: s.code || encodeProviderServerName(prov, servers.length + 1),
-                  kind: 'direct',
-                  url: s.url,
-                  headers: s.headers || {},
-                  downloadUrl: s.downloadUrl || s.url,
-                  quality: s.quality || 'HD'
-                });
-              }
-            }
-          }
-        }
-      } catch (_) {}
-    }
-  }
-
-  // 4. تصفية صارمة نهائية: حظر أي رابط إعلاني أو إطار خارجي واقتصار القائمة 100% على الروابط المباشرة من قواشطنا
-  const cleanDirect = servers.filter(s => {
-    const u = String(s.url || '').toLowerCase();
-    if (/vidsrc|multiembed|autoembed|2embed|111movies|embed\.su|vidlink|123embed/i.test(u)) return false;
-    return s.kind === 'direct' || u.includes('.m3u8') || u.includes('.mp4');
-  });
-
-  return probeAndRankServers(cleanDirect);
+export async function resolvePlaybackForItem(item, season=1, episode=1, apiBase='', options={}) {
+  const result=await playbackClient.resolve(item,{...options,season,episode,
+    apiBase:apiBase || ProviderEndpoints.backend || 'https://matv.onrender.com'});
+  return {...result,servers:await probeAndRankServers(result.servers)};
+}
+export async function resolveUnifiedServersForItem(item, season=1, episode=1, apiBase='', options={}) {
+  return (await resolvePlaybackForItem(item,season,episode,apiBase,options)).servers;
 }
 
 // محرك البحث الموحد (Search-Fusion Engine) الذي يصفي ويدمج النتائج من القواشط + TMDb
 export async function nexusUnifiedSearch(queryText, apiBase = '') {
-  const q = String(queryText || '').trim();
-  if (!q) return [];
-
-  const [tmdbRes, scraperRes] = await Promise.allSettled([
-    tmdbFetch('/search/multi', { query: q, page: '1' }),
-    fetch(`${apiBase}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] }))
-  ]);
-
-  const rawList = [];
-  if (tmdbRes.status === 'fulfilled' && Array.isArray(tmdbRes.value?.results)) {
-    for (const item of tmdbRes.value.results) {
-      if (item.media_type === 'person') continue;
-      const norm = normalizeTmdbItem(item);
-      if (norm) rawList.push(norm);
-    }
-  }
-  if (scraperRes.status === 'fulfilled') {
-    const items = scraperRes.value?.items || scraperRes.value?.results || scraperRes.value?.data || [];
-    if (Array.isArray(items)) rawList.push(...items);
-  }
-
-  return deduplicateAndMergeCatalog(rawList);
+  const q=String(queryText || '').trim();if(!q)return [];
+  const payload=await tmdbFetch('/search/multi',{query:q,page:'1'});
+  return (payload.results || []).filter(item=>item.media_type!=='person').map(item=>normalizeTmdbItem(item)).filter(Boolean);
 }
 
 // أداة حصاد الرئيسية والمزامنة الآلية مع Supabase (Zero-Wait Home Snapshot)

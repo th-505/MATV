@@ -82,6 +82,33 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
     bool metadataOnly = false,
   }) async {
+    final canonical = RegExp(
+      r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$',
+    ).firstMatch(ref);
+    if (canonical != null) {
+      final base = 'tmdb:${canonical[1]}:${canonical[2]}';
+      final result = await _getJson('/api/v1/tmdb/details', {'ref': base});
+      final data = (result['data'] as Map).cast<String, dynamic>();
+      final normalized = <String, dynamic>{
+        ...data,
+        'plot': data['overview'],
+        'available_seasons': _list(data['seasons'])
+            .map((row) => row['season_number'])
+            .whereType<int>()
+            .where((n) => n > 0)
+            .toList(),
+        'playback_mode': 'direct',
+      };
+      if (canonical[1] == 'tv') {
+        final season = canonical[3] ?? '1';
+        final episodes = await _getJson('/api/v1/tmdb/season', {
+          'ref': base,
+          'season': season,
+        });
+        normalized['episodes'] = (episodes['data'] as Map)['episodes'];
+      }
+      return normalized;
+    }
     if (_useEdge && ref.startsWith('laroza:')) {
       final response = await _edgeJson('/v1/laroza/details', {'ref': ref});
       if (response['data'] is! Map) {
@@ -277,13 +304,21 @@ class MitvApi implements MediaRepository {
   @override
   Future<List<CatalogItem>> category(String categoryId, {int page = 1}) async {
     final generation = _cacheGeneration;
-    final json = _useEdge && categoryId.startsWith('laroza-')
+    final json = categoryId.startsWith('catalog:')
+        ? await _getJson('/api/v1/catalog', {
+            'ref': categoryId,
+            'page': '$page',
+          })
+        : _useEdge && categoryId.startsWith('laroza-')
         ? await _edgeJson('/v1/laroza/category', {
             'section': categoryId.substring(7),
             'page': '$page',
           })
         : await _getJson('/api/v1/category', {'ref': categoryId, 'p': '$page'});
     _ensureGeneration(generation);
+    if (json['has_more'] is bool) {
+      _pagination['$categoryId:$page'] = json['has_more'] as bool;
+    }
     final pagination = json['pagination'];
     if (pagination is Map && pagination['has_more'] is bool) {
       _pagination['$categoryId:$page'] = pagination['has_more'] as bool;
@@ -300,6 +335,48 @@ class MitvApi implements MediaRepository {
     final json = await _getJson('/api/v1/search', {'q': query.trim()});
     _ensureGeneration(generation);
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
+  }
+
+  /// Server capabilities are authoritative; unsupported sources are not offered.
+  Future<List<String>> explorationSources() async {
+    final json = await _getJson('/api/v1/explore/sources');
+    return _list(json['data'])
+        .where((source) => source['search'] == true && source['id'] is String)
+        .map((source) => source['id'] as String)
+        .where((id) => RegExp(r'^[a-z0-9][a-z0-9_-]{1,29}$').hasMatch(id))
+        .toSet()
+        .toList(growable: false);
+  }
+
+  Future<List<CatalogItem>> explore(String query, String provider) async {
+    final generation = _cacheGeneration;
+    final q = query.trim();
+    if (q.length < 2 ||
+        q.length > 120 ||
+        !RegExp(r'^[a-z0-9][a-z0-9_-]{1,29}$').hasMatch(provider)) {
+      throw const ApiException('INVALID_EXPLORE_INPUT');
+    }
+    final json = await _getJson('/api/v1/explore', {
+      'q': q,
+      'provider': provider,
+    });
+    _ensureGeneration(generation);
+    // A source-pinned search must not merge results with another provider.
+    return _list(json['items'])
+        .map((raw) {
+          final item = _catalogItem(raw);
+          final selected = raw['selected_source'] is String
+              ? raw['selected_source'] as String
+              : provider;
+          final pinned = item.copyWith(
+            source: selected,
+            sourceRefs: {selected: item.ref},
+          );
+          _catalogGroups[item.ref] = pinned;
+          return pinned;
+        })
+        .where((item) => item.ref.isNotEmpty)
+        .toList(growable: false);
   }
 
   Future<bool> tmdbAvailable() async {
@@ -448,6 +525,85 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
   }) async {
     final generation = _cacheGeneration;
+    final canonical = RegExp(
+      r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$',
+    ).firstMatch(ref);
+    if (canonical != null) {
+      final base = 'tmdb:${canonical[1]}:${canonical[2]}';
+      final season = canonical[1] == 'tv' ? canonical[3] ?? '1' : '0';
+      final episode = canonical[1] == 'tv' ? canonical[4] ?? '1' : '0';
+      final started = DateTime.now();
+      var job =
+          (await _getJson(
+                '/api/v1/discovery/start',
+                {
+                  'ref': base,
+                  'title': 'TMDB',
+                  'season': season,
+                  'episode': episode,
+                },
+                const Duration(seconds: 12),
+                'POST',
+              ))['data']
+              as Map;
+      while (DateTime.now().difference(started) < const Duration(seconds: 90)) {
+        _ensureGeneration(generation);
+        final result = job['result'];
+        final sources = result is Map ? result['servers'] : result;
+        if (sources is List && sources.isNotEmpty) {
+          final expires = DateTime.now()
+              .add(const Duration(minutes: 1))
+              .toIso8601String();
+          final normalized = [
+            for (final raw in sources.whereType<Map>())
+              <String, dynamic>{
+                ...raw,
+                'media_type': '${raw['url']}'.contains('.m3u8')
+                    ? 'm3u8'
+                    : 'mp4',
+                'playback_mode': 'direct',
+                'expires_at': raw['expires_at'] ?? expires,
+              },
+          ];
+          final first = normalized.first;
+          final details = TitleDetails.fromJson({
+            'title': _catalogGroups[base]?.title ?? 'التشغيل',
+            'poster': '',
+            'episodes': [],
+            'media_url': first['url'],
+            'media_type': '${first['url']}'.contains('.m3u8') ? 'm3u8' : 'mp4',
+            'playback_mode': 'direct',
+            'media_sources': normalized,
+            'expires_at': expires,
+            'headers': first['headers'] ?? {},
+          });
+          _registerDirectMetadata(details);
+          return details;
+        }
+        if (job['state'] == 'ready') {
+          throw ApiException(
+            result is Map
+                ? '${result['reason'] ?? 'NO_PLAYABLE_SOURCE'}'
+                : 'NO_PLAYABLE_SOURCE',
+          );
+        }
+        if (job['state'] == 'failed' || job['state'] == 'busy') {
+          throw ApiException('${job['error'] ?? 'DISCOVERY_BUSY'}');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        job =
+            (await _getJson('/api/v1/discovery/status', {
+                  'ref': base,
+                  'season': season,
+                  'episode': episode,
+                }))['data']
+                as Map;
+        if (job['state'] == 'missing') {
+          throw const ApiException('DISCOVERY_EXPIRED');
+        }
+      }
+      throw const ApiException('DISCOVERY_STILL_RUNNING');
+    }
     if (_useEdge &&
         [
           '3isk:',
@@ -822,12 +978,21 @@ class MitvApi implements MediaRepository {
     String path, [
     Map<String, String>? query,
     Duration timeout = const Duration(seconds: 30),
+    String method = 'GET',
   ]) async {
     final generation = _cacheGeneration;
     final uri = _baseUri.replace(path: path, queryParameters: query);
-    final response = await _client
-        .get(uri, headers: const {'accept': 'application/json'})
-        .timeout(timeout);
+    final response =
+        await (method == 'POST'
+                ? _client.post(
+                    uri,
+                    headers: const {'accept': 'application/json'},
+                  )
+                : _client.get(
+                    uri,
+                    headers: const {'accept': 'application/json'},
+                  ))
+            .timeout(timeout);
     _ensureGeneration(generation);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException('HTTP ${response.statusCode}');
@@ -839,7 +1004,8 @@ class MitvApi implements MediaRepository {
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('INVALID_JSON');
     }
-    if (decoded['status'] != 'success') {
+    if (decoded['status'] != 'success' &&
+        !(method == 'POST' && decoded['status'] == 'accepted')) {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
     }
     return decoded;
