@@ -1,0 +1,9 @@
+{
+  "api_base": "https://matv.onrender.com",
+  "build": 105,
+  "product": "Najd TV",
+  "schema_version": 1,
+  "source_commit": "6fd336c2cb95a264b0347fd63608afce0d6e3f86",
+  "target": "web",
+  "version": "1.1.5"
+}
