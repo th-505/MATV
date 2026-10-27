@@ -43,16 +43,9 @@ jobs:
       - name: Install locked browser-test dependencies
         timeout-minutes: 3
         run: npm ci
-      - name: Install codec fixture tools
-        timeout-minutes: 3
-        run: |
-          if ! command -v ffmpeg; then sudo apt-get update -qq && sudo apt-get install -y ffmpeg; fi
-      - name: Generate bounded local codec fixtures
+      - name: Prepare hash-verified offline MP4 and HLS fixtures
         timeout-minutes: 1
-        run: |
-          mkdir -p /tmp/matv-codec-fixtures
-          ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=160x90:rate=10 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 3 -c:v libx264 -c:a aac -movflags +faststart -y /tmp/matv-codec-fixtures/sample.mp4
-          ffmpeg -hide_banner -loglevel error -i /tmp/matv-codec-fixtures/sample.mp4 -c copy -hls_time 1 -hls_segment_filename /tmp/matv-codec-fixtures/master%d.ts -y /tmp/matv-codec-fixtures/master.m3u8
+        run: python3 scripts/prepare_codec_fixtures.py
       - name: Verify source episode and output escaping in Chromium
         timeout-minutes: 2
         env:
