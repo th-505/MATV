@@ -1,9 +1,9 @@
 {
   "api_base": "https://matv.onrender.com",
-  "build": 100,
+  "build": 102,
   "product": "T-A-TV",
   "schema_version": 1,
-  "source_commit": "1e06f1a04c1fdd92165729b101883c1ef2c03434",
+  "source_commit": "724589e6398273cfd83532719177077af066c5b3",
   "target": "web",
-  "version": "1.1.0"
+  "version": "1.1.2"
 }
