@@ -17,7 +17,7 @@ test('AI eligible required; probe failures fail closed without copying expected 
 });
 test('only direct approved streams survive; rejected provider cannot discard another',async()=>{
   const review=createDiscoveryAudit({probe:async()=>({playable:true}),auditor:{status:()=>({}),audit:async()=>({eligible:true,id:'good'})}});
-  const result=await review.review([candidate,{url:'https://example.com/player?file=.mp4'}],{});
+  const result=await review.review([candidate,{url:'https://example.com/player?file=.mp4'}],{title:'Example',year:2025});
   assert.equal(result.approved.length,1);assert.equal(result.approved[0].identity_verified,true);
 });
 
@@ -30,4 +30,12 @@ test('AI outage does not block a technically valid exact metadata match, but nev
  assert.equal((await review.review([{...source,observed_identity:{...source.observed_identity,episode:3}}],expected)).approved.length,0);
  const veto=createDiscoveryAudit({probe:async()=>({playable:true}),auditor:{status:()=>({}),audit:async()=>({eligible:false,aiReviewed:true,decision:'mismatch',reasons:['wrong content']})}});
  assert.equal((await veto.review([source],expected)).approved.length,0);
+});
+
+
+test('an AI matched verdict cannot override missing or conflicting canonical identity',async()=>{
+ const review=createDiscoveryAudit({probe:async()=>({playable:true,statusCode:200,container:'mp4'}),auditor:{status:()=>({}),audit:async()=>({eligible:true,id:'optimistic-ai'})}});
+ for(const observed of [{title:'Other title',year:2025},{title:'Example',year:2024},{title:'Example'}]){
+  assert.equal((await review.review([{...candidate,observed_identity:observed}],{title:'Example',year:2025})).approved.length,0);
+ }
 });

@@ -40,7 +40,7 @@ export function createDiscoveryAudit({ auditor = createMediaAuditor(), probe = p
       const auditUnavailable=!audit.aiReviewed && audit.reasons?.some(reason=>
         /^(AI_NOT_CONFIGURED|GEMINI_(?:TIMEOUT|REQUEST_FAILED|CREDENTIALS_OR_QUOTA_REJECTED)|DAILY_BUDGET_EXHAUSTED|AUDIT_BUSY)$/.test(reason));
       const metadataVerified=identityComplete && auditUnavailable && candidate.technical_probe?.playable===true;
-      if (audit.eligible || metadataVerified) approved.push({ ...candidate, identity_verified: audit.eligible,
+      if (identityComplete && candidate.technical_probe?.playable===true && (audit.eligible || metadataVerified)) approved.push({ ...candidate, identity_verified: audit.eligible,
         audit_id: audit.id, audit_pending:metadataVerified, verification_basis:metadataVerified?'exact-source-metadata-and-probe':'gemini-assisted' });
       else quarantine.push({ provider: candidate.provider, audit_id: audit.id,
         decision: audit.decision, reasons: audit.reasons });

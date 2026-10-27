@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {diagnosticsAuthorized} from './diagnostics/search-trace.mjs';
 import {createRateLimiter,getClientAddress} from './hardening.mjs';
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf','.otf':'font/otf','.woff2':'font/woff2','.bin':'application/octet-stream','.frag':'application/octet-stream'};
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf','.otf':'font/otf','.woff2':'font/woff2','.bin':'application/octet-stream','.frag':'application/octet-stream','.txt':'text/plain; charset=utf-8','.z':'application/octet-stream'};
 const digest=x=>createHash('sha256').update(x).digest('hex');
 export function createInternalWeb({root=path.resolve('internal_web'),now=Date.now,token=()=>process.env.DIAGNOSTICS_TOKEN||''}={}){
  const sessions=new Map(),rate=createRateLimiter({windowMs:60000,max:8});
@@ -36,7 +36,7 @@ export function createInternalWeb({root=path.resolve('internal_web'),now=Date.no
   if(!authorized(req)){res.writeHead(401,{'Content-Type':'text/html; charset=utf-8'});res.end(req.method==='HEAD'?'':login);return true}
   if(url.pathname==='/internal'){res.writeHead(303,{Location:'/internal/'});res.end();return true}
   let relative;try{relative=decodeURIComponent(url.pathname.slice('/internal/'.length))||'index.html'}catch{res.writeHead(400);res.end();return true}
-  const file=path.resolve(root,relative),ext=path.extname(file);
+  const file=path.resolve(root,relative),ext=path.extname(file).toLowerCase();
   if(relative.includes('\0')||relative.includes('\\')||!file.startsWith(root+path.sep)||!mime[ext]){res.writeHead(404);res.end();return true}
   let stat;try{stat=await fs.promises.lstat(file)}catch{res.writeHead(404);res.end();return true}
   if(!stat.isFile()||stat.isSymbolicLink()){res.writeHead(404);res.end();return true}
