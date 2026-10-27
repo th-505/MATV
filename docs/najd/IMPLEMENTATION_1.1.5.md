@@ -32,3 +32,13 @@ Do not tick off a stage based only on code presence or a successful build. Recor
 - Public GitHub Pages serves the installer landing page. `/app/`, `Player.html`, `albasri-cinema.html` and `internal_web/index.html` return404; old source is preserved in Git, excluded from public site publishing.
 - Real Render search for the supplied `3cktv` / `وادي الذئاب` example returns503 with `ACCESS_BLOCKED`, not a false absence. The authenticated trace records receipt, DNS, upstream send/response, parser/error and response completion. GitHub's separate network successfully obtained results from that provider; network location matters, so this is not certified as fixed playback.
 - The diagnostics credential was rotated after a tool error exposed its old value. The replacement is outside Git and is active; never include either key in reports.
+
+## Published delivery
+
+Release [v1.1.5](https://github.com/th-505/MATV/releases/tag/v1.1.5) and [workflow40571556739](https://github.com/th-505/MATV/actions/runs/40571556739) succeeded. All six targets bind the same immutable source `6fd336c2cb95a264b0347fd63608afce0d6e3f86`, version1.1.5/build105, and API. The public release contains five native platform packages (plus Windows portable ZIP), checksums and verification reports; the Web ZIP is excluded.
+
+The final internal Web bundle is deployed and live on Render. Its authenticated source manifest matches that same source; unauthenticated compiled-JS and dashboard requests return401. Main contains the generated verified Web bundle as a separate deployment commit. A final server-only MIME correction serves Flutter's extensionless `assets/NOTICES` behind the same authentication, preserving the license page without changing native binaries.
+
+The macOS report verifies both ARM64 and x86_64, with ad-hoc signing and no notarization. iOS remains externally signed; Android update-key continuity is not confirmed. Physical-device playback remains for user/device validation, and network-blocked providers are not represented as working.
+
+See `RELEASE_1.1.5_RECEIPT.json` for exact hashes, sizes, targets and runtime checks. Earlier “pending release” statements above describe the sequence of checkpoints and are superseded by this delivery record.

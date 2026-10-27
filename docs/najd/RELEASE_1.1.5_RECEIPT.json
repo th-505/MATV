@@ -1,0 +1,138 @@
+{
+  "product": "Najd TV",
+  "version": "1.1.5",
+  "build": 105,
+  "verified_at_utc": "2026-10-27T19:58:20.434640+00:00",
+  "release_url": "https://github.com/th-505/MATV/releases/tag/v1.1.5",
+  "workflow_url": "https://github.com/th-505/MATV/actions/runs/40571556739",
+  "source_commit": "6fd336c2cb95a264b0347fd63608afce0d6e3f86",
+  "web_bundle_deploy_commit": "fd75153d4142b42cb584da5419b4cbc1e2afdb49",
+  "render_verified_live_deploy": "dep-dbgg2i3ncjis73c59is0",
+  "targets": [
+    "android-mobile-arm64",
+    "android-tv-armv7",
+    "ios-unsigned-arm64",
+    "macos-native",
+    "web",
+    "windows-x64"
+  ],
+  "artifacts": [
+    {
+      "file": "Najd-TV-Android-Mobile-ARM64.apk",
+      "target": "android-mobile-arm64",
+      "architecture": "arm64-v8a",
+      "sha256": "feb3894e68409358466c2bc686afdfd29bbeb3ba6af279ca4216738341d684ed",
+      "bytes": 35603011,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Android-TV-ARM32.apk",
+      "target": "android-tv-armv7",
+      "architecture": "armeabi-v7a",
+      "sha256": "72d55652fa3999da998c2da1c5602908b6ce63255865060c716b6ec1992ba3dc",
+      "bytes": 32587959,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-iPhone-Unsigned.ipa",
+      "target": "ios-unsigned-arm64",
+      "architecture": "arm64",
+      "sha256": "5237439b927270d080e8a287c658cfb9dc76aba1aea642e235c10a1a150c3a60",
+      "bytes": 16453610,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Windows-x64.zip",
+      "target": "windows-x64",
+      "architecture": "x64",
+      "sha256": "75f232dc17edccb3047d8e95ed55e32de65a56234b7de81191c6db1a4192fc3d",
+      "bytes": 35134096,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Windows-x64-Setup.exe",
+      "target": "windows-x64",
+      "architecture": "x64",
+      "sha256": "a21e5286ebfbfe955b9a51cd0ba39c6a85e5f87b89a7cb39c8e99e7691825375",
+      "bytes": 26371782,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-macOS-Unsigned.dmg",
+      "target": "macos-native",
+      "architecture": "arm64/x86_64",
+      "sha256": "8f6456b39eeb51edb47eb8fd15914778ad3ee9a0ee76c0ee29c36e4902d12d98",
+      "bytes": 44805621,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Web.zip",
+      "target": "web",
+      "architecture": "browser",
+      "sha256": "a971e7c864cc61f87ab5d0049420ee5b5971ec1da4f20fc2d062ca137c246812",
+      "bytes": 14164679,
+      "verified": true
+    }
+  ],
+  "native_tests": {
+    "desktop": {
+      "passed": 294,
+      "skipped": 7
+    },
+    "android_mobile": {
+      "passed": 294,
+      "skipped": 7
+    },
+    "android_tv": {
+      "passed": 293,
+      "skipped": 8
+    }
+  },
+  "node_tests_passed": 80,
+  "npm_audit_known_vulnerabilities": 0,
+  "web_checks": [
+    {
+      "path": "/internal/source-manifest.json",
+      "auth": true,
+      "http": 200,
+      "no_store": true,
+      "version": "1.1.5",
+      "build": 105,
+      "source_commit": "6fd336c2cb95a264b0347fd63608afce0d6e3f86",
+      "api_base": "https://matv.onrender.com",
+      "target": "web"
+    },
+    {
+      "path": "/internal/index.html",
+      "auth": true,
+      "http": 200,
+      "no_store": true,
+      "flutter_bundle": true
+    },
+    {
+      "path": "/internal/main.dart.js",
+      "auth": false,
+      "http": 401
+    },
+    {
+      "path": "/api/v1/admin/summary",
+      "auth": false,
+      "http": 401
+    },
+    {
+      "path": "/health",
+      "auth": false,
+      "http": 200,
+      "no_store": true
+    }
+  ],
+  "limits": [
+    "iOS IPA requires external signing.",
+    "macOS universal ARM64/x86_64 DMG is ad-hoc signed, not notarized.",
+    "Windows installers are not Authenticode signed.",
+    "Android signing-key continuity with earlier installations is not confirmed.",
+    "Blocked providers remain explicitly unavailable; search/episode/codec fixtures are not physical-device or all-source playback certification.",
+    "Raw Thmanyah fonts remain local/private.",
+    "Web is authenticated internal-only and is excluded from public Releases."
+  ]
+}

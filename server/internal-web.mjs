@@ -37,11 +37,12 @@ export function createInternalWeb({root=path.resolve('internal_web'),now=Date.no
   if(url.pathname==='/internal'){res.writeHead(303,{Location:'/internal/'});res.end();return true}
   let relative;try{relative=decodeURIComponent(url.pathname.slice('/internal/'.length))||'index.html'}catch{res.writeHead(400);res.end();return true}
   const file=path.resolve(root,relative),ext=path.extname(file).toLowerCase();
-  if(relative.includes('\0')||relative.includes('\\')||!file.startsWith(root+path.sep)||!mime[ext]){res.writeHead(404);res.end();return true}
+  const contentType=path.basename(file)==='NOTICES'?'text/plain; charset=utf-8':mime[ext];
+  if(relative.includes('\0')||relative.includes('\\')||!file.startsWith(root+path.sep)||!contentType){res.writeHead(404);res.end();return true}
   let stat;try{stat=await fs.promises.lstat(file)}catch{res.writeHead(404);res.end();return true}
   if(!stat.isFile()||stat.isSymbolicLink()){res.writeHead(404);res.end();return true}
   const real=await fs.promises.realpath(file);if(!real.startsWith(root+path.sep)){res.writeHead(404);res.end();return true}
-  res.writeHead(200,{'Content-Type':mime[ext],'Content-Length':stat.size});
+  res.writeHead(200,{'Content-Type':contentType,'Content-Length':stat.size});
   if(req.method==='HEAD')res.end();else fs.createReadStream(real).on('error',()=>res.destroy()).pipe(res);
   return true;
  }
