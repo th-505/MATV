@@ -9,3 +9,10 @@ exclude:
   - edge
   - web
   - node_modules
+  - app
+  - matv-cinema.html
+  - Player.html
+  - match-player.html
+  - albasri-cinema.html
+  - basrimatches.html
+  - bsr-Player.html

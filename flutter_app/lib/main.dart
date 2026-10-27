@@ -1318,7 +1318,9 @@ class _MatchesPageState extends State<MatchesPage> {
                                             style: TextStyle(
                                               color: m.status == 'live'
                                                   ? Colors.redAccent
-                                                  : const Color(0xFFBEB7A7),
+                                                  : Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
                                             ),
                                           ),
                                           const SizedBox(height: 8),
@@ -1336,8 +1338,10 @@ class _MatchesPageState extends State<MatchesPage> {
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                color: Color(0xFF9E9686),
+                                              style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
                                                 fontSize: 12,
                                               ),
                                             ),
