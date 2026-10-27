@@ -77,3 +77,19 @@ test('persistent cache excludes expired or unverified media and dashboard tolera
  assert.equal(await service.media('other:1'),null);
  const summary=await service.summary();assert.equal(summary.configured,true);assert.deepEqual(summary.unavailable,['jobs','works','sources','events']);assert.deepEqual(summary.jobs,[]);
 });
+
+
+test('an empty search advances to the next alias and one unsafe card cannot discard valid siblings',async()=>{
+ const {createHarvestPipeline}=await import('../server/harvest/pipeline.mjs');
+ const queries=[],queued=[],events=[];
+ const expected={title:'مثال',original_title:'Example',year:2025,type:'movie'};
+ const store={getWork:async()=>({metadata:expected}),enqueueMany:async rows=>queued.push(...rows),event:async row=>events.push(row)};
+ const empty=Object.assign([],{_meta:{errorCode:'EMPTY_RESULT',next_page:2}});
+ const entry={meta:{id:'fixture',enabled:true,domains:['https://source.example'],capabilities:{search:true,details:true}},module:{scrapeSearch:async query=>{queries.push(query);return query==='Example'?empty:[{title:'مثال',year:2025,type:'movie',ref:'https://127.0.0.1/private'},{title:'مثال',year:2025,type:'movie',ref:'https://source.example/actual-film'}]}}};
+ const pipeline=createHarvestPipeline({store,metadata:{},entries:[entry]});
+ const first=await pipeline.provider({provider:'fixture',content_ref:'tmdb:movie:1',payload:{phase:'search',query_index:0,page:1,cycle:1}});
+ assert.equal(first.continuation.query_index,1);assert.equal(first.continuation.page,1);
+ await pipeline.provider({provider:'fixture',content_ref:'tmdb:movie:1',payload:first.continuation});
+ assert.deepEqual(queries,['Example','مثال']);assert.equal(queued.length,1);assert.equal(queued[0].payload.url,'https://source.example/actual-film');
+ assert(events.some(row=>row.reason==='UNSAFE_SOURCE_REFERENCE'));
+});

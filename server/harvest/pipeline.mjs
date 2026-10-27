@@ -32,7 +32,7 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   if(payload.phase==='search'){
    const queries=harvestQueryVariants(expected);const query=queries[payload.query_index||0];if(!query)return {progress:{outcome:'no_verified_match'}};
    const response=await entry.module.scrapeSearch(query,payload.page||1,{...network,searchPageUrl:payload.next_url});
-   if(response?._meta?.errorCode)throw Error(response._meta.errorCode);
+   if(response?._meta?.errorCode&&response._meta.errorCode!=='EMPTY_RESULT')throw Error(response._meta.errorCode);
    const hits=Array.isArray(response)?response:response?.data||[];
    const fingerprint=shortHash(hits.map(hit=>hit.ref||hit.url||hit.id||'').sort().join('\n'));
    if(payload.page_fingerprint===fingerprint){
@@ -46,12 +46,12 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
     const preliminary=matchHarvestIdentity(expected,{...hit,type:contentIdentity(hit).type});
     if(preliminary.reasons.includes('YEAR_CONFLICT')&&!hit.episode_number)continue;
     if(preliminary.evidence.title_similarity<.35&&!preliminary.evidence.title_exact)continue;
-    const safeUrl=referenceUrl(target,allowed);examined++;
+    let safeUrl;try{safeUrl=referenceUrl(target,allowed)}catch{await event(ref,entry.meta.id,'identity','quarantined','UNSAFE_SOURCE_REFERENCE');continue}examined++;
     jobs.push(job(ref,entry.meta.id,'provider','catalog:'+safeUrl,{phase:'catalog',cycle:payload.cycle,source_ref:target,url:safeUrl,hit:{title:hit.title,year:hit.year||null,type:hit.type,poster:hit.poster||null},page:1},expected.title));accepted++;
    }
    await store.enqueueMany(jobs);
    const next=response?._meta?.next_page||response?.pagination?.next_page;
-   if(next&&(Number(next)>Number(payload.page||1)))return {continuation:{...payload,page:Number(next),next_url:response?._meta?.next_url||null,page_fingerprint:fingerprint},progress:{outcome:'search_paginating',examined,queued_catalogs:accepted}};
+   if(hits.length&&next&&(Number(next)>Number(payload.page||1)))return {continuation:{...payload,page:Number(next),next_url:response?._meta?.next_url||null,page_fingerprint:fingerprint},progress:{outcome:'search_paginating',examined,queued_catalogs:accepted}};
    if((payload.query_index||0)+1<queries.length)return {continuation:{phase:'search',query_index:(payload.query_index||0)+1,page:1,cycle:payload.cycle},progress:{outcome:'searching_aliases',examined,queued_catalogs:accepted}};
    await event(ref,entry.meta.id,'search',accepted?'candidates':'empty_unconfirmed',null,{examined,queued_catalogs:accepted});
    return {progress:{outcome:accepted?'candidates_queued':'empty_unconfirmed',queued_catalogs:accepted}};
