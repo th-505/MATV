@@ -6,6 +6,7 @@ on:
       - .github/workflows/daily-scrapers-sync.yml
       - scripts/najd_daily_report.py
       - scripts/test_najd_daily_report.py
+      - scripts/najd_provider_report_registry.mjs
   workflow_dispatch:
   schedule:
     - cron: '0 21 * * *'
@@ -26,11 +27,19 @@ jobs:
           python-version: '3.12'
       - name: Test report isolation and redaction
         run: python -m unittest discover -s scripts -p 'test_najd_daily_report.py'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+      - name: Install application dependencies
+        timeout-minutes: 3
+        run: npm ci --ignore-scripts
+      - name: Export actual registered providers
+        run: node scripts/najd_provider_report_registry.mjs > /tmp/najd-registry.json
       - name: Install analyzer dependencies
         run: python -m pip install requests==2.32.5
       - name: Inspect provider transport availability
         timeout-minutes: 12
-        run: python scripts/matv_provider_analyzer.py --registry server/scrapers/providers-registry.json --out-dir /tmp/najd-provider-diagnostics
+        run: python scripts/matv_provider_analyzer.py --registry /tmp/najd-registry.json --out-dir /tmp/najd-provider-diagnostics
       - name: Generate bounded Gemini diagnosis and GitHub summary
         timeout-minutes: 4
         env:

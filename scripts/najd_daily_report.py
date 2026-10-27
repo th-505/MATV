@@ -37,7 +37,10 @@ def normalize_diagnostics(data):
         if status not in ('reachable', 'unavailable', 'http_error'):
             status = 'unavailable'
         code = row.get('http_status')
-        result.append({'id': provider, 'status': status,
+        mirror = row.get('mirror_of')
+        if mirror is not None and not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', str(mirror)):
+            raise ValueError('INVALID_MIRROR_ID')
+        result.append({'id': provider, 'name': safe_text(row.get('name', provider), 160), 'mirror_of': mirror, 'status': status,
                        'http_status': code if type(code) is int and 100 <= code <= 599 else None,
                        'reason': safe_text(row.get('error', ''), 100)})
     return result
@@ -49,6 +52,8 @@ def create_report(data, client):
         'checked_at': datetime.now(timezone.utc).isoformat(),
         'notification_mode': 'github-only',
         'providers': rows,
+        'independent_providers': sum(not row['mirror_of'] for row in rows),
+        'mirror_providers': sum(bool(row['mirror_of']) for row in rows),
         'counts': {s: sum(row['status'] == s for row in rows)
                    for s in ('reachable', 'http_error', 'unavailable')},
         'scope': 'Homepage transport availability only; search, episode identity and playback are not certified.',
@@ -86,11 +91,15 @@ def render_markdown(report):
              f"وقت الفحص UTC: {report['checked_at']}", '',
              '**الإشعارات: GitHub فقط مؤقتًا. لا يتم إرسال بريد.**', '',
              f"المواقع المتاحة عبر HTTP: {counts['reachable']}؛ أخطاء HTTP: {counts['http_error']}؛ غير متاحة: {counts['unavailable']}.", '',
+             f"المصادر المستقلة: {report['independent_providers']}؛ المرايا: {report['mirror_providers']}.", '',
              'هذا فحص اتصال الصفحة الرئيسية؛ لا يثبت نجاح البحث أو ترقيم الحلقات أو تشغيل الفيديو.', '',
              '| المصدر | حالة الاتصال | HTTP | السبب |', '|---|---|---|---|']
     for row in report['providers']:
         reason = row['reason'].replace('|', '/').replace('\n', ' ')
-        lines.append(f"| {row['id']} | {row['status']} | {row['http_status'] or '—'} | {reason or '—'} |")
+        label = row['name'].replace('|', '/').replace('\n', ' ')
+        if row['mirror_of']:
+            label += ' (مرآة: ' + row['mirror_of'] + ')'
+        lines.append(f"| {label} | {row['status']} | {row['http_status'] or '—'} | {reason or '—'} |")
     lines.extend(['', '## تشخيص Gemini', ''])
     gemini = report['gemini']
     if gemini['status'] == 'ready':

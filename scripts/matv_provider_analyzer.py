@@ -25,7 +25,7 @@ def public_host(url):
 
 def inspect(session, provider):
     url = provider["url"]
-    record = {"id": provider["id"], "seed_url": url, "status": "unavailable"}
+    record = {"id": provider["id"], "name": str(provider.get("name", provider["id"]))[:160], "mirror_of": provider.get("mirror_of"), "seed_url": url, "status": "unavailable"}
     if not public_host(url):
         record["error"] = "unsafe_or_unresolvable_host"
         return record

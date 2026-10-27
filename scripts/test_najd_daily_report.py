@@ -45,6 +45,12 @@ class DailyReportTests(unittest.TestCase):
         for bad in ('secret-value', '@owner', '<script>', 'https://', 'abc'):
             self.assertNotIn(bad, clean)
 
+    def test_mirrors_are_not_counted_as_independent(self):
+        report = create_report({'providers': [{'id': 'original', 'status': 'reachable'}, {'id': 'mirror', 'mirror_of': 'original', 'status': 'unavailable'}]}, FakeGemini(failure=GeminiUnavailable()))
+        self.assertEqual(report['independent_providers'], 1)
+        self.assertEqual(report['mirror_providers'], 1)
+        self.assertIn('مرآة: original', render_markdown(report))
+
     def test_bad_provider_ids_rejected(self):
         with self.assertRaises(ValueError):
             normalize_diagnostics({'providers': [{'id': '<script>', 'status': 'reachable'}]})
