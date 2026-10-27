@@ -3,6 +3,12 @@
 // يسأل المشغل تلو المشغل حتى يجد رابط الفيديو الفعلي (.m3u8 / .mp4) الخالي من الإعلانات ومنع أطر الـ iframe نهائياً
 import * as cheerio from 'cheerio';
 import { generateAntiBanHeaders } from './anti-ban.mjs';
+import { fetchSafeResponse, assertSafeScraperUrl } from './shared/http.mjs';
+
+export async function fetchEmbedResponse(url, options = {}) {
+  const result = await fetchSafeResponse(url, {timeoutMs:6500, maxRetries:0, maxRedirects:3, ...options, allowHttp:false});
+  return {...result, text:async()=>result.html};
+}
 
 const STREAM_REGEX_LIST = [
   /["'](https?:\/\/[^"'\s<>]+\.m3u8(?:\?[^"'\s<>]*)?)["']/gi,
@@ -16,15 +22,19 @@ const STREAM_REGEX_LIST = [
 
 // 1. فك ضغط كود JavaScript المعالج بـ Dean Edwards Packer: eval(function(p,a,c,k,e,d)...)
 export function unpackDeanEdwards(packedHtml = '') {
+  if (typeof packedHtml !== 'string' || packedHtml.length > 1024 * 1024) return '';
   const unpackedBlocks = [];
+  const deadlineMs = Date.now() + 100;
   const regex = /eval\(function\(p,a,c,k,e,[dr]\)\{[\s\S]*?\}\(\s*'([\s\S]*?)'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'([\s\S]*?)'\.split\('\|'\)/g;
   let match;
 
   while ((match = regex.exec(packedHtml)) !== null) {
+    if (Date.now() > deadlineMs) break;
     try {
       let [_, p, aStr, cStr, kStr] = match;
       const a = parseInt(aStr, 10);
       let c = parseInt(cStr, 10);
+      if (a < 2 || a > 62 || !Number.isSafeInteger(c) || c > 4096 || p.length > 100000 || kStr.length > 100000 || unpackedBlocks.length >= 20) continue;
       const k = kStr.split('|');
 
       const encodeBase = (num) => {
@@ -33,9 +43,10 @@ export function unpackDeanEdwards(packedHtml = '') {
       };
 
       while (c--) {
+        if (p.length > 1024 * 1024 || Date.now() > deadlineMs) break;
         if (k[c]) {
           const token = encodeBase(c);
-          p = p.replace(new RegExp(`\\b${token}\\b`, 'g'), k[c]);
+          p = p.replace(new RegExp(`\\b${token}\\b`, 'g'), () => k[c]);
         }
       }
       unpackedBlocks.push(p);
@@ -72,7 +83,8 @@ export function unwrapBase64BridgeUrl(rawUrl = '') {
 
 // 3. التحقق من أن الرابط هو تدفق فيديو حقيقي (.m3u8 أو .mp4) وليس ملف أصول أو إعلانات
 export function isValidDirectMediaUrl(url = '') {
-  if (!url || typeof url !== 'string' || !url.startsWith('http')) return false;
+  if (!url || typeof url !== 'string') return false;
+  try { assertSafeScraperUrl(url,{allowHttp:false}); } catch { return false; }
   const lower = url.toLowerCase();
   if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.gif') || lower.endsWith('.svg') || lower.endsWith('.js') || lower.endsWith('.css') || lower.endsWith('.vtt')) {
     return false;
@@ -116,7 +128,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // أ) مشغل Ok.ru (استخراج HLS و MP4 من JSON data-options)
   if (lower.includes('ok.ru/videoembed')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const optsMatch = html.match(/data-options="([^"]+)"/);
@@ -141,14 +153,14 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ب) مشغل DoodStream / Dooood / Ds2play
   if (/dood|d000d|ds2play|doods/i.test(lower)) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const passMatch = html.match(/\$\.get\(['"](\/pass_md5\/[^'"]+)['"]/);
       if (passMatch) {
         const origin = new URL(embedUrl).origin;
         const passUrl = `${origin}${passMatch[1]}`;
-        const passRes = await fetch(passUrl, {
+        const passRes = await fetchEmbedResponse(passUrl, {
           headers: { ...generateAntiBanHeaders(embedUrl), Referer: embedUrl },
           signal: AbortSignal.timeout(6000)
         });
@@ -165,7 +177,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ج) مشغل Sibnet (شائع في الأنمي)
   if (lower.includes('sibnet.ru')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const m = html.match(/player\.src\(\[\{src:\s*["']([^"']+)["']/);
@@ -179,7 +191,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // د) مشغل Vidmoly
   if (lower.includes('vidmoly')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const m = html.match(/file\s*:\s*["'](https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)["']/i);
@@ -192,7 +204,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // هـ) مشغل Uqload
   if (lower.includes('uqload')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const m = html.match(/sources\s*:\s*\[\s*["'](https?:\/\/[^"']+\.mp4[^"']*)["']/i);
@@ -205,7 +217,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // و) مشغل Streamwish / Awish / Flaswish
   if (/streamwish|awish|flaswish|embedwish|strwish/i.test(lower)) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
@@ -219,7 +231,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ز) مشغل Filemoon / Moonplayer
   if (/filemoon|moonplayer/i.test(lower)) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
@@ -233,7 +245,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
   // ح) مشغل Mixdrop
   if (lower.includes('mixdrop')) {
     try {
-      const res = await fetch(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
+      const res = await fetchEmbedResponse(embedUrl, { headers: generateAntiBanHeaders(parentReferer), signal: AbortSignal.timeout(6000) });
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
@@ -309,13 +321,15 @@ function extractChildPlayerCandidates(html = '', currentUrl = '') {
 
 // 7. محرك الاستعلام المتسلسل العنقودي (Recursive Cascade Stream Resolver)
 // يسأل المشغل الحالي، وإن كان جسراً يسأل المشغل الداخلي حتى يجد البث الفعلي
-export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0, visited = new Set()) {
+export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0, visited = new Set(), deadlineMs = Date.now() + 20000) {
   if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.startsWith('http')) return [];
+  if (Date.now() > deadlineMs || visited.size >= 16 || rawUrl.length > 4096) return [];
   if (depth > 4) return []; // حد العمق الأقصى لمنع الحلقات اللانهائية
   if (visited.has(rawUrl)) return [];
   visited.add(rawUrl);
 
   const targetUrl = unwrapBase64BridgeUrl(rawUrl);
+  try { assertSafeScraperUrl(targetUrl,{allowHttp:false}); } catch { return []; }
 
   // أ) إن كان الرابط هو نفسه تدفق مباشر
   if (isValidDirectMediaUrl(targetUrl)) {
@@ -331,17 +345,16 @@ export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0
   // ب) فحص المشغلات الخاصة المعروفة (Ok.ru, Sibnet, Dood, Vidmoly, إلخ)
   try {
     const special = await extractSpecialHostStreams(targetUrl, parentReferer);
-    if (special.length > 0) return special;
+    if (special.length > 0) return special.filter(s=>{try{assertSafeScraperUrl(s.url,{allowHttp:false});return true}catch{return false}});
   } catch (_) {}
 
   // ج) جلب صفحة المشغل لاستخراج البث أو العثور على المشغل الداخلي التالي
   try {
-    const res = await fetch(targetUrl, {
+    const res = await fetchEmbedResponse(targetUrl, {
       headers: {
         ...generateAntiBanHeaders(targetUrl),
         Referer: parentReferer || new URL(targetUrl).origin + '/'
       },
-      redirect: 'follow',
       signal: AbortSignal.timeout(6500)
     });
 
@@ -359,7 +372,7 @@ export async function cascadeResolveStream(rawUrl, parentReferer = '', depth = 0
       const childCandidates = extractChildPlayerCandidates(html, targetUrl);
       for (const childUrl of childCandidates) {
         if (!visited.has(childUrl)) {
-          const childStreams = await cascadeResolveStream(childUrl, targetUrl, depth + 1, visited);
+          const childStreams = await cascadeResolveStream(childUrl, targetUrl, depth + 1, visited, deadlineMs);
           if (childStreams.length > 0) {
             return childStreams; // عثر على البث العامل، نرجعه فوراً
           }

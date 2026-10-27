@@ -622,7 +622,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/shahid4u.mjs",
       "metadata_line": 48,
-      "source_sha256": "a815d9573b48ee9d6c8d1698f286bda2092ecb7728eb40e5268efddd1cab0a36",
+      "source_sha256": "91f75ffcb7f1e81d3007dce450678bbd44ea433015b923396b0def4d3ed413be",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

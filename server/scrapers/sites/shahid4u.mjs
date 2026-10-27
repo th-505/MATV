@@ -276,18 +276,27 @@ export async function scrapeServers(urlOrRef, options = {}) {
   const targetUrl = resolveShahid4uTargetUrl(urlOrRef, PRIMARY_BASE_URL);
   if (!targetUrl) return [];
 
-  const watchUrl = targetUrl.includes('/watch/')
-    ? targetUrl
-    : targetUrl.replace(/\/(film|episode|post|series)\//, '/watch/');
-
+  let watchUrl = targetUrl;
   try {
-    const { html } = await fetchProviderHtml(watchUrl, {
-      ...options,
-      providerId: PROVIDER_ID,
-      referer: PRIMARY_BASE_URL
+    let { html } = await fetchProviderHtml(targetUrl, {
+      ...options, providerId: PROVIDER_ID, referer: PRIMARY_BASE_URL
     });
-
-    const $ = cheerio.load(html);
+    let $ = cheerio.load(html);
+    const declared = $('a.sh-watch-action[href], a.watch-btn[href], a[href*="/watch/"]').first().attr('href');
+    const legacy = targetUrl.replace(/\/(film|episode|post|series)\//, '/watch/');
+    const resolvedWatch = declared
+      ? resolveShahid4uTargetUrl(resolveSafeUrl(declared,targetUrl), PRIMARY_BASE_URL)
+      : legacy;
+    if (resolvedWatch && resolvedWatch !== targetUrl && !targetUrl.includes('/watch/')) {
+      watchUrl = resolvedWatch;
+      const response = await fetchProviderHtml(watchUrl, {
+        ...options,
+        ...(typeof options.fixtureWatchHtml === 'string' ? {fixtureHtml:options.fixtureWatchHtml} : {}),
+        providerId: PROVIDER_ID, referer: targetUrl
+      });
+      html = response.html;
+      $ = cheerio.load(html);
+    }
     const candidateUrls = [];
     const directServers = [];
 
@@ -308,16 +317,20 @@ export async function scrapeServers(urlOrRef, options = {}) {
     }
 
     // 2. Buttons data-embed/data-url
-    $('[data-embed], [data-url], .servers-list li').each((_, el) => {
-      const u = $(el).attr('data-embed') || $(el).attr('data-url') || '';
+    $('.sh-watch-server[data-src], iframe#brWatchFrame[src], [data-embed], [data-url], .servers-list li').each((_, el) => {
+      const u = $(el).attr('data-embed') || $(el).attr('data-url') || $(el).attr('data-src') || $(el).attr('src') || '';
       if (u && u.startsWith('http')) candidateUrls.push(u);
     });
 
-    const uniqueCandidateUrls = Array.from(new Set(candidateUrls));
+    const uniqueCandidateUrls = Array.from(new Set(candidateUrls.map(u=>resolveSafeUrl(u,watchUrl,{allowHttp:false})).filter(Boolean)));
+    // Try different hosts before alternate links on the same host.
+    const hostFirst = new Map();
+    for (const u of uniqueCandidateUrls) if (!hostFirst.has(new URL(u).hostname)) hostFirst.set(new URL(u).hostname,u);
+    const candidatesToProbe = [...new Set([...hostFirst.values(),...uniqueCandidateUrls])].slice(0,6);
 
     if (!options.fixtureHtml && uniqueCandidateUrls.length > 0) {
       const unwrapped = await Promise.all(
-        uniqueCandidateUrls.slice(0, 6).map((u) => unwrapEmbedToDirectStreams(u, watchUrl))
+        candidatesToProbe.map((u) => unwrapEmbedToDirectStreams(u, watchUrl))
       );
       for (const grp of unwrapped) {
         for (const s of grp) {

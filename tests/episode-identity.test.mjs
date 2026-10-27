@@ -38,3 +38,10 @@ test('public details wrapper retains source identity and satisfies the real brow
  const actual=sanitizeDetailsPayload(raw,'shahid4u');
  assert(isCinemaPayload(actual));assert.equal(actual.status,'success');assert.equal(actual.episode_number,1217);assert.equal(actual.type,'series');assert.equal(actual.episodes.at(-1).number,1217);
 });
+test('modern same-source watch link and data-src servers are read, private candidates rejected',async()=>{
+ const {scrapeServers}=await import('../server/scrapers/sites/shahid4u.mjs');
+ const page='<a class="sh-watch-action" href="https://shahidfu.cam/watch/episode-almhqq-kwnan-detective-conan-e1217/servers">مشاهدة</a>';
+ const watch=await readFile(new URL('./fixtures/shahid4u-watch.html',import.meta.url),'utf8');
+ const result=await scrapeServers('https://shahidfu.cam/episode-almhqq-kwnan-detective-conan-e1217/',{fixtureHtml:page,fixtureWatchHtml:watch});
+ assert.equal(result.length,2);assert(result.some(x=>x.url.includes('mixdrop.ps')));assert(result.some(x=>x.url.includes('doodstream.com')));assert(result.every(x=>x.type==='embed'&&x.verified===false));
+});
