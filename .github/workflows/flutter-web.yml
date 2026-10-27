@@ -40,18 +40,34 @@ jobs:
         with:
           node-version: '24.22.1'
           cache: npm
-      - name: Verify Chromium direct MP4 and HLS playback with offline Auth fixtures
-        env:
-          CHROMIUM_BIN: /usr/bin/google-chrome
+      - name: Install locked browser-test dependencies
+        timeout-minutes: 3
+        run: npm ci
+      - name: Install codec fixture tools
+        timeout-minutes: 3
         run: |
-          npm ci
           if ! command -v ffmpeg; then sudo apt-get update -qq && sudo apt-get install -y ffmpeg; fi
+      - name: Generate bounded local codec fixtures
+        timeout-minutes: 1
+        run: |
           mkdir -p /tmp/matv-codec-fixtures
           ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=160x90:rate=10 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 3 -c:v libx264 -c:a aac -movflags +faststart -y /tmp/matv-codec-fixtures/sample.mp4
           ffmpeg -hide_banner -loglevel error -i /tmp/matv-codec-fixtures/sample.mp4 -c copy -hls_time 1 -hls_segment_filename /tmp/matv-codec-fixtures/master%d.ts -y /tmp/matv-codec-fixtures/master.m3u8
-          node scripts/episode_identity_browser_test.mjs
-          node scripts/flutter_web_smoke.mjs
-          node scripts/flutter_web_smoke.mjs hls
+      - name: Verify source episode and output escaping in Chromium
+        timeout-minutes: 2
+        env:
+          CHROMIUM_BIN: /usr/bin/google-chrome
+        run: node scripts/episode_identity_browser_test.mjs
+      - name: Verify Chromium MP4 playback with offline Auth fixtures
+        timeout-minutes: 2
+        env:
+          CHROMIUM_BIN: /usr/bin/google-chrome
+        run: node scripts/flutter_web_smoke.mjs
+      - name: Verify Chromium HLS playback with offline Auth fixtures
+        timeout-minutes: 2
+        env:
+          CHROMIUM_BIN: /usr/bin/google-chrome
+        run: node scripts/flutter_web_smoke.mjs hls
       - name: Record immutable source identity and package Web bundle
         run: |
           set -euo pipefail

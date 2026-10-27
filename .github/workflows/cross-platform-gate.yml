@@ -23,7 +23,7 @@ jobs:
           node --check server/provider-store.mjs
           node --check web/core/ma-nexus.js
       - name: Run background discovery and TMDB tests
-        run: node --test tests/discovery-coordinator.test.mjs tests/tmdb-failover.test.mjs tests/security-boundary.test.mjs tests/episode-identity.test.mjs
+        run: node --test tests/discovery-coordinator.test.mjs tests/tmdb-failover.test.mjs tests/security-boundary.test.mjs tests/episode-identity.test.mjs tests/embed-security.test.mjs
       - name: Security boundary regressions
         run: node scripts/ssrf_http_guard_test.mjs && node scripts/cors_boundary_test.mjs && node scripts/tmdb_catalog_security_test.mjs
       - name: Validate web install manifest

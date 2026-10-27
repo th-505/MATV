@@ -42,7 +42,7 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_BIN || "/usr/bin/chromium",
   args: ["--no-sandbox", "--autoplay-policy=no-user-gesture-required"],
 });
-const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, serviceWorkers: "block" });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const corsHeaders = {
@@ -50,6 +50,15 @@ const corsHeaders = {
   "access-control-allow-methods": "GET, HEAD, POST, OPTIONS",
   "access-control-allow-headers": "*",
 };
+// Auth and library requests are fixtures too: never create real users from CI.
+const fixtureUser = {id:'00000000-0000-4000-8000-000000000121',aud:'authenticated',role:'authenticated',is_anonymous:true,created_at:new Date().toISOString(),app_metadata:{provider:'anonymous',providers:['anonymous']},user_metadata:{}};
+const jwt = [Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),Buffer.from(JSON.stringify({sub:fixtureUser.id,role:'authenticated',is_anonymous:true,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url'),'fixture-signature'].join('.');
+await page.route('https://roqccichwszxamdpvhli.supabase.co/**',async route=>{
+  if(route.request().method()==='OPTIONS') return route.fulfill({status:204,headers:corsHeaders});
+  const u=new URL(route.request().url());
+  const body=u.pathname.startsWith('/auth/')?{access_token:jwt,refresh_token:'fixture-refresh',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:fixtureUser}:[];
+  return route.fulfill({status:200,headers:{...corsHeaders,'content-type':'application/json'},body:JSON.stringify(body)});
+});
 await page.route("https://matv.onrender.com/**", async (route) => {
   if (route.request().method() === "OPTIONS") {
     await route.fulfill({ status: 204, headers: corsHeaders });
