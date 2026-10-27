@@ -8,12 +8,13 @@ Future<void> selectShellDestination(WidgetTester tester, String id) async {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
   }
-  final destination = find.byKey(ValueKey('nav-$id'));
+  // Cached TV rows are built outside the visible viewport; reveal the real row.
+  final destination = find.byKey(ValueKey('nav-$id'), skipOffstage: false);
   if (destination.evaluate().isEmpty) {
     final sidebar = find.byKey(const Key('tatv-right-sidebar'));
     await tester.scrollUntilVisible(
       destination,
-      -180,
+      180,
       scrollable: find
           .descendant(of: sidebar, matching: find.byType(Scrollable))
           .first,
@@ -22,6 +23,7 @@ Future<void> selectShellDestination(WidgetTester tester, String id) async {
   await tester.ensureVisible(destination);
   await tester.pump(const Duration(milliseconds: 350));
   await tester.pump();
+  expect(destination.hitTestable(), findsOneWidget);
   await tester.tap(destination);
   await tester.pump(const Duration(milliseconds: 350));
   await tester.pump();
