@@ -1,0 +1,135 @@
+{
+  "version": "1.1.2",
+  "build": 102,
+  "source_commit": "724589e6398273cfd83532719177077af066c5b3",
+  "render_deploy": "dep-dbg2s0nf3r2c73b5emog",
+  "runtime": {
+    "node": "v24.22.1",
+    "openssl": "3.5.9",
+    "flutter": "3.47.8",
+    "dart": "3.13.7"
+  },
+  "checks": {
+    "node_unit": 64,
+    "node_unit_patched_container": 64,
+    "flutter_passed": 282,
+    "flutter_existing_skips": 6,
+    "flutter_analyze": "no issues",
+    "npm_audit_known_advisories": 0,
+    "ssrf": "passed",
+    "cors": "passed",
+    "tmdb_security": "passed",
+    "source_reference_metadata_ip": "400 rejected",
+    "foreign_origin": "403 rejected",
+    "diagnostics_without_key": "401 rejected",
+    "tls_untrusted_cert": "rejected",
+    "tls_hostname_mismatch": "rejected",
+    "tls_matching_trusted_cert": "200",
+    "conan_real_site_chromium": "1217 retained in actual title/player route, 1207–1217 source list; no JS errors",
+    "supabase_cross_owner_probe": "authenticated anonymous synthetic subject could not read other-owner library/favorites/history",
+    "supabase_legacy_grants": "anon denied; authenticated non-CRUD denied; owner CRUD and backend access preserved",
+    "live_diagnostics_headers": [
+      "CSP self-only scripts/connect",
+      "nosniff",
+      "DENY framing",
+      "no-referrer",
+      "no-store",
+      "HSTS"
+    ],
+    "web_patched_sdk_mp4": "160x90 decoded, playhead advanced, no JS errors, offline Auth fixtures",
+    "web_patched_sdk_hls": "160x90 decoded, playhead advanced, no JS errors, offline Auth fixtures",
+    "ci_stall_diagnosis": "Prior cancelled job spent its codec step downloading100 apt packages; replaced with tiny hash-verified offline media fixtures.",
+    "published_web_manifest": {
+      "version": "1.1.2",
+      "build": 102,
+      "source_commit": "724589e6398273cfd83532719177077af066c5b3",
+      "api_base": "https://matv.onrender.com"
+    }
+  },
+  "limits": [
+    "No physical-device playback/battery/thermal certification",
+    "Some third-party sources remain WAF/login/suspension/timeout blocked",
+    "Supabase leaked-password setting remains disabled; current app uses anonymous Auth, connected tools cannot change that setting",
+    "Advisory notices for deliberate anonymous owner Auth and backend deny-by-default tables retained; no permissive RLS added",
+    "Conan1217 has correct source episodes, but current supported direct-media extraction returns unavailable; reachable embed pages are not called playable videos."
+  ],
+  "release_run": "https://github.com/th-505/MATV/actions/runs/40452111992",
+  "hosting_scope": {
+    "render_workspace": "MATV",
+    "services_found": 1,
+    "runtime": "Docker; all relevant Render services rebuilt"
+  },
+  "release": {
+    "url": "https://github.com/th-505/MATV/releases/tag/v1.1.2",
+    "published_at": "2026-10-27T05:02:12Z",
+    "workflow_conclusion": "success",
+    "pages_build_conclusion": "success",
+    "all_asset_digests_match_report": true,
+    "targets": [
+      "android-mobile-arm64",
+      "android-tv-armv7",
+      "ios-unsigned-arm64",
+      "macos-native",
+      "web",
+      "windows-x64"
+    ],
+    "artifacts": [
+      {
+        "file": "MA-TV-Android-Mobile-ARM64.apk",
+        "target": "android-mobile-arm64",
+        "architecture": "arm64-v8a",
+        "sha256": "fcba54830b637fbcd39ce24454b04bf69e829c4911b956aecc6a9fd486a92bef",
+        "bytes": 33997428,
+        "verified": true
+      },
+      {
+        "file": "MA-TV-Android-TV-ARM32.apk",
+        "target": "android-tv-armv7",
+        "architecture": "armeabi-v7a",
+        "sha256": "0fafb69c85a2a7bd16a9f64090ce6566325dfb0eb8b1c01ca7692502fcee518b",
+        "bytes": 30867684,
+        "verified": true
+      },
+      {
+        "file": "MA-TV-iPhone-Unsigned.ipa",
+        "target": "ios-unsigned-arm64",
+        "architecture": "arm64",
+        "sha256": "7b5f5fea4eed9a1f9f30b7c1afe21842bb9d5f4508f8e88d0fae14bf7f8ba4d6",
+        "bytes": 15063131,
+        "verified": true
+      },
+      {
+        "file": "MA-TV-Windows-x64.zip",
+        "target": "windows-x64",
+        "architecture": "x64",
+        "sha256": "09a9f9d8526ccce9b6f247af91be6f560f1f4102a809b9ba75601691323dc7f7",
+        "bytes": 34027157,
+        "verified": true
+      },
+      {
+        "file": "MA-TV-Windows-x64-Setup.exe",
+        "target": "windows-x64",
+        "architecture": "x64",
+        "sha256": "dae416fb1eac7778ca8233b1d19c74239ca1251677af78a7540429ee39c60dff",
+        "bytes": 25468480,
+        "verified": true
+      },
+      {
+        "file": "MA-TV-macOS-Unsigned.dmg",
+        "target": "macos-native",
+        "architecture": "arm64/x86_64",
+        "sha256": "0f19997a83f9cdadb5c63f7c3b5fdacc712f154906855bd213de6e497a244af1",
+        "bytes": 43125300,
+        "verified": true
+      },
+      {
+        "file": "MA-TV-Web.zip",
+        "target": "web",
+        "architecture": "browser",
+        "sha256": "f9d36eb7f9b40a2c726d327ad56922fdd73a3cb6e3c72e1a70a2746e69f7f476",
+        "bytes": 14405512,
+        "verified": true
+      }
+    ]
+  }
+}
