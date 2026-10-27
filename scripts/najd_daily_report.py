@@ -57,9 +57,10 @@ def create_report(data, client, forms=None):
         'mirror_providers': sum(bool(row['mirror_of']) for row in rows),
         'counts': {s: sum(row['status'] == s for row in rows)
                    for s in ('reachable', 'http_error', 'unavailable')},
-        'scope': 'Homepage transport availability only; search, episode identity and playback are not certified.',
+        'scope': 'Homepage availability plus the separately recorded known-title search checks; episode identity and playback are not certified.',
         'gemini': {'status': 'unavailable'},
         'repairs_applied': 0,
+        'search_checks': {row['provider']:row.get('search_check',{}) for row in forms or []},
     }
     proposals=[]
     prompt = (
@@ -99,14 +100,16 @@ def render_markdown(report):
              '**الإشعارات: GitHub فقط مؤقتًا. لا يتم إرسال بريد.**', '',
              f"المواقع المتاحة عبر HTTP: {counts['reachable']}؛ أخطاء HTTP: {counts['http_error']}؛ غير متاحة: {counts['unavailable']}.", '',
              f"المصادر المستقلة: {report['independent_providers']}؛ المرايا: {report['mirror_providers']}.", '',
-             'هذا فحص اتصال الصفحة الرئيسية؛ لا يثبت نجاح البحث أو ترقيم الحلقات أو تشغيل الفيديو.', '',
-             '| المصدر | حالة الاتصال | HTTP | السبب |', '|---|---|---|---|']
+             'يتضمن التقرير اتصال الصفحة الرئيسية وفحص البحث المسجّل لكل مصدر؛ لا يثبت اكتمال الحلقات أو تشغيل الفيديو.', '',
+             '| المصدر | حالة الاتصال | HTTP | السبب | البحث التجريبي |', '|---|---|---|---|---|']
     for row in report['providers']:
         reason = row['reason'].replace('|', '/').replace('\n', ' ')
         label = row['name'].replace('|', '/').replace('\n', ' ')
         if row['mirror_of']:
             label += ' (مرآة: ' + row['mirror_of'] + ')'
-        lines.append(f"| {label} | {row['status']} | {row['http_status'] or '—'} | {reason or '—'} |")
+        check=report.get('search_checks',{}).get(row['id'],{})
+        search=safe_text(check.get('outcome','غير مفحوص'),80)+' '+str(check.get('result_count',''))
+        lines.append(f"| {label} | {row['status']} | {row['http_status'] or '—'} | {reason or '—'} | {search} |")
     lines.extend(['', '## تشخيص Gemini', ''])
     gemini = report['gemini']
     if gemini['status'] == 'ready':

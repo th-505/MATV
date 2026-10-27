@@ -73,6 +73,11 @@ def observed_forms(path):
     result=[]
     for row in json.loads(file.read_text()).get('providers',[])[:25]:
         try:
-            if row.get('form'):result.append({'provider':row['id'],'observed_form':config_only(row['form'])})
+            item={'provider':row['id']}
+            if row.get('form'):item['observed_form']=config_only(row['form'])
+            check=row.get('search_check')
+            if isinstance(check,dict):
+                item['search_check']={k:check[k] for k in ['outcome','result_count','identity_confirmed','sample'] if k in check and isinstance(check[k],(str,int,bool))}
+            result.append(item)
         except ValueError:continue
     return result

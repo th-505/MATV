@@ -34,7 +34,7 @@ export function createDiscoveryAudit({ auditor = createMediaAuditor(), probe = p
       const { candidate, audit } = result.value;
       const observed=candidate.observed_identity || {};
       const identityComplete=Boolean(expected.year && observed.year) &&
-        [expected.title,...(expected.aliasases || [])].some(title=>matchesIdentity(observed,title,{year:expected.year})) &&
+        [expected.title,...(expected.aliasases || [])].some(title=>matchesIdentity(observed,title,{year:expected.year,aliases:expected.aliases||[]})) &&
         (!expected.season || Number(observed.season)===Number(expected.season)) &&
         (!expected.episode || Number(observed.episode)===Number(expected.episode));
       const auditUnavailable=!audit.aiReviewed && audit.reasons?.some(reason=>

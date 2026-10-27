@@ -21,7 +21,7 @@ test('name and conflicting year never match and metadata cannot lengthen media e
  assert.equal(mediaExpiry({url:`https://cdn.example/movie.mp4?exp=${(now-1000)/1000}`},now),null);
 });
 test('provider config rejects arbitrary fields, credentials and private domains',()=>{
- for(const config of [{code:'eval()'},{primary_domain:'http://source.example'},{primary_domain:'https://user:pass@source.example'},{primary_domain:'https://a.internal'},{search_parameter:'api_key'},{card_selector:'.x:has(script)'}])assert.throws(()=>validateProviderConfig(config));
+ for(const config of [{code:'eval()'},{primary_domain:'http://source.example'},{primary_domain:'https://user:pass@source.example'},{primary_domain:'https://a.internal'},{search_parameter:'api_key'},{search_path:'/?s={query}&token=secret'},{card_selector:'.x:has(script)'}])assert.throws(()=>validateProviderConfig(config));
 });
 test('domain rotation strips old credentials and preserves third-party embed origins',()=>{
  registerProviderOrigins('fixture',['https://old.example']);
@@ -39,4 +39,41 @@ test('a synchronous handler failure releases the worker slot and records a faile
  const worker=createHarvestWorker({store,handlers:{work:()=>{throw Error('FIXTURE_FAILURE')}},pollMs:60000});
  worker.start();await new Promise(r=>setImmediate(r));await worker.stop();
  assert.equal(failures,1);assert.equal(worker.metrics().active,0);
+});
+
+test('observed Conan source has twelve references, eleven numbers and a real series parent',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const html=await readFile(new URL('./fixtures/shahid4u-conan-index.html',import.meta.url),'utf8');
+ const index=scanEpisodeIndex(html,'https://shahidfu.cam/episode-almhqq-kwnan-detective-conan-e1217/',{provider:'shahid4u',domains:['shahidfu.cam'],title:'انمي المحقق كونان Detective Conan الحلقة 1217 مترجمة'});
+ assert.equal(index.episodes.length,12);assert.equal(new Set(index.episodes.map(row=>row.episode)).size,11);
+ assert.equal(index.source_declared_references,12);assert.equal(index.parents.length,1);
+ assert.equal(Math.min(...index.episodes.map(row=>row.episode)),1207);assert.equal(Math.max(...index.episodes.map(row=>row.episode)),1217);
+});
+test('AWS and nested CDN expiry hints can shorten, never extend cached media lifetime',()=>{
+ const now=Date.UTC(2026,9,27,12);
+ assert.equal(mediaExpiry({url:'https://cdn.example/film.mp4?X-Amz-Date=20261027T120000Z&X-Amz-Expires=120'},now),now+120000);
+ assert.equal(mediaExpiry({url:'https://cdn.example/film.mp4?hdnea=exp%3D'+Math.floor((now+180000)/1000)+'%7Eacl%3D*'},now),now+180000);
+});
+
+test('a bilingual source title must contain two known aliases, not a loose single-word prefix',()=>{
+ const expected={title:'المحقق كونان',aliases:['Detective Conan'],year:1996,type:'series'};
+ assert.equal(matchHarvestIdentity(expected,{title:'انمي المحقق كونان Detective Conan الحلقة 1217 مترجمة',year:1996,type:'series'}).accepted,true);
+ assert.equal(matchHarvestIdentity({title:'Avatar',year:2009},{title:'Avatar Special Other Story',year:2009}).accepted,false);
+ assert.equal(matchHarvestIdentity(expected,{title:'المحقق كونان Detective Conan',year:2026,type:'series'}).accepted,false);
+});
+
+
+test('persistent cache excludes expired or unverified media and dashboard tolerates DB outage',async()=>{
+ const {createHarvestService}=await import('../server/harvest/service.mjs');
+ const now=Date.now();
+ const store={episodes:async()=>[{media:[
+  {url:'https://cdn.example/valid.mp4',expires_at:new Date(now+60000).toISOString(),identity_verified:true,web_playable:false},
+  {url:'https://cdn.example/expired.mp4',expires_at:new Date(now-1000).toISOString(),identity_verified:true},
+  {url:'https://cdn.example/unverified.mp4',expires_at:new Date(now+60000).toISOString(),identity_verified:false},
+ ]}],request:async()=>{throw Error('DATABASE_UNAVAILABLE')},config:async()=>[]};
+ const service=createHarvestService({store,metadata:{},now:()=>now});
+ assert.equal((await service.media('tmdb:movie:1')).length,1);
+ assert.equal(await service.media('tmdb:movie:1',{platform:'web'}),null);
+ assert.equal(await service.media('other:1'),null);
+ const summary=await service.summary();assert.equal(summary.configured,true);assert.deepEqual(summary.unavailable,['jobs','works','sources','events']);assert.deepEqual(summary.jobs,[]);
 });

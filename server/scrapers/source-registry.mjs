@@ -56,7 +56,7 @@ export function createSourceSearch({ loadModule = source => getProvider(source.i
 
 export const searchSource = createSourceSearch();
 
-const SOURCE_NAMES = {mycima:'ماي سيما',akwam:'أكوام',cimanow:'سيما ناو',shahid4u:'شاهد فور يو',moviztime:'موفيز تايم',shii4u:'شي فور يو',egydead:'إيجي ديد',ipauniverse:'آي بي إيه يونيفرس','3cktv':'قصة عشق',anime4up:'أنمي فور أب',qfilm:'كيو فيلم',ristoanime:'ريستو أنمي',arabseed:'عرب سيد',mewsry:'مصري',anime4up_rest:'أنمي فور أب البديل',witanime:'ويت أنمي','3isk':'قصة عشق',alooy:'ألوي',laroza:'لاروزا'};
+const SOURCE_NAMES = {mycima:'ماي سيما',akwam:'أكوام',cimanow:'سيما ناو',shahid4u:'شاهد فور يو',moviztime:'موفيز تايم',shii4u:'شي فور يو',egydead:'إيجي ديد',ipauniverse:'آي بي إيه يونيفرس','3cktv':'قصة عشق',anime4up:'أنمي فور أب',qfilm:'كيو فيلم',ristoanime:'ريستو أنمي',arabseed:'عرب سيد',mewsry:'سوريا لايف',anime4up_rest:'أنمي فور أب البديل',witanime:'ويت أنمي','3isk':'قصة عشق',alooy:'ألوي',laroza:'لاروزا'};
 export function listSourceCapabilities() {
   return SOURCE_REGISTRY.map(({ id, aliases, search }) => {
     const meta = getProvider(id).meta;

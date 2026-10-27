@@ -167,7 +167,24 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   Timer? poll;
   Map<String, dynamic>? ticket, status;
   String message = '', kind = 'browser';
-  bool busy = false;
+  bool busy = false, ownsTicket = false;
+  List<Map<String, dynamic>> members = [];
+  Future<void> loadMembers() async {
+    try {
+      final value = await CloudLibrarySync.accountRpc('najd_link_members');
+      if (mounted && value is List) {
+        setState(
+          () => members = value
+              .whereType<Map>()
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList(),
+        );
+      }
+    } catch (_) {
+      /* Offline account remains usable locally. */
+    }
+  }
+
   String get link {
     const base = String.fromEnvironment(
       'MITV_INTERNAL_WEB_BASE',
@@ -188,6 +205,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   @override
   void initState() {
     super.initState();
+    unawaited(loadMembers());
     try {
       final fragment = Uri.splitQueryString(Uri.base.fragment);
       if (fragment.containsKey('najd_link')) {
@@ -228,6 +246,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
     if (!mounted) return;
     setState(() {
       ticket = Map<String, dynamic>.from(value as Map);
+      ownsTicket = true;
       status = null;
       message = 'افتح الطلب على الجهاز الآخر، ثم وافق عليه هنا';
     });
@@ -247,6 +266,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
       setState(() => status = Map<String, dynamic>.from(value as Map));
       if (status?['approved'] == true) {
         await CloudLibrarySync.refreshAccountContext();
+        await loadMembers();
       }
       if (status?['expired'] == true || status?['approved'] == true) {
         poll?.cancel();
@@ -272,6 +292,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
       'p_label': 'متصفح أو جهاز نجد',
     });
     if (value['claimed'] == true && mounted) {
+      ownsTicket = false;
       setState(
         () => ticket = {
           'id': values['najd_link'],
@@ -341,7 +362,8 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
             ),
           ],
         ),
-        if (status?['claimed'] == true &&
+        if (ownsTicket &&
+            status?['claimed'] == true &&
             status?['approved'] != true &&
             status?['expired'] != true)
           FilledButton(
@@ -387,6 +409,30 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
               }),
         child: const Text('إلغاء ربط هذا الجهاز'),
       ),
+      TextButton(
+        onPressed: busy ? null : loadMembers,
+        child: const Text('تحديث الأجهزة المرتبطة'),
+      ),
+      for (final member in members)
+        ListTile(
+          title: Text('${member['display_name'] ?? 'جهاز نجد'}'),
+          subtitle: Text(
+            member['expires_at'] == null
+                ? 'ربط مستمر'
+                : 'ينتهي: ${member['expires_at']}',
+          ),
+          trailing: TextButton(
+            onPressed: busy
+                ? null
+                : () => action(() async {
+                    await CloudLibrarySync.accountRpc('najd_link_revoke', {
+                      'p_member': member['member_id'],
+                    });
+                    await loadMembers();
+                  }),
+            child: const Text('إلغاء الربط'),
+          ),
+        ),
       if (message.isNotEmpty) Text(message),
     ],
   );

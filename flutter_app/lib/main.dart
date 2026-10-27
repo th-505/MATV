@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -29,6 +30,7 @@ import 'src/unified_media.dart';
 import 'src/storage_cleanup.dart';
 import 'src/cloud_library.dart';
 
+bool _fontLicensesRegistered = false;
 const _brandAccent = NajdUi.accent;
 const _brandAccentMuted = NajdUi.accentLight;
 
@@ -47,6 +49,14 @@ class _MitvAppState extends State<MitvApp> {
   @override
   void initState() {
     super.initState();
+    if (!_fontLicensesRegistered) {
+      _fontLicensesRegistered = true;
+      LicenseRegistry.addLicense(() async* {
+        yield LicenseEntryWithLineBreaks([
+          'Noto Sans Arabic',
+        ], await rootBundle.loadString('assets/fallback/OFL.txt'));
+      });
+    }
     unawaited(NajdAppearance.instance.load());
     unawaited(loadPrivateNajdFonts().then((_) => NajdFontAddon.restore()));
     _cloudFuture = storeFuture
@@ -211,9 +221,10 @@ class _ShellState extends State<Shell> {
     _pages[index] = _createPage(index);
     if (kIsWeb && Uri.base.fragment.contains('najd_link=')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted)
+        if (mounted) {
           Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const NajdAccountPage()));
+        }
       });
     }
     final ref = kIsWeb ? Uri.base.queryParameters['ref'] ?? '' : '';
@@ -770,6 +781,60 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        FutureBuilder<List<CatalogItem>>(
+          future: _latest,
+          builder: (context, snapshot) {
+            final items = snapshot.data ?? const <CatalogItem>[];
+            if (items.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(child: Text('أحدث الأفلام')),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(title: const Text('أحدث الأفلام')),
+                            body: CatalogPage(
+                              api: widget.api,
+                              store: widget.store,
+                              title: 'أحدث الأفلام',
+                              categoryId: 'catalog:movie:all',
+                              unified: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                      child: const Text('عرض المزيد'),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 270,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) => SizedBox(
+                      width: 155,
+                      child: _CatalogCard(
+                        item: items[index],
+                        onTap: () => openDetails(
+                          context,
+                          widget.api,
+                          widget.store,
+                          items[index],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
         const SizedBox(height: 24),
         Text('أكمل المشاهدة', style: Theme.of(context).textTheme.titleLarge),
         if (widget.store.continueWatching.isEmpty)
@@ -1009,6 +1074,11 @@ class _SettingsPageState extends State<SettingsPage> {
         enabled: !_busy,
         leading: const Icon(Icons.search_off),
         onTap: () => _clear('مسح سجل البحث', widget.store.clearSearchHistory),
+      ),
+      const AboutListTile(
+        applicationName: NajdUi.brand,
+        applicationVersion: '1.1.5',
+        child: Text('عن نجد والتراخيص'),
       ),
       if (_busy) const LinearProgressIndicator(),
     ],
@@ -1664,10 +1734,7 @@ class _CatalogCard extends StatelessWidget {
                       },
                       if (item.year != null) '${item.year}',
                     ].join(' • '),
-                    style: const TextStyle(
-                      color: Color(0xFFB8B09F),
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ],
               ),

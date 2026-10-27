@@ -527,22 +527,29 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       await discoveryStore.put('audit-v1:' + record.result.id, record, record.result.expiresAt);
     },
   }) });
+  const harvest=createHarvestService({metadata:discoveryMetadata,logger:data=>log(data.event,data)});
   const discovery = createDiscoveryCoordinator({
     load: async key => discoveryStore?.get('audited-v2:' + key) || null,
     persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v2:' + key,result,expiresAt),
     maxConcurrent: 3, maxQueued: 40, ttlMs: 60_000,
     discover: async ({ ref, season, episode }, publish) => {
       // The canonical TMDB identity is authoritative, never caller-supplied title/year.
-      const metadata=(await discoveryMetadata.details(ref)).data;
+      const metadata=(await harvest.cachedWork(ref) || await discoveryMetadata.details(ref)).data;
       const series=ref.startsWith('tmdb:tv:');
       if(series){
         const episodes=(await discoveryMetadata.season(ref,season || 1)).data?.episodes || [];
         if(!episodes.some(row=>Number(row.episode_number)===Number(episode || 1)))throw Error('EPISODE_NOT_FOUND');
       }
-      const expected={title:metadata.title,aliases:[metadata.original_title],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};
+      const expected={title:metadata.title,aliases:[metadata.original_title,...(metadata.aliases||[])],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};
+      const cachedMedia=await harvest.media(ref,{season:series?season||1:0,episode:series?episode||1:0});
+      if(cachedMedia?.length){
+        // Cache stores evidence, not a permanent trust decision: re-probe and audit before release.
+        const reviewed=await discoveryAudit.review(cachedMedia,expected);
+        if(reviewed.approved.length)return {servers:reviewed.approved.map(source=>({provider:source.provider,quality:source.quality||null,kind:'direct',url:source.url,headers:source.headers||{},identity_verified:source.identity_verified,verification_basis:source.verification_basis,audit_pending:source.audit_pending})),reason:null};
+      }
       const approved=[],seen=new Set();let rejected=0;
       await activateAllScrapersForContent(metadata.title, season || 1, episode || 1, {
-        ref,year:metadata.year,type:series?'series':'movie',original_language:metadata.original_language,genres:metadata.genres,titleVariants:[metadata.original_title],
+        ref,year:metadata.year,type:series?'series':'movie',original_language:metadata.original_language,genres:metadata.genres,titleVariants:[metadata.original_title,...(metadata.aliases||[])],
         onSources:async candidates=>{
           const reviewed=await discoveryAudit.review(candidates,expected);
           rejected+=reviewed.quarantine.length;
@@ -560,7 +567,6 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
   });
   const maintenanceIdentity=createGithubIdentityVerifier();
   const internalWeb=createInternalWeb();
-  const harvest=createHarvestService({metadata:discoveryMetadata,logger:data=>log(data.event,data)});
   const server = http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }

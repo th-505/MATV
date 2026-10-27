@@ -14,7 +14,8 @@ export function validateProviderConfig(config){
   if(k==='primary_domain'){
    const u=new URL(v);if(u.protocol!=='https:'||u.username||u.password||u.port||u.pathname!=='/'||u.search||u.hash||!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(u.hostname)||/\.(?:local|localhost|internal|test)$/i.test(u.hostname))throw Error('INVALID_PROVIDER_DOMAIN');result[k]=u.origin;
   }else if(k==='search_path'){
-   if(!v.startsWith('/')||v.startsWith('//')||/[\r\n\\]/.test(v)||v.includes('://'))throw Error('INVALID_PROVIDER_SEARCH_PATH');result[k]=v;
+   if(!v.startsWith('/')||v.startsWith('//')||/[\r\n\\]/.test(v)||v.includes('://'))throw Error('INVALID_PROVIDER_SEARCH_PATH');
+   const path=new URL(v,'https://config.invalid');if([...path.searchParams.keys()].some(key=>/token|key|auth|cookie|password|secret/i.test(key)))throw Error('INVALID_PROVIDER_SEARCH_PATH');result[k]=v;
   }else if(k==='search_parameter'){
    if(!/^[A-Za-z_][A-Za-z0-9_-]{0,39}$/.test(v)||/token|key|auth|cookie/i.test(v))throw Error('INVALID_PROVIDER_SEARCH_PARAMETER');result[k]=v;
   }else if(k==='search_method'){

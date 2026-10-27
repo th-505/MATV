@@ -4,7 +4,7 @@ import { createConcurrencyQueue } from './shared/concurrency.mjs';
 export function identityTitle(value) {
   return String(value || '').normalize('NFKC').toLocaleLowerCase('ar')
     .replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 1632))
-    .replace(/^(?:(?:مشاهدة|تحميل|فيلم|مسلسل)\s+)+/g, '')
+    .replace(/^(?:(?:مشاهدة|تحميل|فيلم|مسلسل|انمي|أنمي|anime)\s+)+/g, '')
     .replace(/(?:الموسم|موسم|season)\s*\d+|(?:الحلقة|الحلقه|حلقة|episode)\s*\d+/gi, '')
     .replace(/[\u064B-\u065F\u0670]/g, '')
     .replace(/\b(?:19|20)\d{2}\b/g, '')
@@ -12,8 +12,15 @@ export function identityTitle(value) {
     .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 }
 
-export function matchesIdentity(hit, title, { year, type, allowMissingYear=false } = {}) {
-  if (!identityTitle(title) || identityTitle(hit?.title) !== identityTitle(title)) return false;
+export function titleIdentityMatches(observed,title,aliases=[]){
+ const clean=value=>identityTitle(value).replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي');
+ const actual=clean(observed),names=[...new Set([title,...aliases].map(clean).filter(Boolean))];
+ if(!actual)return false;if(names.includes(actual))return true;
+ const contained=names.filter(name=>name.length>=4&&(' '+actual+' ').includes(' '+name+' '));
+ return contained.some(a=>contained.some(b=>a!==b&&!a.includes(b)&&!b.includes(a)&&/[\u0600-\u06ff]/.test(a)!==/[\u0600-\u06ff]/.test(b)));
+}
+export function matchesIdentity(hit, title, { year, type, aliases=[], allowMissingYear=false } = {}) {
+  if (!identityTitle(title) || !titleIdentityMatches(hit?.title,title,aliases)) return false;
   const expectedYear = String(year || '').match(/(?:19|20)\d{2}/)?.[0];
   const actualYear = String(hit?.year || hit?.title || '').match(/(?:19|20)\d{2}/)?.[0];
   if (expectedYear && actualYear && actualYear !== expectedYear) return false;
@@ -46,11 +53,12 @@ export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 2
         typeof provider?.scrapeSearch !== 'function' || typeof provider?.scrapeDetails !== 'function') return [];
     return queue.run(async () => {
       const network = { strict:true, timeoutMs:5000, maxRetries:0 };
-      const titles = [...new Set([title, ...(options.titleVariants || [])].filter(Boolean))].slice(0,2);
+      const allTitles = [...new Set([title, ...(options.titleVariants || [])].filter(Boolean))];
+      const titles=allTitles.slice(0,2);
       let hit = null;
       for (const query of titles) {
         const hits = await provider.scrapeSearch(query, 1, network);
-        hit = (Array.isArray(hits) ? hits : []).find(item => titles.some(alias=>matchesIdentity(item,alias,{...options,allowMissingYear:true})));
+        hit = (Array.isArray(hits) ? hits : []).find(item => allTitles.some(alias=>matchesIdentity(item,alias,{...options,aliases:allTitles,allowMissingYear:true})));
         if(hit)break;
       }
       if (!hit) return [];

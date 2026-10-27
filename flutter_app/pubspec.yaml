@@ -39,5 +39,6 @@ flutter:
       fonts:
         - asset: assets/fallback/NotoSansArabic.ttf
   assets:
+    - assets/fallback/OFL.txt
     - assets/najd/
     - assets/najd/fonts/

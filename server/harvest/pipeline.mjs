@@ -1,6 +1,6 @@
 import {supportsContent} from '../scrapers/content-scope.mjs';
 import {shortHash,referenceUrl,scanEpisodeIndex} from './episode-index.mjs';
-import {matchHarvestIdentity,harvestQueryVariants,mediaExpiry} from './identity.mjs';
+import {matchHarvestIdentity,harvestQueryVariants,mediaExpiry,containsWorkTitle} from './identity.mjs';
 import {fetchProviderHtml} from '../scrapers/shared/http.mjs';
 import {directCandidate} from '../scrapers/content-discovery.mjs';
 import {probePinnedMedia} from '../pinned-playback.mjs';
@@ -34,6 +34,11 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
    const response=await entry.module.scrapeSearch(query,payload.page||1,{...network,searchPageUrl:payload.next_url});
    if(response?._meta?.errorCode)throw Error(response._meta.errorCode);
    const hits=Array.isArray(response)?response:response?.data||[];
+   const fingerprint=shortHash(hits.map(hit=>hit.ref||hit.url||hit.id||'').sort().join('\n'));
+   if(payload.page_fingerprint===fingerprint){
+    await event(ref,entry.meta.id,'search','partial','PAGINATION_REPEATED');
+    return {...((payload.query_index||0)+1<queries.length?{continuation:{phase:'search',query_index:(payload.query_index||0)+1,page:1,cycle:payload.cycle}}:{}),progress:{outcome:'partial',reason:'PAGINATION_REPEATED'}};
+   }
    let accepted=0;let examined=0;const jobs=[];
    // A search page is bounded by its actual server response. Each candidate is its own resumable DB job.
    for(const hit of hits){
@@ -46,27 +51,29 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
    }
    await store.enqueueMany(jobs);
    const next=response?._meta?.next_page||response?.pagination?.next_page;
-   if(next&&(Number(next)>Number(payload.page||1)))return {continuation:{...payload,page:Number(next),next_url:response?._meta?.next_url||null},progress:{outcome:'search_paginating',examined,queued_catalogs:accepted}};
+   if(next&&(Number(next)>Number(payload.page||1)))return {continuation:{...payload,page:Number(next),next_url:response?._meta?.next_url||null,page_fingerprint:fingerprint},progress:{outcome:'search_paginating',examined,queued_catalogs:accepted}};
    if((payload.query_index||0)+1<queries.length)return {continuation:{phase:'search',query_index:(payload.query_index||0)+1,page:1,cycle:payload.cycle},progress:{outcome:'searching_aliases',examined,queued_catalogs:accepted}};
    await event(ref,entry.meta.id,'search',accepted?'candidates':'empty_unconfirmed',null,{examined,queued_catalogs:accepted});
    return {progress:{outcome:accepted?'candidates_queued':'empty_unconfirmed',queued_catalogs:accepted}};
   }
   const target=payload.url||referenceUrl(payload.source_ref,allowed);
   const details=await entry.module.scrapeDetails(payload.source_ref||target,network);
-  const observed={...(payload.hit||{}),...details};
+  const observed={...(payload.hit||{}),...details,title:details.title||payload.hit?.title,year:details.year||payload.hit?.year};
   const identity=matchHarvestIdentity(expected,observed);
   if(!identity.accepted){await event(ref,entry.meta.id,'identity','quarantined',identity.reasons[0],{score:identity.score,evidence:identity.evidence});return {progress:{outcome:'identity_unconfirmed',reason:identity.reasons[0]}};}
   const html=(await fetchPage(target,{...network,providerId:entry.meta.id,allowedHosts:allowed})).html;
   const index=scanEpisodeIndex(html,target,{provider:entry.meta.id,domains:allowed,title:details.title||expected.title,episodes:details.episodes||[]});
   const sourceRef=payload.source_ref||entry.meta.id+':'+Buffer.from(target).toString('base64url');
+  const repeatedPage=payload.parent_fingerprint===index.page_fingerprint;
+  if(repeatedPage)await event(ref,entry.meta.id,'catalog','partial','PAGINATION_REPEATED');
   const declared=Number(expected.number_of_episodes)||null;
-  const partial=index.pages.length>0||Boolean(declared&&index.episodes.length<declared);
-  await store.putSource({work_ref:ref,provider:entry.meta.id,source_ref:sourceRef,identity_score:identity.score,evidence:identity.evidence,state:partial?'partial':'indexed',progress:{observed_episodes:index.episodes.length,additional_pages:index.pages.length,parent_pages:index.parents.length},updated_at:new Date(now()).toISOString()});
+  const partial=repeatedPage||index.pages.length>0||Boolean(declared&&index.episodes.length<declared);
+  await store.putSource({work_ref:ref,provider:entry.meta.id,source_ref:sourceRef,identity_score:identity.score,evidence:identity.evidence,state:partial?'partial':'indexed',progress:{observed_references:index.episodes.length,distinct_episodes:new Set(index.episodes.map(row=>row.season+':'+row.episode)).size,source_declared_references:index.source_declared_references,canonical_declared_episodes:declared,source_index_complete:!repeatedPage&&!index.pages.length&&index.source_declared_references!==null&&index.episodes.length>=index.source_declared_references,additional_pages:index.pages.length,parent_pages:index.parents.length},updated_at:new Date(now()).toISOString()});
   const series=cached.type==='series';const rows=series?index.episodes:[{source_ref:sourceRef,season:0,episode:0,title:details.title||expected.title}];
   // All observed rows are retained; batching is transport sizing, never an episode cap.
   await store.putEpisodes(rows.map(({url,...row})=>({...row,work_ref:ref,provider:entry.meta.id})));
-  const children=rows.map(row=>job(ref,entry.meta.id,'episode',row.source_ref,{source_ref:row.source_ref,cycle:payload.cycle,identity_evidence:identity.evidence},expected.title,row.season,row.episode));
-  for(const page of [...index.parents,...index.pages])children.push(job(ref,entry.meta.id,'provider','catalog:'+page,{...payload,phase:'catalog',url:page,source_ref:entry.meta.id+':'+Buffer.from(page).toString('base64url'),hit:payload.hit||{},page:(payload.page||1)+1},expected.title));
+  const children=rows.map(row=>job(ref,entry.meta.id,'episode',row.source_ref,{source_ref:row.source_ref,cycle:payload.cycle,identity_evidence:identity.evidence,observed_identity:{title:observed.title,year:observed.year},observed_episode:{season:row.season,episode:row.episode}},expected.title,row.season,row.episode));
+  for(const page of (repeatedPage?[]:[...index.parents,...index.pages]))children.push(job(ref,entry.meta.id,'provider','catalog:'+page,{...payload,phase:'catalog',url:page,source_ref:entry.meta.id+':'+Buffer.from(page).toString('base64url'),hit:payload.hit||{},page:(payload.page||1)+1,parent_fingerprint:index.page_fingerprint},expected.title));
   await store.enqueueMany(children);
   await event(ref,entry.meta.id,'catalog',partial?'partial':'indexed',null,{observed_episodes:rows.length,more_pages:index.pages.length,declared_episodes:expected.number_of_episodes||null});
   return {progress:{outcome:rows.length?'episode_jobs_queued':'no_observed_episodes',observed_episodes:rows.length,more_pages:index.pages.length}};
@@ -75,11 +82,15 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   const entry=byId.get(input.provider);if(!entry)throw Error('HARVEST_PROVIDER_UNAVAILABLE');
   const ref=input.content_ref,source=input.payload.source_ref;
   const current=await store.getEpisode(ref,entry.meta.id,source);
-  if(current?.state==='playable'&&Date.parse(current.media_expires_at)>now()+65*60000)return {progress:{outcome:'valid_cached_media'}};
+  if(current?.state==='playable'&&Date.parse(current.media_expires_at)>now()+2*60000)return {refreshAt:Math.max(now()+60000,Date.parse(current.media_expires_at)-5*60000),progress:{outcome:'valid_cached_media'}};
   await store.setEpisode(ref,entry.meta.id,source,{state:'resolving'});
   const d=await entry.module.scrapeDetails(source,network);
   const identity=contentIdentity(d);
-  if(input.episode_number&&identity.episode_number&&identity.episode_number!==input.episode_number)throw Error('HARVEST_EPISODE_IDENTITY_CONFLICT');
+  const work=await store.getWork(ref);if(!work)throw Error('HARVEST_WORK_MISSING');
+  if(input.episode_number){
+    if(identity.episode_number!==input.episode_number)throw Error('HARVEST_EPISODE_IDENTITY_CONFLICT');
+    if(!containsWorkTitle(work.metadata,d.title||d.series_title||d.parent_title))throw Error('HARVEST_EPISODE_WORK_UNCONFIRMED');
+  }else if(!matchHarvestIdentity(work.metadata,d).accepted)throw Error('HARVEST_WORK_IDENTITY_UNCONFIRMED');
   let candidates=[...(d?.media_sources||[]),...(d?.servers||[])].filter(directCandidate);
   if(!candidates.length&&typeof entry.module.scrapeServers==='function')candidates=(await entry.module.scrapeServers(source,network)).filter(directCandidate);
   if(!candidates.length){const target=referenceUrl(source,domains(entry));candidates=await unwrapEmbedToDirectStreams(target,target);}
@@ -89,11 +100,11 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
    let technical;try{technical=await probe(candidate,{platform:'native'})}catch{continue}
    if(!technical.playable)continue;
    const publicHeaders={};for(const[k,v]of Object.entries(candidate.headers||{}))if(['referer','origin','user-agent','cookie'].includes(k.toLowerCase())&&typeof v==='string'&&!/[\r\n]/.test(v))publicHeaders[k]=v;
-   media.push({...candidate,provider:entry.meta.id,kind:'direct',headers:publicHeaders,expires_at:new Date(expires).toISOString(),identity_verified:true,verification_basis:'canonical-work-source-metadata-and-probe',web_playable:technical.webPlayable===true,season:input.season_number,episode:input.episode_number});
+   media.push({...candidate,provider:entry.meta.id,kind:'direct',headers:publicHeaders,expires_at:new Date(expires).toISOString(),identity_verified:true,observed_identity:{...(input.payload.observed_identity||{}),season:input.payload.observed_episode?.season||0,episode:input.payload.observed_episode?.episode||0},verification_basis:'canonical-work-source-metadata-and-probe',web_playable:technical.webPlayable===true,season:input.season_number,episode:input.episode_number});
   }
   const expiry=media.length?Math.min(...media.map(x=>Date.parse(x.expires_at))):null;
   await store.setEpisode(ref,entry.meta.id,source,{state:media.length?'playable':'unavailable',media,media_expires_at:expiry?new Date(expiry).toISOString():null,last_checked_at:new Date(now()).toISOString()});
-  await store.request('najd_work_catalog',{ref:'eq.'+ref},'PATCH',{state:media.length?'playable':'partial',updated_at:new Date(now()).toISOString()});
+  if(media.length)await store.request('najd_work_catalog',{ref:'eq.'+ref},'PATCH',{state:'playable',updated_at:new Date(now()).toISOString()});
   await event(ref,entry.meta.id,'episode',media.length?'playable':'unavailable',media.length?null:'DIRECT_MEDIA_NOT_FOUND',{season:input.season_number,episode:input.episode_number,media_count:media.length});
   return {refreshAt:expiry?Math.max(now()+60000,expiry-5*60000):now()+3600000,progress:{outcome:media.length?'playable':'unavailable',media_count:media.length}};
  }

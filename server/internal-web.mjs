@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {diagnosticsAuthorized} from './diagnostics/search-trace.mjs';
 import {createRateLimiter,getClientAddress} from './hardening.mjs';
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf','.otf':'font/otf','.woff2':'font/woff2','.bin':'application/octet-stream'};
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf','.otf':'font/otf','.woff2':'font/woff2','.bin':'application/octet-stream','.frag':'application/octet-stream'};
 const digest=x=>createHash('sha256').update(x).digest('hex');
 export function createInternalWeb({root=path.resolve('internal_web'),now=Date.now,token=()=>process.env.DIAGNOSTICS_TOKEN||''}={}){
  const sessions=new Map(),rate=createRateLimiter({windowMs:60000,max:8});

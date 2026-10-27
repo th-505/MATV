@@ -37,8 +37,15 @@ class NajdAppearance extends ChangeNotifier {
 }
 
 Future<bool> loadPrivateNajdFonts() async {
-  final loader = FontLoader('ThmanyahSans');
+  final paths = [
+    for (final weight in ['Regular', 'Medium', 'Bold'])
+      'assets/najd/fonts/thmanyahsans-$weight.otf',
+  ];
   try {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final bundled = manifest.listAssets().toSet();
+    if (!paths.every(bundled.contains)) return false;
+    final loader = FontLoader('ThmanyahSans');
     for (final weight in ['Regular', 'Medium', 'Bold']) {
       loader.addFont(
         rootBundle.load('assets/najd/fonts/thmanyahsans-$weight.otf'),

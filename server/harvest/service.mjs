@@ -37,14 +37,17 @@ export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='
  }
  async function summary(){
   if(!store)return {configured:false,worker:worker.metrics()};
-  const [jobs,works,sources,events,config]=await Promise.all([
+  const settled=await Promise.allSettled([
    store.request('matv_discovery_jobs',{select:'job_key,stage,provider,status,attempts,progress,error_code,updated_at',order:'updated_at.desc',limit:100}),
    store.request('najd_work_catalog',{select:'ref,title,type,state,episode_count,last_checked_at,expires_at',order:'updated_at.desc',limit:100}),
    store.request('najd_source_catalog',{select:'work_ref,provider,identity_score,state,progress,updated_at',order:'updated_at.desc',limit:100}),
    store.request('najd_harvest_events',{select:'id,provider,stage,outcome,reason,details,created_at',order:'created_at.desc',limit:100}),
    store.config(),
   ]);
-  return {configured:true,worker:worker.metrics(),recent_limit:100,jobs,works,sources,events,providers:config};
+  const names=['jobs','works','sources','events','providers'];
+  const result={configured:true,worker:worker.metrics(),recent_limit:100,unavailable:[]};
+  settled.forEach((item,i)=>{result[names[i]]=item.status==='fulfilled'?item.value:[];if(item.status!=='fulfilled')result.unavailable.push(names[i]);});
+  return result;
  }
  async function setConfig(provider,config){
   if(!store)throw Error('HARVEST_NOT_CONFIGURED');
