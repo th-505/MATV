@@ -1725,7 +1725,7 @@ export function renderMediaCard(rawItem) {
 
   card.innerHTML = `
     <div class="poster-wrap">
-      <img src="${escapeHtml(safeImageUrl(poster))}" loading="lazy" alt="${escapeHtml(item.title || '')}" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
+      <img src="${escapeHtml(safeImageUrl(poster))}" loading="lazy" alt="${escapeHtml(item.title || '')}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'">
       <span class="poster-type">${escapeHtml(typeLabel)}</span>
       <button class="card-fav-btn ${favActive ? 'active' : ''}" data-href="${escapeHtml(itemId)}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة">
         ${favActive ? '♥' : '♡'}
@@ -1936,16 +1936,16 @@ async function loadHomeShelves() {
 
     if (dynamicContainer && Array.isArray(homeData?.shelves)) {
       dynamicContainer.innerHTML = '';
-      homeData.shelves.forEach(shelf => {
+      homeData.shelves.forEach((shelf, shelfIndex) => {
         if (!Array.isArray(shelf.items) || !shelf.items.length) return;
         const sec = document.createElement('div');
         sec.className = 'shelf';
-        const trackId = `track_${shelf.id}`;
+        const trackId = `track_${shelfIndex}`;
         sec.innerHTML = `
           <div class="shelf-header">
             <div>
-              <h3 class="shelf-title">${shelf.title}</h3>
-              ${shelf.sub ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">${shelf.sub}</div>` : ''}
+              <h3 class="shelf-title">${escapeHtml(shelf.title)}</h3>
+              ${shelf.sub ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">${escapeHtml(shelf.sub)}</div>` : ''}
             </div>
             <div class="shelf-actions">
               <button class="shelf-arrow" onclick="scrollShelf('${trackId}', 380)">‹</button>
@@ -2547,7 +2547,7 @@ async function loadLiveMatches() {
 
       card.innerHTML = `
         <div class="team-col">
-          <div class="team-logo"><img src="${escapeHtml(safeImageUrl(m.team1?.logo || m.team1?.img || ''))}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
+          <div class="team-logo"><img src="${escapeHtml(safeImageUrl(m.team1?.logo || m.team1?.img || ''))}" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
           <div class="team-name">${escapeHtml(m.team1?.name || 'الفريق الأول')}</div>
         </div>
         <div class="match-center">
@@ -2556,7 +2556,7 @@ async function loadLiveMatches() {
           <div class="match-league">${escapeHtml(m.competition || 'بطولة مباشرة')}</div>
         </div>
         <div class="team-col">
-          <div class="team-logo"><img src="${escapeHtml(safeImageUrl(m.team2?.logo || m.team2?.img || ''))}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
+          <div class="team-logo"><img src="${escapeHtml(safeImageUrl(m.team2?.logo || m.team2?.img || ''))}" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
           <div class="team-name">${escapeHtml(m.team2?.name || 'الفريق الثاني')}</div>
         </div>
       `;

@@ -252,7 +252,7 @@ export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الح�
   return normalizeEpisodeEntries(rawEpisodes,fallbackTitle);
 }
 
-function sanitizeDetailsPayload(details, source = '') {
+export function sanitizeDetailsPayload(details, source = '') {
   if (!details || typeof details !== 'object') return details;
   const servers = Array.isArray(details.servers) ? details.servers : [];
   if (Array.isArray(details.episodes)) {
@@ -260,6 +260,7 @@ function sanitizeDetailsPayload(details, source = '') {
   }
   return {
     ...details,
+    status: details.status || 'success',
     source: details.source || source,
     servers,
     media_sources: servers

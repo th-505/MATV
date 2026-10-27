@@ -1,9 +1,11 @@
+import {sanitizeDetailsPayload} from '../server/scrapers/index.mjs';
+import {isCinemaPayload} from '../web/core/contracts.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {contentIdentity,explicitEpisode,normalizeEpisodeEntries} from '../shared/content-identity.js';
 import {normalizeDetailsResult} from '../server/scrapers/shared/normalize.mjs';
-import {scrapeDetails,extractShahid4uCardsFromHtml} from '../server/scrapers/sites/shahid4u.mjs';
+import {scrapeDetails,extractShahid4uStreamsAndEpisodes,extractShahid4uCardsFromHtml} from '../server/scrapers/sites/shahid4u.mjs';
 test('Conan episode1217, season numbers, Arabic digits and film sequel numbers remain distinct',()=>{
  assert.equal(explicitEpisode('الموسم 1 الحلقة 1217'),1217);
  assert.equal(explicitEpisode('الموسم ١ الحلقة ١٢١٧'),1217);
@@ -28,4 +30,11 @@ test('real observed same-series markup preserves1207..1217 and excludes unrelate
 test('an explicit film cannot acquire a made-up series list from related data',()=>{
  const d=normalizeDetailsResult({title:'فيلم Detective Conan Movie 12',type:'movie',url:'https://shahidfu.cam/film-conan/',episodes:[{number:1,url:'https://shahidfu.cam/episode-related-e1/'}]},{providerId:'shahid4u'});
  assert.equal(d.type,'movie');assert.equal(d.is_series,false);assert.equal(d.episode_number,null);assert.deepEqual(d.episodes,[]);
+});
+
+test('public details wrapper retains source identity and satisfies the real browser contract',async()=>{
+ const html=await readFile(new URL('./fixtures/conan-1217.html',import.meta.url),'utf8');
+ const raw=await extractShahid4uStreamsAndEpisodes('https://shahidfu.cam/episode-almhqq-kwnan-detective-conan-e1217/',{fixtureHtml:html});
+ const actual=sanitizeDetailsPayload(raw,'shahid4u');
+ assert(isCinemaPayload(actual));assert.equal(actual.status,'success');assert.equal(actual.episode_number,1217);assert.equal(actual.type,'series');assert.equal(actual.episodes.at(-1).number,1217);
 });

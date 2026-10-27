@@ -404,12 +404,13 @@ export const scrapeShahid4uCategory = scrapeCatalog;
 export const scrapeShahid4uCatalog = scrapeCatalog;
 export const searchShahid4u = scrapeSearch;
 export const scrapeShahid4uDetails = scrapeDetails;
-export const extractShahid4uStreamsAndEpisodes = async (url) => {
+export const extractShahid4uStreamsAndEpisodes = async (url, options = {}) => {
   const [details, servers] = await Promise.all([
-    scrapeDetails(url),
-    scrapeServers(url)
+    scrapeDetails(url, options),
+    scrapeServers(url, options)
   ]);
   return {
+    ...details,
     episodes: details?.episodes || [],
     servers: servers || []
   };
