@@ -7,7 +7,7 @@ const pubspecVersion = pubspec.match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+(\d+
 assert.equal(pubspecVersion[1], PRODUCT_VERSION, "Runtime PRODUCT_VERSION must match Flutter product version");
 assert.equal(PRODUCT_VERSION, "1.1.5", "Runtime PRODUCT_VERSION must be 1.1.5");
 assert.equal(pubspecVersion[1], "1.1.5", "Flutter pubspec version must be 1.1.5");
-assert.equal(pubspecVersion[2], "102", "Flutter pubspec build must be 102");
+assert.equal(pubspecVersion[2], "105", "Flutter pubspec build must be 105");
 
 const smoke = await readFile(new URL("./remote_runtime_v1_smoke.mjs", import.meta.url), "utf8");
 assert.match(smoke, /import\s*\{\s*PRODUCT_VERSION\s*\}/, "remote Runtime smoke must consume PRODUCT_VERSION from source");
