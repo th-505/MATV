@@ -12,6 +12,7 @@ import {
   normalizeDetailsResult,
   normalizeServerList,
   extractYear,
+  extractSeasonNumber,
   extractEpisodeNumber,
   inferContentType
 } from '../shared/normalize.mjs';
@@ -409,6 +410,7 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
  */
 function extractEpisodesFromDom($, pageUrl) {
   const episodesMap = new Map();
+  const season = extractSeasonNumber($('h1').first().text(),1);
 
   $('a[href*="?key="]').each((idx, el) => {
     const href = $(el).attr('href');
@@ -423,14 +425,15 @@ function extractEpisodesFromDom($, pageUrl) {
     }
 
     const rawText = $(el).text().trim();
-    const num = extractEpisodeNumber(rawText, fullUrl, idx + 1) || (idx + 1);
+    const num = extractEpisodeNumber(rawText, fullUrl);
+    if(!num)return;
 
-    if (!episodesMap.has(num)) {
-      episodesMap.set(num, {
+    if (!episodesMap.has(fullUrl)) {
+      episodesMap.set(fullUrl, {
         id: ref,
         ref,
         number: num,
-        season: 1,
+        season,
         title: rawText && !rawText.includes('undefined') ? rawText : `الحلقة ${num}`,
         url: fullUrl,
         source: PROVIDER_META.id
@@ -509,6 +512,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
   if (!year) year = extractYear(title);
 
   const episodes = extractEpisodesFromDom($, cleanUrl);
+  const selectedKey=new URL(cleanUrl).searchParams.get('key');
+  const selectedEpisode=selectedKey?episodes.find(row=>new URL(row.url).searchParams.get('key')===selectedKey):null;
 
   const normalized = normalizeDetailsResult(
     {
@@ -519,6 +524,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       rating,
       genres,
       episodes,
+      episode_number:selectedEpisode?.number||null,
+      season_number:selectedEpisode?.season||extractSeasonNumber(title,null),
       type: 'series',
       sourceUrl: cleanUrl
     },

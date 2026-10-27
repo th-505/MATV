@@ -95,7 +95,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/akwam.mjs",
       "metadata_line": 33,
-      "source_sha256": "146307020fa4bf162b9ae91ac4e507cdcef78c200105ee9842bf54d83f1ef80f",
+      "source_sha256": "33fb589d58b624ac59e0083fac7a745308159d37c01f093443b3d7edfc66f240",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -128,8 +128,8 @@
       "code": "AY",
       "mirror_of": null,
       "path": "server/scrapers/sites/alooy.mjs",
-      "metadata_line": 52,
-      "source_sha256": "df2d8a9f09c1e3f725d7c2d1fdbff76d2445e43cbcf2fd8269da836de33a3ea5",
+      "metadata_line": 53,
+      "source_sha256": "fb954ba26c28933f105af4fedcad0e33ca258a55ec9acb3b4e6f2c3474c86bf6",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -490,7 +490,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/mycima.mjs",
       "metadata_line": 48,
-      "source_sha256": "10930d9705b198eca0ae359a991d859dcba88bc6d63708bb169a808143f78e38",
+      "source_sha256": "56965c58b7222767012be8d4428762fd338dd744537f049461ddad36a4e68e29",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -590,7 +590,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/shahid4u.mjs",
       "metadata_line": 48,
-      "source_sha256": "03d41d10d5660a79723fbeea34c3d03bba3b7da28976454cf7a876823a2bd5e0",
+      "source_sha256": "11b860dee2424821554a9807c55e451dec718356924cffef50359bf6a0cc9868",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

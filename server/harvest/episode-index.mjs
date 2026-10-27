@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import {explicitEpisode,contentIdentity,identityDigits} from '../../shared/content-identity.js';
+import {explicitEpisode,contentIdentity,identityDigits,explicitSeason} from '../../shared/content-identity.js';
 import {resolveSafeUrl,assertSafeScraperUrl} from '../scrapers/shared/http.mjs';
 import {identityTitle} from '../scrapers/content-discovery.mjs';
 import {createHash} from 'node:crypto';
@@ -13,12 +13,12 @@ function safePage(raw,base,domains){const url=resolveSafeUrl(raw,base,{allowHttp
 const cleanTitle=x=>identityTitle(x).replace(/^(?:انمي|أنمي|anime)\s+/i,'').replace(/[أإآ]/g,'ا');
 /** Observed links only. Never synthesize a guessed page count or number range. */
 export function scanEpisodeIndex(html,url,{provider,domains,title='',episodes=[]}={}){
- const $=cheerio.load(html);const byRef=new Map();
+ const $=cheerio.load(html);const byRef=new Map();const parentSeason=explicitSeason(title,url);
  function add(raw){
   const target=safePage(raw.url||raw.link||raw.ref?.replace(/^[a-z0-9_-]+:/i,'')||'',url,domains);if(!target)return;
   const text=String(raw.title||raw.name||'').trim().slice(0,500);const number=explicitEpisode(text,target)||Number(raw.episode_number??raw.number??raw.num);
   if(!Number.isSafeInteger(number)||number<1||number>100000)return;
-  const season=Number(raw.season_number??raw.season)||contentIdentity({title:text,url:target,type:'series'}).season_number||1;
+  const season=Number(raw.season_number??raw.season)||explicitSeason(text,target)||parentSeason||1;
   const ref=raw.ref||provider+':'+Buffer.from(target).toString('base64url');
   byRef.set(target,{source_ref:ref,url:target,title:text||'الحلقة '+number,season,episode:number});
  }

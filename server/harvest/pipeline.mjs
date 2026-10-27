@@ -18,7 +18,7 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   if(!m?.title)throw Error('HARVEST_CANONICAL_IDENTITY_UNAVAILABLE');
   const series=ref.startsWith('tmdb:tv:');
   await store.putWork({ref,tmdb_id:Number(m.id||ref.split(':').pop()),type:series?'series':'movie',title:m.title,original_title:m.original_title||'',aliases:m.aliases||[],year:m.year||null,runtime_minutes:m.runtime_minutes||null,genres:m.genres||[],poster:m.poster||'',season_count:m.number_of_seasons||null,episode_count:m.number_of_episodes||null,metadata:m,state:'harvesting',last_checked_at:new Date(now()).toISOString(),last_requested_at:new Date(now()).toISOString(),expires_at:new Date(now()+7*86400000).toISOString(),updated_at:new Date(now()).toISOString()});
-  const cycle=Math.floor(now()/3600000);
+  const cycle=input.started_at||Math.floor(now()/3600000);
   const children=[...byId.values()].filter(e=>e.meta.enabled!==false&&supportsContent(e.meta.id,m)).map(entry=>job(ref,entry.meta.id,'provider','search',{phase:'search',query_index:0,page:1,cycle},m.title));
   for(const row of m.seasons||[])children.push(job(ref,'tmdb','season',String(row.season_number),{cycle},m.title,row.season_number,0));
   await store.enqueueMany(children);
@@ -84,11 +84,13 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   const current=await store.getEpisode(ref,entry.meta.id,source);
   if(current?.state==='playable'&&Date.parse(current.media_expires_at)>now()+2*60000)return {refreshAt:Math.max(now()+60000,Date.parse(current.media_expires_at)-5*60000),progress:{outcome:'valid_cached_media'}};
   await store.setEpisode(ref,entry.meta.id,source,{state:'resolving'});
+  try{
   const d=await entry.module.scrapeDetails(source,network);
   const identity=contentIdentity(d);
   const work=await store.getWork(ref);if(!work)throw Error('HARVEST_WORK_MISSING');
   if(input.episode_number){
     if(identity.episode_number!==input.episode_number)throw Error('HARVEST_EPISODE_IDENTITY_CONFLICT');
+    if(identity.season_number!==input.season_number)throw Error('HARVEST_SEASON_IDENTITY_CONFLICT');
     if(!containsWorkTitle(work.metadata,d.title||d.series_title||d.parent_title))throw Error('HARVEST_EPISODE_WORK_UNCONFIRMED');
   }else if(!matchHarvestIdentity(work.metadata,d).accepted)throw Error('HARVEST_WORK_IDENTITY_UNCONFIRMED');
   let candidates=[...(d?.media_sources||[]),...(d?.servers||[])].filter(directCandidate);
@@ -107,6 +109,7 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   if(media.length)await store.request('najd_work_catalog',{ref:'eq.'+ref},'PATCH',{state:'playable',updated_at:new Date(now()).toISOString()});
   await event(ref,entry.meta.id,'episode',media.length?'playable':'unavailable',media.length?null:'DIRECT_MEDIA_NOT_FOUND',{season:input.season_number,episode:input.episode_number,media_count:media.length});
   return {refreshAt:expiry?Math.max(now()+60000,expiry-5*60000):now()+3600000,progress:{outcome:media.length?'playable':'unavailable',media_count:media.length}};
+  }catch(error){await store.setEpisode(ref,entry.meta.id,source,{state:'unavailable',media:[],media_expires_at:null,last_checked_at:new Date(now()).toISOString()}).catch(()=>{});throw error;}
  }
  async function season(input){
   const response=await metadata.season(input.content_ref,input.season_number);

@@ -222,7 +222,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     const title = $('h1.title, h1').first().text().trim() || 'تفاصيل العمل';
     const poster = $('.media-poster img, .image img').attr('src') || $('.media-poster img, .image img').attr('data-src') || '';
     const overview = $('.story, .overview, p.description').text().trim() || '';
-    const yearMatch = title.match(/\((\d{4})\)/) || $('.year').text().match(/(\d{4})/);
+    const ownYear=$('.sh-single-info a[href*="year="]').toArray().find(el=>/السنة/.test($(el).parent().parent().find('strong').text()));
+    const yearMatch = title.match(/\(\s*(\d{4})\s*\)/) || (ownYear?$(ownYear).text():$('.year').text()).match(/(\d{4})/);
 
     // Extract episodes
     const rawEpisodes = [];
@@ -232,7 +233,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       const epHref=$(el).attr('href');
       const epText=$(el).find('.sh-episode-tile-title').text().trim() || $(el).attr('title') || $(el).text().trim();
       const identity=contentIdentity({title:epText,url:epHref,type:'series'});
-      if(epHref && identity.episode_number)rawEpisodes.push({number:identity.episode_number,season:identity.season_number||1,title:epText,url:resolveSafeUrl(epHref,targetUrl)});
+      const observedSeason=extractSeasonNumber(epText+' '+decodeURI(epHref||''),extractSeasonNumber(title,1));
+      if(epHref && identity.episode_number)rawEpisodes.push({number:identity.episode_number,season:observedSeason,title:epText,url:resolveSafeUrl(epHref,targetUrl)});
     });
 
     const episodes = normalizeEpisodeList(rawEpisodes, {

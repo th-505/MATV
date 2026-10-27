@@ -1,3 +1,4 @@
+import {readCachedPlayback} from './harvest/cached-playback.mjs';
 import {getProviderConfig} from './scrapers/shared/provider-config.mjs';
 import {createGithubIdentityVerifier} from './maintenance/github-identity.mjs';
 import {createInternalWeb} from './internal-web.mjs';
@@ -533,11 +534,13 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v2:' + key,result,expiresAt),
     maxConcurrent: 3, maxQueued: 40, ttlMs: 60_000,
     discover: async ({ ref, season, episode }, publish) => {
+      const stored=await readCachedPlayback(harvest,{ref,season:season||1,episode:episode||1});
+      if(stored)return stored;
       // The canonical TMDB identity is authoritative, never caller-supplied title/year.
       const metadata=(await harvest.cachedWork(ref) || await discoveryMetadata.details(ref)).data;
       const series=ref.startsWith('tmdb:tv:');
       if(series){
-        const episodes=(await discoveryMetadata.season(ref,season || 1)).data?.episodes || [];
+        const episodes=(await harvest.cachedSeason(ref,season||1) || await discoveryMetadata.season(ref,season || 1)).data?.episodes || [];
         if(!episodes.some(row=>Number(row.episode_number)===Number(episode || 1)))throw Error('EPISODE_NOT_FOUND');
       }
       const expected={title:metadata.title,aliases:[metadata.original_title,...(metadata.aliases||[])],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};

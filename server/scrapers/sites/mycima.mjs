@@ -237,14 +237,16 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
     // Extract episodes
     const rawEpisodes = [];
+    const pageSeason=extractSeasonNumber(title,1);
     $('.Episodes--Seasons--Episodes a, .EpisodesList a').each((idx, el) => {
       const epHref = $(el).attr('href');
       const epTitle = $(el).find('episodetitle').text().trim() || $(el).text().trim();
-      const numMatch = epTitle.match(/(\d+)/);
-      const epNum = numMatch ? Number(numMatch[1]) : idx + 1;
+      const epNum = extractEpisodeNumber(epTitle,epHref);
+      if(!epNum)return;
       if (epHref) {
         rawEpisodes.push({
           number: epNum,
+          season:extractSeasonNumber(epTitle+' '+decodeURI(epHref),pageSeason),
           title: `الحلقة ${epNum}`,
           url: resolveSafeUrl(epHref, targetUrl)
         });
@@ -308,7 +310,9 @@ export async function scrapeServers(urlOrRef, options = {}) {
       const dlHref = ($(el).attr('href') || '').trim();
       const resText = $(el).find('resolution').text().trim() || $(el).text().trim();
       const qualityMatch = resText.match(/(1080p|720p|480p|360p|4K)/i);
-      if (dlHref && (dlHref.includes('.mp4') || dlHref.includes('.m3u8') || dlHref.startsWith('http'))) {
+      if (dlHref && /^https:\/\//i.test(dlHref)) {
+        let direct=false;try{direct=/\.(?:mp4|m3u8)$/i.test(new URL(dlHref).pathname)}catch{}
+        if(!direct){embedCandidates.push(dlHref);return;}
         const streamType = dlHref.includes('.m3u8') ? 'm3u8' : 'mp4';
         directServers.push({
           provider: PROVIDER_ID,
@@ -319,8 +323,8 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: dlHref,
           type: streamType,
           streamType,
-          quality: qualityMatch ? qualityMatch[1] : 'HD',
-          verified: true,
+          quality: qualityMatch ? qualityMatch[1] : null,
+          verified: false,
           headers: generateAntiBanHeaders(targetUrl)
         });
       }

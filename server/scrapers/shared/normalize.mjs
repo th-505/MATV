@@ -1,4 +1,4 @@
-import { contentIdentity, explicitEpisode } from '../../../shared/content-identity.js';
+import { contentIdentity, explicitEpisode, explicitSeason } from '../../../shared/content-identity.js';
 // server/scrapers/shared/normalize.mjs
 // Unified normalizers for Arabic/English numbers, episodes, seasons, catalog items, details, and servers
 import { resolveSafeUrl } from './http.mjs';
@@ -48,23 +48,7 @@ export function extractYear(text = '') {
 }
 
 export function extractSeasonNumber(text = '', defaultSeason = 1) {
-  const normalized = normalizeDigits(String(text || ''));
-  if (!normalized) return defaultSeason;
-
-  const explicitNum =
-    normalized.match(/(?:الموسم|موسم|season|s)\s*[:\-_]?\s*(\d{1,2})\b/i) ||
-    normalized.match(/\bS(\d{1,2})(?:E\d{1,4})?\b/i);
-  if (explicitNum) {
-    const num = parseInt(explicitNum[1], 10);
-    if (num > 0 && num <= 99) return num;
-  }
-
-  for (const [word, num] of ARABIC_ORDINAL_MAP.entries()) {
-    const rgx = new RegExp(`(?:الموسم|موسم)\\s+${word}\\b`, 'i');
-    if (rgx.test(normalized)) return num;
-  }
-
-  return defaultSeason;
+  return explicitSeason(text,text) || defaultSeason;
 }
 
 export function extractEpisodeNumber(text = '', url = '', _legacyFallback = null) {
@@ -174,7 +158,7 @@ export function normalizeDetailsResult(raw = {}, context = {}) {
   const title = normalizeDigits(String(raw.title || '').trim());
   const poster = resolveSafeUrl(raw.poster || raw.image || '', baseUrl, { allowHttp });
   const identity=contentIdentity({...raw,title,url:sourceUrl,type:raw.type || (raw.episodes?.length?'series':'movie')});
-  const episodes = identity.type === 'movie' ? [] : normalizeEpisodeList(raw.episodes || [], { providerId, baseUrl: sourceUrl || baseUrl, allowHttp });
+  const episodes = identity.type === 'movie' ? [] : normalizeEpisodeList(raw.episodes || [], { providerId, baseUrl: sourceUrl || baseUrl, defaultSeason:identity.season_number||1, allowHttp });
 
   // Group seasons if not explicitly provided
   let seasons = Array.isArray(raw.seasons) ? raw.seasons : [];

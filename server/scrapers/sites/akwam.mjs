@@ -675,7 +675,9 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     $('meta[property="og:description"]').attr('content')?.trim() ||
     '';
 
-  const yearText = $('.badge-secondary, .year, .meta-info').first().text().trim();
+  const ownMetadata=$('h1').first().parent();
+  const labeledYear=ownMetadata.find('span').toArray().map(el=>$(el).text().trim()).find(text=>/^(?:السنة|سنة|year)\s*[:：]/i.test(text));
+  const yearText = labeledYear || ownMetadata.find('.year,.meta-info').first().text().trim();
   const year = extractYear(yearText) || extractYear(title) || '';
   const rating = $('.label.rating, .rating').first().text().replace(/[^\d.]/g, '').trim() || '';
   const quality = $('.badge-quality, .quality').first().text().trim() || '';
