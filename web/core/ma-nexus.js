@@ -1,3 +1,4 @@
+import { normalizeEpisodeEntries } from '../../shared/content-identity.js';
 import { playbackClient, browserDirectSource } from './playback-client.js';
 import { fetchNetflixHomeShelves, fetchFullTmdbDetails, tmdbFetch, normalizeTmdbItem } from './tmdb-service.js';
 import { ProviderEndpoints } from './api-client.js';
@@ -80,24 +81,7 @@ export function formatRuntimeArabic(minutes, mediaType = 'movie') {
 
 // توحيد وتطهير قائمة الحلقات لمنع ظهور undefined نهائياً
 export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الحلقة') {
-  if (!Array.isArray(rawEpisodes)) return [];
-  return rawEpisodes.map((ep, idx) => {
-    const rawText = String(ep?.title || ep?.name || ep?.label || ep?.ep || '');
-    const numMatch = rawText.match(/(\d+)/);
-    const epNum = Number(ep?.number || ep?.episodeNumber || ep?.episode || (numMatch ? numMatch[1] : idx + 1)) || (idx + 1);
-    const cleanTitle = rawText && !rawText.includes('undefined')
-      ? rawText
-      : `${fallbackTitle} ${epNum}`;
-    return {
-      ...ep,
-      id: ep?.id || ep?.ref || ep?.url || `ep-${epNum}`,
-      number: epNum,
-      episodeNumber: epNum,
-      title: cleanTitle,
-      label: `الحلقة ${epNum}`,
-      url: ep?.url || ep?.ref || ep?.link || ''
-    };
-  });
+  return normalizeEpisodeEntries(rawEpisodes,fallbackTitle);
 }
 
 // Missing metadata remains missing; it must never become an invented year or score.

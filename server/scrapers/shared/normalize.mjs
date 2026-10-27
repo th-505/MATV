@@ -1,3 +1,4 @@
+import { contentIdentity } from '../../../shared/content-identity.js';
 // server/scrapers/shared/normalize.mjs
 // Unified normalizers for Arabic/English numbers, episodes, seasons, catalog items, details, and servers
 import { resolveSafeUrl } from './http.mjs';
@@ -209,7 +210,8 @@ export function normalizeDetailsResult(raw = {}, context = {}) {
   const sourceUrl = resolveSafeUrl(raw.sourceUrl || raw.url || '', baseUrl, { allowHttp });
   const title = normalizeDigits(String(raw.title || '').trim());
   const poster = resolveSafeUrl(raw.poster || raw.image || '', baseUrl, { allowHttp });
-  const episodes = normalizeEpisodeList(raw.episodes || [], { providerId, baseUrl: sourceUrl || baseUrl, allowHttp });
+  const identity=contentIdentity({...raw,title,url:sourceUrl,type:raw.type || (raw.episodes?.length?'series':'movie')});
+  const episodes = identity.type === 'movie' ? [] : normalizeEpisodeList(raw.episodes || [], { providerId, baseUrl: sourceUrl || baseUrl, allowHttp });
 
   // Group seasons if not explicitly provided
   let seasons = Array.isArray(raw.seasons) ? raw.seasons : [];
@@ -253,7 +255,8 @@ export function normalizeDetailsResult(raw = {}, context = {}) {
     episodes,
     servers: Array.isArray(raw.servers) ? raw.servers : [],
     source: raw.source || providerId,
-    sourceUrl
+    sourceUrl,
+    ...identity
   };
 }
 

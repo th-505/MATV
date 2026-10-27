@@ -1,3 +1,4 @@
+import { contentIdentity } from '../../shared/content-identity.js';
 import { searchTraceEvent } from '../diagnostics/search-trace.mjs';
 import { listProviders, getProvider } from './registry.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
@@ -46,7 +47,7 @@ export function createSourceSearch({ loadModule = source => getProvider(source.i
     if (!Array.isArray(items)) { const error = new Error('STRUCTURE_CHANGED'); error.code = 'STRUCTURE_CHANGED'; throw error; }
     const result = items
       .filter(item => item && titleMatchesQuery(item.title, q))
-      .map(item => ({ ...item, selected_source: source.id }));
+      .map(item => ({ ...item, ...contentIdentity(item), selected_source: source.id }));
     searchTraceEvent('title_filter', { raw_count: items.length, kept_count: result.length, reason: items.length && !result.length ? 'TITLE_FILTER_REJECTED_ALL' : null });
     return result;
   };

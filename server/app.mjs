@@ -1,3 +1,4 @@
+import { allowedOrigin } from './security-boundary.mjs';
 import { createSearchTraces, diagnosticsAuthorized } from './diagnostics/search-trace.mjs';
 import { diagnosticsHtml, diagnosticsJs } from './diagnostics/dashboard.mjs';
 import { BROWSE_SECTIONS, browseCatalog } from './catalog-browser.mjs';
@@ -58,7 +59,7 @@ function requireTestMode() {
 
 function applyCors(req, res) {
   const origin = String(req.headers.origin || "");
-  if (origin && (ALLOWED_ORIGINS.has(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin.endsWith(".github.io"))) {
+  if (origin && (allowedOrigin(origin))) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Vary", "Origin");
@@ -579,7 +580,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if (url.pathname === '/api/v1/diagnostics/searches') {
         if (!diagnosticsAuthorized(req)) return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
         if (req.method !== 'GET') return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
-        return sendJson(req,res,200,{items:traceStore.list({provider:url.searchParams.get('provider')||'',query:url.searchParams.get('q')||'',id:url.searchParams.get('id')||''}),retention_seconds:traceStore.retention_seconds});
+        return sendJson(req,res,200,{items:traceStore.list({provider:url.searchParams.get('provider')||'',query:url.searchParams.get('q')||'',id:url.searchParams.get('id')||''}),runtime:{node:process.version,openssl:process.versions.openssl},retention_seconds:traceStore.retention_seconds});
       }
       if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());

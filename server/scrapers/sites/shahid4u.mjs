@@ -2,6 +2,7 @@
 // Standalone provider module for شاهد فور يو (Shahid4U) — Code: SU
 
 import * as cheerio from 'cheerio';
+import { contentIdentity } from '../../../shared/content-identity.js';
 import {
   fetchProviderHtml,
   fetchSafeResponse,
@@ -225,18 +226,13 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
     // Extract episodes
     const rawEpisodes = [];
-    $('a[href*="/episode/"]').each((idx, el) => {
-      const epHref = $(el).attr('href');
-      const epText = $(el).text().trim();
-      const numMatch = epText.match(/(\d+)/);
-      const epNum = numMatch ? Number(numMatch[1]) : idx + 1;
-      if (epHref) {
-        rawEpisodes.push({
-          number: epNum,
-          title: `الحلقة ${epNum}`,
-          url: resolveSafeUrl(epHref, targetUrl)
-        });
-      }
+    const episodeLinks = $('.sh-single-episode-grid a, .EpisodesList a, .episodes-list a');
+    const links = episodeLinks.length ? episodeLinks : $('a[href*="/episode/"]');
+    links.each((_,el)=>{
+      const epHref=$(el).attr('href');
+      const epText=$(el).find('.sh-episode-tile-title').text().trim() || $(el).attr('title') || $(el).text().trim();
+      const identity=contentIdentity({title:epText,url:epHref,type:'series'});
+      if(epHref && identity.episode_number)rawEpisodes.push({number:identity.episode_number,season:identity.season_number||1,title:epText,url:resolveSafeUrl(epHref,targetUrl)});
     });
 
     const episodes = normalizeEpisodeList(rawEpisodes, {
@@ -255,7 +251,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         title: cleanTitleText(title),
         poster: resolveSafeUrl(poster, targetUrl),
         overview,
-        year: yearMatch ? yearMatch[1] : '2025',
+        year: yearMatch ? yearMatch[1] : null,
         type: isSeries ? 'series' : 'movie',
         is_series: isSeries,
         episodes,

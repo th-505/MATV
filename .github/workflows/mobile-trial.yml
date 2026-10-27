@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.19.0'
+          node-version: '24.22.1'
           cache: npm
       - run: npm ci
       - run: npm run check
@@ -88,7 +88,7 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.7'
+          flutter-version: '3.47.8'
           channel: stable
           cache: true
       - name: Create Android scaffolding
@@ -160,7 +160,7 @@ jobs:
           swift --version
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.7'
+          flutter-version: '3.47.8'
           channel: stable
           cache: true
       - name: Create iOS scaffolding
@@ -206,7 +206,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.7'
+          flutter-version: '3.47.8'
           channel: stable
           cache: true
       - name: Create Windows scaffolding
@@ -278,7 +278,7 @@ jobs:
           swift --version
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.7'
+          flutter-version: '3.47.8'
           channel: stable
           cache: true
       - name: Create macOS scaffolding
@@ -388,8 +388,8 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"T-A-TV {version} (build {build}), Search diagnostics and verified source search fixes.\n\n"
-              "Six targets packaged and checked from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
+              f"T-A-TV {version} (build {build}), Security refresh and source-accurate episode identity.\n\n"
+              "Node 24.22.1, Flutter 3.47.8 / Dart 3.13.7 security baseline; Wrangler dependencies patched. Conan source episode 1217 remains 1217; synthetic episode lists removed, movie pages have no episode grid. Tightened CORS, rate limits, output escaping and upstream body bounds.\n\nSix targets packaged and checked from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
               "Source names use Arabic labels and domains. Search requests carry anonymous per-launch session and platform identifiers plus a trace ID. The private server dashboard shows upstream URLs, redirects, HTTP status, parsing and title filtering. MyCima, Shahid4u and QFilm search paths and cards were updated from observed live forms. This does not certify all providers: blocked, suspended, login-gated and timed-out sources remain explicitly unavailable. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
               "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
               "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"

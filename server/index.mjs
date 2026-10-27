@@ -57,7 +57,7 @@ async function proxyMatchLogo(req, res, url) {
   try {
     const upstream = await fetch(source, {
       signal: controller.signal,
-      redirect: "follow",
+      redirect: "manual",
       headers: {
         Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         Referer: "https://kooorracity.com/",
@@ -69,7 +69,7 @@ async function proxyMatchLogo(req, res, url) {
       return res.end(JSON.stringify({ error: "MATCH_LOGO_UPSTREAM" }));
     }
     const type = String(upstream.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-    if (!type.startsWith("image/")) {
+    if (!["image/png","image/jpeg","image/gif","image/webp","image/avif"].includes(type)) {
       res.writeHead(502, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
       return res.end(JSON.stringify({ error: "MATCH_LOGO_NOT_IMAGE" }));
     }

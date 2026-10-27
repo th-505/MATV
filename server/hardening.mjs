@@ -51,6 +51,7 @@ export function createRateLimiter({ windowMs = 60_000, max = 120 } = {}) {
     let entry = hits.get(id);
     if (!entry || entry.resetAt <= now) {
       entry = { count: 0, resetAt: now + window };
+      if (hits.size >= 10000) hits.delete(hits.keys().next().value);
       hits.set(id, entry);
     }
     entry.count += 1;
@@ -64,11 +65,10 @@ export function createRateLimiter({ windowMs = 60_000, max = 120 } = {}) {
 }
 
 export function getClientAddress(req) {
-  const forwarded = String(req?.headers?.["x-forwarded-for"] || "")
-    .split(",")
-    .map((value) => value.trim())
-    .find(Boolean);
-  return forwarded || String(req?.socket?.remoteAddress || "unknown");
+  // Render appends its verified peer; never trust a client-supplied leftmost IP.
+  // Direct/self-hosted deployments ignore forwarded headers by default.
+  const peers = String(req?.headers?.["x-forwarded-for"] || "").split(",").map(x=>x.trim()).filter(Boolean);
+  return (process.env.RENDER ? peers.at(-1) : '') || String(req?.socket?.remoteAddress || "unknown");
 }
 
 export function maybeCompress(req, body, { thresholdBytes = 1_024 } = {}) {

@@ -1,3 +1,4 @@
+import { allowedOrigin, protectServer } from './security-boundary.mjs';
 import { searchTraceEvent } from './diagnostics/search-trace.mjs';
 import { pathToFileURL } from "node:url";
 import { createProductionServer } from "./index.mjs";
@@ -30,7 +31,7 @@ const FALLBACK_ROUTES = new Set([
 
 function applyCors(req, res) {
   const origin = String(req.headers.origin || "");
-  if (origin && (ALLOWED_ORIGINS.has(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin.endsWith(".github.io"))) {
+  if (origin && (allowedOrigin(origin))) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Vary", "Origin");
@@ -160,7 +161,7 @@ export function createMitvRuntimeServer({
 
     return baseHandler(req, res);
   });
-  return baseServer;
+  return protectServer(baseServer);
 }
 
 export function startMitvRuntimeServer({ port = Number(process.env.PORT || 3000) } = {}) {

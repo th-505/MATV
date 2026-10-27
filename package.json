@@ -15,7 +15,7 @@
     "test:unified": "node --test tests/*.test.mjs && node scripts/ui_shell_test.mjs && node scripts/metadata_ui_test.mjs && python3 scripts/platform_parity_test.py"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1"
   },
   "dependencies": {
     "cheerio": "1.2.0"

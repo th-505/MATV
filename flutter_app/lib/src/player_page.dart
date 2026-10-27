@@ -1,3 +1,4 @@
+import 'cycle_feature_policy.dart';
 import 'stream_bridge.dart';
 import 'fullscreen_video_surface.dart';
 import 'download_service.dart';
@@ -181,7 +182,7 @@ class _PlayerPageState extends State<PlayerPage> {
   StreamBridge? _streamBridge;
   final _sources = <PlaybackSource>[];
   int _sourceIndex = 0;
-  int _generation = 0;
+  final _generation = RequestGeneration();
   DateTime? _expiresAt;
   Duration? _handoffPosition;
   Duration? _lastObservedPosition;
@@ -304,7 +305,7 @@ class _PlayerPageState extends State<PlayerPage> {
     bool keepSources = false,
     bool software = false,
   }) async {
-    final generation = ++_generation;
+    final generation = _generation.next();
     _nativeStartupTimer?.cancel();
     _nativeFailureInFlight = false;
     try {
@@ -320,7 +321,7 @@ class _PlayerPageState extends State<PlayerPage> {
           widget.sourceRef,
           refresh: forceRefresh,
         );
-        if (!mounted || generation != _generation) return;
+        if (!mounted || !_generation.isCurrent(generation)) return;
         mediaPath = resolved.mediaPath;
         mediaType = resolved.mediaType;
         playbackMode = resolved.playbackMode;
@@ -374,7 +375,7 @@ class _PlayerPageState extends State<PlayerPage> {
       final previousBridge = _streamBridge;
       _streamBridge = null;
       await previousBridge?.close();
-      if (!mounted || generation != _generation) return;
+      if (!mounted || !_generation.isCurrent(generation)) return;
       Uri uri;
       if (widget.localFileUri != null) {
         uri = widget.localFileUri!;
@@ -388,7 +389,7 @@ class _PlayerPageState extends State<PlayerPage> {
             LocalStreamBridge(trustedEdge: playbackMode == 'edge_local_proxy');
         _streamBridge = bridge;
         uri = await bridge.open(Uri.parse(mediaPath), playbackHeaders);
-        if (!mounted || generation != _generation) {
+        if (!mounted || !_generation.isCurrent(generation)) {
           await bridge.close();
           return;
         }
@@ -488,7 +489,7 @@ class _PlayerPageState extends State<PlayerPage> {
         }
       });
     } catch (_) {
-      if (!mounted || generation != _generation) return;
+      if (!mounted || !_generation.isCurrent(generation)) return;
       await _fallbackFromNative('تعذر تشغيل هذا المصدر داخل المشغل الأصلي');
     }
   }
@@ -747,7 +748,7 @@ class _PlayerPageState extends State<PlayerPage> {
 
   @override
   void dispose() {
-    _generation++;
+    _generation.cancelOutstanding();
     _controlsTimer?.cancel();
     _seekFeedbackTimer?.cancel();
     unawaited(_restoreDisplay());

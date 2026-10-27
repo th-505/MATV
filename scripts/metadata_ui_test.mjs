@@ -36,7 +36,7 @@ const server = createServer(async (req, res) => {
   try {
     const path = new URL(req.url, 'http://localhost').pathname;
     if (path === '/') { res.setHeader('Content-Type', 'text/html'); return res.end('<!doctype html><html><body><main id="fixture"></main></body></html>'); }
-    if (!path.startsWith('/web/core/')) { res.statusCode = 404; return res.end(); }
+    if (!path.startsWith('/web/core/') && path !== '/shared/content-identity.js') { res.statusCode = 404; return res.end(); }
     const content = await readFile(resolve(root, '.' + path));
     res.setHeader('Content-Type', 'text/javascript'); res.end(content);
   } catch { res.statusCode = 404; res.end(); }

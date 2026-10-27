@@ -215,8 +215,8 @@ export async function fetchFullTmdbDetails(mediaType, tmdbId, seasonNumber = 1) 
     if (!Number.isInteger(seasonValue) || seasonValue < 0 || seasonValue > 100) return null;
     const seasonData = await tmdbFetch(`/tv/${tmdbId}/season/${seasonValue}`);
     if (Array.isArray(seasonData?.episodes) && seasonData.episodes.length > 0) {
-      episodes = seasonData.episodes.map((ep, idx) => {
-        const epNum = ep.episode_number || (idx + 1);
+      episodes = seasonData.episodes.filter(ep=>Number.isInteger(ep.episode_number)&&ep.episode_number>0).map((ep) => {
+        const epNum = ep.episode_number;
         return {
           number: epNum,
           episodeNumber: epNum,
@@ -227,12 +227,6 @@ export async function fetchFullTmdbDetails(mediaType, tmdbId, seasonNumber = 1) 
           runtime: ep.runtime || 45
         };
       });
-    } else if (Array.isArray(details.seasons) && details.seasons.length > 0) {
-      const matchedSeason = details.seasons.find(s => Number(s.season_number) === seasonValue);
-      const totalEps = Math.min(Math.max(Number(matchedSeason?.episode_count || details.number_of_episodes) || 12, 1), 50);
-      for (let i = 1; i <= totalEps; i++) {
-        episodes.push({ number: i, episodeNumber: i, season: seasonValue, title: `الحلقة ${i}` });
-      }
     }
   }
 

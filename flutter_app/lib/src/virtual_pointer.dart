@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 /// D-pad focus navigation remains the default. A settings switch can call
 /// [setEnabled]; a connected scope also supports F8 and the remote menu key.
 class VirtualPointerController extends ChangeNotifier {
+  // Keep the public parameter name while storing state in a private field.
+  // ignore: prefer_initializing_formals
   VirtualPointerController({bool enabled = false}) : _enabled = enabled;
 
   bool _enabled;

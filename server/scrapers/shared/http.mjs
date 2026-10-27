@@ -322,6 +322,29 @@ async function acquireHostSlot(hostname) {
   };
 }
 
+// Bound decompressed HTML as well as declared Content-Length, including chunked bodies.
+export async function readBoundedText(response, maxBytes = 8 * 1024 * 1024) {
+  if (Number(response.headers?.get?.('content-length')) > maxBytes) {
+    await response.body?.cancel(); throw new Error('UPSTREAM_BODY_TOO_LARGE');
+  }
+  if (!response.body?.getReader) {
+    const text = await response.text();
+    if (Buffer.byteLength(text) > maxBytes) throw new Error('UPSTREAM_BODY_TOO_LARGE');
+    return text;
+  }
+  const reader = response.body.getReader();
+  const chunks = []; let size = 0;
+  try {
+    while (true) {
+      const {done,value} = await reader.read(); if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) { await reader.cancel(); throw new Error('UPSTREAM_BODY_TOO_LARGE'); }
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks).toString('utf8');
+  } finally { reader.releaseLock(); }
+}
+
 export async function fetchSafeResponse(targetUrl, options = {}) {
   const {
     method = 'GET',
@@ -400,7 +423,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           // A HEAD probe must never consume a body, even from a broken upstream.
           let text = '';
           if (method === 'HEAD') await res.body?.cancel();
-          else text = await res.text();
+          else text = await readBoundedText(res);
 
           searchTraceEvent('upstream_response', { url: hopUrl, status: res.status, bytes: Buffer.byteLength(text), content_type: res.headers?.get?.('content-type') || '', challenge: isCloudflareOrAccessBlock(res.status, text, res.headers), html_title: text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g, '').trim() || '' });
           searchTraceHtml(text,hopUrl);

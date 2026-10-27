@@ -1345,15 +1345,16 @@ main.container { max-width: 1600px; margin: 0 var(--sidebar-width) 0 0; padding:
 
 <!-- Unified JavaScript Application (MA-NEXUS v8.0) -->
 <script type="module">
-import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.1.0';
+import { contentIdentity } from './shared/content-identity.js';
+import { getMatches, getMatchServers, getMatchPlayback, getCinemaCategory, searchCinema, getCinemaDetails } from './web/core/api-client.js?v=1.1.2';
 import { createVideoStage } from './web/core/video-stage.js';
 import { playbackMessage } from './web/core/playback-client.js';
 import { UI_CONTRACT, resolveNavigationTab } from './web/core/ui-contract.js';
-import { CinemaCategories } from './web/core/catalog-config.js?v=1.1.0';
-import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.1.0';
-import { resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.1.0';
-import { fetchFullTmdbDetails, tmdbFetch, normalizeTmdbItem } from './web/core/tmdb-service.js?v=1.1.0';
-import { findAndLoadSubtitles } from './web/core/subtitles-hybrid.js?v=1.1.0';
+import { CinemaCategories } from './web/core/catalog-config.js?v=1.1.2';
+import { formatSaudiMatchTime, hasSaudiMatchTimePassed } from './web/core/match-time.js?v=1.1.2';
+import { resolvePlaybackUrl } from './web/core/direct-playback.js?v=1.1.2';
+import { fetchFullTmdbDetails, tmdbFetch, normalizeTmdbItem } from './web/core/tmdb-service.js?v=1.1.2';
+import { findAndLoadSubtitles } from './web/core/subtitles-hybrid.js?v=1.1.2';
 import {
   loadHomeWithSupabaseSync,
   deduplicateAndMergeCatalog,
@@ -1363,7 +1364,7 @@ import {
   normalizeEpisodesList,
   probeAndRankServers,
   metadataYear, metadataRating, escapeHtml, safeImageUrl, selectTmdbMatch
-} from './web/core/ma-nexus.js?v=1.1.0';
+} from './web/core/ma-nexus.js?v=1.1.2';
 
 // Responsive shell: a permanent right sidebar becomes a modal drawer on handhelds.
 document.title = UI_CONTRACT.name;
@@ -1410,7 +1411,7 @@ setSidebarOpen(false);
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=1.1.0').catch(console.warn);
+  navigator.serviceWorker.register('./sw.js?v=1.1.2').catch(console.warn);
 }
 
 // Global State & In-Memory Work Registry
@@ -1436,7 +1437,10 @@ function registerWorkItem(item) {
   const id = String(item.id || item.href || item.ref || '');
   if (!id) return item;
   const existing = workRegistry.get(id) || {};
-  const merged = { ...existing, ...item, id, href: id };
+  const combined = { ...existing, ...item, id, href:id };
+  const merged = { ...combined, ...contentIdentity(combined) };
+  // Discard old synthetic cached lists; real scraper entries have source references.
+  if (!id.startsWith('tmdb:') && Array.isArray(merged.episodes)) merged.episodes=merged.episodes.filter(ep=>ep.ref||ep.url||ep.link);
   workRegistry.set(id, merged);
   try {
     sessionStorage.setItem('matv_work_' + id, JSON.stringify(merged));
@@ -1451,8 +1455,7 @@ function getRegisteredWorkItem(id, fallbackTitle = '', fallbackType = 'movie') {
     const raw = sessionStorage.getItem('matv_work_' + id);
     if (raw) {
       const parsed = JSON.parse(raw);
-      workRegistry.set(id, parsed);
-      return parsed;
+      return registerWorkItem(parsed);
     }
   } catch (_) {}
   const isTv = fallbackType === 'tv' || fallbackType === 'series' || String(id).includes(':tv:') || String(id).includes('series');
@@ -1798,8 +1801,9 @@ window.openPlayerPage = function(id, season = 1, epNum = 1, srvIdx = 0) {
   const s = Math.max(1, Number(season) || 1);
   const ep = Math.max(1, Number(epNum) || 1);
   const srv = Math.max(0, Number(srvIdx) || 0);
-  const title = currentDetailItem?.title || currentWatchItem?.title || '';
-  const type = currentDetailItem?.mediaType || currentWatchItem?.mediaType || 'movie';
+  const work = getRegisteredWorkItem(id);
+  const title = work?.title || '';
+  const type = work?.mediaType || 'movie';
   window.location.hash = `#/watch?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&s=${s}&ep=${ep}&srv=${srv}`;
 };
 
@@ -2044,7 +2048,7 @@ async function renderTitleDetailPage(params) {
   const titleParam = params.get('title') || '';
   const baseItem = getRegisteredWorkItem(id, titleParam, typeParam);
   currentDetailItem = baseItem;
-  currentDetailSeason = 1;
+  currentDetailSeason = baseItem.season_number || 1;
 
   document.getElementById('detailTitle').textContent = baseItem.title || 'جاري التحميل…';
   document.getElementById('detailPoster').src = baseItem.poster || baseItem.img || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
@@ -2066,7 +2070,7 @@ async function renderTitleDetailPage(params) {
   };
 
   document.getElementById('detailPlayNowBtn').onclick = () => {
-    window.openPlayerPage(currentDetailItem.id, currentDetailSeason, 1, 0);
+    window.openPlayerPage(currentDetailItem.id, currentDetailSeason, currentDetailItem.episode_number || currentDetailItem.episodes?.find(ep=>ep.number)?.number || 1, 0);
   };
 
   // Resolve TMDb ID if needed
@@ -2100,9 +2104,9 @@ async function renderTitleDetailPage(params) {
   if (!String(id).startsWith('tmdb:')) {
     try {
       const scRes = await getCinemaDetails(id);
-      if (Array.isArray(scRes?.data?.episodes) && scRes.data.episodes.length > 0) {
-        scraperEpisodes = normalizeEpisodesList(scRes.data.episodes);
-      }
+      const data = scRes?.data && typeof scRes.data==='object' ? scRes.data : scRes;
+      if (Array.isArray(data?.episodes)) scraperEpisodes = normalizeEpisodesList(data.episodes);
+      if (data?.title || data?.type) currentDetailItem=registerWorkItem({...baseItem,...data,id:baseItem.id});
     } catch (_) {}
   }
 
@@ -2156,7 +2160,8 @@ async function renderTitleDetailPage(params) {
   }
 
   // Episodes Section (Strict anti-undefined numbering)
-  const isSeriesWork = mediaType === 'tv' || scraperEpisodes.length > 0 || (Array.isArray(currentDetailItem.episodes) && currentDetailItem.episodes.length > 0);
+  mediaType=currentDetailItem.mediaType || mediaType;
+  const isSeriesWork = mediaType === 'tv';
   if (isSeriesWork) {
     const epWrap = document.getElementById('detailEpisodesWrap');
     const seasonsBar = document.getElementById('detailSeasonsBar');
@@ -2165,14 +2170,16 @@ async function renderTitleDetailPage(params) {
 
     const renderSeasonEpisodes = (rawEps, seasonNum) => {
       currentDetailSeason = seasonNum;
-      const cleanEps = normalizeEpisodesList(rawEps.length ? rawEps : Array.from({ length: 12 }, (_, i) => ({ number: i + 1, title: `الحلقة ${i + 1}` })));
+      const cleanEps = normalizeEpisodesList(rawEps);
       currentDetailItem.episodes = cleanEps;
       epGrid.innerHTML = '';
+      if(!cleanEps.length)epGrid.textContent='لم تتوفر قائمة حلقات موثقة من المصدر؛ لم تُنشأ أرقام بديلة.';
       cleanEps.forEach((ep, index) => {
-        const epNum = ep.number || ep.episodeNumber || (String(ep.title || '').match(/\d+/)?.[0]) || (index + 1);
+        const epNum = ep.number;
         const btn = document.createElement('button');
         btn.className = 'ep-btn';
-        btn.textContent = `الحلقة ${epNum}`;
+        btn.textContent = epNum ? `الحلقة ${epNum}` : ep.title;
+        btn.disabled = !epNum;
         btn.onclick = () => {
           if (ep.url || ep.link) currentDetailItem.episodeRef = ep.url || ep.link;
           window.openPlayerPage(currentDetailItem.id, seasonNum, epNum, 0);
@@ -2207,7 +2214,7 @@ async function renderTitleDetailPage(params) {
     }
 
     const initialEps = scraperEpisodes.length > 0 ? scraperEpisodes : (currentDetailItem.episodes || []);
-    renderSeasonEpisodes(initialEps, 1);
+    renderSeasonEpisodes(initialEps, currentDetailSeason);
   }
 
   // Similar Works Section
@@ -2336,14 +2343,8 @@ async function renderPlayerWatchPage(params) {
   const nextEpBtn = document.getElementById('nextEpBtn');
   if (isTv && !isLiveStream) {
     epNavBar.style.display = 'flex';
-    prevEpBtn.disabled = epNum <= 1;
-    prevEpBtn.style.opacity = epNum <= 1 ? '0.4' : '1';
-    prevEpBtn.onclick = () => {
-      if (epNum > 1) window.openPlayerPage(id, season, epNum - 1, 0);
-    };
-    nextEpBtn.onclick = () => {
-      window.openPlayerPage(id, season, epNum + 1, 0);
-    };
+    prevEpBtn.disabled = nextEpBtn.disabled = true;
+    prevEpBtn.onclick = nextEpBtn.onclick = null;
   } else {
     epNavBar.style.display = 'none';
   }
@@ -2406,11 +2407,20 @@ async function renderPlayerWatchPage(params) {
     }
 
     watchEpGrid.innerHTML = '';
+    const numbered=episodesList.filter(ep=>ep.number && (!ep.season || Number(ep.season)===season)).sort((a,b)=>a.number-b.number);
+    const selected=numbered.findIndex(ep=>ep.number===epNum);
+    const previous=selected>0?numbered[selected-1]:null;
+    const next=selected>=0?numbered[selected+1]:null;
+    prevEpBtn.disabled=!previous;nextEpBtn.disabled=!next;
+    prevEpBtn.onclick=()=>previous&&window.openPlayerPage(id,season,previous.number,0);
+    nextEpBtn.onclick=()=>next&&window.openPlayerPage(id,season,next.number,0);
+    if(!episodesList.length)watchEpGrid.textContent='لا توجد قائمة حلقات موثقة من هذا المصدر.';
     episodesList.forEach((ep, index) => {
-      const num = ep.number || ep.episodeNumber || (String(ep.title || '').match(/\d+/)?.[0]) || (index + 1);
+      const num = ep.number;
       const epBtn = document.createElement('button');
       epBtn.className = 'ep-btn' + (Number(num) === Number(epNum) ? ' active' : '');
-      epBtn.textContent = `الحلقة ${num}`;
+      epBtn.textContent = num ? `الحلقة ${num}` : ep.title;
+      epBtn.disabled = !num;
       epBtn.onclick = () => window.openPlayerPage(id, season, num, 0);
       watchEpGrid.appendChild(epBtn);
     });
@@ -2537,17 +2547,17 @@ async function loadLiveMatches() {
 
       card.innerHTML = `
         <div class="team-col">
-          <div class="team-logo"><img src="${m.team1?.logo || m.team1?.img || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
-          <div class="team-name">${m.team1?.name || 'الفريق الأول'}</div>
+          <div class="team-logo"><img src="${escapeHtml(safeImageUrl(m.team1?.logo || m.team1?.img || ''))}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
+          <div class="team-name">${escapeHtml(m.team1?.name || 'الفريق الأول')}</div>
         </div>
         <div class="match-center">
           <span class="match-status-badge ${isLive ? 'live' : ''}">${statusLabel}</span>
-          <div class="match-time">${timeLabel}</div>
-          <div class="match-league">${m.competition || 'بطولة مباشرة'}</div>
+          <div class="match-time">${escapeHtml(timeLabel)}</div>
+          <div class="match-league">${escapeHtml(m.competition || 'بطولة مباشرة')}</div>
         </div>
         <div class="team-col">
-          <div class="team-logo"><img src="${m.team2?.logo || m.team2?.img || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
-          <div class="team-name">${m.team2?.name || 'الفريق الثاني'}</div>
+          <div class="team-logo"><img src="${escapeHtml(safeImageUrl(m.team2?.logo || m.team2?.img || ''))}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\' fill=\\'%23e8bd75\\'/></svg>'"></div>
+          <div class="team-name">${escapeHtml(m.team2?.name || 'الفريق الثاني')}</div>
         </div>
       `;
       card.onclick = () => openMatchStream(m, idx);

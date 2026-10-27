@@ -1,3 +1,4 @@
+import { normalizeEpisodeEntries } from '../../shared/content-identity.js';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 import { createContentDiscovery } from './content-discovery.mjs';
 import { PROVIDERS_MAP } from './registry.mjs';
@@ -248,24 +249,7 @@ export async function scrapeRealSearch(query) {
 }
 
 export function normalizeEpisodesList(rawEpisodes = [], fallbackTitle = 'الحلقة') {
-  if (!Array.isArray(rawEpisodes)) return [];
-  return rawEpisodes.map((ep, idx) => {
-    const rawText = String(ep?.title || ep?.name || ep?.label || ep?.ep || '');
-    const numMatch = rawText.match(/(\d+)/);
-    const epNum = Number(ep?.number || ep?.episodeNumber || ep?.episode || (numMatch ? numMatch[1] : idx + 1)) || (idx + 1);
-    const cleanTitle = rawText && !rawText.includes('undefined')
-      ? rawText
-      : `${fallbackTitle} ${epNum}`;
-    return {
-      ...ep,
-      id: ep?.id || ep?.ref || ep?.url || `ep-${epNum}`,
-      number: epNum,
-      episodeNumber: epNum,
-      title: cleanTitle,
-      label: `الحلقة ${epNum}`,
-      url: ep?.url || ep?.ref || ep?.link || ''
-    };
-  });
+  return normalizeEpisodeEntries(rawEpisodes,fallbackTitle);
 }
 
 function sanitizeDetailsPayload(details, source = '') {

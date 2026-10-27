@@ -1,0 +1,29 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname} from 'node:path';
+import {chromium} from 'playwright-core';
+import {scrapeDetails} from '../server/scrapers/sites/shahid4u.mjs';
+const root=resolve(new URL('..',import.meta.url).pathname);
+const item={id:'shahid4u:conan-fixture',ref:'shahid4u:conan-fixture',title:'انمي المحقق كونان Detective Conan الحلقة 1217 مترجمة',type:'series',episode_number:1217,season_number:1,poster:''};
+const html=await readFile(new URL('../tests/fixtures/conan-1217.html',import.meta.url),'utf8');
+const details=await scrapeDetails('https://shahidfu.cam/episode-almhqq-kwnan-detective-conan-e1217/',{fixtureHtml:html});
+const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;const file=resolve(root,'.'+(path==='/'?'/index.html':path));if(!file.startsWith(root+'/')){res.statusCode=403;return res.end()};res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'})[extname(file)]||'application/octet-stream');res.end(await readFile(file))}catch{res.statusCode=404;res.end()}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;let browser;
+try{
+ browser=await chromium.launch({executablePath:process.env.CHROMIUM_BIN||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});const page=await browser.newPage({serviceWorkers:"block"});page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',async route=>{const u=new URL(route.request().url());if(u.origin===base)return route.continue();if(!['matv.onrender.com','127.0.0.1'].includes(u.hostname)){if(route.request().resourceType()==='image')return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aRZkAAAAASUVORK5CYII=','base64')});return route.abort()};let body={status:'success',data:[],results:[],sources:[]};
+ if(u.pathname==='/api/v1/explore/sources')body={status:'success',data:[{id:'shahid4u',search:true,name_ar:'شاهد فور يو',domain:'shahidfu.cam'}]};
+ if(u.pathname==='/api/v1/explore')body={status:'success',items:[item]};
+ if(u.pathname==='/api/cinema/details')body=u.searchParams.get('ref')==='shahid4u:film-fixture'?{status:'success',title:'فيلم Detective Conan Movie 12',type:'movie',episodes:[{number:1,ref:'unrelated'}]}:{status:'success',...details};
+ if(u.pathname==='/api/v1/matches')body={status:'success',version:'1.1.2',kind:'matches',data:[{team1:{name:'<img src=x onerror="window.__xss=1">',logo:'x" onerror="window.__xss=1'},team2:{name:'الفريق الثاني'},competition:'<svg onload="window.__xss=1">',status:'live'}]};
+ if(u.pathname==='/api/v1/playback')body={status:'unavailable',servers:[],playback_reason:'PINNED_DIRECT_WEB_UNAVAILABLE'};
+ await route.fulfill({contentType:'application/json',body:JSON.stringify(body)});
+ });
+ await page.goto(base+'/#search');await page.locator('#advancedSearch summary').click();await page.locator('#exploreProvider').selectOption('shahid4u');await page.locator('#exploreQuery').fill('conan');await page.locator('#exploreRun').click();await page.locator('#exploreGrid .media-card').first().click();
+ await page.waitForSelector('#detailEpisodesGrid .ep-btn');const labels=await page.locator('#detailEpisodesGrid .ep-btn').allTextContents();assert(labels.includes('الحلقة 1217'));assert(!labels.includes('الحلقة 1'));assert.equal(labels.length,12);
+ await page.locator('#detailPlayNowBtn').click();await page.waitForFunction(()=>location.hash.includes('ep=1217'));await page.waitForSelector('#watchEpisodesGrid .ep-btn');assert((await page.locator('#watchPageTitle').textContent()).includes('الحلقة 1217'));assert.equal(await page.locator('#nextEpBtn').isDisabled(),true);assert.equal(await page.locator('#prevEpBtn').isDisabled(),false);
+ await page.evaluate(()=>window.openTitlePage({id:'shahid4u:film-fixture',ref:'shahid4u:film-fixture',title:'فيلم Detective Conan Movie 12',type:'movie'}));await page.waitForTimeout(100);assert.equal(await page.locator('#detailEpisodesWrap').isVisible(),false);await page.locator('#detailPlayNowBtn').click();await page.waitForTimeout(100);assert.equal(await page.locator('#watchEpisodesBox').isVisible(),false);assert.equal(await page.locator('#watchEpNavBar').isVisible(),false);
+ await page.locator('#primaryNavigation [data-tab="live"]').click();await page.waitForSelector('#matchesContainer .match-card');assert.equal(await page.locator('#matchesContainer svg, #matchesContainer .team-name img').count(),0);assert.equal(await page.evaluate(()=>window.__xss),undefined);assert((await page.locator('#matchesContainer').textContent()).includes('<svg onload='));
+ assert.deepEqual(errors,[]);console.log('Conan1217 browser regression: real source numbers/references preserved, no synthetic1–12, movie has no episodes, navigation bounded to listed episodes.');
+}finally{await browser?.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

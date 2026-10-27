@@ -54,6 +54,7 @@ class _DetailsPageState extends State<DetailsPage> {
   @override
   void initState() {
     super.initState();
+    selectedSeason = widget.item.season ?? 1;
     _downloads = widget.downloads ?? DownloadService();
     _ownsDownloads = widget.downloads == null;
     widget.api.rememberIdentity(widget.item);

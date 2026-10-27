@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.7'
+          flutter-version: '3.47.8'
           channel: stable
           cache: true
       - name: Apply approved Web branding
@@ -38,7 +38,7 @@ jobs:
           flutter build web --release --no-web-resources-cdn --base-href=/MATV/app/ --dart-define=MITV_TARGET=web --dart-define="MITV_API_BASE=$MITV_API_BASE"
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.19.0'
+          node-version: '24.22.1'
           cache: npm
       - name: Verify Chromium direct MP4 and HLS playback with offline Auth fixtures
         env:
@@ -49,6 +49,7 @@ jobs:
           mkdir -p /tmp/matv-codec-fixtures
           ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=160x90:rate=10 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 3 -c:v libx264 -c:a aac -movflags +faststart -y /tmp/matv-codec-fixtures/sample.mp4
           ffmpeg -hide_banner -loglevel error -i /tmp/matv-codec-fixtures/sample.mp4 -c copy -hls_time 1 -hls_segment_filename /tmp/matv-codec-fixtures/master%d.ts -y /tmp/matv-codec-fixtures/master.m3u8
+          node scripts/episode_identity_browser_test.mjs
           node scripts/flutter_web_smoke.mjs
           node scripts/flutter_web_smoke.mjs hls
       - name: Record immutable source identity and package Web bundle

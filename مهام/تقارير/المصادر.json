@@ -621,8 +621,8 @@
       "code": "SU",
       "mirror_of": null,
       "path": "server/scrapers/sites/shahid4u.mjs",
-      "metadata_line": 47,
-      "source_sha256": "718993a1834a663c3e13a2454c38bc622d6aa181323525e63e954123f4cd19ff",
+      "metadata_line": 48,
+      "source_sha256": "ea8edf07ef2774950c5ea7b0b3513e3c20ce66d3c115921e38b071ec959d890c",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
