@@ -1,0 +1,48 @@
+name: Najd private configuration probe
+on:
+  push:
+    branches: [feat/najd-1.1.3]
+    paths: [.github/workflows/najd-config-probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Inspect configuration and validate one small Gemini request
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_BACKUP: ${{ secrets.GEMINI_API_KEY_BACKUP }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          NAJD_ALERT_EMAIL: ${{ secrets.NAJD_ALERT_EMAIL }}
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,re
+          names=['GEMINI_API_KEY','GEMINI_API_KEY_BACKUP','SMTP_HOST','SMTP_USER','SMTP_USERNAME','SMTP_PASSWORD','EMAIL_PASSWORD','MAIL_PASSWORD','EMAIL_USER','EMAIL_TO','NAJD_ALERT_EMAIL']
+          report={'configured':{n:bool(os.getenv(n)) for n in names}}
+          key=os.getenv('GEMINI_API_KEY') or os.getenv('GEMINI_API_KEY_BACKUP')
+          if key:
+              try:
+                  req=urllib.request.Request('https://generativelanguage.googleapis.com/v1beta/models',headers={'x-goog-api-key':key})
+                  with urllib.request.urlopen(req,timeout=20) as response:
+                      models=json.load(response).get('models',[])
+                  candidates=[m['name'] for m in models if 'generateContent' in m.get('supportedGenerationMethods',[]) and re.fullmatch(r'models/[a-zA-Z0-9._-]+',m.get('name',''))]
+                  model=next((m for m in candidates if m=='models/gemini-2.5-flash-lite'),next((m for m in candidates if 'flash-lite' in m),next((m for m in candidates if 'flash' in m),None)))
+                  if model:
+                      body=json.dumps({'contents':[{'parts':[{'text':'Reply with the single word READY.'}]}],'generationConfig':{'maxOutputTokens':16,'temperature':0}}).encode()
+                      req=urllib.request.Request('https://generativelanguage.googleapis.com/v1beta/'+model+':generateContent',data=body,headers={'x-goog-api-key':key,'Content-Type':'application/json'})
+                      with urllib.request.urlopen(req,timeout=30) as response:
+                          result=json.load(response);report['gemini_http']=response.status;report['gemini_has_response']=bool(result.get('candidates'));report['gemini_model']=model
+              except urllib.error.HTTPError as error:report['gemini_http']=error.code
+              except Exception as error:report['gemini_error_type']=type(error).__name__
+          print(json.dumps(report,indent=2))
+          PY
