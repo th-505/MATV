@@ -16,6 +16,7 @@ const TMDB_ROUTES = new Set([
   "/api/v1/tmdb/status",
   "/api/v1/tmdb/catalog",
   "/api/v1/tmdb/search",
+  "/api/v1/tmdb/person",
   "/api/v1/tmdb/details",
   "/api/v1/tmdb/season",
   "/api/v1/tmdb/trending",
@@ -106,19 +107,23 @@ export function createMitvRuntimeServer({
           }
           return sendJson(req, res, 200, await tmdbRuntime.catalog(url.searchParams.get('path'), params));
         }
+        if (url.pathname === "/api/v1/tmdb/person") return sendJson(req,res,200,await tmdbRuntime.personWorks(url.searchParams.get('id')));
         if (url.pathname === "/api/v1/tmdb/status") return sendJson(req, res, 200, tmdbRuntime.status());
         if (url.pathname === "/api/v1/tmdb/search") {
           const query = String(url.searchParams.get("q") || "").trim();
           if (query.length < 2) return sendJson(req, res, 200, { status: "success", source: "tmdb", data: [] });
           if (query.length > 120) return sendJson(req,res,400,{status:'error',message:'INVALID_QUERY'});
+          const rawPage = url.searchParams.get('page') || '1';
+          if (!/^[1-9]\d{0,2}$/.test(rawPage) || Number(rawPage)>500) return sendJson(req,res,400,{status:'error',message:'TMDB_BAD_PAGE'});
+          const searchOptions = {page: Number(rawPage)};
           const traces = baseServer.searchTraceStore;
-          if (!traces) return sendJson(req,res,200,await tmdbRuntime.search(query));
+          if (!traces) return sendJson(req,res,200,await tmdbRuntime.search(query,searchOptions));
           const session=url.searchParams.get('diagnostic_session')||'';
           const supplied=url.searchParams.get('platform')||'';
           const trace=traces.start({provider:'tmdb',query,platform:['tv','mobile','ios','desktop','web'].includes(supplied)?supplied:/Dart/i.test(req.headers['user-agent']||'')?'native-unknown':req.headers.origin?'web':'unknown',session:/^[a-f0-9-]{20,64}$/i.test(session)?session:null});
           res.setHeader('X-Trace-Id',trace.id);
           let payload;
-          const items=await traces.run(trace,async()=>{payload=await tmdbRuntime.search(query);searchTraceEvent('parser_result',{raw_count:payload.data?.length||0});return payload.data||[];});
+          const items=await traces.run(trace,async()=>{payload=await tmdbRuntime.search(query,searchOptions);searchTraceEvent('parser_result',{raw_count:payload.data?.length||0});return payload.data||[];});
           return sendJson(req,res,200,{...payload,trace_id:trace.id,search_outcome:items.length?'results':'empty_unconfirmed'});
         }
         if (url.pathname === "/api/v1/tmdb/trending") {
@@ -127,9 +132,9 @@ export function createMitvRuntimeServer({
         }
         const ref = String(url.searchParams.get("ref") || "").trim();
         if (!ref) return sendJson(req, res, 400, { status: "error", message: "TMDB_BAD_REFERENCE" });
-        if (url.pathname === "/api/v1/tmdb/details") return sendJson(req, res, 200, await tmdbRuntime.details(ref));
+        if (url.pathname === "/api/v1/tmdb/details") return sendJson(req, res, 200, await baseServer.harvestService?.cachedWork(ref) || await tmdbRuntime.details(ref));
         const season = String(url.searchParams.get("season") || "").trim();
-        return sendJson(req, res, 200, await tmdbRuntime.season(ref, season));
+        return sendJson(req, res, 200, await baseServer.harvestService?.cachedSeason(ref,season) || await tmdbRuntime.season(ref, season));
       } catch (error) {
         const message = String(error?.message || "TMDB_FAILED");
         return sendJson(req, res, errorStatus(message), { status: "error", message });

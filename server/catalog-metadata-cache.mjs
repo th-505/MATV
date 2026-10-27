@@ -37,7 +37,7 @@ export function catalogMetadata(payload,provider,ref,validateRef) {
   result.description=text(payload.description || payload.plot,8000);
   if(typeof payload.published_at==='string' && Number.isFinite(Date.parse(payload.published_at))) result.published_at=new Date(payload.published_at).toISOString();
   result.episodes=[];
-  for(const raw of (Array.isArray(payload.episodes) ? payload.episodes : []).slice(0,500)) {
+  for(const raw of (Array.isArray(payload.episodes) ? payload.episodes : [])) {
     try {
       const episodeRef=String(raw.ref || raw.link || raw.href || '');
       if(validateRef(episodeRef)!==provider) continue;
@@ -50,7 +50,10 @@ export function catalogMetadata(payload,provider,ref,validateRef) {
     } catch { /* Malformed source links cannot become cache fetch targets. */ }
   }
   // Retain useful bounded metadata while never truncating a JSON byte stream.
+  result.episodes_total_count=result.episodes.length;
+  result.episodes_partial=false;
   while(Buffer.byteLength(JSON.stringify(result))>MAX_BYTES && result.episodes.length) result.episodes.pop();
+  result.episodes_partial=result.episodes.length<result.episodes_total_count;
   if(Buffer.byteLength(JSON.stringify(result))>MAX_BYTES) throw Error('CATALOG_METADATA_TOO_LARGE');
   return result;
 }

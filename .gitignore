@@ -45,3 +45,9 @@ supabase/.temp/
 .wrangler/
 .dev.vars
 .dev.vars.*
+
+# Najd: latest user instruction keeps original Thmanyah fonts private/local.
+flutter_app/assets/najd/fonts/*
+!flutter_app/assets/najd/fonts/.gitkeep
+assets/private-fonts/
+.private/

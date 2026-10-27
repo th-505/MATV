@@ -1,7 +1,9 @@
+import 'source_picker.dart';
 import 'cycle_feature_policy.dart';
 import 'stream_bridge.dart';
 import 'fullscreen_video_surface.dart';
 import 'download_service.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,8 +20,10 @@ import 'media_format_policy.dart';
 import 'models.dart';
 import 'player_controls.dart';
 import 'universal_player.dart';
+
 import 'package:media_kit/media_kit.dart' as mk;
 import 'package:file_selector/file_selector.dart' as picker;
+
 import 'subtitle_service.dart';
 import 'subtitle_delay.dart';
 
@@ -101,6 +105,29 @@ Duration historyPositionForSource(
   return Duration(milliseconds: value < 0 ? 0 : value);
 }
 
+EpisodeItem? nextObservedEpisode(
+  List<EpisodeItem> episodes, {
+  required int? number,
+  required int? season,
+}) {
+  if (number == null || season == null) return null;
+  final candidates = episodes
+      .where(
+        (e) =>
+            e.watchAvailable &&
+            e.hasEpisodeNumber &&
+            e.ref.isNotEmpty &&
+            ((e.season ?? season) > season ||
+                ((e.season ?? season) == season && e.number > number)),
+      )
+      .toList();
+  candidates.sort((a, b) {
+    final s = (a.season ?? season).compareTo(b.season ?? season);
+    return s != 0 ? s : a.number.compareTo(b.number);
+  });
+  return candidates.isEmpty ? null : candidates.first;
+}
+
 class PlayerPage extends StatefulWidget {
   const PlayerPage({
     super.key,
@@ -121,8 +148,10 @@ class PlayerPage extends StatefulWidget {
     this.localFileUri,
     this.persistProgress = true,
     this.subtitles,
+    this.episodeQueue = const [],
   });
 
+  final List<EpisodeItem> episodeQueue;
   final MitvApi api;
   final LocalLibraryStore store;
   final CatalogItem item;
@@ -502,6 +531,27 @@ class _PlayerPageState extends State<PlayerPage> {
     if (!controller.value.hasError && controller.value.isInitialized) {
       _lastObservedPosition = controller.value.position;
     }
+    final next = _nextEpisode;
+    if (next != null && !widget.isLive && !controller.value.hasError) {
+      final value = controller.value;
+      if (value.isPlaying && !_nextPrepared) {
+        _nextPrepared = true;
+        unawaited(_prepareNext(next));
+      }
+      if (value.duration > Duration.zero &&
+          value.duration - value.position < const Duration(seconds: 60) &&
+          !_nextRenewed) {
+        _nextRenewed = true;
+        if (widget.api
+                .cachedPlayback(next.ref)
+                ?.expiresAt
+                ?.isAfter(DateTime.now().add(const Duration(minutes: 2))) !=
+            true) {
+          unawaited(_prepareNext(next, refresh: true));
+        }
+      }
+      if (value.isCompleted) unawaited(_advanceEpisode(next));
+    }
     if (controller.value.hasError) {
       unawaited(_fallbackFromNative('تعذر استمرار التشغيل بالمشغل الأصلي'));
     }
@@ -675,17 +725,55 @@ class _PlayerPageState extends State<PlayerPage> {
     await _initialize(keepSources: true);
   }
 
-  Widget _sourceMenu() => PopupMenuButton<int>(
-    tooltip: 'الجودة / المصدر',
+  Widget _sourceMenu() => SourcePickerButton(
+    sources: _sources,
+    selected: _sourceIndex,
     onOpened: () => _controlsTimer?.cancel(),
-    onCanceled: _revealControls,
-    icon: const Icon(Icons.high_quality),
-    itemBuilder: (_) => [
-      for (var i = 0; i < _sources.length; i++)
-        PopupMenuItem(value: i, child: Text(_sources[i].displayLabel)),
-    ],
+    onClosed: _revealControls,
     onSelected: _selectSource,
   );
+
+  bool _nextPrepared = false, _nextRenewed = false, _advancing = false;
+  EpisodeItem? get _nextEpisode => nextObservedEpisode(
+    widget.episodeQueue,
+    number: widget.episodeNumber,
+    season: widget.item.season,
+  );
+  Future<void> _prepareNext(EpisodeItem episode, {bool refresh = false}) async {
+    try {
+      await widget.api.resolvePlayback(episode.ref, refresh: refresh);
+    } catch (_) {
+      /* Next availability does not interrupt current playback. */
+    }
+  }
+
+  Future<void> _advanceEpisode(EpisodeItem episode) async {
+    if (_advancing || !mounted) return;
+    _advancing = true;
+    await _saveProgress(force: true);
+    if (!mounted) return;
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => PlayerPage(
+            api: widget.api,
+            store: widget.store,
+            item: widget.item.copyWith(
+              season: episode.season,
+              episode: episode.number,
+            ),
+            title: episode.title.isEmpty
+                ? 'الحلقة ${episode.number}'
+                : episode.title,
+            sourceRef: episode.ref,
+            episodeId: episode.id,
+            episodeNumber: episode.number,
+            episodeQueue: widget.episodeQueue,
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _saveProgress({bool force = false}) async {
     if (widget.isLive || !widget.persistProgress) return;
@@ -831,9 +919,8 @@ class _PlayerPageState extends State<PlayerPage> {
       '${v.inMinutes}:${(v.inSeconds % 60).toString().padLeft(2, '0')}';
   void _subtitleNotice(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _applyCaption(mk.Player player, PreparedSubtitle caption) async {
@@ -967,56 +1054,59 @@ class _PlayerPageState extends State<PlayerPage> {
       final episodeInput = TextEditingController(
         text: episode?.toString() ?? '',
       );
-      final selection = await showDialog<({String id, int? season, int? episode})>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('تحديد العمل للترجمة'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'أدخل معرّف IMDb للعمل الصحيح. للمسلسل، تأكد من أرقام الموسم والحلقة في النسخة الأصلية.',
-                ),
-                TextField(
-                  controller: input,
-                  decoration: const InputDecoration(labelText: 'IMDb (tt...)'),
-                ),
-                if (isSeries)
-                  TextField(
-                    controller: seasonInput,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'الموسم الأصلي',
+      final selection =
+          await showDialog<({String id, int? season, int? episode})>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('تحديد العمل للترجمة'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'أدخل معرّف IMDb للعمل الصحيح. للمسلسل، تأكد من أرقام الموسم والحلقة في النسخة الأصلية.',
                     ),
-                  ),
-                if (isSeries)
-                  TextField(
-                    controller: episodeInput,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'الحلقة الأصلية',
+                    TextField(
+                      controller: input,
+                      decoration: const InputDecoration(
+                        labelText: 'IMDb (tt...)',
+                      ),
                     ),
-                  ),
+                    if (isSeries)
+                      TextField(
+                        controller: seasonInput,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'الموسم الأصلي',
+                        ),
+                      ),
+                    if (isSeries)
+                      TextField(
+                        controller: episodeInput,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'الحلقة الأصلية',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إلغاء'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, (
+                    id: input.text.trim(),
+                    season: int.tryParse(seasonInput.text),
+                    episode: int.tryParse(episodeInput.text),
+                  )),
+                  child: const Text('تأكيد وبحث'),
+                ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, (
-                id: input.text.trim(),
-                season: int.tryParse(seasonInput.text),
-                episode: int.tryParse(episodeInput.text),
-              )),
-              child: const Text('تأكيد وبحث'),
-            ),
-          ],
-        ),
-      );
+          );
       input.dispose();
       seasonInput.dispose();
       episodeInput.dispose();

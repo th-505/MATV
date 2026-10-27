@@ -1,7 +1,7 @@
 import { normalizeEpisodeEntries } from '../../shared/content-identity.js';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 import { createContentDiscovery } from './content-discovery.mjs';
-import { PROVIDERS_MAP } from './registry.mjs';
+import { PROVIDERS_MAP, getProvider } from './registry.mjs';
 import { searchSource, searchAllSources } from './source-registry.mjs';
 // =====================================================================
 // MA TV SUPREME REAL SCRAPERS MASTER ENGINE (ZERO IFRAMES DIRECT RESOLUTION)
@@ -396,9 +396,9 @@ export async function scrapeRealDetails(refOrUrl) {
 }
 
 // All registered providers with real search and details capabilities participate.
-const contentDiscovery = createContentDiscovery({ entries: [...PROVIDERS_MAP.values()] });
+const contentDiscovery = createContentDiscovery({ entries: [...PROVIDERS_MAP.keys()].map(getProvider) });
 const runRegistered = (id, title, season, episode, options) =>
-  contentDiscovery.runProvider(PROVIDERS_MAP.get(id), title, season, episode, options).catch(() => []);
+  contentDiscovery.runProvider(getProvider(id), title, season, episode, options).catch(() => []);
 export const runMyCimaScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('mycima', title, season, episode, options);
 export const runAkwamScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('akwam', title, season, episode, options);
 export const runEgyDeadScraper = (title, season = 1, episode = 1, options = {}) => runRegistered('egydead', title, season, episode, options);

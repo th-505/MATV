@@ -799,7 +799,7 @@ export async function resolveStream(urlOrRef, options = {}) {
     embedUrl: targetUrl,
     streamType: 'embed',
     type: 'embed',
-    quality: 'HD',
+    quality: null,
     verified: false,
     headers: { Referer: referer },
     obstacle: 'STREAM_GATE_DEVTOOLS_GUARD'

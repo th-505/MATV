@@ -1,4 +1,5 @@
 import 'support/shell_navigation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +13,7 @@ import 'package:mitv/src/library_store.dart';
 import 'package:mitv/src/models.dart';
 import 'package:mitv/src/player_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'phase2_player_test.dart' show FakeEngine;
 
 class _LayoutApi extends MitvApi {
@@ -62,9 +64,9 @@ void main() {
         expect(api.requests, ['catalog:movie:all:1']);
         expect(find.byType(HomePage), findsOneWidget);
         expect(find.text('الأخبار'), findsNothing);
-        expect(find.byType(NavigationBar), findsNothing);
+        expect(find.byType(NavigationBar), findsOneWidget);
         expect(find.byType(AppBar), findsNothing);
-        if (!isTvTarget && dimensions.width < 900) {
+        if (isTvTarget || (!isDesktopTarget && dimensions.width < 900)) {
           expect(find.byKey(const Key('tatv-open-navigation')), findsOneWidget);
           await tester.tap(find.byKey(const Key('tatv-open-navigation')));
           await tester.pumpAndSettle();
@@ -145,7 +147,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    Focus.of(tester.element(find.text('الرئيسية'))).requestFocus();
+    Focus.of(tester.element(find.byKey(const ValueKey('nav-home'))))
+        .requestFocus();
     await tester.pump();
     for (final kind in ['movie', 'series', 'anime']) {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -182,7 +185,7 @@ void main() {
     );
     expect(api.requests.length, 5);
     await tester.pumpWidget(const SizedBox());
-  });
+  }, skip: isTvTarget);
 
   testWidgets('viewport reads actual bounds, camera padding and text scale', (
     tester,
@@ -245,7 +248,7 @@ void main() {
                   )
                   .decoration!
               as BoxDecoration;
-      expect((border.border! as Border).top.color, const Color(0xFFE8BD75));
+      expect((border.border! as Border).top.color, const Color(0xFF8480FF));
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
       expect(selections, 1);

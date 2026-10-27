@@ -11,10 +11,10 @@ const root = resolve(new URL('..', import.meta.url).pathname);
 const server = createServer(async (req, res) => {
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    const file = resolve(root, '.' + (path === '/' ? '/index.html' : path));
+    const file = resolve(root, '.' + (path === '/' ? '/docs/legacy/index.html.source' : path));
     if (!file.startsWith(root + '/')) { res.statusCode = 403; return res.end(); }
     const content = await readFile(file);
-    res.setHeader('Content-Type', ({ '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml' })[extname(file)] || 'application/octet-stream');
+    res.setHeader('Content-Type', ({ '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml' })[(file.endsWith('.html.source') ? '.html' : extname(file))] || 'application/octet-stream');
     res.end(content);
   } catch { res.statusCode = 404; res.end(); }
 });

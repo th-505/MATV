@@ -1,3 +1,8 @@
+import {getProviderConfig} from './scrapers/shared/provider-config.mjs';
+import {createGithubIdentityVerifier} from './maintenance/github-identity.mjs';
+import {createInternalWeb} from './internal-web.mjs';
+import {createHarvestService} from './harvest/service.mjs';
+import {masterDashboardHtml,masterDashboardCss,masterDashboardJs} from './diagnostics/master-dashboard.mjs';
 import { allowedOrigin } from './security-boundary.mjs';
 import { createSearchTraces, diagnosticsAuthorized } from './diagnostics/search-trace.mjs';
 import { diagnosticsHtml, diagnosticsJs } from './diagnostics/dashboard.mjs';
@@ -537,7 +542,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       const expected={title:metadata.title,aliases:[metadata.original_title],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};
       const approved=[],seen=new Set();let rejected=0;
       await activateAllScrapersForContent(metadata.title, season || 1, episode || 1, {
-        ref,year:metadata.year,type:series?'series':'movie',titleVariants:[metadata.original_title],
+        ref,year:metadata.year,type:series?'series':'movie',original_language:metadata.original_language,genres:metadata.genres,titleVariants:[metadata.original_title],
         onSources:async candidates=>{
           const reviewed=await discoveryAudit.review(candidates,expected);
           rejected+=reviewed.quarantine.length;
@@ -553,6 +558,9 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       return {servers:approved,reason:approved.length?null:rejected?'IDENTITY_NOT_VERIFIED':'NO_PLAYABLE_SOURCE'};
     },
   });
+  const maintenanceIdentity=createGithubIdentityVerifier();
+  const internalWeb=createInternalWeb();
+  const harvest=createHarvestService({metadata:discoveryMetadata,logger:data=>log(data.event,data)});
   const server = http.createServer(async (req, res) => {
     applyCors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
@@ -568,6 +576,39 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     }
     res.setHeader("X-RateLimit-Remaining", String(rate.remaining));
     try {
+      if(url.pathname==='/api/v1/providers/configuration'){
+        if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,200,{providers:listSourceCapabilities().map(source=>{
+          const c=getProviderConfig(source.id);const {enabled=true,revision=0,...config}=c||{};
+          return {id:source.id,revision,enabled,domain:source.domain,config};
+        })});
+      }
+      if(url.pathname==='/api/v1/maintenance/provider-config'){
+        if(req.method!=='POST')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        try{await maintenanceIdentity(String(req.headers.authorization||'').replace(/^Bearer /,''));}catch{return sendJson(req,res,401,{message:'MAINTENANCE_AUTH_REQUIRED'})}
+        let raw='';for await(const chunk of req){raw+=chunk.toString();if(Buffer.byteLength(raw)>8192)return sendJson(req,res,413,{message:'BODY_TOO_LARGE'});}
+        let body;try{body=JSON.parse(raw)}catch{return sendJson(req,res,400,{message:'INVALID_JSON'})}
+        if(!body||typeof body!=='object'||Array.isArray(body)||!Number.isSafeInteger(body.expected_revision)||body.expected_revision<0)return sendJson(req,res,400,{message:'INVALID_REVISION'});
+        try{return sendJson(req,res,200,await harvest.applyVerified(body.provider,body.config,body.expected_revision));}
+        catch(error){const reason=/^[A-Z_]{3,80}$/.test(error.message)?error.message:'VERIFIED_REPAIR_NOT_APPLIED';return sendJson(req,res,422,{applied:false,reason});}
+      }
+      if(await internalWeb.handle(req,res,url))return;
+      if (['/admin','/admin/style.css','/admin/app.js'].includes(url.pathname)) {
+        if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+        res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
+        res.setHeader('Content-Type',url.pathname.endsWith('.css')?'text/css; charset=utf-8':url.pathname.endsWith('.js')?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+        res.writeHead(200);return res.end(url.pathname.endsWith('.css')?masterDashboardCss:url.pathname.endsWith('.js')?masterDashboardJs:masterDashboardHtml);
+      }
+      if(url.pathname==='/api/v1/admin/summary'){
+        if(!diagnosticsAuthorized(req))return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
+        if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,200,{server:{node:process.version,openssl:process.versions.openssl,uptime_seconds:Math.floor(process.uptime()),memory:process.memoryUsage()},harvest:await harvest.summary()});
+      }
+      if(url.pathname==='/api/v1/harvest/wake'){
+        if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,202,{configured:harvest.wake().configured});
+      }
       if (url.pathname === '/diagnostics' || url.pathname === '/diagnostics/app.js') {
         if (req.method !== 'GET') return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
         res.setHeader('Cache-Control','no-store');
@@ -807,5 +848,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     }
   });
   server.searchTraceStore = traceStore;
+  server.harvestService=harvest;
+  if(process.env.NODE_ENV!=='test')server.once('listening',()=>harvest.start());
+  server.once('close',()=>void harvest.stop());
   return server;
 }

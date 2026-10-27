@@ -170,7 +170,7 @@ export function parseCatalogItems(html = '', baseUrl = EGYDEAD_CONFIG.baseUrl, d
 
     const cleanTitle = cleanTitleText(rawTitle);
     const year = extractYear(rawTitle) || node.find('.year, .ItemYear, .badge-secondary').first().text().trim();
-    const quality = node.find('.quality, ._quality_tag, .label').first().text().trim() || 'HD';
+    const quality = node.find('.quality, ._quality_tag, .label').first().text().trim() || '';
     const rating = node.find('.rate, .rating').first().text().replace(/[^\d.]/g, '').trim();
 
     const inferredType = inferContentType(rawTitle, url, defaultType);
@@ -301,7 +301,7 @@ export function parseServersFromHtml(html = '', targetUrl = PRIMARY_DOMAIN, isLi
       url,
       type,
       streamType: type,
-      quality: 'HD',
+      quality: null,
       verified: false,
       source: provider,
       headers: { Referer: targetUrl }
@@ -326,7 +326,7 @@ export function parseServersFromHtml(html = '', targetUrl = PRIMARY_DOMAIN, isLi
       url,
       type: 'embed',
       streamType: 'embed',
-      quality: 'HD',
+      quality: null,
       verified: false,
       source: provider,
       headers: { Referer: targetUrl }
@@ -544,7 +544,7 @@ export async function scrapeDetails(urlOrRef = '', options = {}) {
     const overview = $('.StoryContent, .story, .overview, p.story').text().trim();
     const year = extractYear(rawTitle) || $('.release-year, .ItemYear').text().trim();
     const rating = $('.item-rating, .rate').text().replace(/[^\d.]/g, '').trim();
-    const quality = $('.item-quality, .quality').text().trim() || 'HD';
+    const quality = $('.item-quality, .quality').text().trim() || '';
 
     const genres = [];
     $('.genres a, .genre a').each((_, el) => {
@@ -671,7 +671,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
           url: targetUrl,
           type: 'embed',
           streamType: 'embed',
-          quality: 'HD',
+          quality: null,
           verified: false,
           source: LIVE_PROVIDER_ID,
           headers: { Referer: EGYDEAD_CONFIG.liveDomain }
@@ -762,7 +762,7 @@ export async function resolveStream(urlOrRef = '', options = {}) {
         streamUrl: best.url,
         streamType: best.streamType || 'm3u8',
         type: best.streamType || 'm3u8',
-        quality: best.quality || 'HD',
+        quality: best.quality || '',
         verified: true,
         headers: best.headers || { Referer: referer }
       };
@@ -778,7 +778,7 @@ export async function resolveStream(urlOrRef = '', options = {}) {
     embedUrl: targetUrl,
     streamType: 'embed',
     type: 'embed',
-    quality: 'HD',
+    quality: null,
     verified: false,
     headers: { Referer: referer }
   };

@@ -330,7 +330,7 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
         url: cand.url,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: pageUrl, 'User-Agent': DEFAULT_UA },
         verified: false
       });
@@ -518,7 +518,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         overview,
         story: overview,
         year: $('.year').first().text().trim() || extractYear(title),
-        quality: 'HD',
+        quality: null,
         genres,
         episodes,
         type: isMovie ? 'movie' : 'series',
@@ -705,7 +705,7 @@ export async function resolveStream(urlOrRef, options = {}) {
         url: best.url,
         type: best.streamType,
         streamType: best.streamType,
-        quality: best.quality || 'HD',
+        quality: best.quality || '',
         headers: best.headers || { Referer: cleanUrl, 'User-Agent': DEFAULT_UA },
         verified: false
       };
@@ -719,7 +719,7 @@ export async function resolveStream(urlOrRef, options = {}) {
     url: cleanUrl,
     type: 'embed',
     streamType: 'embed',
-    quality: 'HD',
+    quality: null,
     headers: { Referer: `${THREE_CKTV_CONFIG.baseUrl}/`, 'User-Agent': DEFAULT_UA },
     verified: false
   };

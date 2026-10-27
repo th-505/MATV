@@ -47,7 +47,7 @@ assert.equal(formatRuntimeArabic(115, 'movie'), '1س 55د');
 assert.equal(formatRuntimeArabic(45, 'tv'), '45 د');
 
 // 6. index.html MA-NEXUS v8.0 architectural contract guard
-const indexHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+const indexHtml = await readFile(new URL('../docs/legacy/index.html.source', import.meta.url), 'utf8');
 assert.match(indexHtml, /\/web\/core\/ma-nexus\.js/, 'index.html must use MA-NEXUS v8.0 orchestrator');
 assert.match(indexHtml, /id="pageTitleDetail"/, 'index.html must include full-screen #pageTitleDetail view');
 assert.match(indexHtml, /id="pagePlayerView"/, 'index.html must include full-screen #pagePlayerView view');

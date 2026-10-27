@@ -19,7 +19,7 @@ const mime = {
 const server = http.createServer((req, res) => {
   const file = path.join(
     dir,
-    new URL(req.url, "http://local").pathname.replace(/^\/MATV\/app\//, ""),
+    new URL(req.url, "http://local").pathname.replace(/^\/internal\//, ""),
   );
   if (
     !file.startsWith(dir + "/") ||
@@ -156,7 +156,7 @@ await page.route("https://media.fixture.example/**", async (route) => {
 });
 try {
   await page.goto(
-    `http://127.0.0.1:${server.address().port}/MATV/app/index.html?ref=alooy:fixture`,
+    `http://127.0.0.1:${server.address().port}/internal/index.html?ref=alooy:fixture`,
   );
   await page.locator("flutter-view").waitFor({ timeout: 60000 });
   const placeholder = page.locator("flt-semantics-placeholder");

@@ -531,7 +531,7 @@ export function extractRawServersFromHtml(html = '', baseUrl = ACTIVE_MIRROR_URL
       url: safeUrl,
       name: meta.name || '',
       label: meta.label || meta.name || '',
-      quality: meta.quality || 'HD',
+      quality: meta.quality || '',
       streamType: inferredType,
       type: inferredType,
       verified: Boolean(meta.verified === true),
@@ -572,7 +572,7 @@ export function extractRawServersFromHtml(html = '', baseUrl = ACTIVE_MIRROR_URL
               if (u) {
                 pushCandidate(u, {
                   name: entry?.name || entry?.server || `WL-${qualityKey.toUpperCase()}`,
-                  quality: (entry?.quality || qualityKey || 'HD').toUpperCase()
+                  quality: (entry?.quality || qualityKey || '').toUpperCase()
                 });
               }
             }
@@ -605,7 +605,7 @@ export function extractRawServersFromHtml(html = '', baseUrl = ACTIVE_MIRROR_URL
       anchor.text().trim() ||
       node.text().trim() ||
       'Server';
-    const qualityText = node.find('.quality').text().trim() || 'HD';
+    const qualityText = node.find('.quality').text().trim() || '';
 
     pushCandidate(candidateUrl, {
       name: serverName.replace(/\s+/g, ' ').slice(0, 50),
@@ -626,7 +626,7 @@ export function extractRawServersFromHtml(html = '', baseUrl = ACTIVE_MIRROR_URL
         row.find('.server-name').text().trim() ||
         $(el).text().trim() ||
         'Download';
-      const qualityText = row.find('.td-quality, .quality').text().trim() || 'HD';
+      const qualityText = row.find('.td-quality, .quality').text().trim() || '';
       pushCandidate(href, {
         name: serverName,
         quality: qualityText,
@@ -748,7 +748,7 @@ async function unwrapSingleCandidateServer(serverObj, parentReferer = ACTIVE_MIR
         .map((s) => ({
           url: s.url,
           name: serverObj?.name || 'Anime4Up Stream',
-          quality: s.quality || serverObj?.quality || 'HD',
+          quality: s.quality || serverObj?.quality || '',
           streamType: s.streamType || 'm3u8',
           type: s.streamType || 'm3u8',
           verified: Boolean(s.verified === true),

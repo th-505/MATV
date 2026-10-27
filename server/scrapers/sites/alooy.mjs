@@ -219,7 +219,7 @@ function extractCardsFromDom($, baseUrl) {
     const poster = rawPoster ? resolveSafeUrl(rawPoster, baseUrl) : '';
 
     const qualityBadge = $(node).find('.video_quality .label').first().text().trim();
-    const quality = qualityBadge || 'HD';
+    const quality = qualityBadge || '';
 
     const normalized = normalizeCatalogItem(
       {
@@ -604,7 +604,7 @@ async function resolveM3u8Iframe(iframeSrc, refererUrl, options = {}) {
         url: vidMp4Url,
         type: 'mp4',
         streamType: 'mp4',
-        quality: 'HD',
+        quality: null,
         verified: true,
         headers: {
           Referer: refererUrl,
@@ -668,7 +668,7 @@ async function resolveM3u8Iframe(iframeSrc, refererUrl, options = {}) {
     url: fullIframeUrl,
     type: 'embed',
     streamType: 'embed',
-    quality: 'HD',
+    quality: null,
     verified: false,
     headers: {
       Referer: refererUrl
@@ -781,7 +781,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: u.href,
           type: u.pathname.endsWith('.webm') ? 'webm' : 'mp4',
           streamType: u.pathname.endsWith('.webm') ? 'webm' : 'mp4',
-          quality: 'HD',
+          quality: null,
           verified: true,
           headers: {
             Referer: targetUrl,
@@ -817,7 +817,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
             url: fullIfr,
             type: 'embed',
             streamType: 'embed',
-            quality: 'HD',
+            quality: null,
             verified: false,
             headers: { Referer: targetUrl }
           });

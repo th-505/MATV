@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "product": "T-A-TV",
+  "product": "نجد — Najd TV",
   "scope": "source_contract_not_release_certification",
   "navigation": [
     {
@@ -59,22 +59,22 @@
     "rtl": true,
     "sidebar_side": "right",
     "permanent_min_width": 900,
-    "native_tv_and_desktop_permanent": true,
-    "narrow": "right_drawer_with_floating_menu_button",
-    "topbar": false,
-    "bottom_navigation": false,
+    "native_tv_and_desktop_permanent": false,
+    "narrow": "right_modal_drawer_and_five_shortcuts",
+    "topbar": true,
+    "bottom_navigation": true,
     "search_own_page": true,
     "explore_inside_search_advanced": true
   },
   "theme": {
-    "background": "#07090b",
-    "surface": "#0d1117",
-    "elevated": "#121824",
-    "accent": "#e8bd75",
-    "accent_light": "#f7d594",
-    "accent_dark": "#b88b3e",
-    "text": "#ffffff",
-    "secondary_text": "#94a3b8"
+    "background": "#08080e",
+    "surface": "#14131f",
+    "elevated": "#201d30",
+    "accent": "#8280ff",
+    "accent_light": "#b4b2ff",
+    "accent_dark": "#4d4c9a",
+    "text": "#f8f7ff",
+    "secondary_text": "#bcb8cf"
   },
   "features": {
     "catalog": "tmdb_metadata",
@@ -112,7 +112,7 @@
       "id": "web",
       "source": "index.html",
       "scaffold": "manifest.json",
-      "delivery": "static_html_pwa",
+      "delivery": "download_landing_only",
       "build_recipe": null,
       "artifact_present": true,
       "artifact": "index.html",
@@ -122,10 +122,10 @@
       "id": "flutter_web",
       "source": "flutter_app/lib/main.dart",
       "scaffold": "flutter_app/web/index.html",
-      "delivery": "generated_web_bundle",
+      "delivery": "authenticated_internal_web",
       "build_recipe": ".github/workflows/flutter-web.yml",
-      "artifact_present": true,
-      "artifact": "app/main.dart.js",
+      "artifact_present": false,
+      "artifact": "internal_web/index.html",
       "installed_or_live_verified": false
     },
     {
@@ -275,5 +275,12 @@
     ],
     "source_checks_are_build_proof": false,
     "old_app_bundle_rebuilt_in_this_task": false
-  }
+  },
+  "bottom_pages": [
+    "live",
+    "search",
+    "home",
+    "favorites",
+    "settings"
+  ]
 }

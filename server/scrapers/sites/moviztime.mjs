@@ -653,7 +653,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
         url: cleanUrl,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: `${MOVIZTIME_CONFIG.baseUrl}/` }
       });
 
@@ -830,7 +830,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
               url: s.url,
               type: s.streamType,
               streamType: s.streamType,
-              quality: s.quality || 'HD',
+              quality: s.quality || '',
               headers: s.headers || { Referer: cleanUrl }
             });
           }
@@ -847,7 +847,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
             ? 'm3u8'
             : 'mp4'
           : 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: cleanUrl }
       });
     }
@@ -859,7 +859,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
         url: cleanUrl,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: `${MOVIZTIME_CONFIG.baseUrl}/` }
       });
     }
@@ -935,7 +935,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       url: cleanUrl,
       type: 'embed',
       streamType: 'embed',
-      quality: 'HD',
+      quality: null,
       headers: { Referer: `${MOVIZTIME_CONFIG.baseUrl}/` }
     };
   }
@@ -965,7 +965,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       url: unwrapped[0].url,
       type: unwrapped[0].streamType,
       streamType: unwrapped[0].streamType,
-      quality: unwrapped[0].quality || 'HD',
+      quality: unwrapped[0].quality || '',
       headers: unwrapped[0].headers || { Referer: cleanUrl }
     };
   }

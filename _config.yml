@@ -1,0 +1,11 @@
+exclude:
+  - internal_web
+  - docs
+  - flutter_app
+  - server
+  - supabase
+  - scripts
+  - tests
+  - edge
+  - web
+  - node_modules

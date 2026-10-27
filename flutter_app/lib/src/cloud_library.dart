@@ -39,7 +39,7 @@ class SupabaseLibraryTransport implements LibraryCloudTransport {
     if (rows.length > 32) throw ArgumentError('LIBRARY_BATCH_LIMIT');
     final result = await client
         .rpc(
-          'mitv_upsert_library',
+          'najd_upsert_library',
           params: {
             'rows': rows.map((row) => row.toJson()).toList(growable: false),
           },
@@ -55,12 +55,10 @@ class SupabaseLibraryTransport implements LibraryCloudTransport {
   }) async {
     _checkOwner();
     final result = await client
-        .from('mitv_library')
-        .select()
-        .eq('user_id', ownerId)
-        .gt('sync_revision', afterRevision)
-        .order('sync_revision')
-        .limit(limit.clamp(1, 250))
+        .rpc(
+          'najd_pull_library',
+          params: {'p_after': afterRevision, 'p_limit': limit.clamp(1, 250)},
+        )
         .timeout(const Duration(seconds: 20));
     return _rows(result);
   }
@@ -93,6 +91,9 @@ class AnonymousLibraryTransport extends SupabaseLibraryTransport {
   static const _registeredKey = 'mitv.auth.registered.v1';
   Future<void>? _preparing;
   bool _ready = false;
+  DateTime? _contextAt;
+  String _scopeKey = '';
+  String get scopeKey => _scopeKey.isEmpty ? ownerId : _scopeKey;
   String? _boundOwner;
   @override
   String get ownerId =>
@@ -102,7 +103,11 @@ class AnonymousLibraryTransport extends SupabaseLibraryTransport {
       '';
 
   Future<void> prepare() {
-    if (_ready) return Future.value();
+    if (_ready &&
+        _contextAt != null &&
+        DateTime.now().difference(_contextAt!) < const Duration(seconds: 30)) {
+      return Future.value();
+    }
     final pending = _preparing;
     if (pending != null) return pending;
     final operation = _prepare();
@@ -147,6 +152,16 @@ class AnonymousLibraryTransport extends SupabaseLibraryTransport {
         throw StateError('DEVICE_REGISTRATION_NOT_PERSISTED');
       }
     }
+    final context = await client
+        .rpc('najd_touch_account')
+        .timeout(const Duration(seconds: 12));
+    if (context is! Map || context['owner_scope'] == null) {
+      throw StateError('ACCOUNT_CONTEXT_UNAVAILABLE');
+    }
+    _scopeKey = context['grant_id'] == null
+        ? owner
+        : '$owner:${context['owner_scope']}:${context['grant_id']}';
+    _contextAt = DateTime.now();
     _ready = true;
   }
 }
@@ -173,8 +188,89 @@ class CloudLibrarySync with WidgetsBindingObserver {
   static Future<Supabase>? _initializing;
   static Future<CloudLibrarySync?>? _startingDefault;
   static const deviceIdKey = 'mitv.device.uuid.v1';
-  String get _cursorKey => 'library.cloud.cursor.v2.${transport.ownerId}';
-  String get _historyKey => 'library.cloud.history.v1.${transport.ownerId}';
+  static Future<void> refreshAccountContext() async {
+    final sync = await _startingDefault;
+    final adapter = sync?.transport;
+    if (adapter is AnonymousLibraryTransport) adapter._contextAt = null;
+    await sync?.syncNow();
+  }
+
+  static Future<dynamic> accountRpc(
+    String name, [
+    Map<String, dynamic> params = const {},
+  ]) async {
+    const allowed = {
+      'najd_touch_account',
+      'najd_link_create',
+      'najd_link_claim',
+      'najd_link_status',
+      'najd_link_approve',
+      'najd_link_revoke',
+      'najd_link_members',
+    };
+    if (!allowed.contains(name)) {
+      throw ArgumentError('ACCOUNT_ACTION_NOT_ALLOWED');
+    }
+    final sync = await _startingDefault;
+    await sync?.syncNow();
+    final sdk = await _initializing;
+    if (sdk?.client.auth.currentUser == null) {
+      throw StateError('ACCOUNT_UNAVAILABLE');
+    }
+    return sdk!.client
+        .rpc(name, params: params)
+        .timeout(const Duration(seconds: 12));
+  }
+
+  static Future<Map<String, dynamic>> profile({
+    String? name,
+    String? avatar,
+  }) async {
+    await accountRpc('najd_touch_account');
+    final sdk = await _initializing;
+    final uid = sdk!.client.auth.currentUser!.id;
+    if (name != null || avatar != null) {
+      await sdk.client
+          .from('najd_profiles')
+          .update({'display_name': ?name, 'avatar_data': ?avatar})
+          .eq('user_id', uid);
+    }
+    return Map<String, dynamic>.from(
+      await sdk.client
+          .from('najd_profiles')
+          .select()
+          .eq('user_id', uid)
+          .single(),
+    );
+  }
+
+  static Future<({bool queued, int retryAfter})> refreshFavorite(
+    String ref,
+  ) async {
+    if (!RegExp(r'^tmdb:(movie|tv):[1-9]\d*$').hasMatch(ref)) {
+      throw const FormatException('CANONICAL_FAVORITE_REQUIRED');
+    }
+    final sync = await _startingDefault;
+    await sync?.syncNow();
+    final sdk = await _initializing;
+    if (sdk?.client.auth.currentUser == null) {
+      throw StateError('ACCOUNT_UNAVAILABLE');
+    }
+    final value = await sdk!.client
+        .rpc('najd_refresh_favorite', params: {'p_ref': ref})
+        .timeout(const Duration(seconds: 12));
+    if (value is! Map) throw const FormatException('INVALID_REFRESH_RESPONSE');
+    return (
+      queued: value['queued'] == true,
+      retryAfter: ((value['retry_after'] as num?)?.toInt() ?? 10).clamp(1, 60),
+    );
+  }
+
+  String get _scopeId => transport is AnonymousLibraryTransport
+      ? (transport as AnonymousLibraryTransport).scopeKey
+      : transport.ownerId;
+  String get _cursorKey => 'library.cloud.cursor.v2.$_scopeId';
+  String get _historyKey => 'library.cloud.history.v1.$_scopeId';
   Timer? _poll;
   Timer? _debounce;
   Future<void>? _running;
@@ -249,7 +345,7 @@ class CloudLibrarySync with WidgetsBindingObserver {
     LibraryCloudTransport transport, {
     SharedPreferences? preferences,
     DateTime Function()? clock,
-    Duration historyInterval = const Duration(seconds: 60),
+    Duration historyInterval = const Duration(seconds: 5),
     Duration pollInterval = const Duration(minutes: 5),
     bool observeLifecycle = true,
     bool syncImmediately = true,
@@ -274,8 +370,8 @@ class CloudLibrarySync with WidgetsBindingObserver {
   }
 
   void _loadOwnerState() {
-    if (transport.ownerId.isEmpty || _cursorOwner == transport.ownerId) return;
-    _cursorOwner = transport.ownerId;
+    if (transport.ownerId.isEmpty || _cursorOwner == _scopeId) return;
+    _cursorOwner = _scopeId;
     _revision = _prefs.getInt(_cursorKey) ?? 0;
     final last = _prefs.getInt(_historyKey);
     _lastHistoryPush = last == null
@@ -302,8 +398,8 @@ class CloudLibrarySync with WidgetsBindingObserver {
         ? Duration.zero
         : historyInterval - _clock().toUtc().difference(_lastHistoryPush!);
     _debounce = Timer(
-      onlyHistory && remaining > const Duration(seconds: 3)
-          ? remaining
+      onlyHistory
+          ? (remaining > Duration.zero ? remaining : Duration.zero)
           : const Duration(seconds: 3),
       () => unawaited(syncNow()),
     );

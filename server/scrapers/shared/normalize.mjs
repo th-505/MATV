@@ -1,4 +1,4 @@
-import { contentIdentity } from '../../../shared/content-identity.js';
+import { contentIdentity, explicitEpisode } from '../../../shared/content-identity.js';
 // server/scrapers/shared/normalize.mjs
 // Unified normalizers for Arabic/English numbers, episodes, seasons, catalog items, details, and servers
 import { resolveSafeUrl } from './http.mjs';
@@ -67,51 +67,14 @@ export function extractSeasonNumber(text = '', defaultSeason = 1) {
   return defaultSeason;
 }
 
-export function extractEpisodeNumber(text = '', url = '', fallbackNumber = null) {
-  const rawTitle = normalizeDigits(String(text || ''));
-  const rawUrl = normalizeDigits(decodeURIComponent(String(url || '')));
-
-  // Strip season phrases first so "الموسم 5 الحلقة 12" never mistakes 5 for the episode number!
-  const strippedTitle = rawTitle
-    .replace(/(?:الموسم|موسم|season)\s*[:\-_]?\s*\d{1,3}/gi, ' ')
-    .replace(/(?:الموسم|موسم)\s+(?:الأول|الاول|الثاني|الثالث|الرابع|الخامس|السادس|السابع|الثامن|التاسع|العاشر)/gi, ' ')
-    .replace(/\bS\d{1,2}(?=E\d{1,4}\b)/gi, ' ')
-    .replace(/\b(19[5-9]\d|20[0-3]\d)\b/g, ' ')
-    .replace(/\b(2160|1440|1080|720|480|360|240)p?\b/gi, ' ');
-
-  // 1. Explicit episode keyword in title ("الحلقة 12", "حلقة 12", "Episode 12", "Ep 12", "E12")
-  const explicitMatch =
-    strippedTitle.match(/(?:الحلقة|الحلقه|حلقة|حلقه|episode|ep|e)\s*[:#\-_]?\s*(\d{1,4})\b/i) ||
-    rawTitle.match(/\bS\d{1,2}E(\d{1,4})\b/i);
-  if (explicitMatch) {
-    const n = parseInt(explicitMatch[1], 10);
-    if (!Number.isNaN(n) && n >= 0) return n;
-  }
-
-  // 2. Arabic ordinal episode ("الحلقة الأولى")
-  for (const [word, num] of ARABIC_ORDINAL_MAP.entries()) {
-    const rgx = new RegExp(`(?:الحلقة|الحلقه|حلقة|حلقه)\\s+${word}\\b`, 'i');
-    if (rgx.test(strippedTitle)) return num;
-  }
-
-  // 3. Explicit episode keyword in URL slug ("/episode-12", "-الحلقة-12", "/ep-12")
-  const strippedUrl = rawUrl
-    .replace(/(?:season|الموسم|موسم)[-_/\s]*\d{1,3}/gi, ' ')
-    .replace(/\b(19[5-9]\d|20[0-3]\d)\b/g, ' ');
-  const urlMatch = strippedUrl.match(/(?:الحلقة|الحلقه|حلقة|حلقه|episode|ep)[-_/\s:]*(\d{1,4})\b/i);
-  if (urlMatch) {
-    const n = parseInt(urlMatch[1], 10);
-    if (!Number.isNaN(n) && n >= 0) return n;
-  }
-
-  // 4. Standalone number in stripped title (when the card text is just "12" or "عرض 12")
-  const standaloneMatch = strippedTitle.match(/(?:^|\D)(\d{1,4})(?:\D|$)/);
-  if (standaloneMatch) {
-    const n = parseInt(standaloneMatch[1], 10);
-    if (!Number.isNaN(n) && n > 0 && n <= 2000) return n;
-  }
-
-  return fallbackNumber;
+export function extractEpisodeNumber(text = '', url = '', _legacyFallback = null) {
+  const raw=normalizeDigits(String(text||'')).trim();
+  const explicit=explicitEpisode(raw,url);
+  if(explicit!==null)return explicit;
+  for(const[word,n]of ARABIC_ORDINAL_MAP.entries())if(new RegExp(`(?:الحلقة|الحلقه|حلقة|حلقه)\\s+${word}(?=\\s|$|[-_/])`,'i').test(raw))return n;
+  // A bare number is observed source data; an index/year/sequel elsewhere is not.
+  const n=/^\d{1,5}$/.test(raw)?Number(raw):null;
+  return Number.isSafeInteger(n)&&n>0?n:null;
 }
 
 export function inferContentType(title = '', url = '', defaultType = 'movie') {
@@ -147,7 +110,7 @@ export function normalizeCatalogItem(raw = {}, context = {}) {
     poster,
     image: poster,
     year,
-    quality: raw.quality || 'HD',
+    quality: raw.quality || '',
     rating: raw.rating || '',
     category: raw.category || type,
     type,
@@ -168,19 +131,19 @@ export function normalizeEpisodeList(rawEpisodes = [], context = {}) {
 
     const rawTitle = String(ep.title || ep.name || '').trim();
     const season = Number(ep.season) > 0 ? Number(ep.season) : extractSeasonNumber(`${rawTitle} ${url}`, defaultSeason);
-    const parsedNumber =
-      typeof ep.number === 'number' && !Number.isNaN(ep.number) && ep.number > 0
-        ? ep.number
-        : extractEpisodeNumber(rawTitle, url, idx + 1);
-    const number = parsedNumber || idx + 1;
-    const title = rawTitle ? normalizeDigits(rawTitle).replace(/\s+/g, ' ').trim() : `الحلقة ${number}`;
+    const observed=extractEpisodeNumber(rawTitle,url);
+    const field=Number(ep.episode_number??ep.episodeNumber??ep.number??ep.num);
+    const number=observed??(Number.isSafeInteger(field)&&field>0?field:null);
+    const title = rawTitle ? normalizeDigits(rawTitle).replace(/\s+/g, ' ').trim() : number?`الحلقة ${number}`:'حلقة غير مرقمة';
     const ref = ep.ref && ep.ref.includes(':') ? ep.ref : providerId ? `${providerId}:${url}` : url;
 
     // Deduplicate by URL first, and also avoid duplicate (season, number) pointing to same path
     const dedupKey = `${season}:${number}:${url}`;
     if (!byKey.has(url) && !byKey.has(dedupKey)) {
       const normalizedEp = {
-        id: ep.id || `${providerId || 'ep'}-s${season}-e${number}`,
+        id: ep.id || url,
+        episode_number:number,
+        watch_available:number!==null&&ep.watch_available!==false,
         number,
         season,
         title,
@@ -199,7 +162,7 @@ export function normalizeEpisodeList(rawEpisodes = [], context = {}) {
   const uniqueEpisodes = Array.from(new Set(byKey.values()));
   uniqueEpisodes.sort((a, b) => {
     if (a.season !== b.season) return a.season - b.season;
-    return a.number - b.number;
+    return (a.number??Number.MAX_SAFE_INTEGER) - (b.number??Number.MAX_SAFE_INTEGER);
   });
 
   return uniqueEpisodes;
@@ -250,7 +213,7 @@ export function normalizeDetailsResult(raw = {}, context = {}) {
     is_series: Boolean(raw.is_series !== undefined ? raw.is_series : (type === 'series' || episodes.length > 0)),
     genres: Array.isArray(raw.genres) ? raw.genres.map((g) => String(g).trim()).filter(Boolean) : [],
     rating: String(raw.rating || '').trim(),
-    quality: String(raw.quality || 'HD').trim(),
+    quality: String(raw.quality || '').trim(),
     seasons,
     episodes,
     servers: Array.isArray(raw.servers) ? raw.servers : [],

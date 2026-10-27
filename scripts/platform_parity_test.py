@@ -43,7 +43,7 @@ class Elements(HTMLParser):
 class PlatformParity(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.web = read('index.html')
+        cls.web = read('docs/legacy/index.html.source')
         cls.dart = read('flutter_app/lib/main.dart')
         cls.native_contract = read(CONTRACT['shared_contract_sources']['flutter'])
         cls.release = read('.github/workflows/mobile-trial.yml')
@@ -66,7 +66,7 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
         self.assertEqual(self.web_contract['routes']['explore'], 'search')
         self.assertEqual(self.web_contract['routes']['invalid-route'], 'home')
         self.assertIn("import 'src/ui_contract.dart'", self.dart)
-        self.assertIn('TatvUi.pageIds', self.dart)
+        self.assertIn('NajdUi.pageIds', self.dart)
         self.assertIn('UI_CONTRACT.navigation', self.web)
 
     def test_each_web_destination_has_content_and_search_contains_explore(self):
@@ -87,8 +87,8 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
         self.assertEqual(web['direction'], 'rtl')
         self.assertEqual(web['navigationSide'], 'right')
         self.assertEqual(web['desktopBreakpoint'], CONTRACT['navigation_layout']['permanent_min_width'])
-        self.assertFalse(web['topBar'])
-        self.assertFalse(web['bottomNavigation'])
+        self.assertTrue(web['topBar'])
+        self.assertTrue(web['bottomNavigation'])
         theme_keys = {'background':'background','surface':'surface','elevated':'elevated',
                       'accent':'gold','accent_light':'goldLight','accent_dark':'goldDark',
                       'text':'text','secondary_text':'textSecondary'}
@@ -100,15 +100,17 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
             match = re.search(r'\b' + dart_keys[key] + r'\s*=\s*Color\(0xFF([0-9a-f]{6})\)', self.native_contract, re.I)
             self.assertIsNotNone(match, f'Native theme token missing: {key}')
             self.assertEqual('#' + match[1].lower(), value)
-        self.assertIn("brand = 'T-A-TV'", self.native_contract)
+        self.assertIn("brand = 'نجد — Najd TV'", self.native_contract)
         self.assertRegex(self.native_contract, r'sidebarBreakpoint\s*=\s*900(?:\.0)?;')
         # These are integration boundaries, not a visual or device acceptance claim.
-        self.assertIn('TatvUi.sidebarBreakpoint', self.dart)
+        self.assertIn('NajdUi.sidebarBreakpoint', self.dart)
         self.assertIn('TextDirection.rtl', self.dart)
         self.assertIn('isTvTarget', self.dart)
         self.assertIn('isDesktopTarget', self.dart)
         shell = self.dart[self.dart.index('class Shell'):self.dart.index('class HomePage')]
-        self.assertNotRegex(shell, r'\b(?:appBar|bottomNavigationBar)\s*:')
+        self.assertIn('bottomNavigationBar: NavigationBar(', shell)
+        self.assertIn('NajdUi.bottomPages', shell)
+        self.assertIn('ImageFilter.blur', shell)
         self.assertIn('tatv-open-navigation', shell)
 
     def test_native_search_route_is_not_catalog_or_hidden_setting(self):

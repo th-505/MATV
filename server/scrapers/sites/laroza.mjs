@@ -566,7 +566,7 @@ export async function scrapeCatalog(category = 'latest', page = 1, options = {})
                 poster: row.poster,
                 year: row.year,
                 type: row.type || (section === 'movies' ? 'movie' : 'series'),
-                quality: 'HD',
+                quality: null,
                 source: PROVIDER_META.id
               },
               { providerId: PROVIDER_META.id, baseUrl: LAROZA_SITE_CONFIG.baseUrl }
@@ -630,7 +630,7 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
                 poster: row.poster,
                 year: row.year,
                 type: row.type || 'movie',
-                quality: 'HD',
+                quality: null,
                 source: PROVIDER_META.id
               },
               { providerId: PROVIDER_META.id, baseUrl: LAROZA_SITE_CONFIG.baseUrl }
@@ -876,7 +876,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
       url: cleanUrl,
       type: 'embed',
       streamType: 'embed',
-      quality: 'HD',
+      quality: null,
       verified: false,
       headers: { Referer: `${LAROZA_SITE_CONFIG.baseUrl}/`, 'User-Agent': LAROZA_UA }
     });
@@ -940,7 +940,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: resolvedEmbed,
           type: 'embed',
           streamType: 'embed',
-          quality: 'HD',
+          quality: null,
           verified: false,
           headers: { Referer: cleanUrl, 'User-Agent': LAROZA_UA }
         });
@@ -1055,7 +1055,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       streamUrl: cleanUrl,
       type: 'embed',
       streamType: 'embed',
-      quality: 'HD',
+      quality: null,
       verified: false,
       headers: { Referer: `${LAROZA_SITE_CONFIG.baseUrl}/`, 'User-Agent': LAROZA_UA }
     };
@@ -1075,7 +1075,7 @@ export async function resolveStream(urlOrRef, options = {}) {
           streamUrl: source.url,
           type: streamType,
           streamType,
-          quality: source.quality || 'HD',
+          quality: source.quality || '',
           verified: false,
           headers: source.headers || { Referer: cleanUrl, 'User-Agent': LAROZA_UA },
           expires_at: source.expires_at || null,

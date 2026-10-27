@@ -368,7 +368,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: u,
           type: 'embed',
           streamType: 'embed',
-          quality: 'HD',
+          quality: null,
           verified: false,
           headers: generateAntiBanHeaders(targetUrl)
         });
@@ -394,7 +394,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       url: targetUrl,
       type: streamType,
       streamType,
-      quality: 'HD',
+      quality: null,
       verified: true,
       headers: generateAntiBanHeaders(targetUrl)
     };
@@ -415,7 +415,7 @@ export async function resolveStream(urlOrRef, options = {}) {
     url: targetUrl,
     type: 'embed',
     streamType: 'embed',
-    quality: 'HD',
+    quality: null,
     verified: false,
     headers: generateAntiBanHeaders(targetUrl)
   };

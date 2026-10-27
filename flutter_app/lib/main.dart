@@ -1,10 +1,19 @@
+import 'src/account_settings.dart';
+import 'src/font_addons.dart';
+import 'src/favorite_refresh.dart';
+import 'src/najd_theme.dart';
+
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
 import 'src/ui_contract.dart';
+
 import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'src/api_client.dart';
 import 'src/app_target.dart';
 import 'src/details_page.dart';
@@ -20,11 +29,8 @@ import 'src/unified_media.dart';
 import 'src/storage_cleanup.dart';
 import 'src/cloud_library.dart';
 
-const _brandBg = TatvUi.background;
-const _brandPanel = TatvUi.surface;
-const _brandAccent = TatvUi.accent;
-const _brandAccentMuted = TatvUi.accentDark;
-const _brandAccentLight = TatvUi.accentLight;
+const _brandAccent = NajdUi.accent;
+const _brandAccentMuted = NajdUi.accentLight;
 
 void main() => runApp(const MitvApp());
 
@@ -41,6 +47,8 @@ class _MitvAppState extends State<MitvApp> {
   @override
   void initState() {
     super.initState();
+    unawaited(NajdAppearance.instance.load());
+    unawaited(loadPrivateNajdFonts().then((_) => NajdFontAddon.restore()));
     _cloudFuture = storeFuture
         .then(CloudLibrarySync.startDefault)
         .catchError((Object _, StackTrace _) => null);
@@ -60,54 +68,37 @@ class _MitvAppState extends State<MitvApp> {
 
   @override
   Widget build(BuildContext context) {
-    final base = ThemeData.dark(useMaterial3: true);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: TatvUi.brand,
-      builder: (context, child) => isTvTarget
-          ? VirtualPointerScope(controller: _pointer, child: child!)
-          : child!,
-      locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: base.copyWith(
-        scaffoldBackgroundColor: _brandBg,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: _brandBg,
-          foregroundColor: Color(0xFFF6F7FB),
-          centerTitle: true,
-          elevation: 0,
-        ),
-        cardTheme: CardThemeData(
-          color: _brandPanel,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0x55E8BD75)),
+    return ListenableBuilder(
+      listenable: NajdAppearance.instance,
+      builder: (context, _) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: NajdUi.brand,
+        theme: NajdThemes.light,
+        darkTheme: NajdThemes.dark,
+        themeMode: NajdAppearance.instance.mode,
+        builder: (context, child) => NajdTvViewport(
+          child: NajdIntro(
+            child: isTvTarget
+                ? VirtualPointerScope(controller: _pointer, child: child!)
+                : child!,
           ),
         ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _brandAccent,
-          primary: _brandAccent,
-          secondary: _brandAccentLight,
-          surface: _brandPanel,
-          brightness: Brightness.dark,
-        ),
-        visualDensity: isTvTarget
-            ? VisualDensity.comfortable
-            : VisualDensity.standard,
-      ),
-      home: Directionality(
-        textDirection: TextDirection.rtl,
-        child: FutureBuilder<LocalLibraryStore>(
-          future: storeFuture,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return Shell(store: snapshot.data!, pointer: _pointer);
-          },
+        locale: const Locale('ar'),
+        supportedLocales: const [Locale('ar')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: FutureBuilder<LocalLibraryStore>(
+            future: storeFuture,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              return Shell(store: snapshot.data!, pointer: _pointer);
+            },
+          ),
         ),
       ),
     );
@@ -128,59 +119,36 @@ void openDetails(
   );
 }
 
-class _MPlayMark extends StatelessWidget {
-  const _MPlayMark({this.size = 38});
+class _NajdMark extends StatelessWidget {
+  const _NajdMark({this.size = 38});
   final double size;
   @override
-  Widget build(BuildContext context) => SizedBox(
+  Widget build(BuildContext context) => Image.asset(
+    'assets/najd/mark.png',
     width: size,
     height: size,
-    child: CustomPaint(painter: _MPlayPainter()),
+    semanticLabel: 'نجد',
   );
-}
-
-class _MPlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * .10
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..color = _brandAccent;
-    final m = Path()
-      ..moveTo(size.width * .2, size.height * .78)
-      ..lineTo(size.width * .2, size.height * .22)
-      ..lineTo(size.width * .5, size.height * .50)
-      ..lineTo(size.width * .8, size.height * .22)
-      ..lineTo(size.width * .8, size.height * .78);
-    canvas.drawPath(m, stroke);
-    final play = Path()
-      ..moveTo(size.width * .43, size.height * .55)
-      ..lineTo(size.width * .43, size.height * .76)
-      ..lineTo(size.width * .63, size.height * .655)
-      ..close();
-    canvas.drawPath(play, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BrandTitle extends StatelessWidget {
   const _BrandTitle();
   @override
-  Widget build(BuildContext context) => const Row(
+  Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      _MPlayMark(size: 38),
+      _NajdMark(size: 38),
       SizedBox(width: 10),
-      Text(
-        TatvUi.brand,
-        style: TextStyle(
-          color: _brandAccentLight,
-          fontWeight: FontWeight.w800,
-          letterSpacing: .2,
+      Flexible(
+        child: Text(
+          NajdUi.brand,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.w800,
+            letterSpacing: .2,
+          ),
         ),
       ),
     ],
@@ -220,22 +188,34 @@ class Shell extends StatefulWidget {
 
 class _ShellState extends State<Shell> {
   int index = 0;
+  bool _drawerOpen = false;
+  bool _headerVisible = true;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _menuFocus = FocusNode(debugLabel: 'open-navigation');
   final _navFocus = List.generate(
-    TatvUi.pageIds.length,
-    (i) => FocusNode(debugLabel: 'nav-${TatvUi.pageIds[i]}'),
+    NajdUi.pageIds.length + NajdUi.regions.length,
+    (i) => FocusNode(
+      debugLabel:
+          'nav-${i < NajdUi.pageIds.length ? NajdUi.pageIds[i] : NajdUi.regions[i - NajdUi.pageIds.length].id}',
+    ),
   );
   int _pageGeneration = 0;
   late final MitvApi api;
   late final bool _ownsApi;
-  final _pages = List<Widget?>.filled(TatvUi.pageIds.length, null);
+  final _pages = List<Widget?>.filled(NajdUi.pageIds.length, null);
   @override
   void initState() {
     super.initState();
     _ownsApi = widget.api == null;
     api = widget.api ?? MitvApi();
     _pages[index] = _createPage(index);
+    if (kIsWeb && Uri.base.fragment.contains('najd_link=')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted)
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const NajdAccountPage()));
+      });
+    }
     final ref = kIsWeb ? Uri.base.queryParameters['ref'] ?? '' : '';
     if (['alooy:', '3isk:', 'legacy:', 'laroza:'].any(ref.startsWith)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -346,6 +326,7 @@ class _ShellState extends State<Shell> {
     setState(() {
       _pages[value] ??= _createPage(value);
       index = value;
+      _headerVisible = true;
     });
   }
 
@@ -358,7 +339,7 @@ class _ShellState extends State<Shell> {
 
   Widget _navigation({required bool drawer}) => Material(
     key: const Key('tatv-right-sidebar'),
-    color: _brandPanel,
+    color: Theme.of(context).colorScheme.surface,
     child: SafeArea(
       child: SizedBox(
         width: 232,
@@ -382,81 +363,156 @@ class _ShellState extends State<Shell> {
               child: FocusTraversalGroup(
                 policy: OrderedTraversalPolicy(),
                 child: ListView.builder(
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 8,
                   ),
-                  itemCount: TatvUi.pageIds.length,
-                  itemBuilder: (context, i) => FocusTraversalOrder(
-                    order: NumericFocusOrder(i.toDouble()),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Focus(
-                        canRequestFocus: false,
-                        onKeyEvent: (node, event) {
-                          if (event is! KeyDownEvent) {
-                            return KeyEventResult.ignored;
-                          }
-                          if (event.logicalKey ==
-                                  LogicalKeyboardKey.arrowDown ||
-                              event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                            final next =
-                                (i +
-                                    (event.logicalKey ==
-                                            LogicalKeyboardKey.arrowDown
-                                        ? 1
-                                        : -1)) %
-                                _navFocus.length;
-                            _navFocus[next].requestFocus();
-                            return KeyEventResult.handled;
-                          }
-                          if (event.logicalKey == LogicalKeyboardKey.select) {
-                            _selectPage(i);
-                            if (drawer) _closeNavigation();
-                            return KeyEventResult.handled;
-                          }
-                          return KeyEventResult.ignored;
-                        },
-                        child: FocusHighlight(
-                          child: TextButton(
-                            key: ValueKey('nav-${TatvUi.pageIds[i]}'),
-                            focusNode: _navFocus[i],
-                            autofocus: !drawer && i == index,
-                            style: TextButton.styleFrom(
-                              alignment: Alignment.centerRight,
-                              minimumSize: const Size.fromHeight(50),
-                              foregroundColor: i == index
-                                  ? _brandAccentLight
-                                  : TatvUi.secondaryText,
-                              backgroundColor: i == index
-                                  ? _brandAccent.withAlpha(26)
-                                  : Colors.transparent,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
+                  itemCount: NajdUi.pageIds.length + NajdUi.regions.length,
+                  itemBuilder: (context, i) {
+                    if (i >= NajdUi.pageIds.length) {
+                      final region = NajdUi.regions[i - NajdUi.pageIds.length];
+                      return ListTile(
+                        key: ValueKey('region-${region.id}'),
+                        focusNode: _navFocus[i],
+                        minTileHeight: isTvTarget ? 64 : 48,
+                        leading: Icon(region.icon),
+                        title: Text(region.label),
+                        onTap: () {
+                          if (drawer) _closeNavigation();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => Scaffold(
+                                appBar: AppBar(title: Text(region.label)),
+                                body: CatalogPage(
+                                  api: api,
+                                  store: widget.store,
+                                  title: region.label,
+                                  categoryId: region.category,
+                                  mediaKind: region.kind,
+                                  unified: true,
+                                ),
                               ),
                             ),
-                            onPressed: () {
+                          );
+                        },
+                      );
+                    }
+                    return FocusTraversalOrder(
+                      order: NumericFocusOrder(i.toDouble()),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Focus(
+                          canRequestFocus: false,
+                          onKeyEvent: (node, event) {
+                            if (event is! KeyDownEvent) {
+                              return KeyEventResult.ignored;
+                            }
+                            if (event.logicalKey ==
+                                    LogicalKeyboardKey.arrowDown ||
+                                event.logicalKey ==
+                                    LogicalKeyboardKey.arrowUp) {
+                              final next =
+                                  (i +
+                                      (event.logicalKey ==
+                                              LogicalKeyboardKey.arrowDown
+                                          ? 1
+                                          : -1)) %
+                                  _navFocus.length;
+                              _navFocus[next].requestFocus();
+                              return KeyEventResult.handled;
+                            }
+                            if (event.logicalKey == LogicalKeyboardKey.select) {
                               _selectPage(i);
                               if (drawer) _closeNavigation();
-                            },
-                            child: Row(
-                              children: [
-                                Icon(TatvUi.icons[i]),
-                                const SizedBox(width: 12),
-                                Expanded(child: Text(TatvUi.labels[i])),
-                              ],
+                              return KeyEventResult.handled;
+                            }
+                            return KeyEventResult.ignored;
+                          },
+                          child: FocusHighlight(
+                            child: TextButton(
+                              key: ValueKey('nav-${NajdUi.pageIds[i]}'),
+                              focusNode: _navFocus[i],
+                              autofocus: !drawer && i == index,
+                              style: TextButton.styleFrom(
+                                alignment: Alignment.centerRight,
+                                minimumSize: Size.fromHeight(
+                                  isTvTarget ? 64 : 50,
+                                ),
+                                foregroundColor: i == index
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                backgroundColor: i == index
+                                    ? _brandAccent.withAlpha(26)
+                                    : Colors.transparent,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onPressed: () {
+                                _selectPage(i);
+                                if (drawer) _closeNavigation();
+                              },
+                              child: Row(
+                                children: [
+                                  Icon(NajdUi.icons[i]),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Text(NajdUi.labels[i])),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
           ],
         ),
+      ),
+    ),
+  );
+
+  Widget _header() => Material(
+    color: Theme.of(context).scaffoldBackgroundColor,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (isTvTarget ||
+                  MediaQuery.sizeOf(context).width < NajdUi.sidebarBreakpoint)
+                IconButton(
+                  key: const Key('tatv-open-navigation'),
+                  focusNode: _menuFocus,
+                  tooltip: 'القائمة',
+                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                  icon: const Icon(Icons.menu),
+                ),
+              const Expanded(child: _BrandTitle()),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (final filter in [(1, 'فيلم'), (0, 'الكل'), (2, 'مسلسل')])
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: ChoiceChip(
+                    label: Text(filter.$2),
+                    selected: index == filter.$1,
+                    onSelected: (_) => _selectPage(filter.$1),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     ),
   );
@@ -479,9 +535,32 @@ class _ShellState extends State<Shell> {
           }),
         );
         final side =
-            isTvTarget ||
-            viewport.size.width >= TatvUi.sidebarBreakpoint ||
-            isDesktopTarget;
+            !isTvTarget &&
+            (viewport.size.width >= NajdUi.sidebarBreakpoint ||
+                isDesktopTarget);
+        final browsing = NotificationListener<ScrollUpdateNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.axis == Axis.vertical &&
+                (notification.scrollDelta?.abs() ?? 0) > 3) {
+              final visible =
+                  notification.scrollDelta! < 0 ||
+                  notification.metrics.pixels <= 0;
+              if (visible != _headerVisible) {
+                setState(() => _headerVisible = visible);
+              }
+            }
+            return false;
+          },
+          child: Column(
+            children: [
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                child: _headerVisible ? _header() : const SizedBox.shrink(),
+              ),
+              Expanded(child: content),
+            ],
+          ),
+        );
         return Shortcuts(
           shortcuts: const {
             SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
@@ -502,46 +581,73 @@ class _ShellState extends State<Shell> {
               // In RTL, the start drawer opens on the physical right.
               drawer: side
                   ? null
-                  : Drawer(width: 272, child: _navigation(drawer: true)),
+                  : Drawer(
+                      width: isTvTarget ? 340 : 272,
+                      child: _navigation(drawer: true),
+                    ),
               onDrawerChanged: (open) {
+                setState(() => _drawerOpen = open);
                 if (open) {
                   _navFocus[index].requestFocus();
                 } else if (!side) {
                   _menuFocus.requestFocus();
                 }
               },
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.startFloat,
+              floatingActionButton: !side && !_headerVisible
+                  ? FloatingActionButton.small(
+                      key: const Key('tatv-open-navigation'),
+                      focusNode: _menuFocus,
+                      tooltip: 'القائمة',
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                      child: const Icon(Icons.menu),
+                    )
+                  : null,
+              drawerScrimColor: Colors.black.withAlpha(160),
+              bottomNavigationBar: NavigationBar(
+                key: const Key('najd-bottom-navigation'),
+                selectedIndex: !NajdUi.bottomPages.contains(index)
+                    ? 2
+                    : NajdUi.bottomPages.indexOf(index),
+                onDestinationSelected: (value) =>
+                    _selectPage(NajdUi.bottomPages[value]),
+                destinations: [
+                  for (final page in NajdUi.bottomPages)
+                    NavigationDestination(
+                      icon: Icon(NajdUi.icons[page]),
+                      selectedIcon: Icon(
+                        page == 0 ? Icons.home_rounded : NajdUi.icons[page],
+                      ),
+                      label: page == 5 ? 'بحث' : NajdUi.labels[page],
+                    ),
+                ],
+              ),
               body: SafeArea(
-                child: side
-                    ? Row(
+                child: Stack(
+                  children: [
+                    if (side)
+                      Row(
                         textDirection: TextDirection.rtl,
                         children: [
                           _navigation(drawer: false),
                           const VerticalDivider(width: 1),
-                          Expanded(child: content),
+                          Expanded(child: browsing),
                         ],
                       )
-                    : Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 58),
-                              child: content,
-                            ),
+                    else
+                      browsing,
+                    if (isTvTarget && _drawerOpen)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                            child: const ColoredBox(color: Colors.transparent),
                           ),
-                          Positioned(
-                            top: 8,
-                            right: 12,
-                            child: FilledButton.tonalIcon(
-                              key: const Key('tatv-open-navigation'),
-                              focusNode: _menuFocus,
-                              onPressed: () =>
-                                  _scaffoldKey.currentState?.openDrawer(),
-                              icon: const Icon(Icons.menu),
-                              label: const Text('القائمة'),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -613,15 +719,17 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('أحدث الإضافات'),
+                              const Text(
+                                'أحدث الإضافات',
+                                style: TextStyle(color: Colors.white),
+                              ),
                               const SizedBox(height: 8),
                               Text(
                                 item.title,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(color: Colors.white),
                               ),
                               const SizedBox(height: 12),
                               FilledButton.icon(
@@ -814,9 +922,8 @@ class _SettingsPageState extends State<SettingsPage> {
       await action();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('تعذر إكمال التنظيف')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('تعذر إكمال التنظيف')));
       }
     } finally {
       _confirming = false;
@@ -829,8 +936,8 @@ class _SettingsPageState extends State<SettingsPage> {
     padding: const EdgeInsets.all(16),
     children: [
       const ListTile(
-        title: Text(TatvUi.brand),
-        subtitle: Text('المظهر السينمائي الأسود والذهبي'),
+        title: Text(NajdUi.brand),
+        subtitle: Text('نجد · خزامى في المظهر الفاتح والداكن'),
       ),
       FocusHighlight(
         child: ListTile(
@@ -846,6 +953,21 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ),
+      ListTile(
+        leading: const Icon(Icons.person_outline),
+        title: const Text('الحساب والربط'),
+        onTap: () => Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const NajdAccountPage())),
+      ),
+      ListTile(
+        leading: const Icon(Icons.aspect_ratio),
+        title: const Text('قياسات الشاشة الحالية'),
+        subtitle: Text(
+          '${MediaQuery.sizeOf(context).width.round()} × ${MediaQuery.sizeOf(context).height.round()} · كثافة ${MediaQuery.devicePixelRatioOf(context).toStringAsFixed(2)}\nحدود آمنة: ${MediaQuery.viewPaddingOf(context)}',
+        ),
+      ),
+      const NajdThemeControl(),
+      const NajdFontAddonControl(),
       if (isTvTarget && widget.pointer != null)
         AnimatedBuilder(
           animation: widget.pointer!,
@@ -858,6 +980,10 @@ class _SettingsPageState extends State<SettingsPage> {
             onChanged: widget.pointer!.setEnabled,
           ),
         ),
+      const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text('التخزين والسجل'),
+      ),
       if (widget.clearCache != null)
         ListTile(
           title: const Text('مسح الكاش المحلي'),
@@ -924,7 +1050,7 @@ class _TeamBadge extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0xFF1A1A18),
-              border: Border.all(color: const Color(0x44E8BD75)),
+              border: Border.all(color: const Color(0x448480FF)),
             ),
             child: logo.isEmpty
                 ? const Icon(Icons.shield_outlined, color: _brandAccentMuted)
@@ -1565,6 +1691,47 @@ class _SearchPageState extends State<SearchPage> {
   final query = TextEditingController();
   List<CatalogItem> items = const [];
   bool loading = false;
+  bool loadingMore = false;
+  bool hasMore = false;
+  int page = 1;
+  final resultsController = ScrollController();
+  @override
+  void initState() {
+    super.initState();
+    resultsController.addListener(() {
+      if (resultsController.hasClients &&
+          resultsController.position.extentAfter < 700) {
+        unawaited(loadMore());
+      }
+    });
+  }
+
+  Future<void> loadMore() async {
+    if (advanced || loading || loadingMore || !hasMore) return;
+    final request = generation, q = query.text.trim();
+    final nextPage = page + 1;
+    setState(() => loadingMore = true);
+    try {
+      final next = await widget.api.searchTmdbPage(q, page: nextPage);
+      if (!mounted || request != generation) return;
+      setState(() {
+        items = UnifiedMedia.mergeSources([...items, ...next]);
+        page = nextPage;
+        hasMore = widget.api.searchHasMore(q, page) ?? next.length >= 20;
+      });
+    } catch (_) {
+      if (mounted && request == generation) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر تحميل الصفحة التالية؛ حاول مجددًا'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted && request == generation) setState(() => loadingMore = false);
+    }
+  }
+
   bool submitted = false;
   String? error;
   bool advanced = false;
@@ -1618,6 +1785,7 @@ class _SearchPageState extends State<SearchPage> {
     generation += 1;
     debounce?.cancel();
     query.dispose();
+    resultsController.dispose();
     super.dispose();
   }
 
@@ -1651,6 +1819,9 @@ class _SearchPageState extends State<SearchPage> {
     final request = ++generation;
     setState(() {
       loading = true;
+      loadingMore = false;
+      hasMore = false;
+      page = 1;
       submitted = true;
       error = null;
     });
@@ -1661,6 +1832,9 @@ class _SearchPageState extends State<SearchPage> {
       if (!mounted || request != generation || q != query.text.trim()) return;
       setState(() {
         items = result;
+        hasMore =
+            !advanced &&
+            (widget.api.searchHasMore(q, 1) ?? result.length >= 20);
         loading = false;
       });
     } catch (_) {
@@ -1773,22 +1947,32 @@ class _SearchPageState extends State<SearchPage> {
               : !submitted
               ? const Center(child: Text('اكتب اسم فيلم أو مسلسل للبحث'))
               : GridView.builder(
+                  controller: resultsController,
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: isTvTarget ? 260 : 220,
                     childAspectRatio: isTvTarget ? .68 : .62,
                     crossAxisSpacing: isTvTarget ? 18 : 10,
                     mainAxisSpacing: isTvTarget ? 18 : 10,
                   ),
-                  itemCount: items.length,
-                  itemBuilder: (context, i) => _CatalogCard(
-                    item: items[i],
-                    onTap: () => openDetails(
-                      context,
-                      widget.api,
-                      widget.store,
-                      items[i],
-                    ),
-                  ),
+                  itemCount: items.length + (hasMore ? 1 : 0),
+                  itemBuilder: (context, i) => i == items.length
+                      ? Center(
+                          child: loadingMore
+                              ? const CircularProgressIndicator()
+                              : TextButton(
+                                  onPressed: loadMore,
+                                  child: const Text('عرض المزيد'),
+                                ),
+                        )
+                      : _CatalogCard(
+                          item: items[i],
+                          onTap: () => openDetails(
+                            context,
+                            widget.api,
+                            widget.store,
+                            items[i],
+                          ),
+                        ),
                 ),
         ),
       ],
@@ -1816,6 +2000,9 @@ class LibraryPage extends StatelessWidget {
           ...favorites.map(
             (item) => ListTile(
               leading: const Icon(Icons.favorite),
+              trailing: item.ref.startsWith('tmdb:')
+                  ? FavoriteRefresh(ref: item.ref)
+                  : null,
               title: Text(item.title),
               onTap: () => openDetails(context, api, store, item),
             ),

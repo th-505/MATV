@@ -1,3 +1,4 @@
+import {providerScope} from './content-scope.mjs';
 import { contentIdentity } from '../../shared/content-identity.js';
 import { searchTraceEvent } from '../diagnostics/search-trace.mjs';
 import { listProviders, getProvider } from './registry.mjs';
@@ -59,7 +60,7 @@ const SOURCE_NAMES = {mycima:'ماي سيما',akwam:'أكوام',cimanow:'سي�
 export function listSourceCapabilities() {
   return SOURCE_REGISTRY.map(({ id, aliases, search }) => {
     const meta = getProvider(id).meta;
-    return { id, aliases: [...aliases], search, name_ar:SOURCE_NAMES[id] || meta.name,
+    return { id, aliases: [...aliases], search, scope:providerScope(id), name_ar:SOURCE_NAMES[id] || meta.name,
       domain:new URL((getProvider(meta.mirrorOf)?.meta || meta).domains[0]).hostname };
   });
 }

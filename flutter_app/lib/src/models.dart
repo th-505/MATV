@@ -324,6 +324,8 @@ class TitleDetails {
     this.downloadAvailable = true,
     this.year,
     this.plot = '',
+    this.cast = const [],
+    this.directors = const [],
     this.genres = const [],
     this.season,
     this.episode,
@@ -354,6 +356,8 @@ class TitleDetails {
   final bool downloadAvailable;
   final int? year;
   final String plot;
+  final List<Map<String, dynamic>> cast;
+  final List<String> directors;
   final List<String> genres;
   final int? season;
   final int? episode;
@@ -383,6 +387,8 @@ class TitleDetails {
     bool? downloadAvailable,
     int? year,
     String? plot,
+    List<Map<String, dynamic>>? cast,
+    List<String>? directors,
     List<String>? genres,
     int? season,
     int? episode,
@@ -413,6 +419,8 @@ class TitleDetails {
     downloadAvailable: downloadAvailable ?? this.downloadAvailable,
     year: year ?? this.year,
     plot: plot ?? this.plot,
+    cast: List.unmodifiable(cast ?? this.cast),
+    directors: List.unmodifiable(directors ?? this.directors),
     genres: List.unmodifiable(genres ?? this.genres),
     season: season ?? this.season,
     episode: episode ?? this.episode,
@@ -486,7 +494,23 @@ class TitleDetails {
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       downloadAvailable: json['download_available'] != false,
       year: int.tryParse('${json['year'] ?? ''}'),
-      plot: '${json['plot'] ?? json['description'] ?? json['story'] ?? ''}',
+      plot:
+          '${json['plot'] ?? json['overview'] ?? json['description'] ?? json['story'] ?? ''}',
+      cast: json['cast'] is List
+          ? (json['cast'] as List)
+                .whereType<Map>()
+                .map(
+                  (row) => Map<String, dynamic>.unmodifiable(
+                    row.cast<String, dynamic>(),
+                  ),
+                )
+                .toList(growable: false)
+          : const [],
+      directors: json['directors'] is List
+          ? (json['directors'] as List).whereType<String>().toList(
+              growable: false,
+            )
+          : const [],
       genres: _descriptiveGenres(json),
       season: _positiveIdentityNumber(json['season_number'] ?? json['season']),
       episode: _positiveIdentityNumber(

@@ -274,7 +274,7 @@ function extractCatalogItemsFromHtml(html = '', baseUrl = CIMANOW_CONFIG.baseUrl
         url,
         poster: rewriteToActiveCimaNowDomain(rawPoster, baseUrl),
         year: extractYear(rawTitle),
-        quality: 'HD',
+        quality: null,
         rating: rateText,
         type,
         category: categText || type,
@@ -327,7 +327,7 @@ function extractCatalogItemsFromHtml(html = '', baseUrl = CIMANOW_CONFIG.baseUrl
           url,
           poster: rewriteToActiveCimaNowDomain(rawPoster, baseUrl),
           year,
-          quality: 'HD',
+          quality: null,
           type,
           category: type,
           source: PROVIDER_META.id
@@ -631,7 +631,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       overview,
       year,
       rating,
-      quality: 'HD',
+      quality: null,
       genres,
       episodes,
       type: isMovie ? 'movie' : 'series',
@@ -1003,7 +1003,7 @@ export async function resolveStream(urlOrRef, options = {}) {
                 url: top.url,
                 type: top.streamType || top.type || 'mp4',
                 streamType: top.streamType || top.type || 'mp4',
-                quality: top.quality || 'HD',
+                quality: top.quality || '',
                 verified: false,
                 headers: top.headers || { Referer: watchUrl }
               };
@@ -1014,7 +1014,7 @@ export async function resolveStream(urlOrRef, options = {}) {
               url: resolvedTarget,
               type: resolvedTarget.includes('.m3u8') ? 'm3u8' : resolvedTarget.includes('.mp4') ? 'mp4' : 'embed',
               streamType: resolvedTarget.includes('.m3u8') ? 'm3u8' : resolvedTarget.includes('.mp4') ? 'mp4' : 'embed',
-              quality: 'HD',
+              quality: null,
               verified: false,
               headers: { Referer: watchUrl }
             };
@@ -1035,7 +1035,7 @@ export async function resolveStream(urlOrRef, options = {}) {
         url: topStream.url,
         type: topStream.streamType || topStream.type || 'mp4',
         streamType: topStream.streamType || topStream.type || 'mp4',
-        quality: topStream.quality || 'HD',
+        quality: topStream.quality || '',
         verified: false,
         headers: topStream.headers || { Referer: `${CIMANOW_CONFIG.baseUrl}/` }
       };
@@ -1049,7 +1049,7 @@ export async function resolveStream(urlOrRef, options = {}) {
     url: rawUrl,
     type: 'embed',
     streamType: 'embed',
-    quality: 'HD',
+    quality: null,
     verified: false,
     headers: { Referer: `${CIMANOW_CONFIG.baseUrl}/` }
   };

@@ -6,14 +6,14 @@
     "registered_modules": 21,
     "explicit_mirrors": 2,
     "not_marked_as_mirror": 19,
-    "ui_spellings": 19,
+    "ui_spellings": 0,
     "static_ui_array_entries": 0,
     "pinned_search_modules": 19,
     "seed_only_entries": 6
   },
   "ui_delivery": {
-    "mode": "capability_endpoint",
-    "endpoint": "/api/v1/explore/sources",
+    "mode": "static_array",
+    "endpoint": null,
     "live_endpoint_validation": "not_run"
   },
   "pinned_search_mode": "capability_registry",
@@ -29,7 +29,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/3cktv.mjs",
       "metadata_line": 35,
-      "source_sha256": "7c588c046fe6f76d19fb1eebe58e035c4898f13a0314f8df95a5eb28821bb7ed",
+      "source_sha256": "fceff2a1dceff317707226e9f55b5969f5c7249dee998705fcabedf3364ba026",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -49,9 +49,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "3cktv"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "3cktv"
       ],
@@ -64,7 +62,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/3isk.mjs",
       "metadata_line": 56,
-      "source_sha256": "f2e3888ec8a8bebbefc767234c7fb0e92b96e843b6d5358c759e77d314a1f705",
+      "source_sha256": "c9a672391a349409539038a87c0574db60b0002bb9a85c6f568ead21d08f5422",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -84,9 +82,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "3isk"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "3isk"
       ],
@@ -99,7 +95,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/akwam.mjs",
       "metadata_line": 33,
-      "source_sha256": "c39ea07f317b8af2f84a85ef22489aa640f871cb7401bd33ffa42626771a7f78",
+      "source_sha256": "146307020fa4bf162b9ae91ac4e507cdcef78c200105ee9842bf54d83f1ef80f",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -119,9 +115,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "akwam"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "akwam",
         "akoam"
@@ -135,7 +129,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/alooy.mjs",
       "metadata_line": 52,
-      "source_sha256": "d60859f6c91faf817b72fcc5ae4b8fe9758a4b8e156d44cf91df5b6343b95763",
+      "source_sha256": "df2d8a9f09c1e3f725d7c2d1fdbff76d2445e43cbcf2fd8269da836de33a3ea5",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -155,9 +149,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "alooy"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "alooy"
       ],
@@ -170,7 +162,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/anime4up.mjs",
       "metadata_line": 50,
-      "source_sha256": "3e359e158e4d382c1bd147503cd9b812dfcb74fe0f7ce31a06d2c4c6b35a6ef0",
+      "source_sha256": "366396df3406dbe173cae28dc55a4e1a4e573803b72bfec3d8ce980c5f1d6f5a",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -190,9 +182,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "anime4up"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "anime4up"
       ],
@@ -225,9 +215,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "anime4up_rest"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "anime4up_rest"
       ],
@@ -240,7 +228,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/arabseed.mjs",
       "metadata_line": 34,
-      "source_sha256": "4e05e61253a8baea03c37b76fdceafc47afe07b663bb3a9876553e1a7e550b03",
+      "source_sha256": "06af817f2a4ecdd0dd2f8b76694b68be909f126592e67463ef4c87d9911fc5a2",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -260,9 +248,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "arabseed"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "arabseed"
       ],
@@ -275,7 +261,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/cimanow.mjs",
       "metadata_line": 32,
-      "source_sha256": "f0d7b979f168531392d32f4fd8187cffad41c27c04a4cf2cd3e86e56944d2a29",
+      "source_sha256": "6fbe8e6a4abd6283e2ba5294dcba94317b78befa354393dcaf99c0f2b1b82650",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -295,9 +281,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "cimanow"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "cimanow"
       ],
@@ -310,7 +294,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/egydead.mjs",
       "metadata_line": 50,
-      "source_sha256": "7219d8299ca4fcad9a561aa84f1c21f12c974859cad80645c4222681f40e8be4",
+      "source_sha256": "c67e84db4d645f36121fecfb2cef688aaad0fc5055346a0ed31d2b32bcf3545e",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -330,9 +314,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "egydead"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "egydead"
       ],
@@ -376,7 +358,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/ipauniverse.mjs",
       "metadata_line": 54,
-      "source_sha256": "55e453129ba4cc446017ce4c0a9cdf3504eca42db1a9d95ae1a3cf0656e1c895",
+      "source_sha256": "5e6f67946fd6200bf580ec60544ca7e4b475d2f7d1671a0c2b6b97b2f42f6e4e",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -396,9 +378,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "ipauniverse"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "ipauniverse"
       ],
@@ -411,7 +391,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/laroza.mjs",
       "metadata_line": 60,
-      "source_sha256": "1c29983c26c13d9972e794346e869476df51faac05286f37d162233a1eda50a3",
+      "source_sha256": "fbdb96bba37eb270e3ee48bebd37567a81448765b39cf7afffb75c2f572d8df3",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -431,9 +411,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "laroza"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "laroza"
       ],
@@ -466,9 +444,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "mewsry"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "mewsry"
       ],
@@ -481,7 +457,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/moviztime.mjs",
       "metadata_line": 31,
-      "source_sha256": "8ab19933047d789f0963387b16064499128a5745706d861346e106a9ab33e555",
+      "source_sha256": "f43ccf112afc4bce807ae70e1efa2e0d39792d8261967edd38c9e01b5bd72396",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -501,9 +477,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "moviztime"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "moviztime"
       ],
@@ -516,7 +490,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/mycima.mjs",
       "metadata_line": 48,
-      "source_sha256": "062257cf1b29f65aeaa402c650b4e92cca4a470b66ba02b0f68b0c9f1663d470",
+      "source_sha256": "10930d9705b198eca0ae359a991d859dcba88bc6d63708bb169a808143f78e38",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -536,9 +510,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "mycima"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "mycima",
         "wecima"
@@ -552,7 +524,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/qfilm.mjs",
       "metadata_line": 38,
-      "source_sha256": "17780f48de78c25735a51d1439df83e5c506893480dc7e936aee93f3475f71b6",
+      "source_sha256": "46b1ca222573b1a0c2ab67c4df01bc7719b569792425ea13fa8f7d0e7286c762",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -572,9 +544,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "qfilm"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "qfilm"
       ],
@@ -607,9 +577,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "ristoanime"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "ristoanime"
       ],
@@ -622,7 +590,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/shahid4u.mjs",
       "metadata_line": 48,
-      "source_sha256": "91f75ffcb7f1e81d3007dce450678bbd44ea433015b923396b0def4d3ed413be",
+      "source_sha256": "03d41d10d5660a79723fbeea34c3d03bba3b7da28976454cf7a876823a2bd5e0",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -642,9 +610,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "shahid4u"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "shahid4u"
       ],
@@ -677,9 +643,7 @@
         "resolve": true,
         "live": false
       },
-      "ui_spellings": [
-        "shii4u"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "shii4u"
       ],
@@ -692,7 +656,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/witanime.mjs",
       "metadata_line": 52,
-      "source_sha256": "ced43ac369ac35bedb66dc2a3c7534f14c819b6788f7d29fd3ca8cbfb4572e6f",
+      "source_sha256": "5f4fe6e464d22c7bba94b05fccab3a449ab95b139125879ce2ed010c4e65b6c8",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -712,9 +676,7 @@
         "resolve": true,
         "live": true
       },
-      "ui_spellings": [
-        "witanime"
-      ],
+      "ui_spellings": [],
       "pinned_search_spellings": [
         "witanime"
       ],
@@ -727,7 +689,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/yallashoot.mjs",
       "metadata_line": 30,
-      "source_sha256": "a761f1564b8bc2eff0331ea5c2d65fc086a79f73f23101b94831cfe2f4061668",
+      "source_sha256": "7d6378ccc857b19b3ee122936ef38467bed502c937ca44b687b84d075e36b9b4",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

@@ -15,3 +15,5 @@ supabase
 *.patch
 *.apk
 *.apk.sha256
+
+!internal_web/index.html

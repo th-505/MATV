@@ -310,7 +310,7 @@ function extractCatalogItemsFromHtml(html = '', baseUrl = ISK_SITE_CONFIG.baseUr
         url,
         poster: rewriteToActive3iskDomain(rawPoster, baseUrl),
         year: extractYear(rawTitle),
-        quality: 'HD',
+        quality: null,
         type,
         category: type,
         source: PROVIDER_META.id
@@ -526,7 +526,7 @@ async function resolve3iskEmbedWrapper(embedUrl, seePageUrl = '', cookieHeader =
         url: iframeSrc,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: embedUrl, 'User-Agent': ISK_UA }
       });
     }
@@ -555,7 +555,7 @@ async function resolve3iskEmbedWrapper(embedUrl, seePageUrl = '', cookieHeader =
       url: iframeSrc,
       type: 'embed',
       streamType: 'embed',
-      quality: 'HD',
+      quality: null,
       headers: { Referer: embedUrl, 'User-Agent': ISK_UA }
     });
   } catch (_) {}
@@ -731,7 +731,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       poster,
       overview,
       year: extractYear(title),
-      quality: 'HD',
+      quality: null,
       genres,
       episodes,
       type: isMovie ? 'movie' : 'series',
@@ -820,7 +820,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
         url: cleanUrl,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: `${ISK_SITE_CONFIG.baseUrl}/`, 'User-Agent': ISK_UA }
       });
 
@@ -848,7 +848,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
         url: cleanUrl,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: { Referer: `${ISK_SITE_CONFIG.baseUrl}/`, 'User-Agent': ISK_UA }
       });
 
@@ -979,7 +979,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: src,
           type: 'embed',
           streamType: 'embed',
-          quality: 'HD',
+          quality: null,
           headers: { Referer: cleanUrl, 'User-Agent': ISK_UA }
         });
       } else {
@@ -1021,7 +1021,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
         url: cand.url,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         headers: {
           Referer: `${cleanUrl.replace(/\/+$/, '')}/see/`,
           'User-Agent': ISK_UA
@@ -1153,7 +1153,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       url: unwrapped[0].url,
       type: unwrapped[0].streamType,
       streamType: unwrapped[0].streamType,
-      quality: unwrapped[0].quality || 'HD',
+      quality: unwrapped[0].quality || '',
       headers: unwrapped[0].headers || { Referer: cleanUrl, 'User-Agent': ISK_UA }
     };
   }

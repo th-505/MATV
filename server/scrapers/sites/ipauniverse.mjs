@@ -429,7 +429,7 @@ async function extractServersFromDocument($, html, pageUrl, options = {}) {
             url: s.url,
             streamType: s.streamType,
             type: s.streamType,
-            quality: s.quality || 'HD',
+            quality: s.quality || '',
             name: `${PROVIDER_NAME} Direct`,
             headers: s.headers || { Referer: pageUrl },
             verified: false
@@ -451,7 +451,7 @@ async function extractServersFromDocument($, html, pageUrl, options = {}) {
       url: embedUrl,
       streamType: 'embed',
       type: 'embed',
-      quality: 'HD',
+      quality: null,
       name: `${PROVIDER_NAME} (${hostLabel})`,
       headers: { Referer: BASE_URL },
       verified: false
@@ -876,7 +876,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         url: embedUrl,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         source: PROVIDER_ID,
         headers: { Referer: BASE_URL },
         verified: false
@@ -1038,7 +1038,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         url: embedUrl,
         type: 'embed',
         streamType: 'embed',
-        quality: 'HD',
+        quality: null,
         source: PROVIDER_ID,
         headers: { Referer: BASE_URL },
         verified: false
@@ -1229,7 +1229,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: `https://vidsrc.to/embed/movie/${tmdbId}`,
           type: 'embed',
           streamType: 'embed',
-          quality: 'HD',
+          quality: null,
           source: PROVIDER_ID,
           provider: PROVIDER_ID,
           headers: { Referer: BASE_URL },
@@ -1319,7 +1319,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       streamUrl: primary.url,
       streamType: primary.streamType || primary.type,
       type: primary.type || primary.streamType,
-      quality: primary.quality || 'HD',
+      quality: primary.quality || '',
       headers: primary.headers || { Referer: BASE_URL },
       verified: primary.verified === true,
       servers

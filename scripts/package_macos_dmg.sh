@@ -24,8 +24,8 @@ else
 fi
 codesign --verify --deep --strict "$APP_PATH"
 
-DMG="$OUTPUT_DIR/MA-TV-macOS-Unsigned.dmg"
-hdiutil create -volname "T-A-TV" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG" >/dev/null
+DMG="$OUTPUT_DIR/Najd-TV-macOS-Unsigned.dmg"
+hdiutil create -volname "Najd TV" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG" >/dev/null
 shasum -a 256 "$DMG" > "$DMG.sha256"
 python3 - "$APP_PATH" "$DMG" "$ARCHS" "$OUTPUT_DIR/macOS-report.json" <<'PY'
 import hashlib
@@ -40,12 +40,12 @@ architectures = sys.argv[3].split(',')
 report = Path(sys.argv[4])
 with (app / 'Contents/Info.plist').open('rb') as stream:
     info = plistlib.load(stream)
-assert info.get('CFBundleDisplayName') == 'T-A-TV', 'Wrong app display name'
+assert info.get('CFBundleDisplayName') == 'Najd TV', 'Wrong app display name'
 assert info.get('CFBundleIdentifier') == 'com.mitv.mitv', 'Wrong bundle identifier'
 assert set(architectures) <= {'arm64', 'x86_64'}
 assert architectures, 'No supported macOS architecture'
 report.write_text(json.dumps({
-    'product': 'T-A-TV',
+    'product': 'Najd TV',
     'version': info.get('CFBundleShortVersionString'),
     'build': info.get('CFBundleVersion'),
     'architectures': architectures,

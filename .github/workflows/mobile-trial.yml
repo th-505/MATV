@@ -1,4 +1,4 @@
-name: T-A-TV unified six-target release
+name: Najd TV unified six-target release
 
 on:
   push:
@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: mitv-release-${{ github.ref }}
-  cancel-in-progress: true
+  group: najd-production-source
+  cancel-in-progress: false
 
 env:
   MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
@@ -32,6 +32,7 @@ jobs:
         with:
           node-version: '24.22.1'
           cache: npm
+      - run: python -m pip install -r scripts/requirements-branding.txt
       - run: npm ci
       - run: npm run check
       - run: npm run test:continuation
@@ -64,13 +65,13 @@ jobs:
           - target: mobile
             platform: android-arm64
             abi: arm64-v8a
-            artifact: MA-TV-Android-Mobile-ARM64
+            artifact: Najd-TV-Android-Mobile-ARM64
             manifest_target: android-mobile-arm64
             version_offset: 2000
           - target: tv
             platform: android-arm
             abi: armeabi-v7a
-            artifact: MA-TV-Android-TV-ARM32
+            artifact: Najd-TV-Android-TV-ARM32
             manifest_target: android-tv-armv7
             version_offset: 1000
     env:
@@ -94,6 +95,8 @@ jobs:
       - name: Create Android scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=android --org com.mitv --project-name mitv .
+      - name: Install pinned icon packager
+        run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding and TV manifest
         run: |
           python3 scripts/apply_native_branding.py flutter_app
@@ -123,7 +126,7 @@ jobs:
           grep -q networkSecurityConfig /tmp/mitv-manifest.txt
           "$AAPT" dump badging "$APK" > /tmp/mitv-badging.txt
           grep -q "package: name='com.mitv.mitv'" /tmp/mitv-badging.txt
-          grep -q "application-label:'T-A-TV'" /tmp/mitv-badging.txt
+          grep -q "application-label:'Najd TV'" /tmp/mitv-badging.txt
           grep -qx "native-code: '$EXPECTED_ABI'" /tmp/mitv-badging.txt || { cat /tmp/mitv-badging.txt; exit 1; }
           if [ "$APP_TARGET" = tv ]; then grep -q android.software.leanback /tmp/mitv-badging.txt; fi
           python3 - <<'PY'
@@ -166,6 +169,8 @@ jobs:
       - name: Create iOS scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=ios --org com.mitv --project-name mitv .
+      - name: Install pinned icon packager
+        run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Resolve dependencies
@@ -186,14 +191,14 @@ jobs:
           if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
           lipo trial/Payload/Runner.app/Runner -verify_arch arm64
           cd trial
-          ditto -c -k --keepParent Payload MA-TV-iPhone-Unsigned.ipa
-          shasum -a 256 MA-TV-iPhone-Unsigned.ipa > MA-TV-iPhone-Unsigned.ipa.sha256
+          ditto -c -k --keepParent Payload Najd-TV-iPhone-Unsigned.ipa
+          shasum -a 256 Najd-TV-iPhone-Unsigned.ipa > Najd-TV-iPhone-Unsigned.ipa.sha256
           rm -rf Payload
       - name: Record immutable source identity
         run: python3 scripts/write_source_manifest.py --target ios-unsigned-arm64 --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MA-TV-iPhone-Unsigned
+          name: Najd-TV-iPhone-Unsigned
           path: trial/
           retention-days: 14
           if-no-files-found: error
@@ -212,7 +217,9 @@ jobs:
       - name: Create Windows scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=windows --org com.mitv --project-name mitv .
-      - name: Apply MA TV desktop identity
+      - name: Install pinned icon packager
+        run: python -m pip install -r scripts/requirements-branding.txt
+      - name: Apply Najd TV desktop identity
         run: python scripts/apply_native_branding.py flutter_app
       - name: Resolve dependencies and test
         working-directory: flutter_app
@@ -231,7 +238,7 @@ jobs:
           $decoder = Get-ChildItem $sourceRoot -Filter '*mpv*.dll'
           if (!$decoder) { throw 'Missing bundled libmpv' }
           New-Item -ItemType Directory trial -Force | Out-Null
-          Compress-Archive -Path "$sourceRoot/*" -DestinationPath trial/MA-TV-Windows-x64.zip
+          Compress-Archive -Path "$sourceRoot/*" -DestinationPath trial/Najd-TV-Windows-x64.zip
           $compiler = Get-ChildItem 'C:/Program Files (x86)', 'C:/Program Files' -Directory -Filter 'Inno Setup*' | ForEach-Object { Join-Path $_.FullName 'ISCC.exe' } | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (!$compiler) {
             choco install innosetup --yes --no-progress
@@ -244,7 +251,7 @@ jobs:
           & $compiler "/DAppVersion=$version" "/DSourceRoot=$sourceRoot" "/DOutputRoot=$outputRoot" scripts/windows-installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           $installRoot = Join-Path $env:RUNNER_TEMP 'mitv-install-check'
-          $setup = Start-Process -FilePath "$outputRoot/MA-TV-Windows-x64-Setup.exe" -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installRoot") -Wait -PassThru
+          $setup = Start-Process -FilePath "$outputRoot/Najd-TV-Windows-x64-Setup.exe" -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installRoot") -Wait -PassThru
           if ($setup.ExitCode -ne 0) { throw 'Installer smoke test failed' }
           foreach ($file in Get-ChildItem $sourceRoot -Recurse -File) {
             $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
@@ -260,7 +267,7 @@ jobs:
         run: python scripts/write_source_manifest.py --target windows-x64 --output trial/source-manifest.json --api "$env:MITV_API_BASE" --sha "$env:MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MA-TV-Windows-x64
+          name: Najd-TV-Windows-x64
           path: trial/
           retention-days: 14
           if-no-files-found: error
@@ -284,7 +291,9 @@ jobs:
       - name: Create macOS scaffolding
         working-directory: flutter_app
         run: flutter create --platforms=macos --org com.mitv --project-name mitv .
-      - name: Apply MA TV identity and sandbox entitlements
+      - name: Install pinned icon packager
+        run: python -m pip install -r scripts/requirements-branding.txt
+      - name: Apply Najd TV identity and sandbox entitlements
         run: python3 scripts/apply_native_branding.py flutter_app
       - name: Resolve dependencies and analyze
         working-directory: flutter_app
@@ -304,7 +313,7 @@ jobs:
         run: python3 scripts/write_source_manifest.py --target macos-native --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MA-TV-macOS-Unsigned
+          name: Najd-TV-macOS-Unsigned
           path: trial/
           retention-days: 14
           if-no-files-found: error
@@ -341,42 +350,39 @@ jobs:
           cat device-verification.json
       - uses: actions/upload-artifact@v4
         with:
-          name: MA-TV-device-verification
+          name: Najd-TV-device-verification
           path: device-verification.json
           retention-days: 14
           if-no-files-found: error
-      - name: Publish verified Web bundle through the existing Pages source
+      - name: Deploy verified Web bundle only behind server authentication
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Publish only when this release was built from the current main
-          # ancestor, so a slow older run cannot replace a newer Web bundle.
           git fetch origin main
           git merge-base --is-ancestor origin/main "$MITV_SOURCE_COMMIT"
-          python3 - <<'PY'
-          import pathlib, zipfile
-          archive = pathlib.Path('device-artifacts/MA-TV-Flutter-Web/MA-TV-Web.zip')
-          destination = pathlib.Path('/tmp/mitv-verified-web')
+          python3 - <<'PYWEB'
+          import pathlib, zipfile, shutil
+          archive=pathlib.Path('device-artifacts/Najd-TV-Flutter-Web/Najd-TV-Web.zip')
+          destination=pathlib.Path('/tmp/najd-internal-web')
           with zipfile.ZipFile(archive) as package:
               for name in package.namelist():
-                  path = pathlib.PurePosixPath(name)
+                  path=pathlib.PurePosixPath(name)
                   assert not path.is_absolute() and '..' not in path.parts
+                  assert not ('thmanyah' in name.lower() and path.suffix.lower() in ('.otf','.ttf','.woff','.woff2')), 'Private font publication forbidden'
               package.extractall(destination)
-          PY
-          git checkout -B mitv-pages-publish origin/main
-          rm -rf app
-          mkdir -p app
-          cp -R /tmp/mitv-verified-web/. app/
-          touch .nojekyll
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app .nojekyll
+          PYWEB
+          git checkout -B main origin/main
+          rm -rf internal_web
+          mkdir internal_web
+          cp -R /tmp/najd-internal-web/. internal_web/
+          git add internal_web
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish verified six-target MA TV Web bundle [skip ci] [skip render]'
-            git push origin HEAD:main
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Deploy verified Najd internal Web bundle [skip ci]'
+            git push origin main
           fi
-          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
       - name: Publish all verified packages together
         env:
           GH_TOKEN: ${{ github.token }}
@@ -388,16 +394,21 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"T-A-TV {version} (build {build}), Security refresh and source-accurate episode identity.\n\n"
+              f"Najd TV {version} (build {build}), Security refresh and source-accurate episode identity.\n\n"
               "Node 24.22.1, Flutter 3.47.8 / Dart 3.13.7 security baseline; Wrangler dependencies patched. Conan source episode 1217 remains 1217; synthetic episode lists removed, movie pages have no episode grid. Tightened CORS, rate limits, output escaping and upstream body bounds.\n\nSix targets packaged and checked from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and Web ZIP. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
               "Source names use Arabic labels and domains. Search requests carry anonymous per-launch session and platform identifiers plus a trace ID. The private server dashboard shows upstream URLs, redirects, HTTP status, parsing and title filtering. MyCima, Shahid4u and QFilm search paths and cards were updated from observed live forms. This does not certify all providers: blocked, suspended, login-gated and timed-out sources remain explicitly unavailable. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
               "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
               "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"
               f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n\n"
-              "Web: https://th-505.github.io/MATV/app/\n", encoding='utf-8')
+              "Web: internal administration and testing only; not published in Releases.\n", encoding='utf-8')
           pathlib.Path('/tmp/mitv-release-version').write_text(version)
           PY
           VERSION="$(cat /tmp/mitv-release-version)"
           shopt -s nullglob
           ASSETS=(device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.dmg device-artifacts/*/*.sha256 device-artifacts/*/macOS-report.json device-verification.json)
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "T-A-TV $VERSION" --notes-file /tmp/release-notes.md "${ASSETS[@]}"
+          PUBLIC_ASSETS=()
+          for ASSET in "${ASSETS[@]}"; do
+            case "$ASSET" in *Najd-TV-Flutter-Web/*) continue ;; esac
+            PUBLIC_ASSETS+=("$ASSET")
+          done
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "Najd TV $VERSION" --notes-file /tmp/release-notes.md "${PUBLIC_ASSETS[@]}"

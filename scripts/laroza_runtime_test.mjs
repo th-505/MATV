@@ -99,7 +99,7 @@ const parentPage=createLarozaProvider({edgeBase:'https://edge.test',fetchImpl:as
 const parentMetadata=await parentPage.metadata(seriesRef);
 assert.equal(parentMetadata.episodes[0].ref,episodeRef);assert.equal(parentMetadata.work_identity_verified,true);
 assert.equal(parentMetadata.timeline_verified,false);assert.equal(parentMetadata.identity_verified,false);
-for(const response of [new Response('<html>ads</html>',{headers:{'content-type':'text/html'}}),Response.json({status:'success',source:'unexpected',data:[]}),Response.json({status:'success',source:'laroza',data:[],padding:'x'.repeat(128*1024)})]) {
+for(const response of [new Response('<html>ads</html>',{headers:{'content-type':'text/html'}}),Response.json({status:'success',source:'unexpected',data:[]}),Response.json({status:'success',source:'laroza',data:[],padding:'x'.repeat(2*1024*1024)})]) {
   const broken=createLarozaProvider({edgeBase:'https://edge.test',fetchImpl:async()=>response});
   await assert.rejects(broken.category(),/LAROZA_(BAD_EDGE_RESPONSE|EDGE_RESPONSE_TOO_LARGE)/);
 }

@@ -28,7 +28,7 @@ assert.equal(selectTmdbMatch(candidates, { title: 'Unknown', year: '2024' }, 'mo
 assert.equal(safeImageUrl('javascript:alert(1)'), '');
 
 const root = resolve(new URL('..', import.meta.url).pathname);
-const html = await readFile(resolve(root, 'index.html'), 'utf8');
+const html = await readFile(resolve(root, 'docs/legacy/index.html.source'), 'utf8');
 const cardSource = html.slice(html.indexOf('export function renderMediaCard('), html.indexOf('\nconst createMediaCard = renderMediaCard;')).replace('export function', 'function');
 assert.match(html, /selectTmdbMatch\(sRes\?\.results/);
 assert.doesNotMatch(html, /sRes\.results\[0\]/);

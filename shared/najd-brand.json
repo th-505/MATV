@@ -1,0 +1,109 @@
+{
+  "name_ar": "نجد",
+  "name_en": "Najd TV",
+  "version": "1.1.5",
+  "palette_source": {
+    "url": "https://www.riyadhair.com/_next/static/chunks/0iifcd72yk6rc.css",
+    "observed_on": "2026-10-27",
+    "tokens_hsl": {
+      "100": [
+        242,
+        34,
+        15
+      ],
+      "90": [
+        241,
+        34,
+        30
+      ],
+      "80": [
+        241,
+        34,
+        45
+      ],
+      "70": [
+        241,
+        50,
+        60
+      ],
+      "60": [
+        241,
+        100,
+        75
+      ],
+      "50": [
+        241,
+        100,
+        80
+      ],
+      "40": [
+        241,
+        100,
+        85
+      ],
+      "30": [
+        241,
+        100,
+        90
+      ],
+      "20": [
+        242,
+        100,
+        95
+      ],
+      "10": [
+        240,
+        100,
+        99
+      ]
+    }
+  },
+  "lavender": {
+    "100": "#1A1933",
+    "90": "#333267",
+    "80": "#4D4C9A",
+    "70": "#6866CC",
+    "60": "#8280FF",
+    "50": "#9B99FF",
+    "40": "#B4B2FF",
+    "30": "#CDCCFF",
+    "20": "#E6E5FF",
+    "10": "#FAFAFF"
+  },
+  "themes": {
+    "dark": {
+      "background": "#08080E",
+      "surface": "#14131F",
+      "elevated": "#201D30",
+      "text": "#F8F7FF",
+      "secondary": "#BCB8CF",
+      "accent": "#9B99FF",
+      "on_accent": "#19172C",
+      "border": "#3D3658"
+    },
+    "light": {
+      "background": "#FCFCFF",
+      "surface": "#FFFFFF",
+      "elevated": "#F1F0FF",
+      "text": "#211E32",
+      "secondary": "#5D5771",
+      "accent": "#4D4C9A",
+      "on_accent": "#FFFFFF",
+      "border": "#DAD7EC"
+    }
+  },
+  "font_policy": "local-only-no-raw-publication",
+  "font_family": "ThmanyahSans",
+  "intro_seconds": 14,
+  "poem": [
+    "أن كان رمحك بأول الخيل ملحوم",
+    "فـ أنا برمحي حـامي نجد كلـه",
+    "من شافنا بالحلم يقعد من النوم",
+    "ومن شـافنا بالعـلم بطـنـه يهلـه"
+  ],
+  "poet": "محمد بن قرملة",
+  "minimum_touch_px": 48,
+  "minimum_tv_px": 64,
+  "navigation": "right",
+  "logo": "assets/brand/najd-mark.png"
+}

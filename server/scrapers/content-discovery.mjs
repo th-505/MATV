@@ -1,3 +1,4 @@
+import {supportsContent} from './content-scope.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 
 export function identityTitle(value) {
@@ -40,6 +41,7 @@ export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 2
   const queue = createConcurrencyQueue({ concurrency, maxQueued });
   async function runProvider(entry, title, season = 1, episode = 1, options = {}) {
     const { meta, module: provider } = entry || {};
+    if (!supportsContent(meta?.id,options)) return [];
     if (!meta?.capabilities?.search || !meta?.capabilities?.details || meta.mirrorOf ||
         typeof provider?.scrapeSearch !== 'function' || typeof provider?.scrapeDetails !== 'function') return [];
     return queue.run(async () => {
@@ -57,7 +59,7 @@ export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 2
       let details = await provider.scrapeDetails(target, network);
       // Missing catalog years are checked on details; conflicts never reach playback.
       const observedYear=details?.year || hit.year || null;
-      if(options.year && observedYear && String(options.year)!==String(observedYear).slice(0,4))return [];
+      if(options.year && (!observedYear || String(options.year)!==String(observedYear).slice(0,4)))return [];
       let observedEpisode = null;
       const episodic = options.type === 'series' || hit.type === 'series' || hit.type === 'tv' || details?.type === 'series';
       if (episodic) {

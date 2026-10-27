@@ -11,7 +11,7 @@ const isHls=fixture.endsWith('.m3u8');
 const mediaUrl='https://fixture.media.example/video.'+(isHls?'m3u8':'mp4');
 const server=createServer(async(req,res)=>{try{
  const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
- const file=resolve(root,'.'+(path==='/'?'/index.html':path));if(!file.startsWith(root+'/'))throw Error('path');
+ const file=resolve(root,'.'+(path==='/'?'/docs/legacy/index.html.source':path));if(!file.startsWith(root+'/'))throw Error('path');
  res.setHeader('Content-Type',extname(file)==='.js'?'text/javascript':extname(file)==='.html'?'text/html':'application/octet-stream');res.end(await readFile(file));
 }catch{res.statusCode=404;res.end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;

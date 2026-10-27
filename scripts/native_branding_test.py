@@ -16,9 +16,9 @@ with tempfile.TemporaryDirectory() as directory:
     ), encoding='utf-8')
     branding.apply_windows(root)
     actual = (runner / 'Runner.rc').read_text(encoding='utf-8')
-    assert actual.count('"T-A-TV" "\\0"') == 3
+    assert actual.count('"Najd TV" "\\0"') == 3
     assert 'old value' not in actual
-    assert (runner / 'main.cpp').read_text(encoding='utf-8') == '  if (!window.Create(L"T-A-TV", origin, size)) {'
+    assert (runner / 'main.cpp').read_text(encoding='utf-8') == '  if (!window.Create(L"Najd TV", origin, size)) {'
     first = actual
     branding.apply_windows(root)
     assert (runner / 'Runner.rc').read_text(encoding='utf-8') == first

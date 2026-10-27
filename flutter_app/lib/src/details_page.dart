@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import 'api_client.dart';
 import 'app_target.dart';
 import 'download_service.dart';
@@ -127,7 +129,11 @@ class _DetailsPageState extends State<DetailsPage> {
     );
   }
 
-  Future<void> _openEpisode(EpisodeItem episode, FocusNode returnFocus) async {
+  Future<void> _openEpisode(
+    EpisodeItem episode,
+    FocusNode returnFocus, {
+    List<EpisodeItem> queue = const [],
+  }) async {
     if (episode.ref.isEmpty || !episode.watchAvailable) return;
     final label = episode.title.trim().isEmpty
         ? (episode.hasEpisodeNumber ? 'الحلقة ${episode.number}' : 'حلقة')
@@ -139,12 +145,12 @@ class _DetailsPageState extends State<DetailsPage> {
         builder: (_) => PlayerPage(
           api: widget.api,
           store: widget.store,
-          item: _playItem(
-            widget.api.cachedMetadata(widget.item.ref),
-          ).copyWith(season: episode.season),
+          item: _playItem(widget.api.cachedMetadata(widget.item.ref))
+              .copyWith(season: episode.season),
           title: label,
           sourceRef: episode.ref,
           episodeId: episode.id,
+          episodeQueue: queue,
           episodeNumber: episode.hasEpisodeNumber ? episode.number : null,
         ),
       ),
@@ -185,6 +191,110 @@ class _DetailsPageState extends State<DetailsPage> {
         const SnackBar(content: Text('جارٍ إلغاء التنزيل وحذف الملف الجزئي…')),
       );
     }
+  }
+
+  bool _seasonDownloading = false;
+  Future<void> _downloadSeason(TitleDetails details) async {
+    if (_seasonDownloading) {
+      setState(() => _seasonDownloading = false);
+      return;
+    }
+    final episodes = details.episodes
+        .where((episode) => episode.watchAvailable && episode.ref.isNotEmpty)
+        .toList(growable: false);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تنزيل الموسم'),
+        content: Text(
+          'تنزيل ${episodes.length} حلقة متاحة بالتتابع؟ يعتمد التنزيل على وجود مصدر MP4 فعلي. يمكنك إيقاف الطابور.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('تنزيل'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _seasonDownloading = true);
+    for (final episode in episodes) {
+      if (!mounted || !_seasonDownloading) break;
+      await _download(
+        key: 'episode:${episode.id}:${episode.number}',
+        title: '${details.title} — الحلقة ${episode.number}',
+        sourceRef: episode.ref,
+      );
+    }
+    if (mounted) setState(() => _seasonDownloading = false);
+  }
+
+  Future<void> _personWorks(Map<String, dynamic> person) async {
+    final id = int.tryParse('${person['id']}');
+    if (id == null) return;
+    final future = widget.api.personWorks(id);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * .8,
+          child: Column(
+            children: [
+              ListTile(
+                title: Text('أعمال ${person['name']}'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<List<CatalogItem>>(
+                  future: future,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const Center(
+                        child: Text('تعذر تحميل أعمال الممثل'),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final item = snapshot.data![index];
+                        return ListTile(
+                          title: Text(item.title),
+                          subtitle: Text('${item.year ?? ''}'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.of(this.context).push(
+                              MaterialPageRoute(
+                                builder: (_) => DetailsPage(
+                                  api: widget.api,
+                                  store: widget.store,
+                                  item: item,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _download({
@@ -241,16 +351,13 @@ class _DetailsPageState extends State<DetailsPage> {
       final code = error is DownloadException ? error.code : '';
       final message = switch (code) {
         'DOWNLOAD_CANCELLED' => 'تم إلغاء التنزيل وحذف الملف الجزئي.',
-        'DOWNLOAD_STALLED' =>
-          'توقف وصول البيانات لمدة 30 ثانية. تم الاحتفاظ بالتقدم ويمكن استكماله عند إعادة المحاولة.',
-        'INCOMPLETE_DOWNLOAD' =>
-          'انقطع التنزيل قبل اكتمال الملف. تم الاحتفاظ بالتقدم للاستكمال عند إعادة المحاولة.',
+        'DOWNLOAD_STALLED' => 'توقف وصول البيانات لمدة 30 ثانية. تم الاحتفاظ بالتقدم ويمكن استكماله عند إعادة المحاولة.',
+        'INCOMPLETE_DOWNLOAD' => 'انقطع التنزيل قبل اكتمال الملف. تم الاحتفاظ بالتقدم للاستكمال عند إعادة المحاولة.',
         'EMPTY_DOWNLOAD' => 'وصل رد فارغ من خادم التنزيل. أعد المحاولة لاحقًا.',
         _ => 'تعذر تنزيل هذا المصدر حاليًا. لم يتم فتح رابط خارجي.',
       };
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -333,11 +440,37 @@ class _DetailsPageState extends State<DetailsPage> {
                 const SizedBox(height: 16),
                 Text(
                   details.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
+                if (details.plot.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      details.plot,
+                      style: const TextStyle(height: 1.7),
+                    ),
+                  ),
+                if (details.directors.isNotEmpty)
+                  Text('إخراج: ${details.directors.join('، ')}'),
+                if (details.cast.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final person in details.cast)
+                          ActionChip(
+                            label: Text('${person['name'] ?? ''}'),
+                            onPressed: person['id'] == null
+                                ? null
+                                : () => _personWorks(person),
+                          ),
+                      ],
+                    ),
+                  ),
                 if (details.availableSeasons.length > 1 &&
                     widget.item.ref.startsWith('tmdb:tv:'))
                   DropdownButton<int>(
@@ -364,8 +497,19 @@ class _DetailsPageState extends State<DetailsPage> {
                   ),
                 if (details.hasEpisodes) ...[
                   Text(
-                    'الحلقات',
+                    'الحلقات (${details.episodes.length})',
                     style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _downloadSeason(details),
+                    icon: Icon(
+                      _seasonDownloading ? Icons.stop : Icons.download,
+                    ),
+                    label: Text(
+                      _seasonDownloading
+                          ? 'إيقاف طابور الموسم'
+                          : 'تنزيل الموسم',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   ...details.episodes.map((episode) {
@@ -373,7 +517,10 @@ class _DetailsPageState extends State<DetailsPage> {
                     final focusNode = _episodeFocus(episode);
                     return _EpisodeTile(
                       downloadAvailable:
-                          widget.api.downloadableSource(episode.ref) != null,
+                          !kIsWeb &&
+                          (widget.api.cachedPlayback(episode.ref) == null ||
+                              widget.api.downloadableSource(episode.ref) !=
+                                  null),
                       episode: episode,
                       focusNode: focusNode,
                       downloadFocusNode: isTvTarget
@@ -381,7 +528,11 @@ class _DetailsPageState extends State<DetailsPage> {
                           : null,
                       downloading: _activeDownloads.contains(key),
                       downloadLabel: _downloadLabel(key),
-                      onTap: () => _openEpisode(episode, focusNode),
+                      onTap: () => _openEpisode(
+                        episode,
+                        focusNode,
+                        queue: details.episodes,
+                      ),
                       onDownload: () => _download(
                         key: key,
                         title: '${details.title} - الحلقة ${episode.number}',
@@ -404,9 +555,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       onTap: () => _openDirect(details),
                     ),
                   ),
-                  if (widget.api.usesEdge
-                      ? widget.api.downloadableSource(widget.item.ref) != null
-                      : details.downloadAvailable && details.mediaType == 'mp4')
+                  if (!kIsWeb && details.downloadAvailable)
                     Card(
                       child: ListTile(
                         leading: _activeDownloads.contains('direct')

@@ -1,0 +1,33 @@
+/* Original user-supplied Thmanyah faces are LOCAL ONLY and gitignored. */
+@font-face{font-family:ThmanyahSans;src:url('../../assets/private-fonts/thmanyahsans-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:ThmanyahSans;src:url('../../assets/private-fonts/thmanyahsans-Medium.woff2') format('woff2');font-weight:500 600;font-display:swap}
+@font-face{font-family:ThmanyahSans;src:url('../../assets/private-fonts/thmanyahsans-Bold.woff2') format('woff2');font-weight:700 900;font-display:swap}
+:root{--bg-main:#08080e;--bg-surface:#14131f;--bg-surface-elevated:#201d30;--bg-card:#171522;--bg-card-hover:#252139;--gold-primary:#9b99ff;--gold-light:#b4b2ff;--gold-dark:#6866cc;--gold-gradient:linear-gradient(135deg,#b4b2ff,#9b99ff);--gold-glow:rgba(130,128,255,.2);--gold-border:rgba(155,153,255,.32);--gold-border-subtle:rgba(155,153,255,.18);--text-primary:#f8f7ff;--text-secondary:#bcb8cf;--text-muted:#aaa3bd;--on-accent:#19172c;--border:#3d3658}
+html[data-najd-theme="light"]{--bg-main:#fcfcff;--bg-surface:#fff;--bg-surface-elevated:#f1f0ff;--bg-card:#fff;--bg-card-hover:#f1f0ff;--gold-primary:#4d4c9a;--gold-light:#6866cc;--gold-dark:#333267;--gold-gradient:linear-gradient(135deg,#6866cc,#4d4c9a);--gold-glow:rgba(104,102,204,.12);--gold-border:rgba(77,76,154,.3);--gold-border-subtle:rgba(77,76,154,.15);--text-primary:#211e32;--text-secondary:#5d5771;--text-muted:#655e77;--on-accent:#fff;--border:#dad7ec}
+body,input,button,select,textarea{font-family:ThmanyahSans,Alexandria,Cairo,system-ui,sans-serif}
+body{color:var(--text-primary);background-color:var(--bg-main);background-image:radial-gradient(ellipse at 90% 0,rgba(130,128,255,.09),transparent 48%)}
+#appSidebar,.settings-group,.media-card,.detail-card{background:var(--bg-surface);color:var(--text-primary)}
+#appSidebar{border-color:var(--border)}
+.sidebar-heading .brand-wrap{color:var(--text-primary)}
+.brand-badge{background:transparent;border:0;box-shadow:none;width:46px;height:46px}
+.brand-badge img{width:46px;height:46px;object-fit:contain}
+.brand-name{color:var(--text-primary);direction:rtl!important;letter-spacing:0}
+.najd-wordmark{display:flex;flex-direction:column;line-height:1.35;text-align:right}
+.najd-wordmark small{font-size:.65rem;letter-spacing:.08em;color:var(--text-secondary)}
+.card-title,.detail-title,.shelf-title,.team-name,.settings-group h3{color:var(--text-primary)}
+.btn-gold,.btn-gold.primary{color:var(--on-accent)}
+input,select,textarea{background:var(--bg-surface-elevated);color:var(--text-primary);border-color:var(--border)}
+button,a,input,select{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold-primary);outline-offset:4px}
+#najdIntro{border:0;max-width:min(94vw,720px);max-height:94dvh;margin:auto;background:var(--bg-main);color:var(--text-primary);padding:clamp(24px,5vw,52px);border-radius:28px;text-align:center;overflow:auto;box-shadow:0 25px 90px #0008}
+#najdIntro::backdrop{background:rgba(8,8,14,.94);backdrop-filter:blur(16px)}
+#najdIntro img{width:130px;height:130px;object-fit:contain}
+#najdIntro h1{font-size:3rem;line-height:1.25}
+#najdIntro .poem{white-space:pre-line;font-size:clamp(17px,2.5vw,25px);line-height:1.95;margin:24px 0}
+#najdIntro .poet{color:var(--text-secondary);margin-bottom:24px}
+#najdIntroContinue{min-height:48px;padding:12px 26px;border:0;border-radius:14px;background:var(--gold-primary);color:var(--on-accent);font:inherit;cursor:pointer}
+#najdViewport{font-size:.8rem;color:var(--text-secondary);direction:ltr;unicode-bidi:isolate}
+/* Playback is an independently dark canvas in both browsing themes. */
+.watch-video-box,#playerContainer{background:#000;color:#f8f7ff}
+@media(min-width:1600px){button,.filter-chip{min-height:56px}#najdIntro{max-width:900px}#najdIntro .poem{font-size:30px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

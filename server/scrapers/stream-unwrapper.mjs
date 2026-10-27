@@ -142,7 +142,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
         }
         if (Array.isArray(metadata.videos)) {
           for (const v of metadata.videos) {
-            if (v.url) results.push({ url: v.url, streamType: 'mp4', quality: (v.name || 'HD').toUpperCase(), headers: generateAntiBanHeaders(embedUrl) });
+            if (v.url) results.push({ url: v.url, streamType: 'mp4', quality: (v.name || '').toUpperCase(), headers: generateAntiBanHeaders(embedUrl) });
           }
         }
         return results;
@@ -168,7 +168,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
           const baseStream = await passRes.text();
           const randomToken = Math.random().toString(36).substring(2, 12);
           const directMp4 = `${baseStream}${randomToken}?token=${passMatch[1].split('/').pop()}&expiry=${Date.now()}`;
-          return [{ url: directMp4, streamType: 'mp4', quality: 'HD', headers: { ...generateAntiBanHeaders(embedUrl), Referer: `${origin}/` } }];
+          return [{ url: directMp4, streamType: 'mp4', quality: null, headers: { ...generateAntiBanHeaders(embedUrl), Referer: `${origin}/` } }];
         }
       }
     } catch (_) {}
@@ -183,7 +183,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
       const m = html.match(/player\.src\(\[\{src:\s*["']([^"']+)["']/);
       if (m) {
         const fullUrl = m[1].startsWith('http') ? m[1] : `https://video.sibnet.ru${m[1]}`;
-        return [{ url: fullUrl, streamType: 'mp4', quality: 'HD', headers: { ...generateAntiBanHeaders(embedUrl), Referer: embedUrl } }];
+        return [{ url: fullUrl, streamType: 'mp4', quality: null, headers: { ...generateAntiBanHeaders(embedUrl), Referer: embedUrl } }];
       }
     } catch (_) {}
   }
@@ -209,7 +209,7 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
       const html = await res.text();
       const m = html.match(/sources\s*:\s*\[\s*["'](https?:\/\/[^"']+\.mp4[^"']*)["']/i);
       if (m) {
-        return [{ url: m[1], streamType: 'mp4', quality: 'HD', headers: { ...generateAntiBanHeaders(embedUrl), Referer: 'https://uqload.com/' } }];
+        return [{ url: m[1], streamType: 'mp4', quality: null, headers: { ...generateAntiBanHeaders(embedUrl), Referer: 'https://uqload.com/' } }];
       }
     } catch (_) {}
   }
@@ -249,10 +249,10 @@ async function extractSpecialHostStreams(embedUrl, parentReferer) {
       if (!res.ok) return [];
       const html = await res.text();
       const unpacked = unpackDeanEdwards(html);
-      const m = `${html}\n${unpacked}`.match(/MDCore\.wurl\s*=\s*["'](https?:[^"']+)["']/i);
+      const m = `${html}\n${unpacked}`.match(/MDCore\.wurl\s*=\s*["']((?:https?:)?\/\/[^"']+)["']/i);
       if (m) {
         const streamUrl = m[1].startsWith('//') ? `https:${m[1]}` : m[1];
-        return [{ url: streamUrl, streamType: 'mp4', quality: 'HD', headers: generateAntiBanHeaders(embedUrl) }];
+        return [{ url: streamUrl, streamType: 'mp4', quality: null, headers: generateAntiBanHeaders(embedUrl) }];
       }
     } catch (_) {}
   }

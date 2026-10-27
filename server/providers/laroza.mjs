@@ -1,7 +1,8 @@
+import {explicitEpisode} from '../../shared/content-identity.js';
 import { TtlCache, normalizeCatalogItem } from '../content-runtime.mjs';
 
 const DEFAULT_EDGE = 'https://matv-edge-resolver.dada1000100.workers.dev';
-const MAX_JSON_BYTES = 128 * 1024;
+const MAX_JSON_BYTES = 2 * 1024 * 1024;
 export const LAROZA_CATEGORIES = Object.freeze({
   'laroza-latest': 'edge:laroza:latest',
   'laroza-movies': 'edge:laroza:movies',
@@ -119,13 +120,13 @@ export function createLarozaProvider({
       const result = await request('details', {ref}, refresh);
       if (!result.data || typeof result.data !== 'object' || Array.isArray(result.data)) throw Error('LAROZA_BAD_EDGE_RESPONSE');
       const item = catalogItem({ ...result.data, ref });
-      const episodes = (Array.isArray(result.data.episodes) ? result.data.episodes : []).slice(0,500).map((row,index) => {
+      const episodes = (Array.isArray(result.data.episodes) ? result.data.episodes : []).map((row,index) => {
         const entry = catalogItem({ ...row, type:'episode' });
-        const number = Number(row.episode_number ?? row.num ?? index + 1);
+        const number = explicitEpisode(row.title||row.name||'',row.url||'') || Number(row.episode_number ?? row.num);
         return { ...entry, episode_id:String(row.episode_id || row.id || entry.ref),
-          episode_number:Number.isInteger(number) && number > 0 ? number : index + 1,
-          num:Number.isInteger(number) && number > 0 ? number : index + 1,
-          watch_available:row.watch_available !== false };
+          episode_number:Number.isInteger(number) && number > 0 ? number : null,
+          num:Number.isInteger(number) && number > 0 ? number : null,
+          watch_available:Number.isInteger(number) && number > 0 && row.watch_available !== false };
       });
       return { ...item, movie_title:item.title, status:'success', episodes,
         description:String(result.data.description || result.data.plot || '').slice(0,8000),

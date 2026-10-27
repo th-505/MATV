@@ -34,8 +34,8 @@ void main() {
   test(
     'web and shared Flutter targets use the same product navigation and colors',
     () {
-      expect(TatvUi.brand, 'T-A-TV');
-      expect(TatvUi.pageIds, [
+      expect(NajdUi.brand, 'نجد — Najd TV');
+      expect(NajdUi.pageIds, [
         'home',
         'movies',
         'series',
@@ -46,12 +46,12 @@ void main() {
         'favorites',
         'settings',
       ]);
-      expect(TatvUi.labels.length, TatvUi.pageIds.length);
-      expect(TatvUi.icons.length, TatvUi.pageIds.length);
-      expect(TatvUi.sidebarBreakpoint, 900);
-      expect(TatvUi.background, const Color(0xFF07090B));
-      expect(TatvUi.surface, const Color(0xFF0D1117));
-      expect(TatvUi.accent, const Color(0xFFE8BD75));
+      expect(NajdUi.labels.length, NajdUi.pageIds.length);
+      expect(NajdUi.icons.length, NajdUi.pageIds.length);
+      expect(NajdUi.sidebarBreakpoint, 900);
+      expect(NajdUi.background, const Color(0xFF08080E));
+      expect(NajdUi.surface, const Color(0xFF14131F));
+      expect(NajdUi.accent, const Color(0xFF8280FF));
     },
   );
   testWidgets(

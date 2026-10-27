@@ -41,7 +41,7 @@ console.log('Pinned source routing: 19 concrete search modules, aliases, filteri
 
 const capabilities = listSourceCapabilities();
 assert.equal(capabilities.length, SOURCE_REGISTRY.length);
-assert.deepEqual(Object.keys(capabilities[0]).sort(), ['aliases', 'domain', 'id', 'name_ar', 'search']);
+assert.deepEqual(Object.keys(capabilities[0]).sort(), ['aliases', 'domain', 'id', 'name_ar', 'scope', 'search']);
 let active = 0, maxActive = 0;
 const searched = [];
 const allSearch = createMultiSourceSearch({ search: async (query, provider) => {

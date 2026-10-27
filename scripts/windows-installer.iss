@@ -9,17 +9,17 @@
 #endif
 [Setup]
 AppId={{49F9B50D-B1EE-49BD-BEBE-EF6FF8B6DE5B}
-AppName=T-A-TV
+AppName=Najd TV
 AppVersion={#AppVersion}
-AppPublisher=T-A-TV
-DefaultDirName={localappdata}\Programs\T-A-TV
-DefaultGroupName=T-A-TV
+AppPublisher=Najd TV
+DefaultDirName={localappdata}\Programs\Najd TV
+DefaultGroupName=Najd TV
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputRoot}
-OutputBaseFilename=MA-TV-Windows-x64-Setup
+OutputBaseFilename=Najd-TV-Windows-x64-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -30,7 +30,7 @@ Source: "{#SourceRoot}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Tasks]
 Name: desktopicon; Description: "Create a desktop shortcut"; Flags: unchecked
 [Icons]
-Name: "{autoprograms}\T-A-TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"
-Name: "{autodesktop}\T-A-TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\Najd TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"
+Name: "{autodesktop}\Najd TV"; Filename: "{app}\mitv.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 [Run]
-Filename: "{app}\mitv.exe"; Description: "Launch T-A-TV"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\mitv.exe"; Description: "Launch Najd TV"; Flags: nowait postinstall skipifsilent

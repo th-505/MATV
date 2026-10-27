@@ -10,9 +10,9 @@ const MATCH_TIMEOUT_MS=25000;
 function installBrandTheme(){
   if(typeof document==='undefined')return;
   const themeMeta=document.querySelector('meta[name="theme-color"]');
-  if(themeMeta)themeMeta.setAttribute('content','#07090b');
-  document.title='T-A-TV';
-  document.documentElement.style.colorScheme='dark';
+  if(themeMeta)themeMeta.setAttribute('content',document.documentElement.dataset.najdTheme==='light'?'#fcfcff':'#08080e');
+  document.title='نجد — Najd TV';
+  document.documentElement.style.colorScheme=document.documentElement.dataset.najdTheme||'dark';
 }
 installBrandTheme();
 

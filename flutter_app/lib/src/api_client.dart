@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+
 import 'app_target.dart';
+
 import 'package:http/http.dart' as http;
+
 import 'models.dart';
 import 'media_repository.dart';
 import 'alooy_policy.dart';
@@ -50,6 +53,10 @@ class MitvApi implements MediaRepository {
   final _playbackCache = <String, TitleDetails>{};
   final _catalogGroups = <String, CatalogItem>{};
   final _pagination = <String, bool>{};
+  final _searchCache =
+      <String, ({DateTime expires, List<CatalogItem> items})>{};
+  bool? searchHasMore(String query, int page) =>
+      _pagination['search:${query.trim()}:$page'];
   final _metadataWarmAttempts = <String, DateTime>{};
   final _metadataWarmPending = <String>{};
 
@@ -61,6 +68,7 @@ class MitvApi implements MediaRepository {
     _playbackCache.clear();
     _catalogGroups.clear();
     _pagination.clear();
+    _searchCache.clear();
     _metadataWarmAttempts.clear();
     _edgeStreams.removeWhere((_, expiry) => !expiry.isAfter(DateTime.now()));
     // Keep pending slots until they settle, so clearing cannot increase the
@@ -92,9 +100,8 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
     bool metadataOnly = false,
   }) async {
-    final canonical = RegExp(
-      r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$',
-    ).firstMatch(ref);
+    final canonical = RegExp(r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$')
+        .firstMatch(ref);
     if (canonical != null) {
       final base = 'tmdb:${canonical[1]}:${canonical[2]}';
       final result = await _getJson('/api/v1/tmdb/details', {'ref': base});
@@ -405,17 +412,44 @@ class MitvApi implements MediaRepository {
     return json['configured'] == true;
   }
 
-  Future<List<CatalogItem>> searchTmdb(String query) async {
+  Future<List<CatalogItem>> searchTmdb(String query) => searchTmdbPage(query);
+
+  Future<List<CatalogItem>> searchTmdbPage(String query, {int page = 1}) async {
     final generation = _cacheGeneration;
     final value = query.trim();
     if (value.length < 2) return const [];
+    if (page < 1 || page > 500) throw const ApiException('TMDB_BAD_PAGE');
+    final key = '$value:$page';
+    final cached = _searchCache[key];
+    if (cached != null && cached.expires.isAfter(DateTime.now())) {
+      return cached.items;
+    }
     lastSearchTrace = null;
     final json = await _getJson('/api/v1/tmdb/search', {
       'q': value,
+      'page': '$page',
       'platform': appTargetValue,
       'diagnostic_session': _diagnosticSession,
     });
     _ensureGeneration(generation);
+    final result = _dedupeCatalog(_list(json['data']).map(_catalogItem));
+    final pagination = json['pagination'];
+    _pagination['search:$value:$page'] = pagination is Map
+        ? pagination['has_more'] == true
+        : result.length >= 20;
+    _searchCache.removeWhere((_, row) => !row.expires.isAfter(DateTime.now()));
+    if (_searchCache.length >= 128) {
+      _searchCache.remove(_searchCache.keys.first);
+    }
+    _searchCache[key] = (
+      expires: DateTime.now().add(const Duration(minutes: 30)),
+      items: result,
+    );
+    return result;
+  }
+
+  Future<List<CatalogItem>> personWorks(int id) async {
+    final json = await _getJson('/api/v1/tmdb/person', {'id': '$id'});
     return _dedupeCatalog(_list(json['data']).map(_catalogItem));
   }
 
@@ -551,9 +585,8 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
   }) async {
     final generation = _cacheGeneration;
-    final canonical = RegExp(
-      r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$',
-    ).firstMatch(ref);
+    final canonical = RegExp(r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$')
+        .firstMatch(ref);
     if (canonical != null) {
       final base = 'tmdb:${canonical[1]}:${canonical[2]}';
       final season = canonical[1] == 'tv' ? canonical[3] ?? '1' : '0';

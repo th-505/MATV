@@ -110,6 +110,8 @@ function normalizeDetails(body = {}, mediaType, id) {
       type: series ? "series" : "movie",
       title,
       original_title: text(series ? body.original_name : body.original_title),
+      aliases:[...new Set([...(body.alternative_titles?.titles||body.alternative_titles?.results||[]).map(x=>text(x.title)),...(body.translations?.translations||[]).filter(x=>['ar','en'].includes(x.iso_639_1)).map(x=>text(x.data?.title||x.data?.name))].filter(Boolean))].slice(0,40),
+      original_language:text(body.original_language),
       overview: text(body.overview),
       poster: posterUrl(body.poster_path, "w500"),
       backdrop: posterUrl(body.backdrop_path, "w780"),
@@ -122,10 +124,12 @@ function normalizeDetails(body = {}, mediaType, id) {
       seasons,
       genres: Array.isArray(body.genres) ? body.genres.map((genre) => text(genre?.name)).filter(Boolean) : [],
       cast: Array.isArray(body.credits?.cast) ? body.credits.cast.slice(0, 12).map((person) => ({
+        id: Number(person?.id) || null,
         name: text(person?.name),
         character: text(person?.character),
         photo: posterUrl(person?.profile_path, "w185"),
       })).filter((person) => person.name) : [],
+      directors: [...new Set((Array.isArray(body.credits?.crew) ? body.credits.crew : []).filter(person=>person.job==='Director').map(person=>text(person.name)).filter(Boolean))],
       imdb_id: text(body.external_ids?.imdb_id),
       similar: [...(Array.isArray(body.recommendations?.results) ? body.recommendations.results : []), ...(Array.isArray(body.similar?.results) ? body.similar.results : [])]
         .map((item) => normalizeResult({ ...item, media_type: item?.media_type || mediaType }))
@@ -269,7 +273,7 @@ export function createTmdbRuntime({
     throw lastError || new Error("TMDB_NOT_CONFIGURED");
   }
 
-  async function cachedRequest(key, resolver) {
+  async function cachedRequest(key, resolver, ttlMs = cacheTtlMs) {
     prune();
     const cached = cache.get(key);
     if (cached && cached.expiresAt > now()) return cached.value;
@@ -277,7 +281,7 @@ export function createTmdbRuntime({
     const request = (async () => {
       try {
         const value = await resolver();
-        cache.set(key, { expiresAt: now() + cacheTtlMs, value });
+        cache.set(key, { expiresAt: now() + ttlMs, value });
         prune();
         return value;
       } finally {
@@ -288,12 +292,13 @@ export function createTmdbRuntime({
     return request;
   }
 
-  async function search(query) {
+  async function search(query, {page = 1} = {}) {
+    if (!Number.isInteger(page) || page < 1 || page > 500) throw Error("TMDB_BAD_PAGE");
     const q = text(query);
     if (q.length < 2) return { status: "success", source: "tmdb", data: [] };
-    const key = `search:${q.toLocaleLowerCase("ar")}`;
+    const key = `search:${q.toLocaleLowerCase("ar")}:${page}`;
     return cachedRequest(key, async () => {
-      const body = await request("/3/search/multi", { query: q, include_adult: "false" });
+      const body = await request("/3/search/multi", { query: q, include_adult: "false", page });
       const seen = new Set();
       const data = [];
       for (const raw of Array.isArray(body.results) ? body.results : []) {
@@ -301,15 +306,26 @@ export function createTmdbRuntime({
         if (!item || !seen.add(item.ref)) continue;
         data.push(item);
       }
-      return { status: "success", source: "tmdb", data };
-    });
+      const totalPages = Math.max(0, Math.min(500, Number(body.total_pages) || 0));
+      return { status: "success", source: "tmdb", data, pagination: {page, total_pages: totalPages, has_more: page < totalPages} };
+    }, 30 * 60_000);
+  }
+
+  async function personWorks(id) {
+    if(!/^[1-9]\d{0,9}$/.test(String(id)))throw Error('TMDB_BAD_PERSON');
+    return cachedRequest('person:'+id,async()=>{
+      const body=await request('/3/person/'+id+'/combined_credits',{});
+      const seen=new Set();
+      const data=(Array.isArray(body.cast)?body.cast:[]).filter(row=>row.adult!==true).map(normalizeResult).filter(item=>item&&seen.add(item.ref));
+      return {status:'success',source:'tmdb',data};
+    },30*60000);
   }
 
   async function details(ref) {
     const { mediaType, id } = parseRef(ref);
     return cachedRequest(`details:${mediaType}:${id}`, async () => {
       const body = await request(`/3/${mediaType}/${id}`, {
-        append_to_response: "credits,similar,recommendations,external_ids",
+        append_to_response: "credits,similar,recommendations,external_ids,alternative_titles,translations",
       });
       return normalizeDetails(body, mediaType, id);
     });
@@ -343,7 +359,7 @@ export function createTmdbRuntime({
     return structuredClone(await cachedRequest(key, () => request(`/3${valid.path}`, valid.params)));
   }
 
-  return Object.freeze({ status, search, details, season, trending, catalog });
+  return Object.freeze({ status, search, details, season, trending, catalog, personWorks });
 }
 
 export const __tmdbTest = Object.freeze({

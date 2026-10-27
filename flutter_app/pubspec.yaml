@@ -1,7 +1,7 @@
 name: mitv
 publish_to: none
-description: MITV cross-platform media client with direct edge-resolved playback.
-version: 1.1.2+102
+description: Najd TV shared cross-platform media client.
+version: 1.1.5+105
 
 environment:
   sdk: ">=3.13.7 <4.0.0"
@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  url_launcher: 6.3.3
+  archive: 4.5.2
   http: ^1.5.0
   supabase_flutter: 2.18.3
   file_selector: 1.1.0
@@ -32,3 +34,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: NajdArabicFallback
+      fonts:
+        - asset: assets/fallback/NotoSansArabic.ttf
+  assets:
+    - assets/najd/
+    - assets/najd/fonts/

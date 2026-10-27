@@ -9,6 +9,16 @@ Future<void> selectShellDestination(WidgetTester tester, String id) async {
     await tester.pump();
   }
   final destination = find.byKey(ValueKey('nav-$id'));
+  if (destination.evaluate().isEmpty) {
+    final sidebar = find.byKey(const Key('tatv-right-sidebar'));
+    await tester.scrollUntilVisible(
+      destination,
+      -180,
+      scrollable: find
+          .descendant(of: sidebar, matching: find.byType(Scrollable))
+          .first,
+    );
+  }
   await tester.ensureVisible(destination);
   await tester.pump(const Duration(milliseconds: 350));
   await tester.pump();

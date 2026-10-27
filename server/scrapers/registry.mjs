@@ -1,3 +1,4 @@
+import {wrapConfiguredProvider} from './configurable-provider.mjs';
 // server/scrapers/registry.mjs
 // Central Capability Registry for all MATV scrapers & providers
 
@@ -58,23 +59,23 @@ for (const entry of PROVIDER_ENTRIES) {
 }
 
 export function getProvider(id) {
-  return PROVIDERS_MAP.get(id) || null;
+  return wrapConfiguredProvider(PROVIDERS_MAP.get(id)) || null;
 }
 
 export function getProviderByCode(code) {
-  return PROVIDERS_BY_CODE.get(code) || null;
+  return wrapConfiguredProvider(PROVIDERS_BY_CODE.get(code)) || null;
 }
 
 export function listProviders() {
-  return PROVIDER_ENTRIES.map((e) => e.meta);
+  return PROVIDER_ENTRIES.map((e) => wrapConfiguredProvider(e).meta);
 }
 
 export function listIndependentProviders() {
-  return PROVIDER_ENTRIES.filter((e) => !e.meta.mirrorOf).map((e) => e.meta);
+  return PROVIDER_ENTRIES.filter((e) => !e.meta.mirrorOf).map((e) => wrapConfiguredProvider(e).meta);
 }
 
 export function listMirrorProviders() {
-  return PROVIDER_ENTRIES.filter((e) => Boolean(e.meta.mirrorOf)).map((e) => e.meta);
+  return PROVIDER_ENTRIES.filter((e) => Boolean(e.meta.mirrorOf)).map((e) => wrapConfiguredProvider(e).meta);
 }
 
 export default {

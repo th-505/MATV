@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Generate deterministic T-A-TV native, desktop and web branding after `flutter create`.
+"""Generate deterministic Najd TV native, desktop and web branding after `flutter create`.
 
-The approved T-A-TV identity uses charcoal surfaces and a gold M/play mark.
-No bundled font or third-party image dependency is required.
+The approved Najd TV identity uses lavender surfaces and an original smooth Najdi emblem.
+Private local font files are not published. Pillow is pinned in scripts/requirements-branding.txt.
 """
 from __future__ import annotations
+
+from PIL import Image
+import io
 
 import json
 import plistlib
@@ -14,8 +17,8 @@ import sys
 import zlib
 from pathlib import Path
 
-BACKGROUND = (7, 9, 11, 255)
-ACCENT = (232, 189, 117, 255)
+BACKGROUND = (8, 8, 14, 255)
+ACCENT = (130, 128, 255, 255)
 FOREGROUND = (255, 255, 255, 255)
 TRANSPARENT = (0, 0, 0, 0)
 
@@ -28,62 +31,19 @@ def png_bytes(width: int, height: int, rgba: bytearray) -> bytes:
 
 
 def mark(size: int, background: tuple[int, int, int, int]) -> bytes:
-    w = h = max(16, int(size))
-    px = bytearray(background * (w * h))
-
-    def put(x: int, y: int, color=ACCENT):
-        if 0 <= x < w and 0 <= y < h:
-            i = (y * w + x) * 4
-            px[i:i + 4] = bytes(color)
-
-    def disk(cx: float, cy: float, radius: float, color=ACCENT):
-        x0, x1 = max(0, int(cx - radius)), min(w - 1, int(cx + radius))
-        y0, y1 = max(0, int(cy - radius)), min(h - 1, int(cy + radius))
-        r2 = radius * radius
-        for y in range(y0, y1 + 1):
-            dy = y - cy
-            for x in range(x0, x1 + 1):
-                dx = x - cx
-                if dx * dx + dy * dy <= r2:
-                    put(x, y, color)
-
-    def ring(cx: float, cy: float, outer: float, inner: float):
-        x0, x1 = max(0, int(cx - outer)), min(w - 1, int(cx + outer))
-        y0, y1 = max(0, int(cy - outer)), min(h - 1, int(cy + outer))
-        o2, i2 = outer * outer, inner * inner
-        for y in range(y0, y1 + 1):
-            dy = y - cy
-            for x in range(x0, x1 + 1):
-                dx = x - cx
-                d2 = dx * dx + dy * dy
-                if i2 <= d2 <= o2:
-                    put(x, y, FOREGROUND if x + y < (cx + cy) * .91 else ACCENT)
-
-    def thick_line(x0: float, y0: float, x1: float, y1: float, radius: float):
-        steps = max(2, int(max(abs(x1 - x0), abs(y1 - y0))))
-        for n in range(steps + 1):
-            t = n / steps
-            disk(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, radius)
-
-    def triangle(a, b, c, color=FOREGROUND):
-        min_x = max(0, int(min(a[0], b[0], c[0])))
-        max_x = min(w - 1, int(max(a[0], b[0], c[0])))
-        min_y = max(0, int(min(a[1], b[1], c[1])))
-        max_y = min(h - 1, int(max(a[1], b[1], c[1])))
-        def sign(p1, p2, p3):
-            return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
-        for y in range(min_y, max_y + 1):
-            for x in range(min_x, max_x + 1):
-                p = (x + .5, y + .5)
-                d1, d2, d3 = sign(p, a, b), sign(p, b, c), sign(p, c, a)
-                if not ((d1 < 0 or d2 < 0 or d3 < 0) and (d1 > 0 or d2 > 0 or d3 > 0)):
-                    put(x, y, color)
-
-    points=[(.20,.78),(.20,.22),(.50,.50),(.80,.22),(.80,.78)]
-    for a,b in zip(points,points[1:]):
-        thick_line(w*a[0],h*a[1],w*b[0],h*b[1],w*.048)
-    triangle((w*.43,h*.55),(w*.43,h*.76),(w*.63,h*.655))
-    return png_bytes(w, h, px)
+    """Package the original generated Najd master with antialiased icon scaling."""
+    master = Path(__file__).resolve().parents[1] / "assets/brand/najd-mark.png"
+    image = Image.open(master).convert("RGBA")
+    bounds = image.getchannel("A").getbbox()
+    if bounds:
+        image = image.crop(bounds)
+    canvas = Image.new("RGBA", (max(16, int(size)),) * 2, background)
+    edge = max(12, round(canvas.width * .78))
+    image.thumbnail((edge, edge), Image.Resampling.LANCZOS)
+    canvas.alpha_composite(image, ((canvas.width-image.width)//2, (canvas.height-image.height)//2))
+    output = io.BytesIO()
+    canvas.save(output, format="PNG", optimize=True)
+    return output.getvalue()
 
 
 def write_icon(path: Path, size: int, transparent: bool = False):
@@ -142,7 +102,7 @@ def apply_android(root: Path):
 <domain-config cleartextTrafficPermitted="true"><domain includeSubdomains="false">127.0.0.1</domain><domain includeSubdomains="false">localhost</domain></domain-config>
 </network-security-config>''', encoding="utf-8")
         text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
-        text = re.sub(r'android:label="[^"]*"', 'android:label="T-A-TV"', text, count=1)
+        text = re.sub(r'android:label="[^"]*"', 'android:label="Najd TV"', text, count=1)
         manifest.write_text(text, encoding="utf-8")
 
 
@@ -188,8 +148,8 @@ def apply_ios(root: Path):
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
         data.setdefault("NSAppTransportSecurity", {})["NSAllowsLocalNetworking"] = True
-        data["CFBundleDisplayName"] = "T-A-TV"
-        data["CFBundleName"] = "T-A-TV"
+        data["CFBundleDisplayName"] = "Najd TV"
+        data["CFBundleName"] = "Najd TV"
         data["UIFileSharingEnabled"] = True
         data["LSSupportsOpeningDocumentsInPlace"] = True
         with plist.open("wb") as fh:
@@ -207,11 +167,11 @@ def apply_web(root: Path):
     if manifest.exists():
         data = json.loads(manifest.read_text(encoding="utf-8"))
         data.update({
-            "name": "T-A-TV",
-            "short_name": "T-A-TV",
+            "name": "Najd TV",
+            "short_name": "Najd TV",
             "background_color": "#07090b",
             "theme_color": "#07090b",
-            "description": "T-A-TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
+            "description": "Najd TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
         })
         manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -229,14 +189,14 @@ def apply_windows(root: Path):
     main=windows/'runner/main.cpp'
     if main.exists():
         text=main.read_text()
-        text=re.sub(r'(?m)^([ \t]*if \(!window\.Create\().*?\)\)\s*\{',r'\1L"T-A-TV", origin, size)) {',text,count=1)
+        text=re.sub(r'(?m)^([ \t]*if \(!window\.Create\().*?\)\)\s*\{',r'\1L"Najd TV", origin, size)) {',text,count=1)
         main.write_text(text)
     rc=windows/'runner/Runner.rc'
     if rc.exists():
         text=rc.read_text()
         for key in ('CompanyName','FileDescription','ProductName'):
             pattern=r'(?m)^([ \t]*VALUE "'+re.escape(key)+r'", ).*$'
-            text=re.sub(pattern,lambda match: match.group(1)+'"T-A-TV" "\\0"',text)
+            text=re.sub(pattern,lambda match: match.group(1)+'"Najd TV" "\\0"',text)
         rc.write_text(text)
 
 
@@ -248,8 +208,8 @@ def apply_macos(root: Path):
     if plist.exists():
         with plist.open("rb") as fh:
             data = plistlib.load(fh)
-        data["CFBundleDisplayName"] = "T-A-TV"
-        data["CFBundleName"] = "T-A-TV"
+        data["CFBundleDisplayName"] = "Najd TV"
+        data["CFBundleName"] = "Najd TV"
         with plist.open("wb") as fh:
             plistlib.dump(data, fh, sort_keys=False)
 

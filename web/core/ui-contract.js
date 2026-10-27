@@ -1,11 +1,11 @@
 // Shared product contract for web, handheld, desktop and television shells.
 export const UI_CONTRACT = Object.freeze({
-  name: 'T-A-TV',
+  name: 'نجد — Najd TV',
   direction: 'rtl',
   navigationSide: 'right',
   desktopBreakpoint: 900,
-  topBar: false,
-  bottomNavigation: false,
+  topBar: true,
+  bottomNavigation: true,
   advancedSearchLabel: 'بحث متقدم — استكشاف',
   aliases: Object.freeze({ explore: 'search' }),
   navigation: Object.freeze([
@@ -19,7 +19,7 @@ export const UI_CONTRACT = Object.freeze({
     { id: 'favorites', label: 'المفضلة', icon: '♡' },
     { id: 'settings', label: 'الإعدادات', icon: '⚙' },
   ].map(item => Object.freeze(item))),
-  theme: Object.freeze({ background: '#07090b', surface: '#0d1117', elevated: '#121824', gold: '#e8bd75', goldLight: '#f7d594', goldDark: '#b88b3e', text: '#ffffff', textSecondary: '#94a3b8' }),
+  theme: Object.freeze({ background: '#08080e', surface: '#14131f', elevated: '#201d30', gold: '#8280ff', goldLight: '#b4b2ff', goldDark: '#4d4c9a', text: '#f8f7ff', textSecondary: '#bcb8cf' }),
 });
 
 export function resolveNavigationTab(value) {

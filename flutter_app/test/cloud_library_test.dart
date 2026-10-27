@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mitv/src/cloud_library.dart';
 import 'package:mitv/src/library_store.dart';
@@ -130,21 +131,18 @@ void main() {
     },
   );
 
-  test(
-    'unsubmitted local add/remove cancels but attempted lost-ACK keeps tombstone',
-    () async {
-      await store.toggleFavorite(item);
-      await store.toggleFavorite(item);
-      expect(store.pendingCloudRows, isEmpty);
-      await store.toggleFavorite(item);
-      await store.markCloudAttempted(store.pendingCloudRows);
-      await store.toggleFavorite(item);
-      expect(store.pendingCloudRows.single.deleted, isTrue);
-      final restored = await LocalLibraryStore.create();
-      expect(restored.pendingCloudRows.single.deleted, isTrue);
-      restored.dispose();
-    },
-  );
+  test('unsubmitted local add/remove cancels but attempted lost-ACK keeps tombstone', () async {
+    await store.toggleFavorite(item);
+    await store.toggleFavorite(item);
+    expect(store.pendingCloudRows, isEmpty);
+    await store.toggleFavorite(item);
+    await store.markCloudAttempted(store.pendingCloudRows);
+    await store.toggleFavorite(item);
+    expect(store.pendingCloudRows.single.deleted, isTrue);
+    final restored = await LocalLibraryStore.create();
+    expect(restored.pendingCloudRows.single.deleted, isTrue);
+    restored.dispose();
+  });
 
   test('stale in-flight ACK cannot overwrite a later local deletion', () async {
     await store.toggleFavorite(item);
@@ -166,102 +164,93 @@ void main() {
     expect(store.pendingCloudRows, isEmpty);
   });
 
-  test(
-    'history sends at most once per60seconds and cadence survives restart',
-    () async {
-      await store.recordProgress(
-        item: item,
-        position: const Duration(seconds: 5),
-        duration: const Duration(minutes: 10),
-      );
-      await start();
-      await sync!.syncNow();
-      now = now.add(const Duration(seconds: 5));
-      await store.recordProgress(
-        item: item,
-        position: const Duration(seconds: 10),
-        duration: const Duration(minutes: 10),
-      );
-      await sync!.syncNow();
-      expect(cloud.pushes, hasLength(1));
-      await sync!.close();
-      await start();
-      await sync!.syncNow();
-      expect(cloud.pushes, hasLength(1));
-      now = now.add(const Duration(seconds: 55));
-      await sync!.syncNow();
-      expect(cloud.pushes, hasLength(2));
-      expect(cloud.rows.values.single.metadata['position_ms'], 10000);
-    },
-  );
+  test('history sends every5seconds and cadence survives restart', () async {
+    await store.recordProgress(
+      item: item,
+      position: const Duration(seconds: 5),
+      duration: const Duration(minutes: 10),
+    );
+    await start();
+    await sync!.syncNow();
+    now = now.add(const Duration(seconds: 4));
+    await store.recordProgress(
+      item: item,
+      position: const Duration(seconds: 10),
+      duration: const Duration(minutes: 10),
+    );
+    await sync!.syncNow();
+    expect(cloud.pushes, hasLength(1));
+    await sync!.close();
+    await start();
+    await sync!.syncNow();
+    expect(cloud.pushes, hasLength(1));
+    now = now.add(const Duration(seconds: 1));
+    await sync!.syncNow();
+    expect(cloud.pushes, hasLength(2));
+    expect(cloud.rows.values.single.metadata['position_ms'], 10000);
+  });
 
-  test(
-    'newer remote tombstone beats legacy favorite and never resurrects it',
-    () async {
-      SharedPreferences.setMockInitialValues({
-        'library.favorites.v1': [
-          '{"id":"a","title":"عمل","poster":"","type":"movie","ref":"opaque:a"}',
-        ],
-      });
-      store.dispose();
-      store = await LocalLibraryStore.create(clock: () => now);
-      cloud.rows['favorite::opaque:a'] = LibrarySyncRecord(
+  test('newer remote tombstone beats legacy favorite and never resurrects it', () async {
+    SharedPreferences.setMockInitialValues({
+      'library.favorites.v1': [
+        '{"id":"a","title":"عمل","poster":"","type":"movie","ref":"opaque:a"}',
+      ],
+    });
+    store.dispose();
+    store = await LocalLibraryStore.create(clock: () => now);
+    cloud.rows['favorite::opaque:a'] = LibrarySyncRecord(
+      kind: 'favorite',
+      itemKey: 'opaque:a',
+      metadata: const {},
+      updatedAt: now,
+      userId: cloud.ownerId,
+      revision: ++cloud.revision,
+      deleted: true,
+    );
+    await start();
+    await sync!.syncNow();
+    expect(store.favorites, isEmpty);
+    expect(cloud.pushes, isEmpty);
+  });
+
+  test('revision pagination sees late old-clock arrivals and resumes persisted cursor', () async {
+    for (var i = 1; i <= 251; i++) {
+      final ref = 'opaque:$i';
+      cloud.rows['favorite::$ref'] = LibrarySyncRecord(
         kind: 'favorite',
-        itemKey: 'opaque:a',
-        metadata: const {},
+        itemKey: ref,
+        metadata: CatalogItem(
+          id: '$i',
+          title: 'عمل',
+          poster: '',
+          type: 'movie',
+          ref: ref,
+        ).toJson(),
         updatedAt: now,
         userId: cloud.ownerId,
         revision: ++cloud.revision,
-        deleted: true,
       );
-      await start();
-      await sync!.syncNow();
-      expect(store.favorites, isEmpty);
-      expect(cloud.pushes, isEmpty);
-    },
-  );
-
-  test(
-    'revision pagination sees late old-clock arrivals and resumes persisted cursor',
-    () async {
-      for (var i = 1; i <= 251; i++) {
-        final ref = 'opaque:$i';
-        cloud.rows['favorite::$ref'] = LibrarySyncRecord(
-          kind: 'favorite',
-          itemKey: ref,
-          metadata: CatalogItem(
-            id: '$i',
-            title: 'عمل',
-            poster: '',
-            type: 'movie',
-            ref: ref,
-          ).toJson(),
-          updatedAt: now,
-          userId: cloud.ownerId,
-          revision: ++cloud.revision,
-        );
-      }
-      await start();
-      await sync!.syncNow();
-      expect(store.favorites, hasLength(251));
-      expect(cloud.cursors, [0, 250]);
-      await sync!.close();
-      await start();
-      cloud.rows['favorite::opaque:old-clock'] = LibrarySyncRecord(
-        kind: 'favorite',
-        itemKey: 'opaque:old-clock',
-        metadata: item
-            .copyWith(id: 'old-clock', ref: 'opaque:old-clock')
-            .toJson(),
-        updatedAt: now.subtract(const Duration(days: 3)),
-        userId: cloud.ownerId,
-        revision: ++cloud.revision,
-      );
-      await sync!.syncNow();
-      expect(cloud.cursors.last, 251);
-      expect(store.isFavorite('opaque:old-clock'), isTrue);
-    },
-  );
+    }
+    await start();
+    await sync!.syncNow();
+    expect(store.favorites, hasLength(251));
+    expect(cloud.cursors, [0, 250]);
+    await sync!.close();
+    await start();
+    cloud.rows['favorite::opaque:old-clock'] = LibrarySyncRecord(
+      kind: 'favorite',
+      itemKey: 'opaque:old-clock',
+      metadata: item
+          .copyWith(id: 'old-clock', ref: 'opaque:old-clock')
+          .toJson(),
+      updatedAt: now.subtract(const Duration(days: 3)),
+      userId: cloud.ownerId,
+      revision: ++cloud.revision,
+    );
+    await sync!.syncNow();
+    expect(cloud.cursors.last, 251);
+    expect(store.isFavorite('opaque:old-clock'), isTrue);
+  });
 
   test(
     'offline sync retains work and backs off rather than retrying each edit',
@@ -297,9 +286,8 @@ void main() {
       isFalse,
     );
     expect(
-      row({
-        'poster': 'https://image.example/x.jpg?token=secret',
-      }).fitsCloudBudget,
+      row({'poster': 'https://image.example/x.jpg?token=secret'})
+          .fitsCloudBudget,
       isFalse,
     );
     expect(

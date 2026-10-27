@@ -10,6 +10,6 @@ The provider analyzer currently checks homepage HTTP transport only. Its results
 
 The existing primary and backup Gemini secrets are read only inside the diagnosis step. The client discovers a supported low-cost Flash model dynamically. Missing keys, quota errors or malformed output produce an explicit unavailable diagnosis while preserving measured provider results.
 
-Model output is advisory. This reporting workflow executes no proposed code, patches or commands and applies zero repairs. Verified automatic configuration repair belongs to a separate, still-pending implementation with live checks and a restricted configuration schema.
+Model output is untrusted. The workflow executes no proposed code, patches or commands. On scheduled/manual main-branch runs only, up to2 structured configuration proposals can reach the server gate using a short-lived GitHub OIDC identity. The server requires a failing baseline, a real positive title/year result and a negative search before a revision-checked update. Unverified proposals remain unapplied. Only verified structured discoveries may update the bounded knowledge JSON; release and daily maintenance share a concurrency lock. Transport availability still does not certify playback.
 
 Tests: `python -m unittest discover -s scripts -p 'test_najd_daily_report.py'`.

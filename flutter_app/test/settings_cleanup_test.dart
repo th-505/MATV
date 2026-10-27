@@ -1,4 +1,5 @@
 import 'support/shell_navigation.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -23,6 +24,20 @@ class _CleanupApi extends MitvApi {
     clears++;
     super.clearBrowsingCache();
   }
+}
+
+Future<void> revealSetting(WidgetTester tester, String label) async {
+  await tester.scrollUntilVisible(
+    find.text(label),
+    180,
+    scrollable: find
+        .descendant(
+          of: find.byType(SettingsPage),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -67,11 +82,13 @@ void main() {
       expect(api.categories, ['catalog:movie:all', 'catalog:movie:all']);
       await selectShellDestination(tester, 'settings');
       await tester.pumpAndSettle();
+      await revealSetting(tester, 'مسح الكاش المحلي');
       await tester.tap(find.text('مسح الكاش المحلي'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('إلغاء'));
       await tester.pumpAndSettle();
       expect(api.clears, 0);
+      await revealSetting(tester, 'مسح الكاش المحلي');
       await tester.tap(find.text('مسح الكاش المحلي'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('حذف'));
@@ -126,12 +143,14 @@ void main() {
       await tester.pumpAndSettle();
       await selectShellDestination(tester, 'settings');
       await tester.pumpAndSettle();
+      await revealSetting(tester, 'حذف الملفات المحمّلة');
       await tester.tap(find.text('حذف الملفات المحمّلة'));
       await tester.pumpAndSettle();
       expect(deletions, 0);
       await tester.tap(find.text('إلغاء'));
       await tester.pumpAndSettle();
       expect(deletions, 0);
+      await revealSetting(tester, 'حذف الملفات المحمّلة');
       await tester.tap(find.text('حذف الملفات المحمّلة'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('حذف'));
@@ -159,6 +178,7 @@ void main() {
     await selectShellDestination(tester, 'settings');
     await tester.pumpAndSettle();
     final settingsState = tester.state(find.byType(SettingsPage));
+    await revealSetting(tester, 'مسح الكاش المحلي');
     await tester.tap(find.text('مسح الكاش المحلي'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('حذف'));

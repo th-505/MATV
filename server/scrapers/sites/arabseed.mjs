@@ -252,7 +252,7 @@ function extractCardsFromDom($, baseUrl) {
 
     const cleanTitle = cleanTitleText(rawTitle);
     const year = extractYear(rawTitle) || $(el).find('.Year, .year').first().text().trim() || '';
-    const quality = $(el).find('.Quality, .quality, .badge').first().text().trim() || 'HD';
+    const quality = $(el).find('.Quality, .quality, .badge').first().text().trim() || '';
     const rating = $(el).find('.Rating, .rating, .imdb').first().text().replace(/[^\d.]/g, '').trim() || '';
 
     const isSeries =
@@ -442,7 +442,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
   const year = extractYear(rawTitle) || $('.Year, .year').first().text().trim() || '';
   const rating = $('.Rating, .rating, .imdb').first().text().replace(/[^\d.]/g, '').trim() || '';
-  const quality = $('.Quality, .quality, .badge').first().text().trim() || 'HD';
+  const quality = $('.Quality, .quality, .badge').first().text().trim() || '';
 
   const genres = [];
   $('.Genre a, .Genres a, .TaxTerms a, .Categories a').each((_, el) => {
@@ -682,7 +682,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: s.url,
           type: s.streamType || (s.url.includes('.m3u8') ? 'm3u8' : 'mp4'),
           streamType: s.streamType || (s.url.includes('.m3u8') ? 'm3u8' : 'mp4'),
-          quality: s.quality || 'HD',
+          quality: s.quality || '',
           verified: Boolean(s.verified ?? (s.streamType !== 'embed')),
           headers: s.headers || { Referer: watchPageUrl }
         });
@@ -705,7 +705,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
           url: u,
           type: 'embed',
           streamType: 'embed',
-          quality: 'HD',
+          quality: null,
           verified: false,
           headers: { Referer: watchPageUrl }
         });

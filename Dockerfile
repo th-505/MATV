@@ -15,7 +15,8 @@ RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
     npm ci --omit=dev --no-audit --no-fund
 COPY --chown=node:node server/ ./server/
-COPY --chown=node:node shared/content-identity.js ./shared/content-identity.js
+COPY --chown=node:node internal_web/ ./internal_web/
+COPY --chown=node:node shared/ ./shared/
 COPY --chown=node:node edge/src/provider.mjs edge/src/laroza.mjs ./edge/src/
 # Fail the build if the production entrypoint has an uncopied dependency.
 RUN node --input-type=module -e "await import('./server/index-runtime.mjs')"

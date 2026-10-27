@@ -1,12 +1,12 @@
 {
-  "name": "T-A-TV",
-  "short_name": "T-A-TV",
+  "name": "نجد — Najd TV",
+  "short_name": "نجد",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#07090b",
-  "theme_color": "#07090b",
-  "description": "T-A-TV — أفلام ومسلسلات وأنمي وبث مباشر",
+  "background_color": "#08080e",
+  "theme_color": "#08080e",
+  "description": "Najd TV — أفلام ومسلسلات وأنمي وبث مباشر",
   "icons": [
     {
       "src": "app/icons/Icon-192.png",
@@ -28,7 +28,7 @@
   ],
   "shortcuts": [
     {
-      "name": "T-A-TV",
+      "name": "Najd TV",
       "short_name": "الرئيسية",
       "url": "./",
       "icons": [

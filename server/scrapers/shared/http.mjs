@@ -1,3 +1,4 @@
+import {rewriteProviderRequest} from './provider-config.mjs';
 import { searchTraceEvent } from '../../diagnostics/search-trace.mjs';
 import { searchTraceHtml } from '../../diagnostics/search-forms.mjs';
 // server/scrapers/shared/http.mjs
@@ -495,12 +496,14 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
 }
 
 export async function fetchProviderHtml(targetUrl, options = {}) {
+  const rewritten=rewriteProviderRequest(targetUrl,options);targetUrl=rewritten.url;options=rewritten.options;
   // Always validate URL safety even when fixtureHtml is supplied
   assertSafeScraperUrl(targetUrl, {
     allowHttp: options.allowHttp ?? true,
     allowedHosts: options.allowedHosts ?? null
   });
 
+  const observe = value => { try { options.onProviderPage?.(value); } catch {} return value; };
   // Support offline fixture HTML injection for deterministic testing
   if (typeof options.fixtureHtml === 'string') {
     if (isCloudflareOrAccessBlock(options.fixtureStatus || 200, options.fixtureHtml, options.fixtureHeaders)) {
@@ -510,14 +513,14 @@ export async function fetchProviderHtml(targetUrl, options = {}) {
         status: options.fixtureStatus || 403
       });
     }
-    return {
+    return observe({
       ok: (options.fixtureStatus || 200) < 400,
       status: options.fixtureStatus || 200,
       html: options.fixtureHtml,
       url: targetUrl,
       headers: new Map()
-    };
+    });
   }
 
-  return fetchSafeResponse(targetUrl, options);
+  return observe(await fetchSafeResponse(targetUrl, options));
 }

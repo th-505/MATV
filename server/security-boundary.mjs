@@ -1,5 +1,5 @@
 import { createRateLimiter, getClientAddress } from './hardening.mjs';
-const ORIGINS = new Set(['https://th-505.github.io','https://theeb1230-dot.github.io','http://localhost:8000','http://127.0.0.1:8000']);
+const ORIGINS = new Set(['https://matv.onrender.com','https://th-505.github.io','https://theeb1230-dot.github.io','http://localhost:8000','http://127.0.0.1:8000']);
 export function allowedOrigin(value) {
   if (ORIGINS.has(value)) return true;
   return process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(value);

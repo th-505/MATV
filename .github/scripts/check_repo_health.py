@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 
 # الحد الأقصى المسموح به لحجم أي ملف واحد بالميجابايت
 MAX_FILE_SIZE_MB = 2.0
@@ -18,25 +19,19 @@ def check_repository(root_path="."):
     errors = []
     print("🔍 جاري فحص نظافة وسلامة ملفات المشروع...")
 
-    for dirpath, dirnames, filenames in os.walk(root_path):
-        # استبعاد المجلدات المخفية أو غير المطلوبة من الفحص
-        dirnames[:] = [d for d in dirnames if d not in IGNORED_DIRS]
-
-        for filename in filenames:
-            filepath = os.path.join(dirpath, filename)
-            
-            # 1. فحص الامتدادات الممنوعة
-            for ext in FORBIDDEN_EXTENSIONS:
-                if filename.endswith(ext):
-                    errors.append(f"❌ ملف ممنوع ({ext}): {filepath}")
-
-            # 2. فحص حجم الملف
-            try:
-                size_mb = os.path.getsize(filepath) / (1024 * 1024)
-                if size_mb > MAX_FILE_SIZE_MB and not (filename.endswith('.wasm') or filename == 'main.dart.js'):
-                    errors.append(f"⚠️ ملف ضخم جداً ({size_mb:.2f} MB): {filepath}")
-            except OSError:
-                continue
+    files = subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=root_path).decode().split('\0')
+    for relative in files:
+        if not relative: continue
+        filepath=os.path.join(root_path,relative)
+        filename=os.path.basename(filepath)
+        if not os.path.isfile(filepath): continue
+        for ext in FORBIDDEN_EXTENSIONS:
+            if filename.endswith(ext): errors.append(f"❌ ملف ممنوع ({ext}): {filepath}")
+        if 'thmanyah' in relative.lower() and filename.lower().endswith(('.otf','.ttf','.woff','.woff2')):
+            errors.append(f"❌ ملف خط خاص ممنوع النشر: {filepath}")
+        size_mb=os.path.getsize(filepath)/(1024*1024)
+        if size_mb>MAX_FILE_SIZE_MB and not(filename.endswith('.wasm') or filename=='main.dart.js'):
+            errors.append(f"⚠️ ملف ضخم جداً ({size_mb:.2f} MB): {filepath}")
 
     # عرض النتيجة النهائية للمبرمج
     if errors:

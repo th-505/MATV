@@ -595,7 +595,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       rawServers.push({
         name,
         url: resolved,
-        quality: 'HD'
+        quality: null
       });
     });
 
@@ -671,7 +671,7 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
         name: srv.name || `سيرفر ${idx + 1}`,
         label: `${code} - ${srv.name || 'بث مباشر'}`,
         url: srv.url,
-        quality: srv.quality || 'HD',
+        quality: srv.quality || '',
         type: streamType,
         streamType,
         source: 'yallashoot',

@@ -5,8 +5,8 @@ import { PRODUCT_VERSION } from "../server/content-runtime.mjs";
 const pubspec = await readFile(new URL("../flutter_app/pubspec.yaml", import.meta.url), "utf8");
 const pubspecVersion = pubspec.match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+(\d+)\s*$/m);
 assert.equal(pubspecVersion[1], PRODUCT_VERSION, "Runtime PRODUCT_VERSION must match Flutter product version");
-assert.equal(PRODUCT_VERSION, "1.1.2", "Runtime PRODUCT_VERSION must be 1.1.2");
-assert.equal(pubspecVersion[1], "1.1.2", "Flutter pubspec version must be 1.1.2");
+assert.equal(PRODUCT_VERSION, "1.1.5", "Runtime PRODUCT_VERSION must be 1.1.5");
+assert.equal(pubspecVersion[1], "1.1.5", "Flutter pubspec version must be 1.1.5");
 assert.equal(pubspecVersion[2], "102", "Flutter pubspec build must be 102");
 
 const smoke = await readFile(new URL("./remote_runtime_v1_smoke.mjs", import.meta.url), "utf8");

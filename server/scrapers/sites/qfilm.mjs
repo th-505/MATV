@@ -154,7 +154,7 @@ function parseCatalogCards($, baseUrl = PRIMARY_BASE_URL, defaultType = 'movie')
     const poster = resolveSafeUrl(rawPoster, baseUrl, { allowHttp: true });
 
     const rawQuality =
-      node.find('.quality, .badge, .film-quality, ._quality_tag').first().text().trim() || 'HD';
+      node.find('.quality, .badge, .film-quality, ._quality_tag').first().text().trim() || '';
     const quality = rawQuality && !/^now$/i.test(rawQuality) ? rawQuality : 'HD';
 
     const rawRating =
@@ -337,7 +337,7 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
             url: s.url,
             streamType: s.streamType,
             type: s.streamType,
-            quality: s.quality || 'HD',
+            quality: s.quality || '',
             name: `${PROVIDER_NAME} Direct`,
             headers: s.headers || { Referer: pageUrl },
             verified: false
@@ -360,7 +360,7 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
       url: embedUrl,
       streamType: 'embed',
       type: 'embed',
-      quality: 'HD',
+      quality: null,
       name: `${PROVIDER_NAME} (${hostLabel})`,
       headers: { Referer: pageUrl },
       verified: false
@@ -581,7 +581,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     const ratingMatch = ratingText.match(/(\d+(?:\.\d+)?)/);
     const rating = ratingMatch ? ratingMatch[1] : '';
 
-    const rawQuality = $('.quality, .film-quality, ._quality_tag').first().text().trim() || 'HD';
+    const rawQuality = $('.quality, .film-quality, ._quality_tag').first().text().trim() || '';
     const quality = rawQuality && !/^now$/i.test(rawQuality) ? rawQuality : 'HD';
 
     const genres = [];
@@ -856,7 +856,7 @@ export async function resolveStream(urlOrRef, options = {}) {
       streamUrl: primary.url,
       streamType: primary.streamType || primary.type,
       type: primary.type || primary.streamType,
-      quality: primary.quality || 'HD',
+      quality: primary.quality || '',
       headers: primary.headers || { Referer: PRIMARY_BASE_URL },
       verified: primary.verified === true,
       servers
