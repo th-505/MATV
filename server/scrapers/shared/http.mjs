@@ -324,14 +324,14 @@ async function acquireHostSlot(hostname) {
 }
 
 // Bound decompressed HTML as well as declared Content-Length, including chunked bodies.
-export async function readBoundedText(response, maxBytes = 8 * 1024 * 1024) {
+export async function readBoundedBytes(response, maxBytes = 8 * 1024 * 1024) {
   if (Number(response.headers?.get?.('content-length')) > maxBytes) {
     await response.body?.cancel(); throw new Error('UPSTREAM_BODY_TOO_LARGE');
   }
   if (!response.body?.getReader) {
-    const text = await response.text();
-    if (Buffer.byteLength(text) > maxBytes) throw new Error('UPSTREAM_BODY_TOO_LARGE');
-    return text;
+    const bytes = response.arrayBuffer ? Buffer.from(await response.arrayBuffer()) : Buffer.from(await response.text());
+    if (bytes.length > maxBytes) throw new Error('UPSTREAM_BODY_TOO_LARGE');
+    return bytes;
   }
   const reader = response.body.getReader();
   const chunks = []; let size = 0;
@@ -342,8 +342,18 @@ export async function readBoundedText(response, maxBytes = 8 * 1024 * 1024) {
       if (size > maxBytes) { await reader.cancel(); throw new Error('UPSTREAM_BODY_TOO_LARGE'); }
       chunks.push(value);
     }
-    return Buffer.concat(chunks).toString('utf8');
+    return Buffer.concat(chunks);
   } finally { reader.releaseLock(); }
+}
+export async function readBoundedText(response, maxBytes = 8 * 1024 * 1024) {
+  return (await readBoundedBytes(response,maxBytes)).toString('utf8');
+}
+async function readBytePrefix(response,limit){
+  if(!response.body?.getReader)throw Error('UPSTREAM_STREAM_REQUIRED');
+  const reader=response.body.getReader(),chunks=[];let size=0;
+  try{while(size<limit){const {done,value}=await reader.read();if(done)break;const part=Buffer.from(value.subarray(0,limit-size));chunks.push(part);size+=part.length;}}
+  finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+  return Buffer.concat(chunks);
 }
 
 export async function fetchSafeResponse(targetUrl, options = {}) {
@@ -361,7 +371,10 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
     providerId = null,
     fetchImpl = globalThis.fetch,
     dnsLookupImpl = null,
-    skipDnsResolution = false
+    skipDnsResolution = false,
+    responseType = 'text',
+    maxBytes = 8 * 1024 * 1024,
+    prefixBytes = 0
   } = options;
 
   let currentUrl = assertSafeScraperUrl(targetUrl, { allowHttp, allowedHosts }).toString();
@@ -422,12 +435,16 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           }
 
           // A HEAD probe must never consume a body, even from a broken upstream.
-          let text = '';
+          let text = '', bytes;
           if (method === 'HEAD') await res.body?.cancel();
-          else text = await readBoundedText(res);
+          else if (responseType === 'bytes') {
+            bytes = prefixBytes ? await readBytePrefix(res,Math.min(65536,Math.max(1,Number(prefixBytes)||1))) : await readBoundedBytes(res,Math.min(8*1024*1024,Math.max(1,Number(maxBytes)||1)));
+            // Inspect only a prefix for HTML challenges. Never log media bytes.
+            text = bytes.subarray(0,4096).toString('utf8');
+          } else text = await readBoundedText(res);
 
-          searchTraceEvent('upstream_response', { url: hopUrl, status: res.status, bytes: Buffer.byteLength(text), content_type: res.headers?.get?.('content-type') || '', challenge: isCloudflareOrAccessBlock(res.status, text, res.headers), html_title: text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g, '').trim() || '' });
-          searchTraceHtml(text,hopUrl);
+          searchTraceEvent('upstream_response', { url: hopUrl, status: res.status, bytes: bytes?.length ?? Buffer.byteLength(text), content_type: res.headers?.get?.('content-type') || '', challenge: isCloudflareOrAccessBlock(res.status, text, res.headers), html_title: text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g, '').trim() || '' });
+          if(responseType !== 'bytes')searchTraceHtml(text,hopUrl);
           const suspended = /Account Suspended|Domain (?:for sale|expired)/i.test(text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '') || /\/suspendedpage\.cgi$/i.test(new URL(hopUrl).pathname);
           const login = /\/(?:signin|login)\/?$/i.test(new URL(hopUrl).pathname);
           if (suspended || login) {
@@ -458,7 +475,8 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           return {
             ok: true,
             status: res.status,
-            html: text,
+            html: responseType === 'bytes' ? '' : text,
+            ...(bytes?{bytes}:{}),
             url: hopUrl,
             headers: res.headers
           };

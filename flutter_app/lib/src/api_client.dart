@@ -600,6 +600,7 @@ class MitvApi implements MediaRepository {
                   'title': 'TMDB',
                   'season': season,
                   'episode': episode,
+                  if (refresh) 'refresh': '1',
                 },
                 const Duration(seconds: 12),
                 'POST',

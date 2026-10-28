@@ -371,16 +371,31 @@ class _PlayerPageState extends State<PlayerPage> {
           final compatible = _sources.indexWhere(
             (source) => sourcesShareTimeline(previousSource, source),
           );
-          if (compatible < 0) {
+          // Renewed URLs can represent another cut. Retry playback from zero
+          // when no timeline is proven, preserving the same player and controls.
+          final savedClock =
+              previousPosition ??
+              historyPositionForSource(
+                widget.store.resumeEntry(
+                  widget.item.ref,
+                  episodeId: widget.episodeId,
+                ),
+                previousSource,
+                requestedRef: widget.sourceRef,
+              );
+          if (compatible < 0 &&
+              savedClock >= const Duration(milliseconds: 500)) {
             throw StateError('NO_COMPATIBLE_SOURCE_TIMELINE');
           }
-          _sourceIndex = compatible;
+          _sourceIndex = compatible < 0 ? 0 : compatible;
           if (previousPosition != null) {
-            _handoffPosition = sourceHandoffPosition(
-              previousPosition,
-              previousSource,
-              _sources[compatible],
-            );
+            _handoffPosition = compatible < 0
+                ? Duration.zero
+                : sourceHandoffPosition(
+                    previousPosition,
+                    previousSource,
+                    _sources[compatible],
+                  );
           }
         }
       }
@@ -667,7 +682,18 @@ class _PlayerPageState extends State<PlayerPage> {
     final origin = _activeSource;
     if (origin == null) return null;
     for (var index = _sourceIndex + 1; index < _sources.length; index++) {
-      if (sourcesShareTimeline(origin, _sources[index])) return index;
+      if (sourcesShareTimeline(origin, _sources[index]) ||
+          (_handoffPosition ??
+                  historyPositionForSource(
+                    widget.store.resumeEntry(
+                      widget.item.ref,
+                      episodeId: widget.episodeId,
+                    ),
+                    origin,
+                    requestedRef: widget.sourceRef,
+                  )) <
+              const Duration(milliseconds: 500))
+        return index;
     }
     return null;
   }

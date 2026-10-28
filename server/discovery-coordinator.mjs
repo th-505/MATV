@@ -24,7 +24,7 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
       active++;
       job.state = 'running';
       Promise.resolve().then(async () => {
-        const saved = await load(job.key).catch(() => null);
+        const saved = job.input.refresh ? null : await load(job.key).catch(() => null);
         if (saved?.payload && new Date(saved.expires_at).getTime() > now())
           return { result: saved.payload, expiresAt: new Date(saved.expires_at).getTime() };
         return { result: await discover(job.input, partial => { job.partialResult = partial; }), expiresAt: now() + ttlMs };
@@ -46,11 +46,11 @@ export function createDiscoveryCoordinator({ discover, persist = async () => {},
     const key = keyOf(input);
     const previous = jobs.get(key);
     if (previous && (previous.state === 'queued' || previous.state === 'running' ||
-        (previous.state === 'ready' && previous.expiresAt > now()))) return snapshot(previous);
+        (!input.refresh && previous.state === 'ready' && previous.expiresAt > now()))) return snapshot(previous);
     if (active >= maxConcurrent && queue.length >= maxQueued) return { key, state: 'busy' };
     const job = { key, input: { ref: input.ref, title: String(input.title || '').slice(0, 250),
       year: String(input.year || '').slice(0, 4), provider: String(input.provider || ''), season: Number(input.season) || 0,
-      episode: Number(input.episode) || 0 }, state: 'queued', expiresAt: 0 };
+      episode: Number(input.episode) || 0, refresh: input.refresh === true }, state: 'queued', expiresAt: 0 };
     jobs.set(key, job);
     queue.push(job);
     pump();

@@ -55,3 +55,9 @@ test('loads previously cached results instead of calling scrapers', async () => 
   assert.equal(calls, 0);
   assert.equal(coordinator.status({ref:'tmdb:movie:123'}).result.length, 1);
 });
+
+test('explicit refresh bypasses both ready and persistent caches and deduplicates an in-flight retry',async()=>{
+ let calls=0,loads=0;const c=createDiscoveryCoordinator({load:async()=>{loads++;return{payload:{servers:['old']},expires_at:new Date(Date.now()+60000).toISOString()}},discover:async input=>{calls++;assert.equal(input.refresh,true);await sleep(10);return{servers:['new']}}});
+ const input={ref:'tmdb:tv:309328',season:2,episode:1};c.enqueue(input);await sleep(20);assert.equal(loads,1);assert.equal(calls,0);
+ c.enqueue({...input,refresh:true});c.enqueue({...input,refresh:true});await sleep(30);assert.equal(calls,1);assert.equal(loads,1);assert.deepEqual(c.status(input).result.servers,['new']);
+});

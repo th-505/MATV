@@ -1,18 +1,12 @@
 import { matchesIdentity } from './scrapers/content-discovery.mjs';
 import { createMediaAuditor } from './media-audit.mjs';
-import { classifyFallbackProbeResponse } from './fallback-probe.mjs';
-import { fetchSafeResponse } from './scrapers/shared/http.mjs';
 import { createConcurrencyQueue } from './scrapers/shared/concurrency.mjs';
 import { directCandidate } from './scrapers/content-discovery.mjs';
+import {probeHarvestMedia} from './harvest/media-probe.mjs';
 
-// Probe only headers; never fetch video bodies or pass signed URLs to Gemini.
+// Bounded container prefix only; media bytes and signed URLs never reach Gemini.
 export async function probeDiscoveryMedia(candidate) {
-  const response = await fetchSafeResponse(candidate.url, {
-    method: 'HEAD', headers: candidate.headers || {}, allowHttp: false,
-    timeoutMs: 4000, maxRetries: 0, maxRedirects: 3,
-  });
-  return { ...classifyFallbackProbeResponse({ status: response.status,
-    contentType: response.headers?.get('content-type') }), statusCode: response.status };
+  return probeHarvestMedia(candidate,{platform:'native'});
 }
 
 export function createDiscoveryAudit({ auditor = createMediaAuditor(), probe = probeDiscoveryMedia,

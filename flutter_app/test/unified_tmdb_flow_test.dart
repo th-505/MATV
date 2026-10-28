@@ -102,6 +102,10 @@ void main() {
       expect(playback.mediaType, 'm3u8');
       expect(playback.mediaSources.single.mediaType, 'm3u8');
       expect(playback.hasDirectMedia, true);
+      await api.resolvePlayback('tmdb:tv:1:s2:e4', refresh: true);
+      final starts = calls.where((u) => u.path.endsWith('/start')).toList();
+      expect(starts.first.queryParameters.containsKey('refresh'), false);
+      expect(starts.last.queryParameters['refresh'], '1');
       expect(calls.every((uri) => uri.host == 'api.example'), true);
     },
   );

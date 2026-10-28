@@ -1,5 +1,6 @@
 import {supportsContent} from './content-scope.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
+import {mapSourceEpisodes} from '../harvest/episode-mapping.mjs';
 
 export function identityTitle(value) {
   return String(value || '').normalize('NFKC').toLocaleLowerCase('ar')
@@ -74,13 +75,16 @@ export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 2
       let observedEpisode = null;
       const episodic = options.type === 'series' || hit.type === 'series' || hit.type === 'tv' || details?.type === 'series';
       if (episodic) {
-        const ep = selectEpisode(details?.episodes, season, episode);
+        const observedRows=(details?.episodes||[]).map(row=>({...row,source_ref:row.ref||row.url||row.id,season:Number(row.season_number??row.season??1),episode:Number(row.episode_number??row.episodeNumber??row.number)}));
+        const ep = selectEpisode(mapSourceEpisodes(observedRows,{seasons:options.canonicalSeasons||[]}).map(row=>({...row,season_number:row.season,episode_number:row.episode})), season, episode);
         const epTarget = ep?.url || ep?.ref || ep?.id;
         if (!epTarget) return [];
         observedEpisode = ep;
         details = await provider.scrapeDetails(epTarget, network);
       }
-      return (Array.isArray(details?.servers) ? details.servers : []).filter(directCandidate).map((server, i) => ({
+      let servers=[...(Array.isArray(details?.servers)?details.servers:[]),...(Array.isArray(details?.media_sources)?details.media_sources:[])].filter(directCandidate);
+      if(!servers.length&&typeof provider.scrapeServers==='function')servers=(await provider.scrapeServers(observedEpisode?.url||observedEpisode?.ref||observedEpisode?.id||target,network)||[]).filter(directCandidate);
+      return servers.map((server, i) => ({
         ...server, provider: meta.id, code: `${meta.code || meta.id}-${i + 1}`,
         kind: 'direct', content_ref: options.ref || hit.ref || hit.id || target,
         season: episodic ? Number(season) : 0, episode: episodic ? Number(episode) : 0,

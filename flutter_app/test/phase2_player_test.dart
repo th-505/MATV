@@ -230,4 +230,85 @@ void main() {
     expect(bridge.closed, true);
     api.close();
   });
+  testWidgets(
+    'an unstarted canonical episode tries a second source without changing the player',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final store = await LocalLibraryStore.create();
+      const item = CatalogItem(
+        id: 'tmdb:tv:309328',
+        ref: 'tmdb:tv:309328',
+        title: 'تحت الأرض',
+        poster: '',
+        type: 'series',
+      );
+      final api = MitvApi(
+        useEdge: false,
+        client: MockClient(
+          (request) async => http.Response(
+            jsonEncode({
+              'status': 'accepted',
+              'data': {
+                'state': 'ready',
+                'result': {
+                  'servers': [
+                    {
+                      'url': 'https://cdn.example/bad.mp4',
+                      'provider': 'shahid4u',
+                      'headers': {'Referer': 'https://source.example/'},
+                      'expires_at': DateTime.now()
+                          .add(const Duration(minutes: 5))
+                          .toIso8601String(),
+                    },
+                    {
+                      'url': 'https://cdn.example/good.mp4',
+                      'provider': 'shahid4u',
+                      'headers': {'Referer': 'https://source.example/'},
+                      'expires_at': DateTime.now()
+                          .add(const Duration(minutes: 5))
+                          .toIso8601String(),
+                    },
+                  ],
+                },
+              },
+            }),
+            202,
+          ),
+        ),
+      );
+      final engines = <FakeEngine>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            api: api,
+            store: store,
+            item: item,
+            title: item.title,
+            sourceRef: 'tmdb:tv:309328:s2:e1',
+            playerFactory: (uri, type, headers, software) {
+              final engine = FakeEngine(
+                uri,
+                mediaType: type,
+                headers: headers,
+                software: software,
+                fail: uri.path.endsWith('/bad.mp4'),
+              );
+              engines.add(engine);
+              return engine;
+            },
+          ),
+        ),
+      );
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(engines.last.uri.path, '/good.mp4');
+      expect(engines.last.headers['Referer'], 'https://source.example/');
+      expect(engines.last.value.isPlaying, true);
+      expect(engines.last.seeks.every((p) => p == Duration.zero), true);
+      expect(find.byIcon(Icons.high_quality), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      api.close();
+    },
+  );
 }

@@ -1,0 +1,13 @@
+# Najd 1.1.6 playback repair
+
+The installed 1.1.5 client could display “تعذر استمرار التشغيل بالمشغل الأصلي” after an upstream playback error. A canonical TMDB retry omitted the refresh flag, the server reused both ready and persistent discovery cache entries, and an unstarted source could not try a second source without an already proven common timeline. The source search path also omitted a provider's separate server extractor when detail pages returned no direct media.
+
+The client now requests an explicit refresh. The bounded discovery queue bypasses completed/persistent cache on refresh while deduplicating an in-flight request. Discovery invokes the actual server extractor when necessary. The existing player engine, controls and branding remain in place. An unstarted video can try another actual source from zero; saved progress still cannot silently cross an unknown cut. Existing timeline and history regressions remain required.
+
+A verified work catalog containing an observed, contiguous absolute episode index starting at 1 and spanning a canonical TMDB season boundary can be mapped using the actual canonical season counts. Source season/episode, canonical season/episode, offset and mapping basis remain separate in job/media evidence. Missing prefixes, gaps, mixed seasons, unknown counts, specials and out-of-range values are not guessed. For the 16+4 canonical example, source 17–20 map to S2E1–4; the test does not manufacture a live source link for 20.
+
+Every new harvested or audited media candidate requires a bounded, guarded GET container-prefix check in addition to HEAD. Binary bytes retain their original encoding, remain outside text/HTML diagnostic snapshots and are never passed to Gemini. Ignored HTTP Range responses are cancelled at the requested prefix bound. HTTPS, redirect/DNS/private-address checks, timeouts, concurrency and body limits remain active.
+
+Live investigation on 2026-10-28: the actual existing scrapers indexed 60 episode references across 7 verified catalogs. A fresh pass obtained container-verified media for 19 canonical episodes: Alooy S1E1–16 and Shahid4u S2E1–3, and uploaded those expiring links into the private existing Supabase cache. Other sources remain explicitly unavailable or unverified. No current source for S2E4/source episode20 was observed. This is not physical-device playback certification. A partial sparse MP4 metadata experiment is not treated as proof of full decoding or runtime correctness.
+
+Client retry fixes require the 1.1.6 installer; installed 1.1.5 clients already receive server-side source fixes and refreshed shared cache. Platform package availability is determined by the source-bound release workflow, not by these notes.

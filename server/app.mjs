@@ -533,8 +533,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     load: async key => discoveryStore?.get('audited-v2:' + key) || null,
     persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v2:' + key,result,expiresAt),
     maxConcurrent: 3, maxQueued: 40, ttlMs: 60_000,
-    discover: async ({ ref, season, episode }, publish) => {
-      const stored=await readCachedPlayback(harvest,{ref,season:season||1,episode:episode||1});
+    discover: async ({ ref, season, episode, refresh }, publish) => {
+      const stored=refresh?null:await readCachedPlayback(harvest,{ref,season:season||1,episode:episode||1});
       if(stored)return stored;
       // The canonical TMDB identity is authoritative, never caller-supplied title/year.
       const metadata=(await harvest.cachedWork(ref) || await discoveryMetadata.details(ref)).data;
@@ -544,7 +544,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if(!episodes.some(row=>Number(row.episode_number)===Number(episode || 1)))throw Error('EPISODE_NOT_FOUND');
       }
       const expected={title:metadata.title,aliases:[metadata.original_title,...(metadata.aliases||[])],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};
-      const cachedMedia=await harvest.media(ref,{season:series?season||1:0,episode:series?episode||1:0});
+      const cachedMedia=refresh?null:await harvest.media(ref,{season:series?season||1:0,episode:series?episode||1:0});
       if(cachedMedia?.length){
         // Cache stores evidence, not a permanent trust decision: re-probe and audit before release.
         const reviewed=await discoveryAudit.review(cachedMedia,expected);
@@ -552,7 +552,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       }
       const approved=[],seen=new Set();let rejected=0;
       await activateAllScrapersForContent(metadata.title, season || 1, episode || 1, {
-        ref,year:metadata.year,type:series?'series':'movie',original_language:metadata.original_language,genres:metadata.genres,titleVariants:[metadata.original_title,...(metadata.aliases||[])],
+        ref,year:metadata.year,type:series?'series':'movie',canonicalSeasons:metadata.seasons||[],original_language:metadata.original_language,genres:metadata.genres,titleVariants:[metadata.original_title,...(metadata.aliases||[])],
         onSources:async candidates=>{
           const reviewed=await discoveryAudit.review(candidates,expected);
           rejected+=reviewed.quarantine.length;
@@ -674,7 +674,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (req.method !== 'POST') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         const input = { ref:url.searchParams.get('ref') || '', title:url.searchParams.get('title') || '',
           year:url.searchParams.get('year') || '', season:url.searchParams.get('season') || 0,
-          episode:url.searchParams.get('episode') || 0 };
+          episode:url.searchParams.get('episode') || 0, refresh:url.searchParams.get('refresh') === '1' };
         if (input.title.length < 2 || input.title.length > 250 || !/^tmdb:(movie|tv):[0-9]+$/.test(input.ref) || !/^[0-9]{0,4}$/.test(input.year) || !/^[0-9]{1,3}$/.test(String(input.season)) || !/^[0-9]{1,6}$/.test(String(input.episode)) || Number(input.season) > 100 || Number(input.episode) > 100000) return sendJson(req,res,400,{status:'error',message:'INVALID_DISCOVERY_INPUT'});
         try { return sendJson(req,res,202,{status:'accepted',data:discovery.enqueue(input)}); }
         catch { return sendJson(req,res,400,{status:'error',message:'INVALID_REFERENCE'}); }
