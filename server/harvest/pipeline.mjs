@@ -83,7 +83,10 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   const entry=byId.get(input.provider);if(!entry)throw Error('HARVEST_PROVIDER_UNAVAILABLE');
   const ref=input.content_ref,source=input.payload.source_ref;
   const current=await store.getEpisode(ref,entry.meta.id,source);
-  if(current?.state==='playable'&&Date.parse(current.media_expires_at)>now()+2*60000)return {refreshAt:Math.max(now()+60000,Date.parse(current.media_expires_at)-5*60000),progress:{outcome:'valid_cached_media'}};
+  const mapping=input.payload.observed_episode;
+  const cacheIdentityMatches=current?.media?.some(media=>Number(media.observed_identity?.season)===Number(input.season_number)&&Number(media.observed_identity?.episode)===Number(input.episode_number)&&
+   (mapping?.numbering_basis!=='contiguous-source-canonical-season-counts'||(media.source_identity?.numbering_basis===mapping.numbering_basis&&Number(media.source_identity.source_episode)===Number(mapping.source_episode)&&Number(media.source_identity.numbering_offset)===Number(mapping.numbering_offset))));
+  if(current?.state==='playable'&&cacheIdentityMatches&&Date.parse(current.media_expires_at)>now()+2*60000)return {refreshAt:Math.max(now()+60000,Date.parse(current.media_expires_at)-5*60000),progress:{outcome:'valid_cached_media'}};
   await store.setEpisode(ref,entry.meta.id,source,{state:'resolving'});
   try{
   const d=await entry.module.scrapeDetails(source,network);

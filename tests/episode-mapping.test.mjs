@@ -25,3 +25,11 @@ test('live discovery resolves the observed absolute episode through the provider
  const result=await discover.discover('تحت الأرض',2,1,{ref:'tmdb:tv:309328',year:2026,type:'series',canonicalSeasons:metadata.seasons});
  assert.equal(result.length,1);assert.equal(calls.at(-1),'observed:16');assert.equal(result[0].observed_identity.season,2);assert.equal(result[0].observed_identity.episode,1);
 });
+test('a formerly cached absolute episode is re-resolved when its canonical season mapping changes',async()=>{
+ const{createHarvestPipeline}=await import('../server/harvest/pipeline.mjs');let reads=0;const patches=[];
+ const store={getEpisode:async()=>({state:'playable',media_expires_at:new Date(Date.now()+600000).toISOString(),media:[{observed_identity:{season:1,episode:17}}]}),getWork:async()=>({metadata:{title:'تحت الأرض',year:2026}}),setEpisode:async(_ref,_provider,_source,patch)=>patches.push(patch),request:async()=>{},event:async()=>{}};
+ const entries=[{meta:{id:'fixture',domains:['https://source.example'],capabilities:{search:true,details:true}},module:{scrapeDetails:async()=>{reads++;return{title:'تحت الأرض الحلقة 17',year:2026,season_number:1,episode_number:17,media_sources:[{kind:'direct',url:'https://cdn.example/17.mp4'}]}}}}];
+ const pipeline=createHarvestPipeline({store,metadata:{},entries,probe:async()=>({playable:true,container_verified:true,webPlayable:false})});
+ const mapped=mapSourceEpisodes(rows,metadata)[16];await pipeline.episode({content_ref:'tmdb:tv:309328',provider:'fixture',season_number:2,episode_number:1,payload:{source_ref:'fixture:17',observed_episode:mapped,observed_identity:{title:'تحت الأرض',year:2026}}});
+ assert.equal(reads,1);assert.equal(patches.at(-1).state,'playable');assert.equal(patches.at(-1).media[0].observed_identity.season,2);assert.equal(patches.at(-1).media[0].observed_identity.episode,1);assert.equal(patches.at(-1).media[0].source_identity.source_episode,17);
+});
