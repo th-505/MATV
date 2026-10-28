@@ -13,3 +13,11 @@ Opening a work card now queues a bounded, deduplicated harvest and returns metad
 The Arabic administration page separates actual aggregate totals from the last100 sampled rows, source indexing from media probing, and client player errors from source/network errors. `/api/v1/admin/report` requires the admin bearer key and exports an allowlisted support report. Credentials, cookies, raw pages, signed media links and personal identifiers are excluded. The actual client version/build and safe playback error codes are recorded without raw native error strings or media URLs. Reports remain for the owner to download and share; they are not automatically sent to AI or email.
 
 The client update is required for source-edition selection, bounded status feedback and device error reporting. The server and database changes also repair background source favorites for existing installations. Release artifacts and the authenticated Web bundle must pass the common source verification workflow before delivery.
+
+## Deployment verification (2026-10-28)
+
+The server source commit `c57e321d9a9950c30ce77831438179b29fb766ae` became live on Render with Node24.22.1 and OpenSSL3.5.9. The source-favorites migration was applied as `20261028225528`. All12 saved favorite rows resolve to11 distinct supported works, with11 work jobs and0 missing jobs. The service role can read aggregate counts; anonymous/authenticated roles cannot execute that private counts RPC or select discovery jobs. The support report returns401 without the admin key and200 with it, including the real server commit.
+
+Production independently indexed the 3isk original as55+42 episodes and Pusu as93 links. A fresh production request for the 3cktv original/Pusu reached the work queue but returned `ACCESS_BLOCKED`; the same guarded parser independently returned97 episodes from the development environment. Local playlist evidence therefore does not establish Render playback availability. No successful production playback is claimed for either provider based only on their catalog rows.
+
+Validation:124 Node tests passed;315 Flutter tests passed with7 explicit skips; Flutter analysis reported no issues. Native and internal-Web packages are verified separately by the unified1.1.7 release workflow.
