@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +10,7 @@ import 'library_store.dart';
 import 'models.dart';
 import 'player_page.dart';
 import 'route_focus_restorer.dart';
+import 'source_editions_panel.dart';
 
 String buildDownloadResumeKey(CatalogItem item, String key) {
   final catalogId = item.id.trim();
@@ -37,6 +40,7 @@ class DetailsPage extends StatefulWidget {
 
 class _DetailsPageState extends State<DetailsPage> {
   late Future<TitleDetails> future;
+  bool _cardHarvestError = false;
   int selectedSeason = 1;
   late final DownloadService _downloads;
   late final bool _ownsDownloads;
@@ -60,7 +64,8 @@ class _DetailsPageState extends State<DetailsPage> {
     _downloads = widget.downloads ?? DownloadService();
     _ownsDownloads = widget.downloads == null;
     widget.api.rememberIdentity(widget.item);
-    future = widget.api.details(widget.item.ref);
+    if (widget.api.canRequestHarvest(widget.item.ref)) unawaited(_queueCard());
+    future = _loadDetails(widget.item.ref);
   }
 
   @override
@@ -79,7 +84,117 @@ class _DetailsPageState extends State<DetailsPage> {
     super.dispose();
   }
 
-  void retry() => setState(() => future = widget.api.details(widget.item.ref));
+  Future<void> _queueCard({bool retry = false}) async {
+    try {
+      await widget.api.requestHarvest(
+        widget.item.ref,
+        reason: retry ? 'retry' : 'card_open',
+      );
+      if (mounted && _cardHarvestError) {
+        setState(() => _cardHarvestError = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _cardHarvestError = true);
+    }
+  }
+
+  Future<TitleDetails> _loadDetails(String ref) async {
+    final details = await widget.api.details(ref);
+    if (mounted &&
+        details.sourceWorkRef.isNotEmpty &&
+        details.availableSeasons.isNotEmpty) {
+      selectedSeason =
+          details.season ??
+          (details.availableSeasons.contains(selectedSeason)
+              ? selectedSeason
+              : details.availableSeasons.first);
+    }
+    return details;
+  }
+
+  void retry() => setState(() => future = _loadDetails(widget.item.ref));
+
+  Future<void> _toggleFavorite() async {
+    await widget.store.toggleFavorite(widget.item);
+    if (!widget.store.isFavorite(widget.item.ref)) return;
+    try {
+      await widget.api.requestHarvest(widget.item.ref, reason: 'favorite');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حُفظت المفضلة وأُرسل طلب فحص المصادر.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'حُفظت المفضلة محليًا، لكن لم يصل تأكيد طلب القشط. أعد فحص المصادر عند عودة الاتصال.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openSourceEdition(Map<String, dynamic> edition) async {
+    final ref = '${edition['ref'] ?? ''}';
+    if (!RegExp(r'^source:[a-z0-9][a-z0-9_-]{1,29}:[a-f0-9]{24}$')
+        .hasMatch(ref)) {
+      return;
+    }
+    final item = CatalogItem(
+      id: ref,
+      ref: ref,
+      title: '${edition['title'] ?? widget.item.title}',
+      poster: widget.item.poster,
+      type: widget.item.type,
+      source: '${edition['provider'] ?? ''}',
+    );
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) =>
+            DetailsPage(api: widget.api, store: widget.store, item: item),
+      ),
+    );
+  }
+
+  bool _loadingEpisodePage = false;
+  Future<void> _moreEpisodes() async {
+    if (_loadingEpisodePage) return;
+    setState(() => _loadingEpisodePage = true);
+    try {
+      final current = await future;
+      if (current.episodeNextOffset == null) return;
+      final next = await widget.api.moreSourceEpisodes(
+        current.sourceWorkRef.isNotEmpty
+            ? current.sourceWorkRef
+            : widget.item.ref,
+        season: selectedSeason,
+        offset: current.episodeNextOffset!,
+      );
+      if (!mounted) return;
+      final byRef = {
+        for (final ep in [...current.episodes, ...next.episodes]) ep.ref: ep,
+      };
+      final merged = current.copyWith(
+        episodes: byRef.values.toList(),
+        episodeNextOffset: next.episodeNextOffset,
+        clearEpisodePagination: next.episodeNextOffset == null,
+      );
+      setState(() => future = Future.value(merged));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تعذر تحميل بقية الفهرس. الحلقات التي وصلت محفوظة؛ أعد المحاولة.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingEpisodePage = false);
+    }
+  }
 
   FocusNode _episodeFocus(EpisodeItem episode) {
     final key = '${episode.id}:${episode.number}';
@@ -382,7 +497,7 @@ class _DetailsPageState extends State<DetailsPage> {
               tooltip: widget.store.isFavorite(widget.item.ref)
                   ? 'إزالة من المفضلة'
                   : 'إضافة إلى المفضلة',
-              onPressed: () => widget.store.toggleFavorite(widget.item),
+              onPressed: _toggleFavorite,
               icon: Icon(
                 widget.store.isFavorite(widget.item.ref)
                     ? Icons.favorite
@@ -424,14 +539,34 @@ class _DetailsPageState extends State<DetailsPage> {
                 child: FilledButton.icon(
                   onPressed: retry,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('تعذر تحميل التفاصيل، أعد المحاولة'),
+                  label: Text(
+                    '${snapshot.error}'.contains('SOURCE_INDEX_STILL_PENDING')
+                        ? 'فهرسة المصدر لم تكتمل بعد؛ تحديث الحالة'
+                        : 'تعذر تحميل التفاصيل، أعد المحاولة',
+                  ),
                 ),
               );
             }
             final details = snapshot.data!;
+            final sourceCard =
+                details.sourceIndexAuthoritative &&
+                widget.item.ref.startsWith('tmdb:');
             return ListView(
               padding: EdgeInsets.all(isTvTarget ? 28 : 16),
               children: [
+                if (_cardHarvestError && !sourceCard)
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('لم يصل تأكيد بدء فحص المصادر.'),
+                    subtitle: const Text(
+                      'بيانات العمل متاحة؛ أعد إرسال طلب الفحص عند عودة الاتصال.',
+                    ),
+                    trailing: IconButton(
+                      tooltip: 'إعادة إرسال طلب الفحص',
+                      onPressed: () => unawaited(_queueCard(retry: true)),
+                      icon: const Icon(Icons.refresh),
+                    ),
+                  ),
                 if (details.poster.isNotEmpty)
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 420),
@@ -471,8 +606,27 @@ class _DetailsPageState extends State<DetailsPage> {
                       ],
                     ),
                   ),
-                if (details.availableSeasons.length > 1 &&
-                    widget.item.ref.startsWith('tmdb:tv:'))
+                if (sourceCard)
+                  SourceEditionsPanel(
+                    api: widget.api,
+                    workRef: widget.item.ref,
+                    onOpen: _openSourceEdition,
+                  ),
+                if (details.sourceWorkRef.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      '${details.sourceProvider} • ${details.sourceEdition == 'dubbed'
+                          ? 'مدبلج — نسخة مستقلة'
+                          : details.sourceEdition == 'subtitled'
+                          ? 'مترجم'
+                          : 'نسخة المصدر'} — الترقيم حسب هذا المصدر',
+                    ),
+                  ),
+                if (!sourceCard &&
+                    details.availableSeasons.length > 1 &&
+                    (widget.item.ref.startsWith('tmdb:tv:') ||
+                        details.sourceWorkRef.isNotEmpty))
                   DropdownButton<int>(
                     key: const Key('title-season-selector'),
                     value: details.availableSeasons.contains(selectedSeason)
@@ -489,13 +643,13 @@ class _DetailsPageState extends State<DetailsPage> {
                       if (value == null) return;
                       setState(() {
                         selectedSeason = value;
-                        future = widget.api.details(
-                          '${widget.item.ref}:s$value:e1',
+                        future = _loadDetails(
+                          '${details.sourceWorkRef.isNotEmpty ? details.sourceWorkRef : widget.item.ref}:s$value:e1',
                         );
                       });
                     },
                   ),
-                if (details.hasEpisodes) ...[
+                if (!sourceCard && details.hasEpisodes) ...[
                   Text(
                     'الحلقات (${details.episodes.length})',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -541,8 +695,21 @@ class _DetailsPageState extends State<DetailsPage> {
                       onCancelDownload: () => _cancelDownload(key),
                     );
                   }),
-                ] else if (details.canPlay ||
-                    widget.item.ref.startsWith('tmdb:movie:')) ...[
+                  if (details.episodeNextOffset != null)
+                    TextButton.icon(
+                      onPressed: _loadingEpisodePage ? null : _moreEpisodes,
+                      icon: const Icon(Icons.expand_more),
+                      label: Text(
+                        _loadingEpisodePage
+                            ? 'جارٍ تحميل بقية الفهرس…'
+                            : 'تحميل المزيد من حلقات المصدر',
+                      ),
+                    ),
+                ] else if (!sourceCard &&
+                    (details.canPlay ||
+                        widget.item.ref.startsWith('tmdb:movie:') ||
+                        widget.item.ref.startsWith('source:') &&
+                            widget.item.type == 'movie')) ...[
                   Card(
                     child: ListTile(
                       focusNode: _directPlayFocus,
@@ -580,7 +747,7 @@ class _DetailsPageState extends State<DetailsPage> {
                               ),
                       ),
                     ),
-                ] else if (details.playbackUnavailable)
+                ] else if (!sourceCard && details.playbackUnavailable)
                   const ListTile(
                     leading: Icon(Icons.info_outline),
                     title: Text('المشاهدة غير متاحة من هذا المصدر حاليًا'),
@@ -588,7 +755,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       'يمكن إعادة المحاولة لاحقًا دون فتح روابط خارجية.',
                     ),
                   )
-                else
+                else if (!sourceCard)
                   const ListTile(
                     title: Text('لا توجد حلقات أو وسائط متاحة حاليًا'),
                   ),

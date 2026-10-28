@@ -4,6 +4,9 @@ import {createGithubIdentityVerifier} from './maintenance/github-identity.mjs';
 import {createInternalWeb} from './internal-web.mjs';
 import {createHarvestService} from './harvest/service.mjs';
 import {masterDashboardHtml,masterDashboardCss,masterDashboardJs} from './diagnostics/master-dashboard.mjs';
+import {buildSupportReport} from './diagnostics/support-report.mjs';
+import {clientDiagnosticContext,parsePlaybackFeedback} from './diagnostics/client-feedback.mjs';
+import {workReference} from './harvest/work-reference.mjs';
 import { allowedOrigin } from './security-boundary.mjs';
 import { createSearchTraces, diagnosticsAuthorized } from './diagnostics/search-trace.mjs';
 import { diagnosticsHtml, diagnosticsJs } from './diagnostics/dashboard.mjs';
@@ -37,7 +40,7 @@ import { decodeAlooyRef } from './providers/alooy.mjs';
 import { createCatalogMetadataCache } from './catalog-metadata-cache.mjs';
 import { createSupabaseCatalogStore, createSupabaseDiscoveryStore } from './provider-store.mjs';
 import { CatalogCategories } from "./catalog-categories.mjs";
-import { buildRuntimeEnvelope, normalizeCatalogItem } from "./content-runtime.mjs";
+import { buildRuntimeEnvelope, normalizeCatalogItem,PRODUCT_VERSION } from "./content-runtime.mjs";
 import { createRateLimiter, getClientAddress, maybeCompress } from "./hardening.mjs";
 import { scrapeRealCategory, scrapeRealSearch, scrapePinnedSource, scrapeRealDetails, activateAllScrapersForContent } from "./scrapers/index.mjs";
 import { unwrapEmbedToDirectStreams } from "./scrapers/stream-unwrapper.mjs";
@@ -501,7 +504,7 @@ export function assertCatalogReference(ref) {
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   traceStore=createSearchTraces({logger:data=>log(data.event,data)}), searchPinned=scrapePinnedSource,
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now,
-  catalogLoader=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
+  catalogLoader=null, harvestService=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
       if(provider==='laroza') return larozaRuntime.metadata(ref);
@@ -528,7 +531,8 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       await discoveryStore.put('audit-v1:' + record.result.id, record, record.result.expiresAt);
     },
   }) });
-  const harvest=createHarvestService({metadata:discoveryMetadata,logger:data=>log(data.event,data)});
+  const harvest=harvestService||createHarvestService({metadata:discoveryMetadata,logger:data=>log(data.event,data)});
+  const feedbackSeen=new Map();
   const discovery = createDiscoveryCoordinator({
     load: async key => discoveryStore?.get('audited-v2:' + key) || null,
     persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v2:' + key,result,expiresAt),
@@ -609,10 +613,46 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         res.setHeader('Content-Type',url.pathname.endsWith('.css')?'text/css; charset=utf-8':url.pathname.endsWith('.js')?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
         res.writeHead(200);return res.end(url.pathname.endsWith('.css')?masterDashboardCss:url.pathname.endsWith('.js')?masterDashboardJs:masterDashboardHtml);
       }
-      if(url.pathname==='/api/v1/admin/summary'){
+      if(['/api/v1/admin/summary','/api/v1/admin/report'].includes(url.pathname)){
         if(!diagnosticsAuthorized(req))return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
         if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
-        return sendJson(req,res,200,{server:{node:process.version,openssl:process.versions.openssl,uptime_seconds:Math.floor(process.uptime()),memory:process.memoryUsage()},harvest:await harvest.summary()});
+        const commit=process.env.RENDER_GIT_COMMIT||process.env.MITV_SOURCE_COMMIT||null;
+        const snapshot={server:{version:PRODUCT_VERSION,source_commit:/^[a-f0-9]{40}$/.test(commit||'')?commit:null,node:process.version,openssl:process.versions.openssl,uptime_seconds:Math.floor(process.uptime()),memory:process.memoryUsage()},harvest:await harvest.summary(),traces:traceStore.list()};
+        res.setHeader('Cache-Control','no-store');
+        if(url.pathname.endsWith('/report')){res.setHeader('Content-Disposition','attachment; filename="najd-support-report.json"');return sendJson(req,res,200,buildSupportReport(snapshot,{version:PRODUCT_VERSION,commit}));}
+        return sendJson(req,res,200,snapshot);
+      }
+      if(url.pathname==='/api/v1/diagnostics/playback'){
+        if(req.method!=='POST')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        let body='';for await(const chunk of req){body+=chunk.toString();if(Buffer.byteLength(body)>4096)return sendJson(req,res,413,{message:'BODY_TOO_LARGE'});}
+        try{
+          const row=parsePlaybackFeedback(JSON.parse(body)),key=client+'|'+row.work_ref+'|'+row.reason;
+          if(Date.now()-(feedbackSeen.get(key)||0)<30000)return sendJson(req,res,202,{status:'accepted',duplicate:true});
+          feedbackSeen.set(key,Date.now());if(feedbackSeen.size>512)feedbackSeen.delete(feedbackSeen.keys().next().value);
+          const trace=traceStore.start({provider:row.provider,query:row.work_ref,work_ref:row.work_ref,...row.details});
+          trace.events.push({stage:'playback_failed',reason:row.reason,phase:row.details.phase,at_ms:0});trace.state='error';trace.reason=row.reason;trace.duration_ms=0;
+          await Promise.resolve(harvest.recordClientFeedback?.(row)).catch(()=>{});return sendJson(req,res,202,{status:'accepted',trace_id:trace.id});
+        }catch{return sendJson(req,res,400,{message:'INVALID_PLAYBACK_FEEDBACK'});}
+      }
+      if(['/api/v1/harvest/request','/api/v1/harvest/status','/api/v1/harvest/work','/api/v1/harvest/playback'].includes(url.pathname)){
+        const requesting=url.pathname.endsWith('/request');if(req.method!==(requesting?'POST':'GET'))return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        try{
+          const ref=url.searchParams.get('ref')||'';
+          if(requesting){
+            const reason=url.searchParams.get('reason')||'card_open';if(!['card_open','favorite','retry'].includes(reason))throw Error('INVALID_HARVEST_REASON');
+            const context=clientDiagnosticContext(Object.fromEntries(url.searchParams));
+            const trace=traceStore.start({provider:'harvest',query:workReference(ref),work_ref:workReference(ref),...context});
+            trace.events.push({stage:'server_received',at_ms:0});
+            try{const data=await harvest.requestWork(ref,{reason});trace.events.push({stage:'work',at_ms:Date.now()-trace.started_ms});trace.state='success';res.setHeader('X-Trace-Id',trace.id);return sendJson(req,res,202,{status:'accepted',data,trace_id:trace.id});}
+            catch(error){trace.state='error';trace.reason=/^[A-Z][A-Z0-9_]{2,79}$/.test(error.message||'')?error.message:'HARVEST_REQUEST_FAILED';trace.events.push({stage:'search_failed',at_ms:Date.now()-trace.started_ms,reason:trace.reason});throw error;}
+          }
+          if(url.pathname.endsWith('/status'))return sendJson(req,res,200,{status:'success',data:await harvest.workStatus(ref)});
+          const season=Number(url.searchParams.get('season')||1),episode=Number(url.searchParams.get('episode')||1),offset=Number(url.searchParams.get('offset')||0);
+          if(!Number.isSafeInteger(season)||season<0||season>100||!Number.isSafeInteger(episode)||episode<0||episode>100000||!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error('INVALID_HARVEST_EPISODE');
+          if(url.pathname.endsWith('/work'))return sendJson(req,res,200,{status:'success',data:await harvest.sourceDetails(ref,{season,offset})});
+          const data=await harvest.sourcePlayback(ref,{season,episode,platform:url.searchParams.get('platform')==='web'?'web':'native',refresh:url.searchParams.get('refresh')==='1'});
+          return sendJson(req,res,['queued','running'].includes(data.state)?202:200,{status:['queued','running'].includes(data.state)?'accepted':'success',data});
+        }catch(error){const reason=/^[A-Z][A-Z0-9_]{2,79}$/.test(error.message||'')?error.message:'HARVEST_REQUEST_FAILED';return sendJson(req,res,reason==='HARVEST_NOT_CONFIGURED'?503:400,{status:'error',message:reason});}
       }
       if(url.pathname==='/api/v1/harvest/wake'){
         if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});

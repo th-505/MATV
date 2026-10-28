@@ -68,11 +68,7 @@ class _MitvAppState extends State<MitvApp> {
   @override
   void dispose() {
     _pointer.dispose();
-    unawaited(
-      _cloudFuture.then((sync) async {
-        await sync?.close();
-      }),
-    );
+    unawaited(CloudLibrarySync.closeDefault());
     super.dispose();
   }
 

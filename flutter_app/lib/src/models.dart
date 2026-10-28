@@ -337,12 +337,22 @@ class TitleDetails {
     this.attachedSubtitles = const [],
     this.sourceRefs = const {},
     this.availableSeasons = const [],
+    this.sourceIndexAuthoritative = false,
+    this.sourceEdition = 'unknown',
+    this.sourceProvider = '',
+    this.sourceWorkRef = '',
+    this.episodeNextOffset,
   });
 
   final String title;
   final String poster;
   final List<EpisodeItem> episodes;
   final List<int> availableSeasons;
+  final bool sourceIndexAuthoritative;
+  final String sourceEdition;
+  final String sourceProvider;
+  final String sourceWorkRef;
+  final int? episodeNextOffset;
   final String mediaPath;
   final String mediaType;
   final bool playbackUnavailable;
@@ -374,6 +384,12 @@ class TitleDetails {
     String? poster,
     List<EpisodeItem>? episodes,
     List<int>? availableSeasons,
+    bool? sourceIndexAuthoritative,
+    String? sourceEdition,
+    String? sourceProvider,
+    String? sourceWorkRef,
+    int? episodeNextOffset,
+    bool clearEpisodePagination = false,
     String? mediaPath,
     String? mediaType,
     bool? playbackUnavailable,
@@ -402,6 +418,14 @@ class TitleDetails {
   }) => TitleDetails(
     title: title ?? this.title,
     poster: poster ?? this.poster,
+    sourceIndexAuthoritative:
+        sourceIndexAuthoritative ?? this.sourceIndexAuthoritative,
+    sourceEdition: sourceEdition ?? this.sourceEdition,
+    sourceProvider: sourceProvider ?? this.sourceProvider,
+    sourceWorkRef: sourceWorkRef ?? this.sourceWorkRef,
+    episodeNextOffset: clearEpisodePagination
+        ? null
+        : episodeNextOffset ?? this.episodeNextOffset,
     episodes: List.unmodifiable(episodes ?? this.episodes),
     availableSeasons: List.unmodifiable(
       availableSeasons ?? this.availableSeasons,
@@ -450,6 +474,19 @@ class TitleDetails {
               .toList(growable: false)
         : const <EpisodeItem>[];
     return TitleDetails(
+      sourceIndexAuthoritative: json['source_index_authoritative'] == true,
+      sourceEdition: '${json['source_edition'] ?? 'unknown'}',
+      sourceProvider: '${json['provider'] ?? ''}',
+      sourceWorkRef:
+          RegExp(r'^source:[a-z0-9][a-z0-9_-]{1,29}:[a-f0-9]{24}$')
+              .hasMatch('${json['ref'] ?? ''}')
+          ? '${json['ref']}'
+          : '',
+      episodeNextOffset:
+          json['episode_pagination'] is Map &&
+              json['episode_pagination']['has_more'] == true
+          ? int.tryParse('${json['episode_pagination']['next_offset']}')
+          : null,
       availableSeasons: (json['available_seasons'] is List
           ? (json['available_seasons'] as List)
                 .whereType<int>()

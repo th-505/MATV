@@ -5,9 +5,9 @@ import { PRODUCT_VERSION } from "../server/content-runtime.mjs";
 const pubspec = await readFile(new URL("../flutter_app/pubspec.yaml", import.meta.url), "utf8");
 const pubspecVersion = pubspec.match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+(\d+)\s*$/m);
 assert.equal(pubspecVersion[1], PRODUCT_VERSION, "Runtime PRODUCT_VERSION must match Flutter product version");
-assert.equal(PRODUCT_VERSION, "1.1.6", "Runtime PRODUCT_VERSION must be 1.1.6");
-assert.equal(pubspecVersion[1], "1.1.6", "Flutter pubspec version must be 1.1.6");
-assert.equal(pubspecVersion[2], "106", "Flutter pubspec build must be 106");
+assert.equal(PRODUCT_VERSION, "1.1.7", "Runtime PRODUCT_VERSION must be 1.1.7");
+assert.equal(pubspecVersion[1], "1.1.7", "Flutter pubspec version must be 1.1.7");
+assert.equal(pubspecVersion[2], "107", "Flutter pubspec build must be 107");
 
 const smoke = await readFile(new URL("./remote_runtime_v1_smoke.mjs", import.meta.url), "utf8");
 assert.match(smoke, /import\s*\{\s*PRODUCT_VERSION\s*\}/, "remote Runtime smoke must consume PRODUCT_VERSION from source");
@@ -20,3 +20,7 @@ assert.doesNotMatch(matchProduction, /version:\s*["']\d+\.\d+\.\d+["']/, "produc
 assert.match(matchProduction, /cached:\s*false[\s\S]*stale:\s*false/, "production Match Runtime must expose explicit cache/stale state");
 
 console.log("runtime version contract: ok", { version: PRODUCT_VERSION, build: pubspecVersion[2] });
+
+const clientVersion = await readFile(new URL('../flutter_app/lib/src/product_version.dart', import.meta.url), 'utf8');
+assert.equal(clientVersion.match(/productVersion = '([^']+)'/)[1], PRODUCT_VERSION);
+assert.equal(clientVersion.match(/productBuild = (\d+)/)[1], pubspecVersion[2]);

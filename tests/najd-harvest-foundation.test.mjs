@@ -75,7 +75,7 @@ test('persistent cache excludes expired or unverified media and dashboard tolera
  assert.equal((await service.media('tmdb:movie:1')).length,1);
  assert.equal(await service.media('tmdb:movie:1',{platform:'web'}),null);
  assert.equal(await service.media('other:1'),null);
- const summary=await service.summary();assert.equal(summary.configured,true);assert.deepEqual(summary.unavailable,['jobs','works','sources','events']);assert.deepEqual(summary.jobs,[]);
+ const summary=await service.summary();assert.equal(summary.configured,true);assert.deepEqual(summary.unavailable,['jobs','works','sources','events','totals']);assert.deepEqual(summary.jobs,[]);
 });
 
 

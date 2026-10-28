@@ -2,6 +2,7 @@ import { contentIdentity, explicitEpisode, explicitSeason } from '../../../share
 // server/scrapers/shared/normalize.mjs
 // Unified normalizers for Arabic/English numbers, episodes, seasons, catalog items, details, and servers
 import { resolveSafeUrl } from './http.mjs';
+import {decideSourceCatalog,observedRuntimeMinutes,compactCatalogDecision} from './catalog-decision.mjs';
 
 const ARABIC_INDIC_START = 0x0660;
 const EASTERN_ARABIC_START = 0x06f0;
@@ -182,7 +183,7 @@ export function normalizeDetailsResult(raw = {}, context = {}) {
     raw.type ||
     (episodes.length > 0 ? inferContentType(title, sourceUrl, 'series') : inferContentType(title, sourceUrl, 'movie'));
 
-  return {
+  const result={
     id: raw.id || (providerId && sourceUrl ? `${providerId}:${sourceUrl}` : sourceUrl),
     ref: raw.ref || (providerId && sourceUrl ? `${providerId}:${sourceUrl}` : sourceUrl),
     title,
@@ -205,6 +206,10 @@ export function normalizeDetailsResult(raw = {}, context = {}) {
     sourceUrl,
     ...identity
   };
+  result.runtime_minutes=observedRuntimeMinutes(raw.runtime_minutes??raw.duration);
+  result.catalog_decision=compactCatalogDecision(decideSourceCatalog(result));
+  result.source_edition=result.catalog_decision.edition;
+  return result;
 }
 
 export function normalizeServerList(rawServers = [], context = {}) {

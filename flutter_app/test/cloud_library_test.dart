@@ -79,6 +79,43 @@ void main() {
     sync = null;
     store.dispose();
   });
+  test(
+    'a failed cloud startup retries without losing a saved favorite or owner',
+    () async {
+      await CloudLibrarySync.closeDefault();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('mitv.auth.owner.v1', 'owner-a');
+      await store.toggleFavorite(item);
+      var attempts = 0;
+      final recovered = Completer<CloudLibrarySync>();
+      CloudLibrarySync.startupRetryDelay = const Duration(milliseconds: 10);
+      CloudLibrarySync.defaultStartForTesting = (local) async {
+        attempts++;
+        if (attempts == 1) return null;
+        final value = await CloudLibrarySync.start(
+          local,
+          cloud,
+          preferences: prefs,
+          observeLifecycle: false,
+          syncImmediately: false,
+        );
+        recovered.complete(value);
+        return value;
+      };
+      addTearDown(() async {
+        await CloudLibrarySync.closeDefault();
+        CloudLibrarySync.defaultStartForTesting = null;
+        CloudLibrarySync.startupRetryDelay = const Duration(minutes: 5);
+      });
+      expect(await CloudLibrarySync.startDefault(store), isNull);
+      sync = await recovered.future.timeout(const Duration(seconds: 2));
+      await sync!.syncNow();
+      expect(attempts, 2);
+      expect(store.isFavorite(item.ref), isTrue);
+      expect(cloud.rows.values.single.itemKey, item.ref);
+      expect(prefs.getString('mitv.auth.owner.v1'), 'owner-a');
+    },
+  );
   Future<void> start() async {
     sync = await CloudLibrarySync.start(
       store,

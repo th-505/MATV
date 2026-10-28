@@ -28,8 +28,8 @@
       "code": "3V",
       "mirror_of": null,
       "path": "server/scrapers/sites/3cktv.mjs",
-      "metadata_line": 35,
-      "source_sha256": "fceff2a1dceff317707226e9f55b5969f5c7249dee998705fcabedf3364ba026",
+      "metadata_line": 37,
+      "source_sha256": "2b558173cc210a42a5518509e5627d61c50636377c188f1a3ba55f5085c7a747",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -62,7 +62,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/3isk.mjs",
       "metadata_line": 56,
-      "source_sha256": "c9a672391a349409539038a87c0574db60b0002bb9a85c6f568ead21d08f5422",
+      "source_sha256": "c1ca6a4830f85cec3ec2c3972b759fb5fde7a926128138cd1799363b7c1a8037",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

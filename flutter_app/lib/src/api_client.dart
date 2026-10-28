@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'app_target.dart';
+import 'product_version.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -21,27 +22,37 @@ class MitvApi implements MediaRepository {
   String? lastSearchTrace;
   String lastSearchStage = 'not_started';
   String explorationSourceLabel(String id) => _sourceLabels[id] ?? id;
-  MitvApi({http.Client? client, Uri? baseUri, Uri? edgeUri, bool? useEdge})
-    : _client = client ?? http.Client(),
-      _useEdge = useEdge ?? (edgeUri != null || client == null),
-      _edgeUri =
-          edgeUri ??
-          Uri.parse(
-            const String.fromEnvironment(
-              'MITV_EDGE_BASE',
-              defaultValue:
-                  'https://matv-edge-resolver.dada1000100.workers.dev',
-            ),
-          ),
-      _baseUri =
-          baseUri ??
-          Uri.parse(
-            const String.fromEnvironment(
-              'MITV_API_BASE',
-              defaultValue: 'https://matv.onrender.com',
-            ),
-          );
+  MitvApi({
+    http.Client? client,
+    Uri? baseUri,
+    Uri? edgeUri,
+    bool? useEdge,
+    this.sourcePlaybackTimeout = const Duration(seconds: 90),
+    this.sourceIndexTimeout = const Duration(seconds: 20),
+    this.sourcePollInterval = const Duration(milliseconds: 1500),
+  }) : _client = client ?? http.Client(),
+       _useEdge = useEdge ?? (edgeUri != null || client == null),
+       _edgeUri =
+           edgeUri ??
+           Uri.parse(
+             const String.fromEnvironment(
+               'MITV_EDGE_BASE',
+               defaultValue:
+                   'https://matv-edge-resolver.dada1000100.workers.dev',
+             ),
+           ),
+       _baseUri =
+           baseUri ??
+           Uri.parse(
+             const String.fromEnvironment(
+               'MITV_API_BASE',
+               defaultValue: 'https://matv.onrender.com',
+             ),
+           );
 
+  final Duration sourcePlaybackTimeout;
+  final Duration sourceIndexTimeout;
+  final Duration sourcePollInterval;
   final http.Client _client;
   final Uri _baseUri;
   final Uri _edgeUri;
@@ -70,6 +81,7 @@ class MitvApi implements MediaRepository {
     _pagination.clear();
     _searchCache.clear();
     _metadataWarmAttempts.clear();
+    _harvestCardRequests.clear();
     _edgeStreams.removeWhere((_, expiry) => !expiry.isAfter(DateTime.now()));
     // Keep pending slots until they settle, so clearing cannot increase the
     // prefetch concurrency cap. Their old-generation results are discarded.
@@ -95,11 +107,364 @@ class MitvApi implements MediaRepository {
     }
   }
 
+  static final _sourceWorkPattern = RegExp(
+    r'^(source:[a-z0-9][a-z0-9_-]{1,29}:[a-f0-9]{24})(?::s(\d+):e(\d+))?$',
+  );
+
+  final _harvestCardRequests =
+      <String, ({DateTime at, Future<Map<String, dynamic>> result})>{};
+  static const _sourceCatalogProviders = {
+    'mycima',
+    'akwam',
+    'akoam',
+    'wecima',
+    'cimanow',
+    'shahid4u',
+    'shii4u',
+    'moviztime',
+    'moviz',
+    'egydead',
+    'ipauniverse',
+    '3cktv',
+    '3ck',
+    'anime4up',
+    'qfilm',
+    'ristoanime',
+    'arabseed',
+    'mewsry',
+    'anime4up_rest',
+    'witanime',
+  };
+  bool canRequestHarvest(String ref) =>
+      RegExp(r'^tmdb:(movie|tv):[1-9]\d*$').hasMatch(ref) ||
+      _sourceWorkPattern.hasMatch(ref) ||
+      {
+        ..._sourceCatalogProviders,
+        '3isk',
+        'alooy',
+        'legacy',
+        'laroza',
+      }.contains(ref.split(':').first);
+
+  Future<Map<String, dynamic>> requestHarvest(
+    String ref, {
+    String reason = 'card_open',
+  }) {
+    final previous = _harvestCardRequests[ref];
+    if (reason == 'card_open' &&
+        previous != null &&
+        DateTime.now().difference(previous.at) < const Duration(seconds: 15)) {
+      return previous.result;
+    }
+    final result = _getJson(
+      '/api/v1/harvest/request',
+      {
+        'ref': ref,
+        'reason': reason,
+        'platform': appTargetValue,
+        'client_version': productVersion,
+        'client_build': '$productBuild',
+      },
+      const Duration(seconds: 12),
+      'POST',
+    ).then(_harvestData);
+    if (reason == 'card_open') {
+      _harvestCardRequests[ref] = (at: DateTime.now(), result: result);
+      while (_harvestCardRequests.length > 64) {
+        _harvestCardRequests.remove(_harvestCardRequests.keys.first);
+      }
+    }
+    return result.catchError((Object error, StackTrace stack) {
+      if (_harvestCardRequests[ref]?.result == result) {
+        _harvestCardRequests.remove(ref);
+      }
+      Error.throwWithStackTrace(error, stack);
+    });
+  }
+
+  Future<Map<String, dynamic>> _providerSourceMetadata(
+    String originalRef,
+  ) async {
+    final deadline = DateTime.now().add(sourceIndexTimeout);
+    Duration remaining() => deadline.difference(DateTime.now());
+    final request = await requestHarvest(originalRef).timeout(remaining());
+    final ref = '${request['ref'] ?? ''}';
+    if (!_sourceWorkPattern.hasMatch(ref)) {
+      throw const ApiException('INVALID_SOURCE_WORK_REFERENCE');
+    }
+    while (remaining() > Duration.zero) {
+      final status = await harvestStatus(ref).timeout(remaining());
+      final editions = (status['source_editions'] as List? ?? const [])
+          .whereType<Map>();
+      if (editions.any(
+        (row) => row['ref'] == ref && row['available'] == true,
+      )) {
+        return sourceWorkMetadata(ref).timeout(remaining());
+      }
+      if (['failed', 'unavailable'].contains(status['state'])) {
+        throw ApiException('${status['reason'] ?? 'SOURCE_INDEX_UNAVAILABLE'}');
+      }
+      final left = remaining();
+      if (left > Duration.zero) {
+        await Future<void>.delayed(
+          left < sourcePollInterval ? left : sourcePollInterval,
+        );
+      }
+    }
+    throw const ApiException('SOURCE_INDEX_STILL_PENDING');
+  }
+
+  final _playbackFailureReports = <String, DateTime>{};
+
+  /// Coarse device evidence only. No resolved URL, native error text or headers
+  /// are accepted by this method. Legacy page refs use an already known work key.
+  Future<void> reportPlaybackFailure({
+    required String ref,
+    String provider = '',
+    String phase = 'playback',
+    String code = 'NATIVE_PLAYBACK_FAILED',
+    int? season,
+    int? episode,
+  }) async {
+    if (_closed) return;
+    final safeCode =
+        const {
+          'NATIVE_PLAYBACK_FAILED',
+          'NATIVE_DECODER_ERROR',
+          'BUFFER_STALLED',
+          'PLAYER_START_FAILED',
+        }.contains(code)
+        ? code
+        : 'NATIVE_PLAYBACK_FAILED';
+    final key = '$ref|$safeCode';
+    final now = DateTime.now();
+    final deadline = now.add(const Duration(seconds: 5));
+    if (_playbackFailureReports[key] != null &&
+        now.difference(_playbackFailureReports[key]!) <
+            const Duration(seconds: 30)) {
+      return;
+    }
+    _playbackFailureReports[key] = now;
+    while (_playbackFailureReports.length > 64) {
+      _playbackFailureReports.remove(_playbackFailureReports.keys.first);
+    }
+    try {
+      final canonical = RegExp(
+        r'^(tmdb:(?:movie|tv):[1-9]\d{0,9})(?::s(\d+):e(\d+))?$',
+      ).firstMatch(ref);
+      final source = _sourceWorkPattern.firstMatch(ref);
+      String? base = canonical?[1] ?? source?[1];
+      if (base == null) {
+        final known = _harvestCardRequests[ref]?.result;
+        if (known != null) {
+          final data = await known.timeout(const Duration(seconds: 2));
+          final candidate = '${data['ref'] ?? ''}';
+          if (_sourceWorkPattern.hasMatch(candidate)) base = candidate;
+        }
+      }
+      if (base == null) return;
+      final declaredSeason =
+          season ?? int.tryParse(canonical?[2] ?? source?[2] ?? '');
+      final declaredEpisode =
+          episode ?? int.tryParse(canonical?[3] ?? source?[3] ?? '');
+      final body = jsonEncode({
+        'ref': base,
+        'provider':
+            {
+              ..._sourceCatalogProviders,
+              '3isk',
+              'alooy',
+              'legacy',
+              'laroza',
+              'unknown',
+              'egydead_live',
+              'yallashoot',
+              'matches',
+              'matchserver',
+            }.contains(provider)
+            ? provider
+            : 'unknown',
+        'phase':
+            const {'playback', 'startup', 'buffering', 'decode'}.contains(phase)
+            ? phase
+            : 'playback',
+        'code': safeCode,
+        'client_version': productVersion,
+        'client_build': productBuild,
+        'platform': appTargetValue,
+        if (declaredSeason != null &&
+            declaredSeason >= 0 &&
+            declaredSeason <= 100)
+          'season': declaredSeason,
+        if (declaredEpisode != null &&
+            declaredEpisode >= 0 &&
+            declaredEpisode <= 100000)
+          'episode': declaredEpisode,
+      });
+      if (utf8.encode(body).length > 2048) return;
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) return;
+      await _client
+          .post(
+            _baseUri.replace(path: '/api/v1/diagnostics/playback'),
+            headers: const {
+              'accept': 'application/json',
+              'content-type': 'application/json',
+            },
+            body: body,
+          )
+          .timeout(remaining);
+    } catch (_) {
+      /* Telemetry never interrupts playback or displays raw errors. */
+    }
+  }
+
+  Future<Map<String, dynamic>> harvestStatus(String ref) async => _harvestData(
+    await _getJson('/api/v1/harvest/status', {
+      'ref': ref,
+    }, const Duration(seconds: 12)),
+  );
+
+  Map<String, dynamic> _harvestData(Map<String, dynamic> response) {
+    if (response['data'] is! Map) {
+      throw const ApiException('INVALID_HARVEST_RESPONSE');
+    }
+    return (response['data'] as Map).cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> sourceWorkMetadata(
+    String ref, {
+    int season = 1,
+    int offset = 0,
+  }) async {
+    final data = _harvestData(
+      await _getJson('/api/v1/harvest/work', {
+        'ref': ref,
+        'season': '$season',
+        'offset': '$offset',
+      }, const Duration(seconds: 15)),
+    );
+    return {
+      ...data,
+      'ref': data['ref'] ?? ref,
+      'plot': data['overview'],
+      'available_seasons': _list(data['seasons'])
+          .map((row) => row['season_number'])
+          .whereType<int>()
+          .where((n) => n > 0)
+          .toList(),
+      'playback_mode': 'direct',
+    };
+  }
+
+  Future<TitleDetails> moreSourceEpisodes(
+    String ref, {
+    required int season,
+    required int offset,
+  }) async => TitleDetails.fromJson(
+    await sourceWorkMetadata(ref, season: season, offset: offset),
+  );
+
+  Future<TitleDetails> _resolveSourceWorkPlayback(
+    RegExpMatch source, {
+    required bool refresh,
+  }) async {
+    final generation = _cacheGeneration;
+    final ref = source[1]!,
+        season = source[2] ?? '0',
+        episode = source[3] ?? '0';
+    final started = DateTime.now();
+    var firstRequest = true;
+    while (DateTime.now().difference(started) < sourcePlaybackTimeout) {
+      final remaining =
+          sourcePlaybackTimeout - DateTime.now().difference(started);
+      final data = _harvestData(
+        await _getJson(
+          '/api/v1/harvest/playback',
+          {
+            'ref': ref,
+            'season': season,
+            'episode': episode,
+            'platform': const bool.fromEnvironment('dart.library.js_interop')
+                ? 'web'
+                : 'native',
+            if (refresh && firstRequest) 'refresh': '1',
+          },
+          remaining < const Duration(seconds: 15)
+              ? remaining
+              : const Duration(seconds: 15),
+        ),
+      );
+      firstRequest = false;
+      _ensureGeneration(generation);
+      final rawSources = data['servers'];
+      if (rawSources is List && rawSources.isNotEmpty) {
+        final sources = [
+          for (final raw in rawSources.whereType<Map>())
+            {
+              ...raw.cast<String, dynamic>(),
+              'playback_mode': 'direct',
+              'media_type': '${raw['url']}'.contains('.m3u8') ? 'm3u8' : 'mp4',
+            },
+        ];
+        if (sources.any(
+          (s) =>
+              s['kind'] != 'direct' ||
+              s['expires_at'] == null ||
+              !_validSourceMedia('${s['url']}'),
+        )) {
+          throw const ApiException('INVALID_DIRECT_MEDIA');
+        }
+        final first = sources.first;
+        final details = TitleDetails.fromJson({
+          'title': _catalogGroups[ref]?.title ?? 'التشغيل',
+          'poster': '',
+          'episodes': [],
+          'media_url': first['url'],
+          'media_type': first['media_type'],
+          'playback_mode': 'direct',
+          'media_sources': sources,
+          'headers': first['headers'] ?? {},
+          'expires_at': first['expires_at'],
+          'edition': first['edition'] ?? '',
+          'source_index_authoritative': true,
+        });
+        _registerDirectMetadata(details);
+        _playbackCache['$ref:s$season:e$episode'] = details;
+        return details;
+      }
+      if (['unavailable', 'failed', 'ready'].contains(data['state'])) {
+        throw ApiException('${data['reason'] ?? 'NO_PLAYABLE_SOURCE'}');
+      }
+      final left = sourcePlaybackTimeout - DateTime.now().difference(started);
+      if (left > Duration.zero) {
+        await Future<void>.delayed(
+          left < sourcePollInterval ? left : sourcePollInterval,
+        );
+      }
+    }
+    throw const ApiException('SOURCE_PLAYBACK_STILL_PENDING');
+  }
+
+  bool _validSourceMedia(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        isPublicMediaUri(uri) &&
+        RegExp(r'\.(?:mp4|m3u8)$', caseSensitive: false).hasMatch(uri.path);
+  }
+
   Future<Map<String, dynamic>> _metadataJson(
     String ref, {
     bool refresh = false,
     bool metadataOnly = false,
   }) async {
+    final source = _sourceWorkPattern.firstMatch(ref);
+    if (source != null) {
+      return sourceWorkMetadata(
+        source[1]!,
+        season: int.tryParse(source[2] ?? '') ?? 1,
+      );
+    }
     final canonical = RegExp(r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$')
         .firstMatch(ref);
     if (canonical != null) {
@@ -116,7 +481,10 @@ class MitvApi implements MediaRepository {
             .toList(),
         'playback_mode': 'direct',
       };
-      if (canonical[1] == 'tv') {
+      if (data['source_index_authoritative'] == true) {
+        normalized['episodes'] = <dynamic>[];
+      }
+      if (canonical[1] == 'tv' && data['source_index_authoritative'] != true) {
         final season = canonical[3] ?? '1';
         final episodes = await _getJson('/api/v1/tmdb/season', {
           'ref': base,
@@ -125,6 +493,14 @@ class MitvApi implements MediaRepository {
         normalized['episodes'] = (episodes['data'] as Map)['episodes'];
       }
       return normalized;
+    }
+    if (!metadataOnly &&
+        _sourceCatalogProviders.contains(ref.split(':').first)) {
+      try {
+        return await _providerSourceMetadata(ref);
+      } on TimeoutException {
+        throw const ApiException('SOURCE_INDEX_STILL_PENDING');
+      }
     }
     if (_useEdge && ref.startsWith('laroza:')) {
       final response = await _edgeJson('/v1/laroza/details', {'ref': ref});
@@ -585,6 +961,14 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
   }) async {
     final generation = _cacheGeneration;
+    final source = _sourceWorkPattern.firstMatch(ref);
+    if (source != null) {
+      try {
+        return await _resolveSourceWorkPlayback(source, refresh: refresh);
+      } on TimeoutException {
+        throw const ApiException('SOURCE_PLAYBACK_STILL_PENDING');
+      }
+    }
     final canonical = RegExp(r'^tmdb:(movie|tv):(\d+)(?::s(\d+):e(\d+))?$')
         .firstMatch(ref);
     if (canonical != null) {
@@ -1077,7 +1461,9 @@ class MitvApi implements MediaRepository {
       throw const ApiException('INVALID_JSON');
     }
     if (decoded['status'] != 'success' &&
-        !(method == 'POST' && decoded['status'] == 'accepted')) {
+        !(method == 'POST' && decoded['status'] == 'accepted') &&
+        !(path == '/api/v1/harvest/playback' &&
+            ['accepted', 'error'].contains(decoded['status']))) {
       throw ApiException('${decoded['message'] ?? 'RUNTIME_ERROR'}');
     }
     if (isSearch) lastSearchStage = 'response_parsed';

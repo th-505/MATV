@@ -187,6 +187,21 @@ class CloudLibrarySync with WidgetsBindingObserver {
   final bool _observeLifecycle;
   static Future<Supabase>? _initializing;
   static Future<CloudLibrarySync?>? _startingDefault;
+  static Timer? _startupRetry;
+  static bool _defaultStopped = false;
+  @visibleForTesting
+  static Future<CloudLibrarySync?> Function(LocalLibraryStore)?
+  defaultStartForTesting;
+  @visibleForTesting
+  static Duration startupRetryDelay = const Duration(minutes: 5);
+  static Future<void> closeDefault() async {
+    _defaultStopped = true;
+    _startupRetry?.cancel();
+    final current = _startingDefault;
+    _startingDefault = null;
+    await (await current)?.close();
+  }
+
   static const deviceIdKey = 'mitv.device.uuid.v1';
   static Future<void> refreshAccountContext() async {
     final sync = await _startingDefault;
@@ -284,10 +299,26 @@ class CloudLibrarySync with WidgetsBindingObserver {
 
   static Future<CloudLibrarySync?> startDefault(LocalLibraryStore store) {
     // Widget/unit tests use the injectable adapter, never production networking.
-    if (cloudRuntimeIsTest || const bool.fromEnvironment('FLUTTER_TEST')) {
+    if (defaultStartForTesting == null &&
+        (cloudRuntimeIsTest || const bool.fromEnvironment('FLUTTER_TEST'))) {
       return Future.value(null);
     }
-    return _startingDefault ??= _startDefault(store);
+    _defaultStopped = false;
+    return _startingDefault ??= (defaultStartForTesting ?? _startDefault)(store)
+        .then((sync) {
+          if (sync == null) {
+            _startingDefault = null;
+            _startupRetry?.cancel();
+            if (!_defaultStopped) {
+              _startupRetry = Timer(startupRetryDelay, () {
+                if (!_defaultStopped) unawaited(startDefault(store));
+              });
+            }
+          } else {
+            _startupRetry?.cancel();
+          }
+          return sync;
+        });
   }
 
   static Future<CloudLibrarySync?> _startDefault(
@@ -295,15 +326,19 @@ class CloudLibrarySync with WidgetsBindingObserver {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final sdk = await (_initializing ??= Supabase.initialize(
-        url: mitvSupabaseUrl,
-        publishableKey: mitvSupabasePublishableKey,
-        authOptions: const FlutterAuthClientOptions(
-          detectSessionInUri: false,
-          persistSession: true,
-        ),
-        debug: false,
-      ));
+      final sdk = await (_initializing ??=
+          Supabase.initialize(
+            url: mitvSupabaseUrl,
+            publishableKey: mitvSupabasePublishableKey,
+            authOptions: const FlutterAuthClientOptions(
+              detectSessionInUri: false,
+              persistSession: true,
+            ),
+            debug: false,
+          ).catchError((Object error, StackTrace stack) {
+            _initializing = null;
+            Error.throwWithStackTrace(error, stack);
+          }));
       return await start(
         store,
         AnonymousLibraryTransport(sdk.client, prefs),

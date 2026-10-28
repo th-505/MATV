@@ -63,7 +63,7 @@ assert.equal(resolve3cktvTargetUrl(encodedRef), testUrl);
 
 // Relative path resolution
 const relPath = '/series/serie-yalicapkini/';
-assert.equal(resolve3cktvTargetUrl(relPath), `https://e.3cktv.com${relPath}`);
+assert.equal(resolve3cktvTargetUrl(relPath), `${THREE_CKTV_CONFIG.baseUrl}${relPath}`);
 console.log('   Reference encoding & target resolution validated.');
 
 // 3. CATALOG FIXTURE SCRAPING
@@ -231,7 +231,7 @@ const syntheticItems = await scrapeCatalog('all', 1, {
 });
 assert.equal(syntheticItems.length, 1);
 assert.ok(syntheticItems[0].title.includes('194') || syntheticItems[0].title.includes('١٩٤'));
-assert.ok(syntheticItems[0].url.startsWith('https://e.3cktv.com/watch/'));
+assert.ok(syntheticItems[0].url.startsWith(`${THREE_CKTV_CONFIG.baseUrl}/watch/`));
 console.log('   Synthetic special case successfully parsed.');
 
 console.log('\n=== ALL 3ckTV FIXTURE TESTS PASSED SUCCESSFULLY! ===');

@@ -347,9 +347,9 @@ function extractEpisodesFromHtml(html = '', baseUrl = ISK_SITE_CONFIG.baseUrl, d
     const epNum =
       Number.isInteger(dataEp) && dataEp > 0
         ? dataEp
-        : extractEpisodeNumber(anchor.attr('title') || anchor.text(), url, idx + 1) || idx + 1;
+        : extractEpisodeNumber(anchor.attr('title') || anchor.text(), url);
     const season = Number(url.match(/-season-(\d+)-/i)?.[1] || defaultSeason) || 1;
-    const title = (anchor.attr('title') || anchor.find('.cl_srt').text() || `الحلقة ${epNum}`).trim();
+    const title = (anchor.attr('title') || anchor.find('.cl_srt').text() || (epNum?`الحلقة ${epNum}`:'حلقة غير مرقمة')).trim();
 
     let ref = `${PROVIDER_META.id}:${url}`;
     try {
@@ -730,13 +730,14 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       title,
       poster,
       overview,
+      duration:$('h1').first().parent().find('.single-info-item.duration span').last().text().trim(),
       year: extractYear(title),
       quality: null,
       genres,
       episodes,
       type: isMovie ? 'movie' : 'series',
       source: PROVIDER_META.id,
-      sourceUrl: cleanUrl
+      sourceUrl: res.url || cleanUrl
     },
     { providerId: PROVIDER_META.id, baseUrl: activeOrigin }
   );

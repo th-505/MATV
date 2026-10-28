@@ -5,6 +5,7 @@ import {createHarvestPipeline} from './pipeline.mjs';
 import {installProviderConfigs,validateProviderConfig} from '../scrapers/shared/provider-config.mjs';
 import {listProviders,getProvider} from '../scrapers/registry.mjs';
 import {createTmdbRuntime} from '../tmdb-runtime.mjs';
+import {createSourceApi} from './source-api.mjs';
 
 const canonical=ref=>/^tmdb:(movie|tv):[1-9]\d{0,9}$/.test(String(ref));
 export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='1'?createHarvestStore():null,metadata=createTmdbRuntime(),logger=()=>{},now=Date.now}={}){
@@ -43,8 +44,9 @@ export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='
    store.request('najd_source_catalog',{select:'work_ref,provider,identity_score,state,progress,updated_at',order:'updated_at.desc',limit:100}),
    store.request('najd_harvest_events',{select:'id,provider,stage,outcome,reason,details,created_at',order:'created_at.desc',limit:100}),
    store.config(),
+   store.request('rpc/najd_harvest_counts',{},'POST',{}),
   ]);
-  const names=['jobs','works','sources','events','providers'];
+  const names=['jobs','works','sources','events','providers','totals'];
   const result={configured:true,worker:worker.metrics(),recent_limit:100,unavailable:[]};
   settled.forEach((item,i)=>{result[names[i]]=item.status==='fulfilled'?item.value:[];if(item.status!=='fulfilled')result.unavailable.push(names[i]);});
   return result;
@@ -65,7 +67,8 @@ export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='
   await refreshConfig();
   return {...result,evidence:verified.evidence,config:verified.config};
  }
- return {start,stop,cachedWork,cachedSeason,media,summary,setConfig,applyVerified,metrics:worker.metrics,
+ return {...createSourceApi({store,worker,now}),start,stop,cachedWork,cachedSeason,media,summary,setConfig,applyVerified,metrics:worker.metrics,
+  recordClientFeedback:async row=>store?store.event(row):null,
   wake(){if(now()-lastWake>=15000){lastWake=now();start();return worker.wake()}return worker.metrics()},
  };
 }

@@ -2,6 +2,8 @@
 // Standalone provider module for 3ckTV (3cktv, code: 3V)
 // Independent Turkish drama provider, fully isolated from 3isk
 import * as cheerio from 'cheerio';
+import {effectiveProviderDomains} from '../shared/provider-config.mjs';
+import {BROWSER_USER_AGENTS} from '../anti-ban.mjs';
 import {
   fetchProviderHtml,
   fetchSafeResponse,
@@ -36,7 +38,7 @@ export const PROVIDER_META = Object.freeze({
   id: '3cktv',
   name: '3ckTV',
   code: '3V',
-  domains: ['https://e.3cktv.com', 'https://3cktv.com', 'https://ei.3cktv.com'],
+  domains: ['https://e.3cktv.cam', 'https://e.3cktv.com', 'https://3cktv.com', 'https://ei.3cktv.com'],
   mirrorOf: null,
   capabilities: {
     catalog: true,
@@ -62,9 +64,9 @@ export const THREE_CKTV_CONFIG = Object.freeze({
   id: '3cktv',
   name: '3ckTV',
   code: '3V',
-  baseUrl: 'https://e.3cktv.com',
+  baseUrl: 'https://e.3cktv.cam',
   fallbackBaseUrl: 'https://3cktv.com',
-  domains: ['https://e.3cktv.com', 'https://3cktv.com', 'https://ei.3cktv.com'],
+  domains: ['https://e.3cktv.cam', 'https://e.3cktv.com', 'https://3cktv.com', 'https://ei.3cktv.com'],
   categories: {
     turkish_latest: '/episodes/',
     turkish_subbed: '/category/مسلسلات-تركية-مترجمة/',
@@ -78,8 +80,9 @@ export const THREE_CKTV_CONFIG = Object.freeze({
   }
 });
 
-const DEFAULT_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
+// Keep the shared HTTP client profile; a separate obsolete desktop profile
+// currently redirects this site's desktop view to a DNS-broken host.
+const DEFAULT_UA = BROWSER_USER_AGENTS[0];
 
 /**
  * Encodes a target URL into standard 3ckTV ref format: 3cktv:<base64url>
@@ -145,17 +148,17 @@ function clean3cktvTitle(rawTitle = '') {
 export function extractCatalogItemsFromHtml(html = '', baseUrl = THREE_CKTV_CONFIG.baseUrl, defaultType = 'series') {
   if (!html || typeof html !== 'string') return [];
   const $ = cheerio.load(html);
-  const items = [];
+  const items = [],seen=new Set();
 
   $('article.post, .block-post, .BlockItem, .item-box, .post-item').each((_, el) => {
     const node = $(el);
     const a = node.find('a').first();
     const rawHref = a.attr('href') || node.attr('data-url') || '';
-    const href = resolveSafeUrl(rawHref, baseUrl);
-    if (!href) return;
+    const href = resolveSafeUrl(rawHref, baseUrl, {allowHttp:false,allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains)});
+    if (!href || seen.has(href)) return;
 
     const rawTitle =
-      node.find('.title, h2, h3').text().trim() ||
+      node.find('.title, h2, h3').first().text().trim() ||
       a.attr('title') ||
       node.find('img').first().attr('alt') ||
       '';
@@ -173,7 +176,7 @@ export function extractCatalogItemsFromHtml(html = '', baseUrl = THREE_CKTV_CONF
     const poster = resolveSafeUrl(rawPoster, baseUrl);
 
     const year =
-      node.find('.year, .date').text().trim() ||
+      node.find('.year').first().text().trim() ||
       extractYear(title) ||
       '';
 
@@ -199,6 +202,7 @@ export function extractCatalogItemsFromHtml(html = '', baseUrl = THREE_CKTV_CONF
     );
 
     if (normalized) {
+      seen.add(href);
       normalized.serverPrefix = PROVIDER_META.code;
       normalized.is_series = type !== 'movie';
       items.push(normalized);
@@ -216,17 +220,18 @@ export function extractEpisodesFromHtml(html = '', baseUrl = THREE_CKTV_CONFIG.b
   const $ = cheerio.load(html);
   const rawEpisodes = [];
 
-  $('.episodesList a, ul.listEpisodes a, .episodes-list a, .list-episodes a, .watch-container .episodesList a').each(
+  $('.episodesList a, ul.listEpisodes a, .episodes-list a, .list-episodes a, .watch-container .episodesList a, ul.eplist a.epNum').each(
     (idx, el) => {
       const node = $(el);
       const rawHref = node.attr('href') || '';
-      const href = resolveSafeUrl(rawHref, baseUrl);
+      const href = resolveSafeUrl(rawHref, baseUrl, {allowHttp:false,allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains)});
       if (!href) return;
 
-      const rawText = node.text().trim() || node.attr('title') || '';
-      const title = normalizeDigits(rawText).replace(/\s+/g, ' ').trim() || `الحلقة ${idx + 1}`;
-      const epNum = extractEpisodeNumber(title, href, idx + 1);
-      const season = extractSeasonNumber(title, defaultSeason);
+      const rawText = node.attr('title') || node.text().trim() || '';
+      const title = normalizeDigits(rawText).replace(/\s+/g, ' ').trim();
+      const epNum = extractEpisodeNumber(title, href);
+      if(!epNum)return;
+      const season = extractSeasonNumber(`${title} ${href}`, defaultSeason);
 
       rawEpisodes.push({
         number: epNum,
@@ -276,7 +281,7 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
   function addCandidate(rawUrl, name = '') {
     if (!rawUrl || typeof rawUrl !== 'string') return;
     const unwrapped = unwrapCandidateUrl(rawUrl);
-    const safeUrl = resolveSafeUrl(unwrapped, pageUrl);
+    const safeUrl = resolveSafeUrl(unwrapped, pageUrl,{allowHttp:false});
     if (!safeUrl || seenUrls.has(safeUrl)) return;
     seenUrls.add(safeUrl);
     candidateUrls.push({ url: safeUrl, name: name || 'سيرفر مشاهدة' });
@@ -309,7 +314,7 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
 
   // Deep unwrapping for candidates in live or fixture mode if unwrapper provided
   for (const cand of candidateUrls) {
-    const isDirectMedia = cand.url.includes('.m3u8') || cand.url.includes('.mp4');
+    const isDirectMedia = /\.(?:m3u8|mp4)$/i.test(new URL(cand.url).pathname);
     if (isDirectMedia) {
       const streamType = cand.url.includes('.m3u8') ? 'm3u8' : 'mp4';
       rawServers.push({
@@ -318,8 +323,8 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
         url: cand.url,
         type: streamType,
         streamType,
-        quality: streamType === 'm3u8' ? 'AUTO-HLS' : 'HD',
-        headers: { Referer: `${pageUrl}/`, 'User-Agent': DEFAULT_UA },
+        quality: streamType === 'm3u8' ? 'AUTO-HLS' : null,
+        headers: { Referer: pageUrl, 'User-Agent': DEFAULT_UA },
         verified: options.verified === true
       });
     } else {
@@ -334,6 +339,19 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
         headers: { Referer: pageUrl, 'User-Agent': DEFAULT_UA },
         verified: false
       });
+    }
+  }
+
+  // Unwrap only player URLs observed on this watch page, within a fixed work
+  // budget. Fixtures never make a network request unless an injected seam is used.
+  if(!options.fixtureHtml || typeof options.unwrapEmbed==='function'){
+    const unwrap=options.unwrapEmbed||unwrapEmbedToDirectStreams;
+    for(const candidate of candidateUrls.filter(c=>!/\.(?:mp4|m3u8)$/i.test(new URL(c.url).pathname)).slice(0,4)){
+      try{for(const source of await unwrap(candidate.url,pageUrl)||[]){
+        const url=resolveSafeUrl(source.url||'',pageUrl,{allowHttp:false});
+        if(!url||!/\.(?:mp4|m3u8)$/i.test(new URL(url).pathname))continue;
+        rawServers.push({...source,url,name:candidate.name,label:candidate.name,type:/\.m3u8$/i.test(new URL(url).pathname)?'m3u8':'mp4',verified:false});
+      }}catch{/* The observed embed remains explicitly unverified. */}
     }
   }
 
@@ -354,6 +372,12 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
 /**
  * Scrapes catalog items for a given 3ckTV category and page.
  */
+function observedPagination(html,url,page){
+ const $=cheerio.load(html),candidates=[];
+ $('.pagination a[href],a.page-numbers[href],a[rel="next"][href]').each((_,el)=>{const next=resolveSafeUrl($(el).attr('href'),url,{allowHttp:false,allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains)});if(!next)return;const u=new URL(next);const number=Number(u.pathname.match(/\/page\/(\d+)/)?.[1]||u.searchParams.get('page')||u.searchParams.get('paged'));if(Number.isSafeInteger(number)&&number>page)candidates.push({number,url:next});});
+ const next=candidates.sort((a,b)=>a.number-b.number)[0];return next?{next_page:next.number,next_url:next.url}:{next_page:null,next_url:null};
+}
+
 export async function scrapeCatalog(category = 'turkish_latest', page = 1, options = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const subPath =
@@ -369,10 +393,12 @@ export async function scrapeCatalog(category = 'turkish_latest', page = 1, optio
 
   try {
     const res = await fetchProviderHtml(targetUrl, {
+      ...options,
       providerId: PROVIDER_META.id,
-      fixtureHtml: options.fixtureHtml,
+      allowHttp:false,
+      allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains),
       timeoutMs: options.timeoutMs || 10000,
-      headers: { 'User-Agent': DEFAULT_UA }
+      headers: { 'User-Agent': DEFAULT_UA,...(options.headers||{}) }
     });
 
     if (!res.ok || !res.html) {
@@ -381,7 +407,7 @@ export async function scrapeCatalog(category = 'turkish_latest', page = 1, optio
       });
     }
 
-    const items = extractCatalogItemsFromHtml(res.html, THREE_CKTV_CONFIG.baseUrl, defaultType);
+    const items = extractCatalogItemsFromHtml(res.html, res.url || targetUrl, defaultType);
     if (items.length === 0) {
       return createEmptyArrayResult(
         PROVIDER_META.id,
@@ -394,7 +420,8 @@ export async function scrapeCatalog(category = 'turkish_latest', page = 1, optio
     return attachResultMeta(items, {
       ok: true,
       providerId: PROVIDER_META.id,
-      url: res.url || targetUrl
+      url: res.url || targetUrl,
+      ...observedPagination(res.html,res.url||targetUrl,pageNum)
     });
   } catch (err) {
     const classified = classifyNetworkError(err, { providerId: PROVIDER_META.id, url: targetUrl });
@@ -422,10 +449,12 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
 
   try {
     const res = await fetchProviderHtml(targetUrl, {
+      ...options,
       providerId: PROVIDER_META.id,
-      fixtureHtml: options.fixtureHtml,
+      allowHttp:false,
+      allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains),
       timeoutMs: options.timeoutMs || 10000,
-      headers: { 'User-Agent': DEFAULT_UA }
+      headers: { 'User-Agent': DEFAULT_UA,...(options.headers||{}) }
     });
 
     if (!res.ok || !res.html) {
@@ -434,13 +463,14 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
       });
     }
 
-    const items = extractCatalogItemsFromHtml(res.html, THREE_CKTV_CONFIG.baseUrl, 'series');
+    const items = extractCatalogItemsFromHtml(res.html, res.url || targetUrl, 'series');
     return attachResultMeta(items, {
       ok: true,
       errorCode: items.length === 0 ? SCRAPER_ERROR_CODES.EMPTY_RESULT : null,
       errorMessage: items.length === 0 ? 'No search results found' : null,
       providerId: PROVIDER_META.id,
-      url: res.url || targetUrl
+      url: res.url || targetUrl,
+      ...observedPagination(res.html,res.url||targetUrl,pageNum)
     });
   } catch (err) {
     const classified = classifyNetworkError(err, { providerId: PROVIDER_META.id, url: targetUrl });
@@ -464,10 +494,12 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
   try {
     const res = await fetchProviderHtml(cleanUrl, {
+      ...options,
       providerId: PROVIDER_META.id,
-      fixtureHtml: options.fixtureHtml,
+      allowHttp:false,
+      allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains),
       timeoutMs: options.timeoutMs || 10000,
-      headers: { 'User-Agent': DEFAULT_UA }
+      headers: { 'User-Agent': DEFAULT_UA,...(options.headers||{}) }
     });
 
     if (!res.ok || !res.html) {
@@ -485,6 +517,11 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       $('.title').first().text().trim() ||
       '';
     const title = clean3cktvTitle(rawTitle);
+    const own=$('h1').first().closest('.single_main_content,.single_info,article,.details');
+    const context=own.length?own:$('h1').first().parent();
+    const cast=[...new Set(context.find('a[href*="/actor/"]').toArray().map(e=>$(e).text().trim()).filter(Boolean))];
+    const observedLanguage=context.find('.single_item.language span,.language span').last().text().trim();
+    const releaseYear=context.find('.year,.release-year').filter((_,e)=>!$(e).closest('aside,.sidebar,.related,.related-posts').length).first().text().trim();
 
     const rawPoster =
       $('meta[property="og:image"]').attr('content') ||
@@ -493,18 +530,18 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     const poster = resolveSafeUrl(rawPoster, THREE_CKTV_CONFIG.baseUrl);
 
     const overview =
-      $('.story p, .story, .overview, .description').first().text().trim() ||
+      context.find('.story p, .story, .overview, .description').first().text().trim() ||
       $('meta[property="og:description"]').attr('content')?.trim() ||
       '';
 
     const genres = [];
-    $('.genres a, a[href*="/category/"]').each((_, el) => {
+    context.find('.genres a, a[href*="/genre/"], a[href*="/category/"]').each((_, el) => {
       const g = $(el).text().trim();
       if (g && !genres.includes(g)) genres.push(g);
     });
 
     const defaultSeason = extractSeasonNumber(title, 1);
-    const episodes = extractEpisodesFromHtml(res.html, THREE_CKTV_CONFIG.baseUrl, defaultSeason);
+    const episodes = extractEpisodesFromHtml(res.html, res.url || cleanUrl, defaultSeason);
     const isMovie = /فيلم|movie|film/i.test(`${title} ${cleanUrl}`) && episodes.length === 0;
 
     const ref = encode3cktvRef(cleanUrl);
@@ -517,7 +554,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         poster,
         overview,
         story: overview,
-        year: $('.year').first().text().trim() || extractYear(title),
+        year: extractYear(releaseYear) || extractYear(title),
         quality: null,
         genres,
         episodes,
@@ -525,8 +562,11 @@ export async function scrapeDetails(urlOrRef, options = {}) {
         source: PROVIDER_META.id,
         sourceUrl: cleanUrl
       },
-      { providerId: PROVIDER_META.id, baseUrl: THREE_CKTV_CONFIG.baseUrl }
+      { providerId: PROVIDER_META.id, baseUrl: res.url || cleanUrl }
     );
+    normalized.cast=cast.map(name=>({name}));
+    normalized.observed_cast=cast;
+    normalized.observed_language=observedLanguage;
 
     return attachResultMeta(normalized, {
       ok: Boolean(title),
@@ -550,10 +590,12 @@ export async function scrapeEpisodes(urlOrRef, options = {}) {
 
   try {
     const res = await fetchProviderHtml(cleanUrl, {
+      ...options,
       providerId: PROVIDER_META.id,
-      fixtureHtml: options.fixtureHtml,
+      allowHttp:false,
+      allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains),
       timeoutMs: options.timeoutMs || 10000,
-      headers: { 'User-Agent': DEFAULT_UA }
+      headers: { 'User-Agent': DEFAULT_UA,...(options.headers||{}) }
     });
 
     if (!res.ok || !res.html) {
@@ -565,7 +607,7 @@ export async function scrapeEpisodes(urlOrRef, options = {}) {
     const $ = cheerio.load(res.html);
     const title = $('h1').first().text().trim();
     const defaultSeason = extractSeasonNumber(title, 1);
-    const episodes = extractEpisodesFromHtml(res.html, THREE_CKTV_CONFIG.baseUrl, defaultSeason);
+    const episodes = extractEpisodesFromHtml(res.html, res.url || cleanUrl, defaultSeason);
 
     return attachResultMeta(episodes, {
       ok: true,
@@ -586,65 +628,23 @@ export async function scrapeEpisodes(urlOrRef, options = {}) {
  */
 export async function scrapeServers(urlOrRef, options = {}) {
   const cleanUrl = resolve3cktvTargetUrl(urlOrRef, THREE_CKTV_CONFIG.baseUrl);
-  if (!cleanUrl) {
-    return createEmptyArrayResult(PROVIDER_META.id, SCRAPER_ERROR_CODES.UNSAFE_URL, 'Invalid 3ckTV watch URL');
-  }
-
-  const watchUrl = cleanUrl.includes('?do=views') ? cleanUrl : `${cleanUrl.replace(/\/+$/, '')}/?do=views`;
-
-  try {
-    const res = await fetchProviderHtml(watchUrl, {
-      providerId: PROVIDER_META.id,
-      fixtureHtml: options.fixtureHtml,
-      timeoutMs: options.timeoutMs || 10000,
-      headers: { 'User-Agent': DEFAULT_UA }
-    });
-
-    const htmlToUse = res.ok && res.html ? res.html : null;
-    if (!htmlToUse && !options.fixtureHtml) {
-      // Fallback to base url if ?do=views returned 404
-      const fallbackRes = await fetchProviderHtml(cleanUrl, {
-        providerId: PROVIDER_META.id,
-        timeoutMs: options.timeoutMs || 10000,
-        headers: { 'User-Agent': DEFAULT_UA }
+  if (!cleanUrl) return createEmptyArrayResult(PROVIDER_META.id, SCRAPER_ERROR_CODES.UNSAFE_URL, 'Invalid 3ckTV watch URL');
+  const pageOptions={...options,providerId:PROVIDER_META.id,allowHttp:false,allowedHosts:effectiveProviderDomains(PROVIDER_META.id,PROVIDER_META.domains),timeoutMs:options.timeoutMs||10000,headers:{'User-Agent':DEFAULT_UA,...(options.headers||{})}};
+  try{
+    let response=await fetchProviderHtml(cleanUrl,pageOptions),watchUrl=response.url||cleanUrl;
+    if(!response.ok||!response.html)return createEmptyArrayResult(PROVIDER_META.id,SCRAPER_ERROR_CODES.SERVER_EXTRACTION_FAILED,'Source episode page unavailable',{url:watchUrl});
+    let servers=await extractServersFromHtml(response.html,watchUrl,options);
+    if(!servers.length){
+      const $=cheerio.load(response.html),path=new URL(watchUrl).pathname.replace(/\/+$/,'');let observedWatch=null;
+      $('a[href]').each((_,el)=>{
+        if(observedWatch||!/مشاهدة|شاهد|watch/i.test($(el).text().trim()))return;
+        const target=resolveSafeUrl($(el).attr('href'),watchUrl,{allowHttp:false,allowedHosts:pageOptions.allowedHosts});
+        if(target&&target!==watchUrl&&new URL(target).pathname.replace(/\/+$/,'')===path)observedWatch=target;
       });
-      if (!fallbackRes.ok || !fallbackRes.html) {
-        return createEmptyArrayResult(
-          PROVIDER_META.id,
-          SCRAPER_ERROR_CODES.SERVER_EXTRACTION_FAILED,
-          `HTTP_${fallbackRes.status}`,
-          { url: cleanUrl }
-        );
-      }
-      const servers = await extractServersFromHtml(fallbackRes.html, cleanUrl, options);
-      return attachResultMeta(servers, {
-        ok: servers.length > 0,
-        providerId: PROVIDER_META.id,
-        url: cleanUrl
-      });
+      if(observedWatch){response=await fetchProviderHtml(observedWatch,pageOptions);watchUrl=response.url||observedWatch;if(response.ok&&response.html)servers=await extractServersFromHtml(response.html,watchUrl,options);}
     }
-
-    const servers = await extractServersFromHtml(htmlToUse, watchUrl, options);
-    if (servers.length === 0) {
-      return createEmptyArrayResult(
-        PROVIDER_META.id,
-        SCRAPER_ERROR_CODES.SERVER_EXTRACTION_FAILED,
-        'No servers extracted from 3ckTV watch page',
-        { url: watchUrl }
-      );
-    }
-
-    return attachResultMeta(servers, {
-      ok: true,
-      providerId: PROVIDER_META.id,
-      url: watchUrl
-    });
-  } catch (err) {
-    const classified = classifyNetworkError(err, { providerId: PROVIDER_META.id, url: watchUrl });
-    return createEmptyArrayResult(PROVIDER_META.id, classified.code, classified.message, {
-      url: watchUrl
-    });
-  }
+    return attachResultMeta(servers,{ok:servers.length>0,errorCode:servers.length?null:SCRAPER_ERROR_CODES.SERVER_EXTRACTION_FAILED,errorMessage:servers.length?null:'No observed direct media or player available',providerId:PROVIDER_META.id,url:watchUrl});
+  }catch(err){const classified=classifyNetworkError(err,{providerId:PROVIDER_META.id,url:cleanUrl});return createEmptyArrayResult(PROVIDER_META.id,classified.code,classified.message,{url:cleanUrl});}
 }
 
 /**

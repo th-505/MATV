@@ -98,6 +98,12 @@ final _qualitySuffix = RegExp(
   r'(?:\s|[\[\(\-–—|:])+(?:(?:بجودة|جودة)\s+)?(?:\d{3,4}p|[248]k|full[\s-]?hd|hd|sd|web[\s-]?dl|web[\s-]?rip|blu[\s-]?ray|brrip|hdtv|dvdrip|hdrip|hdr|10bit|[xh]26[45])\s*[\]\)]*$',
   caseSensitive: false,
 );
+final _dubbedEdition = RegExp(
+  r'(?:^|[^\p{L}])(?:مدبلج[ةه]?|dubbed)(?=$|[^\p{L}])',
+  unicode: true,
+  caseSensitive: false,
+);
+
 final _translationSuffix = RegExp(
   r'(?:\s|[\[\(\-–—|:])+(?:مترجم|مترجمة|مدبلج|مدبلجة|dubbed|subbed|subtitled)\s*[\]\)]*$',
   caseSensitive: false,
@@ -116,10 +122,11 @@ String _fold(String value) {
   return result;
 }
 
-String _words(String value) => _fold(value)
-    .replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ')
-    .trim()
-    .replaceAll(RegExp(r'\s+'), ' ');
+String _words(String value) =>
+    _fold(value)
+        .replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ')
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
 
 /// Merge only proven same-work, same-edition references. Missing metadata is a
 /// reason to retain separate cards, rather than guess a playback identity.
@@ -244,13 +251,23 @@ class _MediaGroup {
 
 class _MediaIdentity {
   _MediaIdentity(MediaItem item)
-    : title = MediaTaxonomy.normalizeTitle(item.title),
+    : reference = item.ref,
+      independent =
+          item.ref.startsWith('source:') ||
+          _dubbedEdition.hasMatch('${item.title} ${item.edition}'),
+      provider = item.ref.startsWith('source:')
+          ? item.ref.split(':').elementAtOrNull(1) ?? ''
+          : UnifiedMedia.providerId(item),
+      title = MediaTaxonomy.normalizeTitle(item.title),
       year = item.year != null && item.year! > 0 ? item.year : null,
       imdb = _verifiedImdb(item),
       kind = _underlyingKind(item),
       scope = _scope(item),
       audio = _knownAudio(item.audioLanguage),
       edition = _knownEdition(item.edition);
+  final String reference;
+  final bool independent;
+  final String provider;
   final String title;
   final int? year;
   final String imdb;
@@ -274,6 +291,15 @@ class _MediaIdentity {
   }
 
   bool matches(_MediaIdentity other) {
+    // Dubbed cuts and explicit source editions are owned by the exact source
+    // reference, even when IMDb, year, audio and display names agree.
+    if ((independent || other.independent) &&
+        (reference.isEmpty ||
+            other.reference.isEmpty ||
+            reference != other.reference ||
+            provider != other.provider)) {
+      return false;
+    }
     if (!complete ||
         !other.complete ||
         kind != other.kind ||

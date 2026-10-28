@@ -15,7 +15,7 @@ export function searchTraceEvent(stage, data = {}) {
   const trace = context.getStore();
   if (!trace || trace.finished || trace.events.length >= 100) return;
   const event = { stage, at_ms: Date.now() - trace.started_ms };
-  for (const key of ['method','status','attempt','bytes','raw_count','kept_count','reason','duration_ms','challenge','content_type','html_title']) {
+  for (const key of ['method','status','attempt','bytes','raw_count','kept_count','reason','duration_ms','challenge','content_type','html_title','phase']) {
     if (data[key] !== undefined) event[key] = typeof data[key] === 'string' ? data[key].slice(0, 180) : data[key];
   }
   if (data.url) event.url = safeSearchUrl(data.url);
@@ -36,9 +36,9 @@ export function createSearchTraces({ maxEntries = 400, ttlMs = 3600000, now = Da
     for (const [id,t] of records) if (now() - t.started_ms > ttlMs) records.delete(id);
     while (records.size > maxEntries) records.delete(records.keys().next().value);
   }
-  function start({ provider, query, platform = 'unknown', session = null }) {
+  function start({ provider, query, platform = 'unknown', session = null, client_version=null,client_build=null,work_ref=null }) {
     prune();
-    const t = { id: randomUUID(), provider, query, platform, session, started_at: new Date(now()).toISOString(), started_ms: now(), state: 'running', events: [], result_count: null };
+    const t = { id: randomUUID(), provider, query, platform, session, client_version,client_build,work_ref,started_at: new Date(now()).toISOString(), started_ms: now(), state: 'running', events: [], result_count: null };
     records.set(t.id,t); prune();
     return t;
   }

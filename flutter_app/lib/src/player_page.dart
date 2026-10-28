@@ -577,6 +577,20 @@ class _PlayerPageState extends State<PlayerPage> {
     _nativeFailureInFlight = true;
     _nativeStartupTimer?.cancel();
     final controller = _controller;
+    final failureCode = controller?.value.hasError == true
+        ? 'NATIVE_DECODER_ERROR'
+        : failureMessage.contains('استمرار')
+        ? 'BUFFER_STALLED'
+        : 'PLAYER_START_FAILED';
+    unawaited(
+      widget.api.reportPlaybackFailure(
+        ref: widget.sourceRef,
+        provider: _activeSource?.providerId.isNotEmpty == true
+            ? _activeSource!.providerId
+            : _activeSource?.provider ?? '',
+        code: failureCode,
+      ),
+    );
     if (controller != null) {
       if (controller.value.isInitialized && !controller.value.hasError) {
         _handoffPosition = controller.value.position;

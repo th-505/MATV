@@ -7,7 +7,7 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
  if(key.startsWith('sb_publishable_'))throw Error('SUPABASE_SERVER_KEY_REQUIRED');
  const headers={apikey:key,'Content-Type':'application/json',...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key})};
  async function request(table,params={},method='GET',body,prefer='return=representation'){
-  if(!TABLES.has(table)&&!['rpc/najd_claim_jobs','rpc/najd_hourly_refresh','rpc/najd_upsert_episodes','rpc/najd_enqueue_jobs','rpc/najd_apply_provider_config'].includes(table))throw Error('HARVEST_TABLE_REJECTED');
+  if(!TABLES.has(table)&&!['rpc/najd_claim_jobs','rpc/najd_hourly_refresh','rpc/najd_upsert_episodes','rpc/najd_enqueue_jobs','rpc/najd_apply_provider_config','rpc/najd_harvest_counts'].includes(table))throw Error('HARVEST_TABLE_REJECTED');
   const target=new URL('/rest/v1/'+table,base);for(const[k,v]of Object.entries(params))if(v!==undefined&&v!==null)target.searchParams.set(k,String(v));
   const r=await fetchImpl(target,{method,redirect:'error',signal:AbortSignal.timeout(8000),headers:{...headers,Prefer:prefer},...(body===undefined?{}:{body:JSON.stringify(body)})});
   if(!r.ok){await r.body?.cancel();throw Error('HARVEST_DB_HTTP_'+r.status)}
@@ -43,7 +43,7 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
   putSource:row=>upsert('najd_source_catalog','work_ref,provider,source_ref',row),
   async putEpisodes(rows){for(let i=0;i<rows.length;i+=80)await request('rpc/najd_upsert_episodes',{},'POST',{p_rows:rows.slice(i,i+80)});},
   async getEpisode(ref,provider,source){return(await request('najd_episode_cache',{work_ref:'eq.'+ref,provider:'eq.'+provider,source_ref:'eq.'+source,limit:1}))?.[0]||null},
-  episodes:(ref,{season,episode,limit=1000,offset=0,playable=false}={})=>request('najd_episode_cache',{work_ref:'eq.'+ref,...(season===undefined?{}:{season:'eq.'+season}),...(episode===undefined?{}:{episode:'eq.'+episode}),...(playable?{state:'eq.playable',media_expires_at:'gt.'+new Date(Date.now()+30000).toISOString()}:{}),order:'season.asc,episode.asc,provider.asc',limit:Math.min(1000,limit),offset}),
+  episodes:(ref,{season,episode,limit=1000,offset=0,playable=false,indexedSince=null}={})=>request('najd_episode_cache',{work_ref:'eq.'+ref,...(indexedSince?{indexed_at:'gte.'+indexedSince}:{}),...(season===undefined?{}:{season:'eq.'+season}),...(episode===undefined?{}:{episode:'eq.'+episode}),...(playable?{state:'eq.playable',media_expires_at:'gt.'+new Date(Date.now()+30000).toISOString()}:{}),order:'season.asc,episode.asc,provider.asc',limit:Math.min(1000,limit),offset}),
   setEpisode:(ref,provider,source,patch)=>request('najd_episode_cache',{work_ref:'eq.'+ref,provider:'eq.'+provider,source_ref:'eq.'+source},'PATCH',{...patch,updated_at:new Date().toISOString()}),
   event:row=>request('najd_harvest_events',{},'POST',row,'return=minimal'),
   hourly:()=>request('rpc/najd_hourly_refresh',{},'POST',{}),
