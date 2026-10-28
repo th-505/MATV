@@ -18,3 +18,7 @@ test('binary prefix cancels an ignored Range without corrupting bytes or reading
 test('binary mode still blocks unsafe redirect targets before fetching them',async()=>{
  let calls=0;await assert.rejects(()=>fetchSafeResponse(candidate.url,{allowHttp:false,responseType:'bytes',prefixBytes:10000,maxRetries:0,fetchImpl:async()=>{calls++;return new Response(null,{status:302,headers:{location:'https://127.0.0.1/private'}})}}));assert.equal(calls,1);
 });
+test('a real MP4 container is accepted when a CDN omits both MIME headers',async()=>{
+ const result=await probeHarvestMedia(candidate,{headProbe:async()=>({playable:false,container:null,statusCode:200,webPlayable:false}),fetchImpl:async()=>({status:200,bytes:Buffer.from('000000186674797069736f6d00000001','hex')})});
+ assert.equal(result.playable,true);assert.equal(result.container,'mp4');assert.equal(result.container_verified,true);assert.equal(result.webPlayable,false);
+});
