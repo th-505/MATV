@@ -46,6 +46,7 @@ test('source cache excludes another source numbering and returns only direct cur
  await store.putEpisodes([{work_ref:ref,provider:'3cktv',source_ref:'3cktv:e1',season:5,episode:1,state:'playable',media:[{url:'https://cdn.example/1.mp4',kind:'direct',expires_at:new Date(200000).toISOString(),identity_verified:true,observed_identity:{season:1,episode:1}}]}]);
  const wrong=await api.sourcePlayback(ref,{season:5,episode:1});assert.equal(wrong.state,'queued');
  const row=[...store.episodeRows.values()][0];row.media[0].observed_identity.season=5;
+ row.media[0].expires_at='invalid';assert.equal((await api.sourcePlayback(ref,{season:5,episode:1})).state,'queued');row.media[0].expires_at=new Date(200000).toISOString();
  const ready=await api.sourcePlayback(ref,{season:5,episode:1});assert.equal(ready.state,'ready');assert.equal(ready.servers[0].edition,'3cktv:cut-a');assert.equal(ready.servers[0].label,'مدبلج');assert.equal(ready.servers[0].provider_id,'3cktv');
 });
 test('a movie keeps its private playback row without exposing an episode zero or a series grid',async()=>{
@@ -67,4 +68,13 @@ test('interactive playback forces refresh through polling, promotes queued work 
  assert.equal((await api.sourcePlayback(ref,{refresh:true})).state,'queued');
  const retry=[...store.jobs.values()][0];retry.status='failed';
  assert.equal((await api.sourcePlayback(ref,{refresh:true})).state,'failed');
+});
+
+test('refresh while a non-forced job is running cannot expose its rejected cache on the next poll',async()=>{
+ const store=memoryStore(),api=createSourceApi({store,worker:{wake:()=>{}},now:()=>20000}),ref=workReference('3cktv:running');
+ store.works.set(ref,{ref,title:'مسلسل',metadata:{}});
+ await store.putEpisodes([{work_ref:ref,provider:'3cktv',source_ref:'3cktv:e1',season:1,episode:1,state:'playable',media:[{url:'https://cdn.example/old.mp4',kind:'direct',expires_at:new Date(200000).toISOString(),identity_verified:true,observed_identity:{season:1,episode:1}}]}]);
+ await api.sourcePlayback(ref,{refresh:true});const job=[...store.jobs.values()][0];job.status='running';job.payload.force_refresh=false;
+ await store.setEpisode(ref,'3cktv','3cktv:e1',{state:'playable',media:[{url:'https://cdn.example/old.mp4',kind:'direct',expires_at:new Date(200000).toISOString(),identity_verified:true,observed_identity:{season:1,episode:1}}]});
+ assert.equal((await api.sourcePlayback(ref,{refresh:true})).state,'running');assert.equal((await api.sourcePlayback(ref)).state,'running');assert.equal([...store.episodeRows.values()][0].media.length,0);
 });

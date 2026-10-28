@@ -44,7 +44,7 @@ export function createSourceApi({store,worker,now=Date.now}){
   if(forcing){worker.wake();return{state:forcing.status,poll_after_ms:1500};}
   const servers=[],seen=new Set();
   for(const row of rows)for(const media of row.media||[]){
-   if(refresh||row.state!=='playable'||!directCandidate(media)||media.identity_verified!==true||Date.parse(media.expires_at)<=now()+30000||(platform==='web'&&media.web_playable!==true)||Number(media.observed_identity?.season)!==season||Number(media.observed_identity?.episode)!==episode||seen.has(media.url))continue;
+   if(refresh||row.state!=='playable'||!directCandidate(media)||media.identity_verified!==true||!(Date.parse(media.expires_at)>now()+30000)||(platform==='web'&&media.web_playable!==true)||Number(media.observed_identity?.season)!==season||Number(media.observed_identity?.episode)!==episode||seen.has(media.url))continue;
    seen.add(media.url);servers.push({...media,provider_id:row.provider,source_ref:row.source_ref,edition:work.metadata.edition,label:work.metadata.source_edition==='dubbed'?'مدبلج':work.metadata.source_edition==='subtitled'?'مترجم':media.quality||'المصدر'});
   }
   if(platform==='web'&&!servers.length&&rows.some(r=>r.state==='playable'&&r.media?.some(m=>m.identity_verified&&Date.parse(m.expires_at)>now()+30000)))return{state:'unavailable',reason:'PINNED_DIRECT_WEB_UNAVAILABLE'};
@@ -52,6 +52,9 @@ export function createSourceApi({store,worker,now=Date.now}){
   const row=rows.find(r=>r.state!=='unavailable')||rows[0];const jobKey=[key,'episode',row.provider,shortHash(row.source_ref)].join(':');
   const current=(await store.request('matv_discovery_jobs',{job_key:'eq.'+jobKey,select:'status,error_code,payload',limit:1}))?.[0];
   if(current?.status==='failed'&&(!refresh||now()-(playbackRetries.get(jobKey)||0)<10000))return{state:'failed',reason:current.error_code||'DIRECT_MEDIA_NOT_FOUND'};
+  // Invalidate only this requested episode so an already-running cache-hit job
+  // cannot make the next ordinary poll return the link the user rejected.
+  if(refresh)for(const candidate of rows)await store.setEpisode(key,candidate.provider,candidate.source_ref,{state:'pending',media:[],media_expires_at:null});
   if(refresh){playbackRetries.set(jobKey,now());if(playbackRetries.size>256)playbackRetries.delete(playbackRetries.keys().next().value);}
   if(current?.status==='queued')await store.request('matv_discovery_jobs',{job_key:'eq.'+jobKey,status:'eq.queued'},'PATCH',{priority:10,refresh_after:stamp(),updated_at:stamp(),...(refresh?{payload:{...current.payload,force_refresh:true}}:{})});
   if(!refresh&&row.state==='unavailable'&&Date.parse(row.last_checked_at)>now()-60000)return{state:'unavailable',reason:'DIRECT_MEDIA_NOT_FOUND'};
