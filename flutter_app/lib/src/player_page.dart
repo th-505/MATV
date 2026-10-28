@@ -692,8 +692,9 @@ class _PlayerPageState extends State<PlayerPage> {
                     origin,
                     requestedRef: widget.sourceRef,
                   )) <
-              const Duration(milliseconds: 500))
+              const Duration(milliseconds: 500)) {
         return index;
+      }
     }
     return null;
   }
