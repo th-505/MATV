@@ -349,6 +349,8 @@ jobs:
       pages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: device-artifacts
@@ -376,7 +378,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin main
-          git merge-base --is-ancestor origin/main "$MITV_SOURCE_COMMIT"
+          git merge-base --is-ancestor "$MITV_SOURCE_COMMIT" origin/main
+          git diff --exit-code "$MITV_SOURCE_COMMIT" origin/main -- flutter_app shared assets/brand
           python3 - <<'PYWEB'
           import pathlib, zipfile, shutil
           archive=pathlib.Path('device-artifacts/Najd-TV-Flutter-Web/Najd-TV-Web.zip')

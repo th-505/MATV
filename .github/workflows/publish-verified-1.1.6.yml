@@ -1,0 +1,114 @@
+name: Publish verified Najd 1.1.6 artifacts
+
+on:
+  push:
+    branches: ['publish/najd-1.1.6']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: najd-release-publish
+  cancel-in-progress: false
+
+env:
+  MITV_API_BASE: https://matv.onrender.com
+  MITV_SOURCE_COMMIT: b2813a320d5cb72fe4b3e4b988d703fbb72bf962
+  SOURCE_RUN_ID: '40628175391'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: device-artifacts
+          github-token: ${{ github.token }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+      - name: Verify the complete six-target release
+        run: |
+          set -euo pipefail
+          read VERSION BUILD < <(python3 - <<'PY'
+          import pathlib, re
+          match = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('flutter_app/pubspec.yaml').read_text(), re.M)
+          assert match
+          print(*match.groups())
+          PY
+          )
+          python3 scripts/verify_device_artifacts.py device-artifacts "$MITV_API_BASE" "$VERSION" "$BUILD" "$MITV_SOURCE_COMMIT" > device-verification.json
+          cat device-verification.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Najd-TV-device-verification
+          path: device-verification.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: Deploy verified Web bundle only behind server authentication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor "$MITV_SOURCE_COMMIT" origin/main
+          git diff --exit-code "$MITV_SOURCE_COMMIT" origin/main -- flutter_app shared assets/brand
+          python3 - <<'PYWEB'
+          import pathlib, zipfile, shutil
+          archive=pathlib.Path('device-artifacts/Najd-TV-Flutter-Web/Najd-TV-Web.zip')
+          destination=pathlib.Path('/tmp/najd-internal-web')
+          with zipfile.ZipFile(archive) as package:
+              for name in package.namelist():
+                  path=pathlib.PurePosixPath(name)
+                  assert not path.is_absolute() and '..' not in path.parts
+                  assert not ('thmanyah' in name.lower() and path.suffix.lower() in ('.otf','.ttf','.woff','.woff2')), 'Private font publication forbidden'
+              package.extractall(destination)
+          PYWEB
+          git checkout -B main origin/main
+          rm -rf internal_web
+          mkdir internal_web
+          cp -R /tmp/najd-internal-web/. internal_web/
+          git add internal_web
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Deploy verified Najd internal Web bundle [skip ci]'
+            git push origin main
+          fi
+      - name: Publish all verified packages together
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          version, build = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('flutter_app/pubspec.yaml').read_text(), re.M).groups()
+          report = json.loads(pathlib.Path('device-verification.json').read_text())
+          assert report
+          pathlib.Path('/tmp/release-notes.md').write_text(
+              f"Najd TV {version} (build {build}), Playback retry repair, verified media bytes and continuous/split season numbering.\n\n"
+              "Najd lavender dark/light themes, five main destinations, regional sidebar, actual infinite search, cast filmography, local font ZIP import, account profile and revocable owner-approved device linking. Persistent favorite harvesting separates seven-day metadata from expiring media URLs; source configuration can refresh server-side without rebuilding clients. GitHub-only Gemini reports apply only independently verified bounded configuration proposals. Node 24.22.1, Flutter 3.47.8 / Dart 3.13.7 security baseline. Conan source episode 1217 remains 1217; synthetic episode lists removed, movie pages have no episode grid. Tightened CORS, rate limits, output escaping and upstream body bounds.\n\nSix targets packaged and checked from one source commit: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/ZIP, native macOS DMG and an authenticated internal Web build. Android APKs are each at most 35 MiB with libmpv codecs retained.\n\n"
+              "Source names use Arabic labels and domains. Search requests carry anonymous per-launch session and platform identifiers plus a trace ID. The private server dashboard shows upstream URLs, redirects, HTTP status, parsing and title filtering. MyCima, Shahid4u and QFilm search paths and cards were updated from observed live forms. This does not certify all providers: blocked, suspended, login-gated and timed-out sources remain explicitly unavailable. Cloud servers carry metadata and links only. Protected sources unavailable to browsers are excluded from Web playback.\n\n"
+              "The IPA needs external signing. The macOS app is ad-hoc signed, without an Apple developer certificate or notarization; Gatekeeper may require an explicit local approval. Windows packages are not Authenticode signed.\n\n"
+              "Automated package, architecture, checksum, source identity and Chromium MP4/HLS fixture checks passed. Physical iPhone, Android phone/TV and desktop playback, battery and thermal certification remain pending.\n\n"
+              f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n\n"
+              "Web: internal administration and testing only; not published in Releases.\n", encoding='utf-8')
+          pathlib.Path('/tmp/mitv-release-version').write_text(version)
+          PY
+          VERSION="$(cat /tmp/mitv-release-version)"
+          shopt -s nullglob
+          ASSETS=(device-artifacts/*/*.apk device-artifacts/*/*.ipa device-artifacts/*/*.exe device-artifacts/*/*.zip device-artifacts/*/*.dmg device-artifacts/*/*.sha256 device-artifacts/*/macOS-report.json device-verification.json)
+          PUBLIC_ASSETS=()
+          for ASSET in "${ASSETS[@]}"; do
+            case "$ASSET" in *Najd-TV-Flutter-Web/*) continue ;; esac
+            PUBLIC_ASSETS+=("$ASSET")
+          done
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --title "Najd TV $VERSION" --notes-file /tmp/release-notes.md "${PUBLIC_ASSETS[@]}"
