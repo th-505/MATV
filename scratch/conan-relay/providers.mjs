@@ -21,13 +21,13 @@ export async function resolveCimanowVirtual(value,options={}){
  const response=await fetchSafeResponse(new URL('/watch/resolve',target).href,{allowHttp:false,allowedHosts:['cimanow.me'],method:'POST',body:JSON.stringify({key,index:Number(params.get('index'))}),headers:{Accept:'application/json','Content-Type':'application/json','X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':csrf},referer:target.href,cookies,timeoutMs:7000,maxRetries:0});
  if(!response.ok)return [];const json=JSON.parse(response.html);if(json?.ok&&typeof json.url==='string')return resolvePlayer(json.url,target.href,options);return [];
 }
-export async function normalizeCandidate(raw,provider){
+export async function normalizeCandidate(raw,provider,identity={workId:'conan28-2025',edition:'original-subtitled'}){
  const url=assertSafeScraperUrl(raw.url||raw.streamUrl,{allowHttp:false});
  await assertSafeResolvedHost(url.hostname);
  const hls=/\.m3u8$/i.test(url.pathname)||raw.streamType==='m3u8'||raw.type==='m3u8';
  const headers=Object.fromEntries(Object.entries(raw.headers||{}).filter(([key,value])=>['referer','origin','user-agent','accept','accept-language','cookie'].includes(key.toLowerCase())&&typeof value==='string'&&!/[\r\n]/.test(value)));
  const verified=await probePlayerMedia({...raw,url:url.href});if(!verified)return null;
- return {url:verified.url,player:raw.player||null,provenance:raw.provenance||'live-player',format:verified.streamType==='m3u8'?'hls':'mp4',provider,workId:'conan28-2025',edition:'original-subtitled',headers,mediaHosts:[...new Set([url.hostname,new URL(verified.url).hostname])],expires_at:new Date(Date.now()+3600000).toISOString()};
+ return {url:verified.url,player:raw.player||null,provenance:raw.provenance||'live-player',format:verified.streamType==='m3u8'?'hls':'mp4',provider,workId:identity.workId,edition:identity.edition,headers,mediaHosts:[...new Set([url.hostname,new URL(verified.url).hostname])],expires_at:new Date(Date.now()+3600000).toISOString()};
 }
 export async function discoverProviders({onCandidate=async()=>{},onProgress=()=>{},budgetMs=600000,providerIds=null}={}){
  const entries=listProviders().filter(p=>!p.mirrorOf&&p.capabilities?.search&&p.id!=='akwam'&&(!providerIds||providerIds.includes(p.id)));

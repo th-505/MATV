@@ -1,0 +1,64 @@
+[
+  {
+    "provider": "akwam",
+    "work": {
+      "id": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS85NzA2LyVEOCVBMyVEOCVBOCVEOSU4OC0lRDklODYlRDglQjMlRDglQTg",
+      "ref": "akwam:aHR0cHM6Ly9ha3dhbS5zcy9tb3ZpZS85NzA2LyVEOCVBMyVEOCVBOCVEOSU4OC0lRDklODYlRDglQjMlRDglQTg",
+      "title": "أبو نسب",
+      "originalTitle": "",
+      "url": "https://akwam.ss/movie/9706/%D8%A3%D8%A8%D9%88-%D9%86%D8%B3%D8%A8",
+      "sourceUrl": "https://akwam.ss/movie/9706/%D8%A3%D8%A8%D9%88-%D9%86%D8%B3%D8%A8",
+      "poster": "https://img.downet.net/thumb/178x260/uploads/3uhlG.jpg",
+      "image": "https://img.downet.net/thumb/178x260/uploads/3uhlG.jpg",
+      "year": "2023",
+      "quality": "WEB-DL",
+      "rating": "6.8",
+      "category": "movie",
+      "type": "movie",
+      "source": "akwam",
+      "is_series": false,
+      "serverPrefix": "AK"
+    }
+  },
+  {
+    "provider": "ipauniverse",
+    "work": {
+      "id": "1138295",
+      "ref": "ipauniverse:https://watch.ipauniverse.com/detail.html?id=1138295",
+      "title": "Abo Nasab",
+      "originalTitle": "أبو نسب",
+      "url": "https://watch.ipauniverse.com/detail.html?id=1138295",
+      "sourceUrl": "https://watch.ipauniverse.com/detail.html?id=1138295",
+      "poster": "https://image.tmdb.org/t/p/w342/64Fd7nDGv7VvwTpc8Olr2cCcefb.jpg",
+      "image": "https://image.tmdb.org/t/p/w342/64Fd7nDGv7VvwTpc8Olr2cCcefb.jpg",
+      "year": "2023",
+      "quality": "",
+      "rating": "5.4",
+      "category": "movie",
+      "type": "movie",
+      "source": "ipauniverse",
+      "href": "https://watch.ipauniverse.com/detail.html?id=1138295",
+      "is_series": false,
+      "serverPrefix": "IE"
+    }
+  },
+  {
+    "provider": "mycima",
+    "work": {
+      "id": "mycima:aHR0cHM6Ly9teWNpbWEuZ2RuLyVkOSU4NSVkOCViNCVkOCVhNyVkOSU4NyVkOCVhZiVkOCVhOS0lZDklODElZDklOGElZDklODQlZDklODUtJWQ4JWEzJWQ4JWE4JWQ5JTg4LSVkOSU4NiVkOCViMyVkOCVhOC0yMDIzLSVkOSU4NSVkOCVhNyVkOSU4YS0lZDglYjMlZDklOGElZDklODUlZDglYTcv",
+      "ref": "mycima:aHR0cHM6Ly9teWNpbWEuZ2RuLyVkOSU4NSVkOCViNCVkOCVhNyVkOSU4NyVkOCVhZiVkOCVhOS0lZDklODElZDklOGElZDklODQlZDklODUtJWQ4JWEzJWQ4JWE4JWQ5JTg4LSVkOSU4NiVkOCViMyVkOCVhOC0yMDIzLSVkOSU4NSVkOCVhNyVkOSU4YS0lZDglYjMlZDklOGElZDklODUlZDglYTcv",
+      "title": "مشاهدة فيلم أبو نسب ماي سيما     ( 2023  )",
+      "year": "2023",
+      "poster": "https://mycima.gdn/wp-content/uploads/2025/09/e020b80f.jpg",
+      "image": "https://mycima.gdn/wp-content/uploads/2025/09/e020b80f.jpg",
+      "url": "https://mycima.gdn/%d9%85%d8%b4%d8%a7%d9%87%d8%af%d8%a9-%d9%81%d9%8a%d9%84%d9%85-%d8%a3%d8%a8%d9%88-%d9%86%d8%b3%d8%a8-2023-%d9%85%d8%a7%d9%8a-%d8%b3%d9%8a%d9%85%d8%a7/",
+      "sourceUrl": "https://mycima.gdn/%d9%85%d8%b4%d8%a7%d9%87%d8%af%d8%a9-%d9%81%d9%8a%d9%84%d9%85-%d8%a3%d8%a8%d9%88-%d9%86%d8%b3%d8%a8-2023-%d9%85%d8%a7%d9%8a-%d8%b3%d9%8a%d9%85%d8%a7/",
+      "source": "mycima",
+      "code": "MA",
+      "serverPrefix": "MA",
+      "type": "movie",
+      "category": "movie",
+      "is_series": false
+    }
+  }
+]
