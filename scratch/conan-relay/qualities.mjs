@@ -56,7 +56,7 @@ export function mergeVariants(baseline,candidates){
 }
 export function masterPlaylist(variants,requestUrl){
  const base=new URL(requestUrl);base.pathname=base.pathname.replace(/index\.m3u8$/,'variant');base.search='';
- const lines=['#EXTM3U','#EXT-X-VERSION:3'];
+ const lines=['#EXTM3U','#EXT-X-VERSION:4'];
  for(const v of variants){const u=new URL(base);u.searchParams.set('id',v.id);lines.push('#EXT-X-STREAM-INF:BANDWIDTH='+v.bandwidth+',RESOLUTION='+v.width+'x'+v.height+',NAME="'+(v.height+'p '+(v.source.provider||'source')+' '+(v.source.player||'')).replace(/[^a-zA-Z0-9 ._-]/g,'')+'"'+(v.codecs?',CODECS="'+v.codecs+'"':''),u.href);}
  return lines.join('\n')+'\n';
 }
