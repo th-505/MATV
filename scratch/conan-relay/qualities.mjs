@@ -49,7 +49,7 @@ export function mergeVariants(baseline,candidates){
  const anchor=baseline.length?baseline:candidates.slice(0,1);const accepted=baseline.length?[...baseline]:candidates.slice(0,1),rejected=[];
  for(const candidate of candidates){
   if(!anchor.some(base=>compatible(base,candidate))){rejected.push({provider:candidate.source.provider,quality:candidate.height+'p',reason:'TIMELINE_OR_EDITION_MISMATCH'});continue;}
-  if(accepted.some(v=>v.id===candidate.id))continue;
+  const existing=accepted.findIndex(v=>v.id===candidate.id);if(existing>=0){accepted[existing]=candidate;continue;}
   accepted.push(candidate);
  }
  return {variants:accepted.sort((a,b)=>b.height-a.height||b.bandwidth-a.bandwidth),rejected};
@@ -60,7 +60,7 @@ export function masterPlaylist(variants,requestUrl){
  for(const v of variants){const u=new URL(base);u.searchParams.set('id',v.id);lines.push('#EXT-X-STREAM-INF:BANDWIDTH='+v.bandwidth+',RESOLUTION='+v.width+'x'+v.height+',NAME="'+(v.height+'p '+(v.source.provider||'source')+' '+(v.source.player||'')).replace(/[^a-zA-Z0-9 ._-]/g,'')+'"'+(v.codecs?',CODECS="'+v.codecs+'"':''),u.href);}
  return lines.join('\n')+'\n';
 }
-export function publicQualities(variants){return variants.map(v=>({id:v.id,quality:v.height+'p',width:v.width,height:v.height,provider:v.source.provider||'mycima',player:v.source.player||null,bandwidth:v.bandwidth}));}
+export function publicQualities(variants){return variants.map(v=>({id:v.id,quality:v.height+'p',width:v.width,height:v.height,provider:v.source.provider||'mycima',player:v.source.player||null,provenance:v.source.provenance||'live-player',bandwidth:v.bandwidth}));}
 export async function serveVariant(request,variant,asset=null){
  const requestUrl=new URL(request.url);requestUrl.searchParams.set('id',variant.id);
  return proxyHls(new Request(requestUrl,request),variant.source,asset||variant.url);
