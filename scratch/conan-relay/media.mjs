@@ -1,11 +1,13 @@
+import {assertSafeScraperUrl,assertSafeResolvedHost} from './provider-runtime.mjs';
+const originalFetch=globalThis.fetch;
 import {unpackDeanEdwards} from "./unpack.mjs";
 const ORIGIN='https://akwam.ss';
 const PAGE=ORIGIN+'/movie/10524/detective-conan-one-eyed-flashback';
 const UA='Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1';
-export function allowed(value,media=false){
- const u=new URL(value);
+export function allowed(value,media=false,extraHosts=[]){
+ const u=assertSafeScraperUrl(String(value),{allowHttp:false});
  if(u.protocol!=='https:'||u.username||u.password||u.port||u.hash)throw Error('UNSAFE_UPSTREAM');
- if(media?!(/^(?:s[0-9a-z]+\.downet\.net|[a-z0-9-]+\.premilkyway\.com)$/.test(u.hostname)):u.hostname!=='akwam.ss')throw Error('UNSAFE_UPSTREAM');
+ if(media?!(/^(?:s[0-9a-z]+\.downet\.net|[a-z0-9-]+\.premilkyway\.com)$/.test(u.hostname)||extraHosts.includes(u.hostname)):u.hostname!=='akwam.ss')throw Error('UNSAFE_UPSTREAM');
  return u;
 }
 export async function prefix(response,max=1024){
@@ -18,11 +20,13 @@ export async function readText(response){
  try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>1024*1024)throw Error('PAGE_TOO_LARGE');result+=dec.decode(value,{stream:true});}}finally{await reader.cancel();}return result+dec.decode();
 }
 export async function mediaFetch(source,range,method='GET'){
- let current=allowed(source.url,true);
+ let current=allowed(source.url,true,source.mediaHosts);
  for(let hop=0;hop<4;hop++){
-  const response=await fetch(current,{method,redirect:'manual',headers:{...source.headers,...(range?{Range:range}:{})},signal:AbortSignal.timeout(20000)});
+  if(globalThis.fetch===originalFetch)await assertSafeResolvedHost(current.hostname);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let response;
+  try{response=await fetch(current,{method,redirect:'manual',headers:{...source.headers,...(range?{Range:range}:{})},signal:controller.signal});}finally{clearTimeout(timer);}
   if(![301,302,303,307,308].includes(response.status))return response;
-  const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('BAD_REDIRECT');current=allowed(new URL(next,current).href,true);
+  const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('BAD_REDIRECT');current=allowed(new URL(next,current).href,true,source.mediaHosts);
  }throw Error('REDIRECT_LIMIT');
 }
 export async function extract(){
@@ -76,9 +80,9 @@ export async function extractHls(){
   }catch{}
  }const e=Error('NO_VERIFIED_HLS');e.diagnostics=diagnostics;e.candidateCount=matches.length;throw e;
 }
-export function rewritePlaylist(text,upstream,requestUrl){
+export function rewritePlaylist(text,upstream,requestUrl,extraHosts=[]){
  const base=new URL(requestUrl);base.pathname=base.pathname.replace(/\/(?:index\.m3u8|variant|asset)$/,'/asset');const id=base.searchParams.get('id');base.search='';if(id)base.searchParams.set('id',id);
- const route=value=>{const target=allowed(new URL(value,upstream).href,true);const u=new URL(base);u.searchParams.set('u',target.href);return u.href;};
+ const route=value=>{const target=allowed(new URL(value,upstream).href,true,extraHosts);const u=new URL(base);u.searchParams.set('u',target.href);return u.href;};
  return text.split(/\r?\n/).map(line=>{
   if(!line.trim())return line;
   if(line.startsWith('#'))return line.replace(/URI="([^"]+)"/g,(_,value)=>'URI="'+route(value)+'"');
@@ -87,7 +91,7 @@ export function rewritePlaylist(text,upstream,requestUrl){
 }
 export async function proxyHls(request,source,asset=null){
  let target=source.url;
- if(asset){const candidate=allowed(asset,true),original=new URL(source.url);
+ if(asset){const candidate=allowed(asset,true,source.mediaHosts),original=new URL(source.url);
   if(candidate.origin!==original.origin||!candidate.pathname.startsWith(original.pathname.slice(0,original.pathname.lastIndexOf('/')+1)))return new Response('Invalid asset',{status:403});
   target=candidate.href;
  }
@@ -98,7 +102,7 @@ export async function proxyHls(request,source,asset=null){
  if(new URL(target).pathname.endsWith('.m3u8')){
   headers.set('Content-Type','application/vnd.apple.mpegurl');if(request.method==='HEAD')return new Response(null,{headers});
   const text=await readText(response);if(!text.trimStart().startsWith('#EXTM3U'))return new Response('Invalid playlist',{status:502});
-  return new Response(rewritePlaylist(text,target,request.url),{headers});
+  return new Response(rewritePlaylist(text,target,request.url,source.mediaHosts),{headers});
  }
  for(const key of ['content-type','content-length','content-range','accept-ranges']){const value=response.headers.get(key);if(value)headers.set(key,value);}
  return new Response(request.method==='HEAD'?null:response.body,{status:response.status,headers});

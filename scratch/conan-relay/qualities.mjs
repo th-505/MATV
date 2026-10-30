@@ -2,13 +2,13 @@ import {createHash} from 'node:crypto';
 import {allowed,mediaFetch,prefix,readText,proxyHls} from './media.mjs';
 const digest=value=>createHash('sha256').update(value).digest('hex').slice(0,20);
 export function attributes(line){return Object.fromEntries([...line.matchAll(/([A-Z0-9-]+)=("[^"]*"|[^,]*)/g)].map(m=>[m[1],m[2].replace(/^"|"$/g,'')]));}
-export function parseMaster(text,url){
+export function parseMaster(text,url,extraHosts=[]){
  if(!text.trimStart().startsWith('#EXTM3U'))throw Error('INVALID_HLS');
  const lines=text.split(/\r?\n/),variants=[];
  for(let i=0;i<lines.length;i++)if(lines[i].startsWith('#EXT-X-STREAM-INF:')){
   const a=attributes(lines[i]);let j=i+1;while(j<lines.length&&(!lines[j].trim()||lines[j].startsWith('#')))j++;
   if(!lines[j]||a.AUDIO||a.VIDEO||a.SUBTITLES)continue;
-  const target=new URL(lines[j].trim(),url);allowed(target.href,true);
+  const target=new URL(lines[j].trim(),url);allowed(target.href,true,extraHosts);
   const bandwidth=Number(a.BANDWIDTH),resolution=(a.RESOLUTION||'').match(/^(\d+)x(\d+)$/);
   if(!Number.isSafeInteger(bandwidth)||bandwidth<=0||!resolution)continue;
   if(a.CODECS&&!/^[a-zA-Z0-9., -]+$/.test(a.CODECS))continue;
@@ -26,11 +26,11 @@ export function timeline(text){
  return {fingerprint:digest(JSON.stringify({sequence,durations:durations.map(n=>Math.round(n*1000)),discontinuities})),duration:durations.reduce((a,b)=>a+b,0),segments:durations.length};
 }
 export function compatible(a,b){return a.workId===b.workId&&a.edition===b.edition&&a.timeline.fingerprint===b.timeline.fingerprint&&a.codecs===b.codecs;}
-function assetWithin(value,source){const u=allowed(value,true),base=new URL(source.url);if(u.origin!==base.origin||!u.pathname.startsWith(base.pathname.slice(0,base.pathname.lastIndexOf('/')+1)))throw Error('OUTSIDE_SOURCE_DIRECTORY');return u.href;}
+function assetWithin(value,source){const u=allowed(value,true,source.mediaHosts),base=new URL(source.url);if(u.origin!==base.origin||!u.pathname.startsWith(base.pathname.slice(0,base.pathname.lastIndexOf('/')+1)))throw Error('OUTSIDE_SOURCE_DIRECTORY');return u.href;}
 async function playlist(source,url=source.url){assetWithin(url,source);const r=await mediaFetch({...source,url});if(!r.ok){await r.body?.cancel();throw Error('PLAYLIST_UNAVAILABLE');}return readText(r);}
 export async function inspectSource(source){
  if(source.format!=='hls')throw Error('MP4_REQUIRES_HLS_PACKAGING');
- const master=await playlist(source),raw=parseMaster(master,source.url),result=[];
+ const master=await playlist(source),raw=parseMaster(master,source.url,source.mediaHosts),result=[];
  if(!raw.length)throw Error('NO_DECLARED_VARIANTS');
  for(const variant of raw.slice(0,8)){
   const text=await playlist(source,variant.url),timing=timeline(text);

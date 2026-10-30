@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {discoverProviders} from './providers.mjs';
 import {Readable} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
 import {extractHls,proxyHls,extract,proxy} from './media.mjs';
@@ -12,7 +13,7 @@ async function addCandidates(candidates,generation){
  for(const source of candidates){try{variants.push(...await inspectSource(source));}catch(e){diagnostics.push({provider:source.provider||'unknown',reason:e.message==='MP4_REQUIRES_HLS_PACKAGING'?'MP4_REQUIRES_HLS_PACKAGING':'VARIANT_UNAVAILABLE'});}}
  if(state.generation!==generation)return;
  const merged=mergeVariants(state.variants,variants);
- state={...state,variants:merged.variants,sources:[...state.sources,...candidates],diagnostics:[...state.diagnostics,...diagnostics,...merged.rejected],collecting:false};
+ state={...state,variants:merged.variants,sources:[...state.sources,...candidates],diagnostics:[...state.diagnostics,...diagnostics,...merged.rejected]};
 }
 async function refresh(){
  if(pending)return pending;
@@ -24,7 +25,12 @@ async function refresh(){
   for(const source of result.sources){try{baseline.push(...await inspectSource(source));}catch{}}
   if(!baseline.length&&state.variants?.length){state={...state,diagnostics:[{reason:'REFRESH_FAILED_RETAINED_PREVIOUS'}],nextRefresh:Date.now()+60000};return publicState();}
   state={state:baseline.length?'ready':'unavailable',...result,variants:baseline,generation,collecting:true,checkedAt:new Date().toISOString(),nextRefresh:Date.now()+3600000};
-  if(!enrichment){enrichment=(async()=>{try{const extra=await extract();await addCandidates(extra.sources,generation);if(state.generation===generation)state.diagnostics.push(...extra.diagnostics.map(d=>({provider:'akwam',...d})));}catch{if(state.generation===generation){state.collecting=false;state.diagnostics.push({provider:'akwam',reason:'SOURCE_UNAVAILABLE'});}}})().finally(()=>{enrichment=null;});}else state.collecting=false;
+  if(!enrichment){enrichment=(async()=>{
+   const checkAkwam=(async()=>{try{const extra=await extract();await addCandidates(extra.sources,generation);if(state.generation===generation)state.diagnostics.push(...extra.diagnostics.map(d=>({provider:'akwam',...d})));}catch{if(state.generation===generation)state.diagnostics.push({provider:'akwam',reason:'SOURCE_UNAVAILABLE'});}})();
+   const more=await discoverProviders({onCandidate:async candidate=>{if(state.generation===generation)await addCandidates([candidate],generation);},onProgress:progress=>{if(state.generation===generation)state.discovery=progress;}});
+   await checkAkwam;
+   if(state.generation===generation){state.diagnostics.push(...more.diagnostics);state.discovery=more.discovery;state.collecting=false;}
+  })().catch(()=>{if(state.generation===generation){state.collecting=false;state.discovery={...state.discovery,partial:true};}}).finally(()=>{enrichment=null;});}else state.collecting=false;
   return publicState();
  })().finally(()=>{pending=null;});return pending;
 }
