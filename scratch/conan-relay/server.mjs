@@ -43,7 +43,7 @@ async function refresh(){
 }
 async function handle(request){
  const url=new URL(request.url);
- if(url.pathname==='/health')return Response.json({ok:true,service:'conan-relay-test'});
+ if(url.pathname==='/health')return Response.json({ok:true,service:'conan-relay-test',release:'players-pagination-v2'});
  if(!url.pathname.startsWith('/'+access+'/'))return new Response('Not found',{status:404});
  if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405});
  const route=url.pathname.slice(access.length+2);
