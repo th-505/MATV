@@ -41,6 +41,7 @@ export function wrapConfiguredProvider(entry){
   if(name==='scrapeSearch'&&config?.card_selector)return configuredSearch(entry,args[0],args[1]||1,config,args[2]||{});
   const values=[...args];let pagination=null;
   if(name==='scrapeSearch')values[2]={...(values[2]||{}),onProviderPage:response=>{
+   args[2]?.onProviderPage?.(response);
    const html=response.html||'';const tag=html.match(/<a\b[^>]*(?:rel=["']next["']|class=["'][^"']*\bnext\b)[^>]*>/i)?.[0];
    const href=tag?.match(/href=["']([^"']+)["']/i)?.[1]?.replaceAll('&amp;','&');
    if(!href)return;try{const n=new URL(href,response.url);const base=new URL(response.url);if(n.origin!==base.origin||n.hash)return;const next=Number(n.searchParams.get('page')||n.searchParams.get('paged')||n.searchParams.get('p'))||Number(n.pathname.match(/\/page\/(\d+)/)?.[1])||Number(args[1]||1)+1;if(next>Number(args[1]||1))pagination={next_page:next,next_url:n.href}}catch{}

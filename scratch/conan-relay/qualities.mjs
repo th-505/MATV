@@ -8,7 +8,7 @@ export function parseMaster(text,url,extraHosts=[]){
  for(let i=0;i<lines.length;i++)if(lines[i].startsWith('#EXT-X-STREAM-INF:')){
   const a=attributes(lines[i]);let j=i+1;while(j<lines.length&&(!lines[j].trim()||lines[j].startsWith('#')))j++;
   if(!lines[j]||a.AUDIO||a.VIDEO||a.SUBTITLES)continue;
-  const target=new URL(lines[j].trim(),url);allowed(target.href,true,extraHosts);
+  const target=new URL(lines[j].trim(),url);allowed(target.href,true,[...extraHosts,target.hostname]);
   const bandwidth=Number(a.BANDWIDTH),resolution=(a.RESOLUTION||'').match(/^(\d+)x(\d+)$/);
   if(!Number.isSafeInteger(bandwidth)||bandwidth<=0||!resolution)continue;
   if(a.CODECS&&!/^[a-zA-Z0-9., -]+$/.test(a.CODECS))continue;
@@ -33,22 +33,23 @@ export async function inspectSource(source){
  const master=await playlist(source),raw=parseMaster(master,source.url,source.mediaHosts),result=[];
  if(!raw.length)throw Error('NO_DECLARED_VARIANTS');
  for(const variant of raw.slice(0,8)){
-  const text=await playlist(source,variant.url),timing=timeline(text);
+  const variantHost=new URL(variant.url).hostname;const childSource={...source,url:variant.url,mediaHosts:[...new Set([...(source.mediaHosts||[]),variantHost])]};if(new URL(variant.url).origin!==new URL(source.url).origin){childSource.headers={...source.headers};delete childSource.headers.Cookie;delete childSource.headers.cookie;}
+  const text=await playlist(childSource,variant.url),timing=timeline(text);
   const line=text.split(/\r?\n/).find(x=>x.trim()&&!x.startsWith('#'));
-  if(!line)continue;const segment=assetWithin(new URL(line.trim(),variant.url).href,source);
-  const r=await mediaFetch({...source,url:segment},'bytes=0-1023');const bytes=await prefix(r);
+  if(!line)continue;const segment=assetWithin(new URL(line.trim(),variant.url).href,childSource);
+  const r=await mediaFetch({...childSource,url:segment},'bytes=0-1023');const bytes=await prefix(r);
   const container=bytes[0]===0x47||['ftyp','styp','moof'].includes(new TextDecoder().decode(bytes.slice(4,8)));
   if(![200,206].includes(r.status)||!container)continue;
   const id=digest([source.provider||'mycima',new URL(source.url).pathname,new URL(variant.url).pathname].join(':'));
-  result.push({...variant,id,source,timeline:timing,workId:source.workId||'conan28-2025',edition:source.edition||'original-subtitled'});
+  result.push({...variant,id,source:childSource,timeline:timing,workId:source.workId||'conan28-2025',edition:source.edition||'original-subtitled'});
  }
  return result;
 }
 export function mergeVariants(baseline,candidates){
- const accepted=[...baseline],rejected=[];
+ const anchor=baseline.length?baseline:candidates.slice(0,1);const accepted=baseline.length?[...baseline]:candidates.slice(0,1),rejected=[];
  for(const candidate of candidates){
-  if(!baseline.some(base=>compatible(base,candidate))){rejected.push({provider:candidate.source.provider,quality:candidate.height+'p',reason:'TIMELINE_OR_EDITION_MISMATCH'});continue;}
-  if(accepted.some(v=>v.height===candidate.height&&v.codecs===candidate.codecs))continue;
+  if(!anchor.some(base=>compatible(base,candidate))){rejected.push({provider:candidate.source.provider,quality:candidate.height+'p',reason:'TIMELINE_OR_EDITION_MISMATCH'});continue;}
+  if(accepted.some(v=>v.id===candidate.id))continue;
   accepted.push(candidate);
  }
  return {variants:accepted.sort((a,b)=>b.height-a.height||b.bandwidth-a.bandwidth),rejected};
@@ -56,10 +57,10 @@ export function mergeVariants(baseline,candidates){
 export function masterPlaylist(variants,requestUrl){
  const base=new URL(requestUrl);base.pathname=base.pathname.replace(/index\.m3u8$/,'variant');base.search='';
  const lines=['#EXTM3U','#EXT-X-VERSION:3'];
- for(const v of variants){const u=new URL(base);u.searchParams.set('id',v.id);lines.push('#EXT-X-STREAM-INF:BANDWIDTH='+v.bandwidth+',RESOLUTION='+v.width+'x'+v.height+(v.codecs?',CODECS="'+v.codecs+'"':''),u.href);}
+ for(const v of variants){const u=new URL(base);u.searchParams.set('id',v.id);lines.push('#EXT-X-STREAM-INF:BANDWIDTH='+v.bandwidth+',RESOLUTION='+v.width+'x'+v.height+',NAME="'+(v.height+'p '+(v.source.provider||'source')+' '+(v.source.player||'')).replace(/[^a-zA-Z0-9 ._-]/g,'')+'"'+(v.codecs?',CODECS="'+v.codecs+'"':''),u.href);}
  return lines.join('\n')+'\n';
 }
-export function publicQualities(variants){return variants.map(v=>({id:v.id,quality:v.height+'p',width:v.width,height:v.height,provider:v.source.provider||'mycima',bandwidth:v.bandwidth}));}
+export function publicQualities(variants){return variants.map(v=>({id:v.id,quality:v.height+'p',width:v.width,height:v.height,provider:v.source.provider||'mycima',player:v.source.player||null,bandwidth:v.bandwidth}));}
 export async function serveVariant(request,variant,asset=null){
  const requestUrl=new URL(request.url);requestUrl.searchParams.set('id',variant.id);
  return proxyHls(new Request(requestUrl,request),variant.source,asset||variant.url);

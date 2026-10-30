@@ -13,3 +13,4 @@ test('stalled probe and playlist bodies are cancelled within their deadline',asy
   await assert.rejects(()=>read(response),/UPSTREAM_BODY_TIMEOUT/);assert.ok(cancelled);
  }
 });
+test('txt playlist variant is rewritten even when served as text/plain',async()=>{const old=globalThis.fetch;try{globalThis.fetch=async()=>new Response('#EXTM3U\n#EXTINF:10,\npart.ts\n#EXT-X-ENDLIST',{headers:{'content-type':'text/plain'}});const r=await proxyHls(new Request('https://relay.example/private/variant?id=art'),{url:'https://cdn.premilkyway.com/movie/index.txt',format:'hls',headers:{}},'https://cdn.premilkyway.com/movie/index.txt');assert.equal(r.headers.get('content-type'),'application/vnd.apple.mpegurl');assert.ok((await r.text()).includes('https://relay.example/private/asset?id=art&u='));}finally{globalThis.fetch=old;}});

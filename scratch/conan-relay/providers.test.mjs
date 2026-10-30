@@ -16,3 +16,4 @@ for(const provider of ['mycima','cimanow','qfilm'])test('vendored '+provider+' p
  const [actual,expected]=await Promise.all([bundledProvider(provider).module.scrapeSearch('test',1,options),sourceProvider(provider).module.scrapeSearch('test',1,options)]);
  assert.deepEqual(actual.map(x=>x.title),expected.map(x=>x.title));assert.ok(actual.length>0);
 });
+test('provider wrapper preserves the page observer needed for real pagination',async()=>{const fixture=await import('../../scripts/fixtures/providers/moviztime.fixture.mjs');const seen=[];await bundledProvider('moviztime').module.scrapeSearch('Conan',1,{fixtureHtml:fixture.SEARCH_HTML,onProviderPage:r=>seen.push(r)});assert.equal(seen.length,1);assert.ok(seen[0].html);});

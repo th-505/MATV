@@ -75,7 +75,7 @@ export async function extractHls(){
  const matches=plain.replaceAll('\\/','/').match(/https:\/\/[^\s"'<>\\]+\.m3u8(?:\?[^\s"'<>\\]*)?/g)||[];
  for(const value of [...new Set(matches)]){
   try{const u=allowed(value,true);if(!u.hostname.endsWith('.premilkyway.com'))continue;
-   const source={url:u.href,format:'hls',provider:'mycima',workId:'conan28-2025',edition:'original-subtitled',headers:{Referer:'https://fastvip.space/',Origin:'https://fastvip.space','User-Agent':UA,Accept:'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8','Cache-Control':'no-cache','Accept-Language':'ar,en-US;q=0.9,en;q=0.8'},expires_at:new Date(Date.now()+3600000).toISOString()};
+   const source={url:u.href,format:'hls',provider:'mycima',player:'fastvip',workId:'conan28-2025',edition:'original-subtitled',headers:{Referer:'https://fastvip.space/',Origin:'https://fastvip.space','User-Agent':UA,Accept:'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8','Cache-Control':'no-cache','Accept-Language':'ar,en-US;q=0.9,en;q=0.8'},expires_at:new Date(Date.now()+3600000).toISOString()};
    const r=await mediaFetch(source);const bytes=await prefix(r);diagnostics.push({stage:'hls',status:r.status});
    if(r.ok&&new TextDecoder().decode(bytes).trimStart().startsWith('#EXTM3U'))return {sources:[source],candidateCount:matches.length,diagnostics:[{stage:'hls',status:r.status,validHls:true}]};
   }catch{}
@@ -100,7 +100,7 @@ export async function proxyHls(request,source,asset=null){
  const response=await mediaFetch({...source,url:target},range,request.method);
  if(![200,206,416].includes(response.status)){await response.body?.cancel();return new Response('HLS source unavailable',{status:502});}
  const headers=new Headers({'Cache-Control':'private, no-store','Access-Control-Allow-Origin':'*','Access-Control-Expose-Headers':'Content-Length, Content-Range, Accept-Ranges','X-Content-Type-Options':'nosniff'});
- if(new URL(target).pathname.endsWith('.m3u8')){
+ if(new URL(target).pathname.endsWith('.m3u8')||/mpegurl/i.test(response.headers.get('content-type')||'')||new URL(request.url).pathname.endsWith('/variant')||(target===source.url&&source.format==='hls')||new URL(request.url).searchParams.get('p')==='1'){
   headers.set('Content-Type','application/vnd.apple.mpegurl');if(request.method==='HEAD')return new Response(null,{headers});
   const text=await readText(response);if(!text.trimStart().startsWith('#EXTM3U'))return new Response('Invalid playlist',{status:502});
   return new Response(rewritePlaylist(text,target,request.url,source.mediaHosts),{headers});

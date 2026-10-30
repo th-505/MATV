@@ -4,3 +4,7 @@
 export {listProviders,getProvider} from '../../server/scrapers/registry.mjs';
 export {unwrapEmbedToDirectStreams} from '../../server/scrapers/stream-unwrapper.mjs';
 export {fetchSafeResponse,fetchProviderHtml,assertSafeScraperUrl,assertSafeResolvedHost,isUnsafeIpAddress} from '../../server/scrapers/shared/http.mjs';
+
+export {load as loadHtml} from 'cheerio';
+export {createSearchTraces} from '../../server/diagnostics/search-trace.mjs';
+export {unpackDeanEdwards,extractRawStreamsFromText,unwrapBase64BridgeUrl} from '../../server/scrapers/stream-unwrapper.mjs';
