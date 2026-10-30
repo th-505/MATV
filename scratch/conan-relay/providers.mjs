@@ -42,11 +42,11 @@ export async function discoverProviders({onCandidate=async()=>{},onProgress=()=>
   const servers=results.flatMap(r=>r.status==='fulfilled'?(Array.isArray(r.value)?r.value:r.value?.servers||[]):[]);
   const seen=new Set(),unique=servers.filter(s=>{if(!s?.url||seen.has(s.url))return false;seen.add(s.url);return true;});
   const direct=unique.filter(s=>['mp4','m3u8'].includes(s.streamType||s.type)&&/\.(mp4|m3u8)(?:\?|$)/i.test(s.url));
-  const embeds=unique.filter(s=>!direct.includes(s)&&!s.url.includes('/m/'));row.partial ||= embeds.length>8;
+  const embeds=unique.filter(s=>!direct.includes(s)&&!s.url.includes('/m/')).sort((a,b)=>Number(b.url.includes('fastvip.space'))-Number(a.url.includes('fastvip.space')));row.partial ||= embeds.length>16;
   row.candidates=0;
   const publish=async(raw)=>{if(Date.now()>=deadline){row.partial=true;return;}try{const candidate=await normalizeCandidate(raw,meta.id);if(candidate){row.candidates++;await onCandidate(candidate);}}catch{row.rejectedCandidates=(row.rejectedCandidates||0)+1;}};
-  for(const candidate of direct.slice(0,8)){if(Date.now()>=deadline){row.partial=true;break;}await publish(candidate);}
-  for(const embed of embeds.slice(0,8)){if(Date.now()>=deadline){row.partial=true;break;}try{const streams=meta.id==='cimanow'&&embed.url.includes('/watch/resolve#')?await resolveCimanowVirtual(embed.url):await unwrapEmbedToDirectStreams(embed.url,work.url);for(const candidate of streams)await publish(candidate);}catch{row.embedFailures=(row.embedFailures||0)+1;}}
+  for(const candidate of direct.slice(0,16)){if(Date.now()>=deadline){row.partial=true;break;}await publish(candidate);}
+  for(const embed of embeds.slice(0,16)){if(Date.now()>=deadline){row.partial=true;break;}try{const streams=meta.id==='cimanow'&&embed.url.includes('/watch/resolve#')?await resolveCimanowVirtual(embed.url):await unwrapEmbedToDirectStreams(embed.url,work.url);for(const candidate of streams)await publish(candidate);}catch{row.embedFailures=(row.embedFailures||0)+1;}}
   row.stage='done';row.reason=row.candidates?'CANDIDATES_PROBED':extractionFailure||'NO_DIRECT_MEDIA_FROM_TESTED_SERVERS';
  }catch(e){row.reason=safeError(e);}finally{diagnostics.push(row);checked++;progress();}}}
  await Promise.all(Array.from({length:6},worker));return {diagnostics,discovery:{checked,total:entries.length,partial:checked<entries.length||diagnostics.some(d=>d.partial),completedAt:new Date().toISOString()}};

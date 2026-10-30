@@ -6,3 +6,10 @@ test('rejects redirect to unsafe host',async()=>{const old=globalThis.fetch;try{
 import {rewritePlaylist,proxyHls} from './media.mjs';
 test('rewrites variants, segments and encryption keys through worker',()=>{const result=rewritePlaylist('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin?t=123"\nchild.m3u8?t=abc\npart.ts?t=def','https://cyyroro04xrqr.premilkyway.com/hls2/id/master.m3u8','https://example.com/private/index.m3u8');const lines=result.split('\n');assert.ok(lines[1].includes('https://example.com/private/asset?u='));assert.equal(new URL(lines[2]).searchParams.get('u'),'https://cyyroro04xrqr.premilkyway.com/hls2/id/child.m3u8?t=abc');assert.equal(new URL(lines[3]).searchParams.get('u'),'https://cyyroro04xrqr.premilkyway.com/hls2/id/part.ts?t=def');});
 test('rejects assets outside selected media directory before network',async()=>{const response=await proxyHls(new Request('https://example.com/private/asset'),{url:'https://cyyroro04xrqr.premilkyway.com/hls2/id/master.m3u8'},'https://cyyroro04xrqr.premilkyway.com/other/part.ts');assert.equal(response.status,403);});
+import {readText} from './media.mjs';
+test('stalled probe and playlist bodies are cancelled within their deadline',async()=>{
+ for(const read of [r=>prefix(r,1024,{timeoutMs:10}),r=>readText(r,{timeoutMs:10})]){
+  let cancelled=false;const response=new Response(new ReadableStream({cancel(){cancelled=true;}}));
+  await assert.rejects(()=>read(response),/UPSTREAM_BODY_TIMEOUT/);assert.ok(cancelled);
+ }
+});

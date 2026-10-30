@@ -10,14 +10,15 @@ export function allowed(value,media=false,extraHosts=[]){
  if(media?!(/^(?:s[0-9a-z]+\.downet\.net|[a-z0-9-]+\.premilkyway\.com)$/.test(u.hostname)||extraHosts.includes(u.hostname)):u.hostname!=='akwam.ss')throw Error('UNSAFE_UPSTREAM');
  return u;
 }
-export async function prefix(response,max=1024){
- const reader=response.body?.getReader();if(!reader)return new Uint8Array();const chunks=[];let total=0;
- try{while(total<max){const {done,value}=await reader.read();if(done)break;const part=value.slice(0,max-total);chunks.push(part);total+=part.length;}}finally{await reader.cancel();}
+export async function prefix(response,max=1024,{timeoutMs=15000}={}){
+ const reader=response.body?.getReader();if(!reader)return new Uint8Array();const chunks=[];let total=0,timedOut=false;const timer=setTimeout(()=>{timedOut=true;void reader.cancel().catch(()=>{});},timeoutMs);
+ try{while(total<max){const {done,value}=await reader.read();if(done)break;const part=value.slice(0,max-total);chunks.push(part);total+=part.length;}}finally{clearTimeout(timer);await reader.cancel();}
+ if(timedOut)throw Error('UPSTREAM_BODY_TIMEOUT');
  const result=new Uint8Array(total);let offset=0;for(const c of chunks){result.set(c,offset);offset+=c.length;}return result;
 }
-export async function readText(response){
- const reader=response.body?.getReader();if(!reader)return '';const dec=new TextDecoder();let result='',size=0;
- try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>1024*1024)throw Error('PAGE_TOO_LARGE');result+=dec.decode(value,{stream:true});}}finally{await reader.cancel();}return result+dec.decode();
+export async function readText(response,{timeoutMs=15000}={}){
+ const reader=response.body?.getReader();if(!reader)return '';const dec=new TextDecoder();let result='',size=0,timedOut=false;const timer=setTimeout(()=>{timedOut=true;void reader.cancel().catch(()=>{});},timeoutMs);
+ try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>1024*1024)throw Error('PAGE_TOO_LARGE');result+=dec.decode(value,{stream:true});}}finally{clearTimeout(timer);await reader.cancel();}if(timedOut)throw Error('UPSTREAM_BODY_TIMEOUT');return result+dec.decode();
 }
 export async function mediaFetch(source,range,method='GET'){
  let current=allowed(source.url,true,source.mediaHosts);
