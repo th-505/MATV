@@ -1,3 +1,5 @@
+import 'stitch_design.dart';
+import 'najd_theme.dart';
 import 'source_picker.dart';
 import 'cycle_feature_policy.dart';
 import 'stream_bridge.dart';
@@ -1581,32 +1583,49 @@ class _PlayerPageState extends State<PlayerPage> {
               if (active == null)
                 Center(
                   child: SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _failed
-                            ? const Icon(Icons.error_outline, size: 64)
-                            : const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(_status, textAlign: TextAlign.center),
-                        ),
-                        if (_failed)
-                          FilledButton(
-                            onPressed: () {
-                              setState(() => _failed = false);
-                              _initialize(forceRefresh: true);
-                            },
-                            child: const Text('إعادة المحاولة'),
+                    child: _failed
+                        ? Theme(
+                            data: NajdThemes.dark,
+                            child: NajdEmptyState(
+                              kind: NajdEmptyKind.source,
+                              message: _status,
+                              onRetry: () {
+                                setState(() => _failed = false);
+                                _initialize(forceRefresh: true);
+                              },
+                              onExplore: () => Navigator.of(context).maybePop(),
+                            ),
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _failed
+                                  ? const Icon(Icons.error_outline, size: 64)
+                                  : const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Text(
+                                  _status,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              if (_failed)
+                                FilledButton(
+                                  onPressed: () {
+                                    setState(() => _failed = false);
+                                    _initialize(forceRefresh: true);
+                                  },
+                                  child: const Text('إعادة المحاولة'),
+                                ),
+                              if (_failed && _sources.length > 1) _sourceMenu(),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(),
+                                child: const Text('رجوع'),
+                              ),
+                            ],
                           ),
-                        if (_failed && _sources.length > 1) _sourceMenu(),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).maybePop(),
-                          child: const Text('رجوع'),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               if (active != null && _controlsVisible) ...[

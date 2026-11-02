@@ -59,22 +59,22 @@ Future<bool> loadPrivateNajdFonts() async {
 }
 
 class NajdThemes {
-  static const lavender = Color(0xFF8280FF);
+  static const lavender = Color(0xFF6B46C1);
   static ThemeData forBrightness(Brightness brightness) {
     final dark = brightness == Brightness.dark;
-    final background = dark ? const Color(0xFF08080E) : const Color(0xFFFCFCFF);
-    final surface = dark ? const Color(0xFF14131F) : Colors.white;
-    final text = dark ? const Color(0xFFF8F7FF) : const Color(0xFF211E32);
-    final secondary = dark ? const Color(0xFFBCB8CF) : const Color(0xFF5D5771);
-    final primary = dark ? const Color(0xFF9B99FF) : const Color(0xFF4D4C9A);
-    final onPrimary = dark ? const Color(0xFF19172C) : Colors.white;
+    final background = dark ? const Color(0xFF121118) : const Color(0xFFFAF8FF);
+    final surface = dark ? const Color(0xFF1D1A25) : Colors.white;
+    final text = dark ? const Color(0xFFF5F0FF) : const Color(0xFF211B30);
+    final secondary = dark ? const Color(0xFFBCB3CB) : const Color(0xFF6C647B);
+    const primary = Color(0xFF6B46C1);
+    const onPrimary = Colors.white;
     final scheme =
         ColorScheme.fromSeed(
           seedColor: lavender,
           brightness: brightness,
         ).copyWith(
-          primary: primary,
-          onPrimary: onPrimary,
+          primary: dark ? const Color(0xFFBCA6ED) : primary,
+          onPrimary: dark ? const Color(0xFF211B30) : onPrimary,
           secondary: primary,
           surface: surface,
           onSurface: text,
@@ -113,7 +113,15 @@ class NajdThemes {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(48, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        ),
       ),
       scrollbarTheme: ScrollbarThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -142,13 +150,14 @@ class NajdThemeControl extends StatelessWidget {
     builder: (context, _) => ListTile(
       leading: const Icon(Icons.contrast),
       title: const Text('مظهر نجد'),
-      subtitle: const Text('فاتح · داكن · حسب الجهاز'),
+      subtitle: const Text('فاتح · داكن'),
       trailing: DropdownButton<ThemeMode>(
-        value: NajdAppearance.instance.mode,
+        value: NajdAppearance.instance.mode == ThemeMode.light
+            ? ThemeMode.light
+            : ThemeMode.dark,
         items: const [
           DropdownMenuItem(value: ThemeMode.light, child: Text('فاتح')),
           DropdownMenuItem(value: ThemeMode.dark, child: Text('داكن')),
-          DropdownMenuItem(value: ThemeMode.system, child: Text('حسب الجهاز')),
         ],
         onChanged: (value) {
           if (value != null) unawaited(NajdAppearance.instance.setMode(value));

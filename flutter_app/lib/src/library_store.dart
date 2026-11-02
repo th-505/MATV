@@ -336,6 +336,13 @@ class LocalLibraryStore extends ChangeNotifier {
     _notify();
   }
 
+  Future<void> removeHistoryEntry(String key) async {
+    if (_history.remove(key) == null) return;
+    _change('history', key, const {}, deleted: true);
+    await _persistLibrary();
+    _notify();
+  }
+
   Future<void> clearHistory() async {
     for (final key in _history.keys.toList()) {
       _change('history', key, const {}, deleted: true);

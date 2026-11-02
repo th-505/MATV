@@ -1,8 +1,12 @@
 import 'dart:async';
+
+import 'download_activity.dart';
+
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
 import 'alooy_policy.dart';
 import 'download_cleanup_coordinator.dart';
 import 'download_directory_migration.dart';
@@ -52,8 +56,10 @@ class DownloadCancellationToken {
 
 typedef DownloadDirectoryProvider = Future<Directory> Function();
 typedef DownloadProgressCallback = void Function(DownloadProgress progress);
-typedef DownloadReconnectDelay =
-    Future<void> Function(int attempt, DownloadCancellationToken? token);
+typedef DownloadReconnectDelay = Future<void> Function(
+  int attempt,
+  DownloadCancellationToken? token,
+);
 
 class DownloadService {
   DownloadService({
@@ -98,17 +104,67 @@ class DownloadService {
     } on DownloadCleanupInProgress {
       throw const DownloadException('DOWNLOAD_CLEANUP_IN_PROGRESS');
     }
+    final activity = NajdDownloadActivity.instance;
+    final jobId =
+        '${resumeKey ?? fallbackName}:${DateTime.now().microsecondsSinceEpoch}';
+    var received = 0;
+    int? total;
+    void publish({bool failed = false}) => activity.put(
+      NajdDownloadJob(
+        id: jobId,
+        title: fallbackName,
+        received: received,
+        total: total,
+        failed: failed,
+        cancel: token.cancel,
+        retry: failed
+            ? () async {
+                activity.remove(jobId);
+                final retryService = DownloadService(
+                  directoryProvider: _directoryProvider,
+                  reconnectDelay: _reconnectDelayOverride,
+                );
+                try {
+                  await retryService.download(
+                    uri,
+                    fallbackName: fallbackName,
+                    headers: headers,
+                    resumeKey: resumeKey,
+                  );
+                } catch (_) {
+                  // The new activity keeps the retry failure visible.
+                } finally {
+                  retryService.close();
+                }
+              }
+            : null,
+      ),
+    );
+    publish();
     try {
       final result = await _download(
         uri,
         fallbackName: fallbackName,
         headers: headers,
         resumeKey: resumeKey,
-        onProgress: onProgress,
+        onProgress: (progress) {
+          received = progress.receivedBytes;
+          total = progress.totalBytes;
+          publish();
+          onProgress?.call(progress);
+        },
         cancellationToken: token,
       );
       _throwIfCancelled(token);
+      activity.remove(jobId);
       return result;
+    } catch (_) {
+      if (token.isCancelled) {
+        activity.remove(jobId);
+      } else {
+        publish(failed: true);
+      }
+      rethrow;
     } finally {
       registration.complete();
     }

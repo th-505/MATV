@@ -58,6 +58,11 @@ class _PlayerControlsState extends State<PlayerControls> {
           const SizedBox(width: 12),
           IconButton.filled(
             key: const Key('player-play-toggle'),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF6B46C1),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(64, 64),
+            ),
             focusNode: _playFocus,
             autofocus: widget.isTv,
             tooltip: widget.isPlaying ? 'إيقاف مؤقت' : 'تشغيل',
@@ -83,11 +88,13 @@ class _PlayerControlsState extends State<PlayerControls> {
               label: Text(playbackSpeedLabel(widget.playbackSpeed)),
             ),
             menuChildren: supportedPlaybackSpeeds
-                .map((speed) => MenuItemButton(
-                      key: Key('player-speed-${playbackSpeedLabel(speed)}'),
-                      onPressed: () => widget.onPlaybackSpeedChanged(speed),
-                      child: Text(playbackSpeedLabel(speed)),
-                    ))
+                .map(
+                  (speed) => MenuItemButton(
+                    key: Key('player-speed-${playbackSpeedLabel(speed)}'),
+                    onPressed: () => widget.onPlaybackSpeedChanged(speed),
+                    child: Text(playbackSpeedLabel(speed)),
+                  ),
+                )
                 .toList(growable: false),
           ),
         ],

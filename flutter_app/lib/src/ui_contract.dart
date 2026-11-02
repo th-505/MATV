@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Shared product contract; keep in step with web/core/ui-contract.js.
 class NajdUi {
   static const brand = 'نجد — Najd TV';
-  static const bottomPages = <int>[6, 5, 0, 7, 8];
+  static const bottomPages = <int>[0, 5, 7, 8];
   static const regions =
       <
         ({String id, String label, String category, String kind, IconData icon})
@@ -45,12 +45,12 @@ class NajdUi {
         ),
       ];
   static const sidebarBreakpoint = 900.0;
-  static const background = Color(0xFF08080E);
-  static const surface = Color(0xFF14131F);
+  static const background = Color(0xFF121118);
+  static const surface = Color(0xFF1D1A25);
   static const elevated = Color(0xFF201D30);
-  static const accent = Color(0xFF8280FF);
-  static const accentLight = Color(0xFFB4B2FF);
-  static const accentDark = Color(0xFF4D4C9A);
+  static const accent = Color(0xFF6B46C1);
+  static const accentLight = Color(0xFFB69AE9);
+  static const accentDark = Color(0xFF55349C);
   static const text = Color(0xFFF8F7FF);
   static const secondaryText = Color(0xFFBCB8CF);
   static const pageIds = <String>[
