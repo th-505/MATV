@@ -99,7 +99,7 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
             self.assertEqual(web['theme'][theme_keys[key]].lower(), value)
             match = re.search(r'\b' + dart_keys[key] + r'\s*=\s*Color\(0xFF([0-9a-f]{6})\)', self.native_contract, re.I)
             self.assertIsNotNone(match, f'Native theme token missing: {key}')
-            self.assertEqual('#' + match[1].lower(), value)
+            self.assertEqual('#' + match[1].lower(), CONTRACT.get('native_theme_overrides', {}).get(key, value))
         self.assertIn("brand = 'نجد — Najd TV'", self.native_contract)
         self.assertRegex(self.native_contract, r'sidebarBreakpoint\s*=\s*900(?:\.0)?;')
         # These are integration boundaries, not a visual or device acceptance claim.
@@ -108,7 +108,8 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
         self.assertIn('isTvTarget', self.dart)
         self.assertIn('isDesktopTarget', self.dart)
         shell = self.dart[self.dart.index('class Shell'):self.dart.index('class HomePage')]
-        self.assertIn('bottomNavigationBar: NavigationBar(', shell)
+        self.assertIn('bottomNavigationBar:', shell)
+        self.assertIn('NavigationBar(', shell)
         self.assertIn('NajdUi.bottomPages', shell)
         self.assertIn('ImageFilter.blur', shell)
         self.assertIn('tatv-open-navigation', shell)

@@ -93,7 +93,7 @@ void main() {
           }
         }
 
-        await render(HomePage(api: api, store: store), 'home');
+        await render(Shell(api: api, store: store), 'home');
         expect(find.byKey(const Key('stitch-feature-hero')), findsOneWidget);
         await render(LibraryPage(api: api, store: store), 'watchlist-empty');
         expect(find.byKey(const Key('stitch-state-watchlist')), findsOneWidget);
