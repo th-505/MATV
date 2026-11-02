@@ -1,0 +1,42 @@
+name: Najd UI catalogue
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'design/najd-ui/**'
+      - '.github/workflows/najd-ui-catalogue.yml'
+permissions:
+  contents: read
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: design/najd-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: design/najd-ui/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run check
+      - name: Prepare browser checks
+        run: |
+          python -m pip install 'playwright==1.62.0'
+          python -m playwright install --with-deps chromium
+      - name: Test all interfaces without external network
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/najd-ui-http.log 2>&1 &
+          trap 'kill $!' EXIT
+          python scripts/browser_check.py
+      - run: python scripts/package_ui.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: najd-ui-81
+          path: design/najd-ui/artifacts/najd-tv-ui-81.zip

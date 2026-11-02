@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>قائمتي - نجد تي في</title>
+<!-- Material Symbols Outlined -->
+
+<!-- Google Fonts: Space Grotesk & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+
+
+<!-- Tailwind CSS v3 -->
+
+
+<style>
+    body {
+      background-color: #faf8ff;
+      color: #131b2e;
+      font-family: 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card-shadow {
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(107, 70, 193, 0.03);
+    }
+    .card-hover:hover {
+      box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(107, 70, 193, 0.08);
+      transform: translateY(-2px);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  <link rel="stylesheet" href="../../shared/icons.css"><link rel="stylesheet" href="../../shared/thmanyah.css"><script src="../../shared/baseline.js" defer></script><link rel="stylesheet" href="compiled.css"></head>
+<body class="bg-background text-on-surface antialiased min-h-screen pb-28 md:pb-12 select-none">
+<!-- TopAppBar (From Shared Component JSON) -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin h-16 w-full bg-surface/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<button class="text-primary hover:bg-surface-container-highest/50 p-space-xs rounded-full transition-colors active:scale-95 duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="cast">cast</span>
+</button>
+<span class="text-headline-md font-headline-md text-primary font-bold tracking-tight">نجد تي في</span>
+</div>
+<!-- Desktop Navigation Cluster (Shared Components Rule) -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-colors" href="#">الرئيسية</a>
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-colors" href="#">البحث</a>
+<a class="text-primary font-label-lg text-label-lg font-bold" href="#">قائمتي</a>
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-colors" href="#">الإعدادات</a>
+</nav>
+<div class="flex items-center gap-space-sm">
+<button class="text-primary hover:bg-surface-container-highest/50 p-space-xs rounded-full transition-colors active:scale-95 duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-24 px-margin-mobile md:px-margin max-w-7xl mx-auto w-full">
+<!-- Screen Sub-Header: Title & Edit Mode Trigger -->
+<div class="flex items-center justify-between mb-space-lg">
+<div class="flex items-baseline gap-space-sm">
+<h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg text-on-surface font-bold tracking-tight">قائمتي</h1>
+<span class="text-on-surface-variant font-body-sm text-body-sm font-medium">(6 أعمال)</span>
+</div>
+<!-- Clean Text Button: "تعديل" replacing red trash cans -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors font-label-lg text-label-lg active:scale-95" id="editToggleBtn">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+<span>تعديل</span>
+</button>
+</div>
+<!-- Controls Row: Filter Chips & Sorting Control -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md mb-space-lg pb-space-sm border-b border-surface-container">
+<!-- Category Filter Pills -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+<button class="bg-primary-container text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap shadow-sm">
+          الكل (6)
+        </button>
+<button class="bg-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container-highest font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          أفلام (3)
+        </button>
+<button class="bg-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container-highest font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          مسلسلات (2)
+        </button>
+<button class="bg-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container-highest font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          وثائقيات (1)
+        </button>
+</div>
+<!-- Sorting Selector -->
+<div class="flex items-center gap-2 self-end sm:self-auto text-on-surface-variant font-label-md text-label-md">
+<span class="text-outline">ترتيب حسب:</span>
+<button class="flex items-center gap-1 bg-surface-container-lowest border border-outline-variant/40 px-3 py-1.5 rounded-lg text-on-surface font-semibold hover:border-primary transition-colors">
+<span>تاريخ الإضافة</span>
+<span class="material-symbols-outlined text-base" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Media Grid: 6 Posters matching exact 2:3 key art format and items -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-gutter-mobile md:gap-gutter">
+<!-- Item 1: أصداء طويق (مسلسل، 9.3) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A cinematic and majestic shot of the Tuwaiq cliff escarpments in Saudi Arabia under an amber sunset sky, presenting an epic drama visual with dramatic warm directional rim lighting, subtle deep violet haze, and modern premium cinematography in ultra high definition." src="../../shared/images/c8daf070efedf8024331.jpg"/>
+<!-- Top Badge: Series -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            مسلسل
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">9.3</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">أصداء طويق</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">دراما اجتماعية • 10 حلقات</p>
+</div>
+</div>
+<!-- Item 2: صقر الجزيرة (فيلم، 8.8) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A noble falcon perched on a gloved falconer's arm against sweeping golden Arabian sand dunes, bathed in crisp morning sunlight with deep purple shadows, rich cinematic texture, and bright open skies portraying historical pride." src="../../shared/images/4a86361c836f1282ce43.jpg"/>
+<!-- Top Badge: Film -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            فيلم
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">8.8</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">صقر الجزيرة</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">تاريخ وسيرة • 124 دقيقة</p>
+</div>
+</div>
+<!-- Item 3: رحلة نحو النجوم (وثائقي، 9.0) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A futuristic modern astronomical observatory dome nestled in the rocky desert mountains beneath a crystal-clear cosmic night sky filled with luminous nebulae and star clusters, bathed in gentle purple ambient starlight and radiant clarity." src="../../shared/images/0e9b74148cecfdcfcd17.jpg"/>
+<!-- Top Badge: Documentary -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            وثائقي
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">9.0</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">رحلة نحو النجوم</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">علوم وفلك • 85 دقيقة</p>
+</div>
+</div>
+<!-- Item 4: سراب المدينة (مسلسل، 8.5) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A stylized urban skyline illuminated by sleek modern skyscrapers with reflecting glass towers in dusk twilight, featuring dramatic neon purple accents and cool crisp ambient lighting with deep mysterious atmosphere." src="../../shared/images/e26ef8911a5cbac5df9a.jpg"/>
+<!-- Top Badge: Series -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            مسلسل
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">8.5</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">سراب المدينة</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">غموض وتشويق • موسم 1</p>
+</div>
+</div>
+<!-- Item 5: سيف السديم (فيلم، 9.1) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="An artistic cinematic representation of an ancient engraved steel blade standing upright on desert ground reflecting vibrant purple nebula galaxies and cosmic light, capturing an epic sci-fi fantasy aesthetic in high key lighting." src="../../shared/images/93f6736d45495ad1c410.jpg"/>
+<!-- Top Badge: Film -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            فيلم
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">9.1</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">سيف السديم</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">خيال ومغامرة • 140 دقيقة</p>
+</div>
+</div>
+<!-- Item 6: خيول الريح (فيلم، 8.7) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Majestic thoroughbred pure Arabian horses galloping freely across an open pristine desert plain, kicks up golden dust illuminated by warm radiant backlighting, crisp focus, vibrant clarity, and rich natural tones." src="../../shared/images/92bf99bbe9c6b06f243d.jpg"/>
+<!-- Top Badge: Film -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            فيلم
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">8.7</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">خيول الريح</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">دراما أصيلة • 115 دقيقة</p>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component JSON - Exactly mapped, mobile viewport, 'قائمتي' active) -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- الرئيسية (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- البحث (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- قائمتي (Active - exact styles mapped from style_active_navigation) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- الإعدادات (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+<script>
+    // Micro-interaction: Elegant Edit mode toggle
+    const editBtn = document.getElementById('editToggleBtn');
+    let isEditing = false;
+
+    editBtn.addEventListener('click', () => {
+      isEditing = !isEditing;
+      if (isEditing) {
+        editBtn.innerHTML = `
+          <span class="material-symbols-outlined text-lg" data-icon="check">check</span>
+          <span>تم</span>
+        `;
+        editBtn.classList.add('bg-primary-container', 'text-on-primary');
+        editBtn.classList.remove('text-primary', 'hover:bg-primary-fixed');
+      } else {
+        editBtn.innerHTML = `
+          <span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+          <span>تعديل</span>
+        `;
+        editBtn.classList.remove('bg-primary-container', 'text-on-primary');
+        editBtn.classList.add('text-primary', 'hover:bg-primary-fixed');
+      }
+    });
+  </script>
+</body></html>

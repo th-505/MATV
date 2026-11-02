@@ -1,0 +1,452 @@
+[
+  {
+    "id": "NJD-032",
+    "slug": "confirm-cancel-download",
+    "platform": "جوال",
+    "title": "تأكيد إلغاء تحميل جارٍ",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "مطابق للنسخة الداكنة المعتمدة؛ اختلاف الألوان فقط"
+  },
+  {
+    "id": "NJD-033",
+    "slug": "confirm-delete-download",
+    "platform": "جوال",
+    "title": "تأكيد حذف ملف مكتمل",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "مطابق للنسخة الداكنة المعتمدة؛ اختلاف الألوان فقط"
+  },
+  {
+    "id": "NJD-034",
+    "slug": "offline",
+    "platform": "جوال",
+    "title": "انقطاع الاتصال",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إعادة المحاولة أو الوصول للتحميلات"
+  },
+  {
+    "id": "NJD-035",
+    "slug": "offline",
+    "platform": "جوال",
+    "title": "انقطاع الاتصال",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إعادة المحاولة أو الوصول للتحميلات"
+  },
+  {
+    "id": "NJD-036",
+    "slug": "no-source",
+    "platform": "جوال",
+    "title": "عدم توفر مصدر تشغيل",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إعادة الفحص أو العودة للتفاصيل"
+  },
+  {
+    "id": "NJD-037",
+    "slug": "no-source",
+    "platform": "جوال",
+    "title": "عدم توفر مصدر تشغيل",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إعادة الفحص أو العودة للتفاصيل"
+  },
+  {
+    "id": "NJD-038",
+    "slug": "no-results",
+    "platform": "جوال",
+    "title": "بحث بلا نتائج",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تعديل البحث ومسح الفلاتر"
+  },
+  {
+    "id": "NJD-039",
+    "slug": "no-results",
+    "platform": "جوال",
+    "title": "بحث بلا نتائج",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تعديل البحث ومسح الفلاتر"
+  },
+  {
+    "id": "NJD-040",
+    "slug": "home-loading",
+    "platform": "جوال",
+    "title": "تحميل الرئيسية",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "هيكل مؤقت يحافظ على التخطيط"
+  },
+  {
+    "id": "NJD-041",
+    "slug": "home-loading",
+    "platform": "جوال",
+    "title": "تحميل الرئيسية",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "هيكل مؤقت يحافظ على التخطيط"
+  },
+  {
+    "id": "NJD-042",
+    "slug": "search-loading",
+    "platform": "جوال",
+    "title": "تحميل نتائج البحث",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "الحفاظ على الاستعلام والفلاتر"
+  },
+  {
+    "id": "NJD-043",
+    "slug": "search-loading",
+    "platform": "جوال",
+    "title": "تحميل نتائج البحث",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "الحفاظ على الاستعلام والفلاتر"
+  },
+  {
+    "id": "NJD-044",
+    "slug": "details-loading",
+    "platform": "جوال",
+    "title": "تحميل تفاصيل العمل",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تدرج ظهور البيانات دون تأكيد مصدر وهمي"
+  },
+  {
+    "id": "NJD-045",
+    "slug": "details-loading",
+    "platform": "جوال",
+    "title": "تحميل تفاصيل العمل",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تدرج ظهور البيانات دون تأكيد مصدر وهمي"
+  },
+  {
+    "id": "NJD-046",
+    "slug": "player-buffering",
+    "platform": "جوال",
+    "title": "انتظار تحميل الفيديو",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إلغاء الانتظار أو فتح المصادر"
+  },
+  {
+    "id": "NJD-047",
+    "slug": "player-buffering",
+    "platform": "جوال",
+    "title": "انتظار تحميل الفيديو",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إلغاء الانتظار أو فتح المصادر"
+  },
+  {
+    "id": "NJD-048",
+    "slug": "player-error",
+    "platform": "جوال",
+    "title": "تعذر تشغيل الفيديو",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إعادة المحاولة أو اختيار مصدر"
+  },
+  {
+    "id": "NJD-049",
+    "slug": "player-error",
+    "platform": "جوال",
+    "title": "تعذر تشغيل الفيديو",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إعادة المحاولة أو اختيار مصدر"
+  },
+  {
+    "id": "NJD-050",
+    "slug": "link-refresh",
+    "platform": "جوال",
+    "title": "تجديد رابط منتهي",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "الحفاظ على موضع المشاهدة والمصدر المختار"
+  },
+  {
+    "id": "NJD-051",
+    "slug": "link-refresh",
+    "platform": "جوال",
+    "title": "تجديد رابط منتهي",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "الحفاظ على موضع المشاهدة والمصدر المختار"
+  },
+  {
+    "id": "NJD-052",
+    "slug": "quality-picker",
+    "platform": "جوال",
+    "title": "اختيار الجودة",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تلقائي والجودات المتوفرة فعليًا"
+  },
+  {
+    "id": "NJD-053",
+    "slug": "quality-picker",
+    "platform": "جوال",
+    "title": "اختيار الجودة",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تلقائي والجودات المتوفرة فعليًا"
+  },
+  {
+    "id": "NJD-054",
+    "slug": "audio-picker",
+    "platform": "جوال",
+    "title": "اختيار المسار الصوتي",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "اللغات المتوفرة للمصدر"
+  },
+  {
+    "id": "NJD-055",
+    "slug": "audio-picker",
+    "platform": "جوال",
+    "title": "اختيار المسار الصوتي",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "اللغات المتوفرة للمصدر"
+  },
+  {
+    "id": "NJD-056",
+    "slug": "subtitle-picker",
+    "platform": "جوال",
+    "title": "اختيار الترجمة",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إيقاف والترجمات المتوفرة"
+  },
+  {
+    "id": "NJD-057",
+    "slug": "subtitle-picker",
+    "platform": "جوال",
+    "title": "اختيار الترجمة",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إيقاف والترجمات المتوفرة"
+  },
+  {
+    "id": "NJD-058",
+    "slug": "next-episode",
+    "platform": "جوال",
+    "title": "الانتقال للحلقة التالية",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "عد تنازلي وإلغاء وتشغيل الآن"
+  },
+  {
+    "id": "NJD-059",
+    "slug": "next-episode",
+    "platform": "جوال",
+    "title": "الانتقال للحلقة التالية",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "عد تنازلي وإلغاء وتشغيل الآن"
+  },
+  {
+    "id": "NJD-060",
+    "slug": "provider-picker",
+    "platform": "جوال",
+    "title": "اختيار مزود الاستكشاف",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "قدرات المزود وحالة الوصول دون ادعاء تشغيل مثبت"
+  },
+  {
+    "id": "NJD-061",
+    "slug": "provider-picker",
+    "platform": "جوال",
+    "title": "اختيار مزود الاستكشاف",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "قدرات المزود وحالة الوصول دون ادعاء تشغيل مثبت"
+  },
+  {
+    "id": "NJD-062",
+    "slug": "provider-catalog",
+    "platform": "جوال",
+    "title": "مكتبة مزود محدد",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إظهار اسم المزود والحفاظ على مرجع العمل"
+  },
+  {
+    "id": "NJD-063",
+    "slug": "provider-catalog",
+    "platform": "جوال",
+    "title": "مكتبة مزود محدد",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إظهار اسم المزود والحفاظ على مرجع العمل"
+  },
+  {
+    "id": "NJD-064",
+    "slug": "provider-search",
+    "platform": "جوال",
+    "title": "البحث داخل مزود محدد",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "النتائج مرتبطة بالمزود المختار"
+  },
+  {
+    "id": "NJD-065",
+    "slug": "provider-search",
+    "platform": "جوال",
+    "title": "البحث داخل مزود محدد",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "النتائج مرتبطة بالمزود المختار"
+  },
+  {
+    "id": "NJD-066",
+    "slug": "download-quality",
+    "platform": "جوال",
+    "title": "اختيار جودة التحميل",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "الجودة والحجم إن كان معلومًا"
+  },
+  {
+    "id": "NJD-067",
+    "slug": "download-quality",
+    "platform": "جوال",
+    "title": "اختيار جودة التحميل",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "الجودة والحجم إن كان معلومًا"
+  },
+  {
+    "id": "NJD-068",
+    "slug": "storage-full",
+    "platform": "جوال",
+    "title": "عدم كفاية مساحة التخزين",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إدارة التحميلات أو إلغاء"
+  },
+  {
+    "id": "NJD-069",
+    "slug": "storage-full",
+    "platform": "جوال",
+    "title": "عدم كفاية مساحة التخزين",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "إدارة التحميلات أو إلغاء"
+  },
+  {
+    "id": "NJD-070",
+    "slug": "watchlist-edit",
+    "platform": "جوال",
+    "title": "تعديل قائمتي",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تحديد متعدد وإزالة من القائمة فقط"
+  },
+  {
+    "id": "NJD-071",
+    "slug": "watchlist-edit",
+    "platform": "جوال",
+    "title": "تعديل قائمتي",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تحديد متعدد وإزالة من القائمة فقط"
+  },
+  {
+    "id": "NJD-072",
+    "slug": "tv-home",
+    "platform": "تلفزيون",
+    "title": "رئيسية التلفزيون",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-073",
+    "slug": "tv-home",
+    "platform": "تلفزيون",
+    "title": "رئيسية التلفزيون",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-074",
+    "slug": "tv-search",
+    "platform": "تلفزيون",
+    "title": "بحث التلفزيون ولوحة المفاتيح",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-075",
+    "slug": "tv-search",
+    "platform": "تلفزيون",
+    "title": "بحث التلفزيون ولوحة المفاتيح",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-076",
+    "slug": "tv-series",
+    "platform": "تلفزيون",
+    "title": "تفاصيل مسلسل وحلقاته للتلفزيون",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-077",
+    "slug": "tv-series",
+    "platform": "تلفزيون",
+    "title": "تفاصيل مسلسل وحلقاته للتلفزيون",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-078",
+    "slug": "tv-player",
+    "platform": "تلفزيون",
+    "title": "مشغل التلفزيون",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-079",
+    "slug": "tv-player",
+    "platform": "تلفزيون",
+    "title": "مشغل التلفزيون",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-080",
+    "slug": "tv-sources",
+    "platform": "تلفزيون",
+    "title": "مصادر تشغيل التلفزيون",
+    "theme": "dark",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  },
+  {
+    "id": "NJD-081",
+    "slug": "tv-sources",
+    "platform": "تلفزيون",
+    "title": "مصادر تشغيل التلفزيون",
+    "theme": "light",
+    "status": "code-ready; figma-import-pending",
+    "acceptance": "تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق"
+  }
+]

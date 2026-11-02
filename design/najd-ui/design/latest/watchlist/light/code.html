@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>قائمتي - نجد تي في</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Space Grotesk & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-container": "#006a69",
+            "on-surface-variant": "#494453",
+            "inverse-on-surface": "#eef0ff",
+            "surface-container-low": "#f2f3ff",
+            "surface-bright": "#faf8ff",
+            "surface-container-lowest": "#ffffff",
+            "outline-variant": "#cbc3d5",
+            "primary-container": "#6b46c1",
+            "on-primary-fixed-variant": "#522aa7",
+            "surface-tint": "#6b46c1",
+            "tertiary": "#00504f",
+            "secondary-container": "#a882ff",
+            "on-secondary-fixed-variant": "#5429a6",
+            "error-container": "#ffdad6",
+            "primary-fixed-dim": "#d0bcff",
+            "on-secondary-fixed": "#24005b",
+            "surface-dim": "#d2d9f4",
+            "on-tertiary-fixed-variant": "#00504e",
+            "primary-fixed": "#e9ddff",
+            "on-error": "#ffffff",
+            "error": "#ba1a1a",
+            "on-tertiary": "#ffffff",
+            "surface-variant": "#dae2fd",
+            "background": "#faf8ff",
+            "surface-container-highest": "#dae2fd",
+            "on-surface": "#131b2e",
+            "tertiary-fixed-dim": "#77d6d3",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#94f2f0",
+            "on-primary-fixed": "#23005c",
+            "outline": "#7a7484",
+            "surface-container": "#eaedff",
+            "inverse-surface": "#283044",
+            "secondary-fixed": "#eaddff",
+            "surface": "#faf8ff",
+            "on-primary-container": "#e1d2ff",
+            "inverse-primary": "#d0bcff",
+            "on-tertiary-container": "#8ae9e6",
+            "on-error-container": "#93000a",
+            "on-secondary-container": "#3d0190",
+            "on-primary": "#ffffff",
+            "on-tertiary-fixed": "#00201f",
+            "surface-container-high": "#e2e7ff",
+            "secondary-fixed-dim": "#d1bcff",
+            "primary": "#532aa8",
+            "secondary": "#6c45c0",
+            "on-background": "#131b2e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-xl": "2.5rem",
+            "gutter-mobile": "0.75rem",
+            "space-xs": "0.25rem",
+            "margin": "3rem",
+            "margin-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "gutter": "1.5rem"
+          },
+          "fontFamily": {
+            "body-sm": ["Noto Sans Arabic", "Plus Jakarta Sans"],
+            "headline-lg-mobile": ["Space Grotesk", "Noto Sans Arabic"],
+            "headline-sm": ["Space Grotesk", "Noto Sans Arabic"],
+            "headline-xl-mobile": ["Space Grotesk", "Noto Sans Arabic"],
+            "label-lg": ["Noto Sans Arabic", "Plus Jakarta Sans"],
+            "label-sm": ["Noto Sans Arabic", "Plus Jakarta Sans"],
+            "body-lg": ["Noto Sans Arabic", "Plus Jakarta Sans"],
+            "body-md": ["Noto Sans Arabic", "Plus Jakarta Sans"],
+            "headline-xl": ["Space Grotesk", "Noto Sans Arabic"],
+            "headline-md": ["Space Grotesk", "Noto Sans Arabic"],
+            "label-md": ["Noto Sans Arabic", "Plus Jakarta Sans"],
+            "headline-lg": ["Space Grotesk", "Noto Sans Arabic"]
+          },
+          "fontSize": {
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "700" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-xl-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "700" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-xl": ["48px", { "lineHeight": "56px", "fontWeight": "700" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+            "headline-lg": ["36px", { "lineHeight": "44px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #faf8ff;
+      color: #131b2e;
+      font-family: 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card-shadow {
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(107, 70, 193, 0.03);
+    }
+    .card-hover:hover {
+      box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(107, 70, 193, 0.08);
+      transform: translateY(-2px);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased min-h-screen pb-28 md:pb-12 select-none">
+<!-- TopAppBar (From Shared Component JSON) -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin h-16 w-full bg-surface/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<button class="text-primary hover:bg-surface-container-highest/50 p-space-xs rounded-full transition-colors active:scale-95 duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="cast">cast</span>
+</button>
+<span class="text-headline-md font-headline-md text-primary font-bold tracking-tight">نجد تي في</span>
+</div>
+<!-- Desktop Navigation Cluster (Shared Components Rule) -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-colors" href="#">الرئيسية</a>
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-colors" href="#">البحث</a>
+<a class="text-primary font-label-lg text-label-lg font-bold" href="#">قائمتي</a>
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:text-primary transition-colors" href="#">الإعدادات</a>
+</nav>
+<div class="flex items-center gap-space-sm">
+<button class="text-primary hover:bg-surface-container-highest/50 p-space-xs rounded-full transition-colors active:scale-95 duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-24 px-margin-mobile md:px-margin max-w-7xl mx-auto w-full">
+<!-- Screen Sub-Header: Title & Edit Mode Trigger -->
+<div class="flex items-center justify-between mb-space-lg">
+<div class="flex items-baseline gap-space-sm">
+<h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg text-on-surface font-bold tracking-tight">قائمتي</h1>
+<span class="text-on-surface-variant font-body-sm text-body-sm font-medium">(6 أعمال)</span>
+</div>
+<!-- Clean Text Button: "تعديل" replacing red trash cans -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors font-label-lg text-label-lg active:scale-95" id="editToggleBtn">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+<span>تعديل</span>
+</button>
+</div>
+<!-- Controls Row: Filter Chips & Sorting Control -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md mb-space-lg pb-space-sm border-b border-surface-container">
+<!-- Category Filter Pills -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+<button class="bg-primary-container text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap shadow-sm">
+          الكل (6)
+        </button>
+<button class="bg-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container-highest font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          أفلام (3)
+        </button>
+<button class="bg-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container-highest font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          مسلسلات (2)
+        </button>
+<button class="bg-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container-highest font-label-md text-label-md px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          وثائقيات (1)
+        </button>
+</div>
+<!-- Sorting Selector -->
+<div class="flex items-center gap-2 self-end sm:self-auto text-on-surface-variant font-label-md text-label-md">
+<span class="text-outline">ترتيب حسب:</span>
+<button class="flex items-center gap-1 bg-surface-container-lowest border border-outline-variant/40 px-3 py-1.5 rounded-lg text-on-surface font-semibold hover:border-primary transition-colors">
+<span>تاريخ الإضافة</span>
+<span class="material-symbols-outlined text-base" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Media Grid: 6 Posters matching exact 2:3 key art format and items -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-gutter-mobile md:gap-gutter">
+<!-- Item 1: أصداء طويق (مسلسل، 9.3) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A cinematic and majestic shot of the Tuwaiq cliff escarpments in Saudi Arabia under an amber sunset sky, presenting an epic drama visual with dramatic warm directional rim lighting, subtle deep violet haze, and modern premium cinematography in ultra high definition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjYz8supDXLpW8_A7aACaJht5Br8dpL3yxXMI-ATW-wdeePepShD7Pmk4ziBMME4IXYCezl5cn3FjsUevTFDehbgBuBRYcQKdwRMTM82NUse3aRgPzBldtVBWfpR76z2MQ9N9wb81MMmCIxyDZyGz7YZq9DqhwhE6Hmxatzs9bfJLopftFqFz2XvK1zprbOtgzsxlyVmGv70XM1-H2NL3Zj-BQUKm2ouXI5epCVjY"/>
+<!-- Top Badge: Series -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            مسلسل
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">9.3</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">أصداء طويق</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">دراما اجتماعية • 10 حلقات</p>
+</div>
+</div>
+<!-- Item 2: صقر الجزيرة (فيلم، 8.8) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A noble falcon perched on a gloved falconer's arm against sweeping golden Arabian sand dunes, bathed in crisp morning sunlight with deep purple shadows, rich cinematic texture, and bright open skies portraying historical pride." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO_pqsbgDh2yexTzXYztGdt_sYBSv0mh8kbxsFjtlLTFkbFVWKgZsPiTzk5ODbFAFCbVJKyM-No7KN6Yc8pstkedbwZ66BENLS2qol5Zbylu6m5uBkSUwvdvskXmBaRnSngmk4cVI3wAVRq97TDSedQR2_sDd_8czHmP5WvbEokUrHKWEXF-uCWXM8teY16fry_vop0sLfgFDyS4KYuBtPSsvWBRC9vY-u1BAJh5o"/>
+<!-- Top Badge: Film -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            فيلم
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">8.8</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">صقر الجزيرة</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">تاريخ وسيرة • 124 دقيقة</p>
+</div>
+</div>
+<!-- Item 3: رحلة نحو النجوم (وثائقي، 9.0) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A futuristic modern astronomical observatory dome nestled in the rocky desert mountains beneath a crystal-clear cosmic night sky filled with luminous nebulae and star clusters, bathed in gentle purple ambient starlight and radiant clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1NUAyfVLvusAO04T6aOOx6nd573AMAniXR8_UyxZTUtBnB1vqCk_-1sTkQxpc2kZ14wUiyJch1VVtEf0fMdLKmuYGYrBsMmxTi9t08d053ODCajU58l-t0iBgWyBxcnr_dduFR0HGMf9xMQRek7vuW2C4IViUMVElOoZe9ychzntMcMeSYtGKIaRFNVWL6cbz2QPfVWmGAbFUuHCrhx1FhQaaTbaUS0ermOAo9Go"/>
+<!-- Top Badge: Documentary -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            وثائقي
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">9.0</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">رحلة نحو النجوم</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">علوم وفلك • 85 دقيقة</p>
+</div>
+</div>
+<!-- Item 4: سراب المدينة (مسلسل، 8.5) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A stylized urban skyline illuminated by sleek modern skyscrapers with reflecting glass towers in dusk twilight, featuring dramatic neon purple accents and cool crisp ambient lighting with deep mysterious atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGmMNSmKXvRJr9ZjotpwERLpSgMfJxjYz6g09CpY1R4oykfEKB2aPUmjz_XRFJB7bw5ySFH3c3HlaRH5mjfWuzDTyhmRVk1kaVQQHB-UFixagJR3cdFgbpJyM7G1QDuwaM6bohFFZ39Np6fixAUrK7RRWQrMXDJ_eCZqneTh8Viawg3BvPqYdgBeTS7zjiqUTvn0JRTXdKMnqkyBsjx9K-ZtBxGI19tbtBIbM12_8"/>
+<!-- Top Badge: Series -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            مسلسل
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">8.5</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">سراب المدينة</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">غموض وتشويق • موسم 1</p>
+</div>
+</div>
+<!-- Item 5: سيف السديم (فيلم، 9.1) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="An artistic cinematic representation of an ancient engraved steel blade standing upright on desert ground reflecting vibrant purple nebula galaxies and cosmic light, capturing an epic sci-fi fantasy aesthetic in high key lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBknT5KQEaIxd62c8t6dPaKg3e3fC2zStwFq8TLruouvdZ1hAlmtlA9ca2h0qgMvx4tUrE0paPn3B3Bqbed8M9-KJv3ZV4crJvyODp1-necmApk8x8fOwhG1pMI31KQJUrtbgk8_nzUGPs8OKo0PvPLSjkUQK8EZ_tgIRAoUhRNsQlm8uKXqLrtnip1SxYptztwPhZLrNbTvkx44wyAXKWhgOHoQqzwF43_k3f1QMA"/>
+<!-- Top Badge: Film -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            فيلم
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">9.1</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">سيف السديم</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">خيال ومغامرة • 140 دقيقة</p>
+</div>
+</div>
+<!-- Item 6: خيول الريح (فيلم، 8.7) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl p-2 card-shadow card-hover transition-all duration-200">
+<div class="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Majestic thoroughbred pure Arabian horses galloping freely across an open pristine desert plain, kicks up golden dust illuminated by warm radiant backlighting, crisp focus, vibrant clarity, and rich natural tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ1O1L_QnrVc1Y1ulf1QR8fnFMxz319Q5144DmtdOvFe00qriwHFYsHsY-uiEydm9SvPI3mF5jC40aD58cimD4kB_smfUgA6F5oZDYXkpFRNDGs8wb9ESvNmSRWYetpqJECr33HSM8Wqa8d4jHzREdEWwyjM4cu-dN0Iv7B6Or6uqE7uDtUvmmVrKpkmp5nit-0l6stS-IrkgiWawbT3r4iaSxZNf48mdBIstijY0"/>
+<!-- Top Badge: Film -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-md text-white font-label-sm text-label-sm px-2 py-0.5 rounded">
+            فيلم
+          </div>
+<!-- Rating Overlay -->
+<div class="absolute bottom-2 left-2 flex items-center gap-1 bg-on-surface/90 backdrop-blur-md text-white px-1.5 py-0.5 rounded text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-xs text-amber-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-xs font-bold">8.7</span>
+</div>
+</div>
+<div class="mt-2.5 px-1 flex flex-col">
+<h3 class="font-headline-sm text-sm text-on-surface font-bold truncate">خيول الريح</h3>
+<p class="font-body-sm text-xs text-on-surface-variant truncate mt-0.5">دراما أصيلة • 115 دقيقة</p>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component JSON - Exactly mapped, mobile viewport, 'قائمتي' active) -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- الرئيسية (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- البحث (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- قائمتي (Active - exact styles mapped from style_active_navigation) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- الإعدادات (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+<script>
+    // Micro-interaction: Elegant Edit mode toggle
+    const editBtn = document.getElementById('editToggleBtn');
+    let isEditing = false;
+
+    editBtn.addEventListener('click', () => {
+      isEditing = !isEditing;
+      if (isEditing) {
+        editBtn.innerHTML = `
+          <span class="material-symbols-outlined text-lg" data-icon="check">check</span>
+          <span>تم</span>
+        `;
+        editBtn.classList.add('bg-primary-container', 'text-on-primary');
+        editBtn.classList.remove('text-primary', 'hover:bg-primary-fixed');
+      } else {
+        editBtn.innerHTML = `
+          <span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+          <span>تعديل</span>
+        `;
+        editBtn.classList.remove('bg-primary-container', 'text-on-primary');
+        editBtn.classList.add('text-primary', 'hover:bg-primary-fixed');
+      }
+    });
+  </script>
+</body></html>

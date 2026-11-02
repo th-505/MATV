@@ -1,0 +1,14 @@
+{
+  "name": "najd-tv-interface",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Najd TV Arabic interface catalogue: 81 screens and states",
+  "scripts": {
+    "build": "python3 scripts/build_ui.py && node scripts/compile-baseline.cjs && python3 scripts/cache_assets.py",
+    "start": "python3 -m http.server 4173 --bind 0.0.0.0",
+    "check": "python3 scripts/check_ui.py"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

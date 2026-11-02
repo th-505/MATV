@@ -14,3 +14,7 @@ Flutter Web: https://th-505.github.io/MATV/app/
 6. **Subtitles & Sync:** Stremio OpenSubtitles v3 API integration, UTF-8/CP1256 decoding, and native `sub-delay` synchronization.
 7. **Android TV & Focus Navigation:** High-contrast focus borders, D-Pad support, and virtual pointer controller with smooth acceleration.
 8. **Automated Multiplatform CI:** GitHub Actions matrix releasing 6 identical targets (Mobile ARM64, TV ARM32, iOS Unsigned IPA, Windows ZIP/Setup, macOS DMG, Web) with split ABI limits (~35 MiB).
+
+## Najd UI catalogue
+
+[81 واجهة وحالة لنجد تي في](design/najd-ui/README.md) — كود المعاينات وخطة التسليم وفحوص الجوال والتلفزيون.

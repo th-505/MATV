@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>قائمتي - نجد تي في</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+
+
+
+<!-- Tailwind CSS -->
+
+
+<style>
+    body {
+      background-color: #14121a;
+      color: #e5e1eb;
+      font-family: 'Hanken Grotesk', 'Noto Sans Arabic', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .pb-safe {
+      padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  <link rel="stylesheet" href="../../shared/icons.css"><link rel="stylesheet" href="../../shared/thmanyah.css"><script src="../../shared/baseline.js" defer></script><link rel="stylesheet" href="compiled.css"></head>
+<body class="bg-background text-on-background min-h-screen flex flex-col selection:bg-primary-container selection:text-white pb-24">
+<!-- Top App Bar (Shared Components Anchor) -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin h-16 w-full bg-surface/80 dark:bg-surface/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<button aria-label="بث الشاشة" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined" data-icon="cast">cast</span>
+</button>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-headline-md text-primary dark:text-primary font-bold tracking-tight">نجد تي في</span>
+</div>
+</div>
+<!-- Web Navigation Links -->
+<nav class="hidden md:flex items-center gap-space-lg text-label-md font-label-md">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">الرئيسية</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">البحث</a>
+<a class="text-primary font-bold border-b-2 border-primary-container pb-1" href="#">قائمتي</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">الإعدادات</a>
+</nav>
+<div class="flex items-center gap-space-sm">
+<button aria-label="الإشعارات" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas Container -->
+<main class="flex-1 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin pt-20">
+<!-- Title & Action Bar -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md pt-space-md pb-space-lg">
+<div class="flex items-baseline gap-space-md">
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface">قائمتي</h1>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container-high px-2.5 py-0.5 rounded-full">6 أعمال محفوظة</span>
+</div>
+<!-- Action Cluster: Edit and Quick Search -->
+<div class="flex items-center gap-space-sm self-stretch md:self-auto">
+<div class="relative flex-1 md:w-64">
+<input class="w-full bg-surface-container-low border border-white/10 rounded-lg pr-9 pl-space-md py-1.5 text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container transition-colors" placeholder="ابحث في قائمتي..." type="text"/>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]" data-icon="search">search</span>
+</div>
+<button class="px-space-md py-1.5 rounded-lg border border-white/20 text-on-surface hover:bg-white/10 transition-colors font-label-md text-label-md flex items-center gap-1.5 active:scale-95 duration-150" id="editBtn" onclick="toggleEditMode()">
+<span class="material-symbols-outlined text-[16px]" data-icon="edit">edit</span>
+<span id="editBtnText">تعديل</span>
+</button>
+</div>
+</div>
+<!-- Filter Chips & Sort Controls -->
+<div class="flex flex-wrap items-center justify-between gap-space-md pb-space-lg">
+<!-- Chips Rail -->
+<div class="flex items-center gap-space-sm overflow-x-auto no-scrollbar py-0.5">
+<button class="filter-chip bg-primary-container text-white px-space-md py-1.5 rounded-full font-label-sm text-label-sm transition-all" data-category="all" type="button">
+          الكل (6)
+        </button>
+<button class="filter-chip bg-surface-container-low border border-white/10 text-on-surface-variant hover:text-on-surface px-space-md py-1.5 rounded-full font-label-sm text-label-sm transition-all" data-category="movie" type="button">
+          أفلام (3)
+        </button>
+<button class="filter-chip bg-surface-container-low border border-white/10 text-on-surface-variant hover:text-on-surface px-space-md py-1.5 rounded-full font-label-sm text-label-sm transition-all" data-category="series" type="button">
+          مسلسلات (2)
+        </button>
+<button class="filter-chip bg-surface-container-low border border-white/10 text-on-surface-variant hover:text-on-surface px-space-md py-1.5 rounded-full font-label-sm text-label-sm transition-all" data-category="doc" type="button">
+          وثائقيات (1)
+        </button>
+</div>
+<!-- Sorting Selector -->
+<div class="flex items-center gap-space-xs text-label-sm font-label-sm text-on-surface-variant bg-surface-container-low px-space-md py-1.5 rounded-lg border border-white/5">
+<span class="text-outline">الترتيب:</span>
+<div class="flex items-center gap-1 text-on-surface font-semibold cursor-pointer">
+<span>تاريخ الإضافة</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</div>
+</div>
+</div>
+<!-- Batch Selection Bar (Conditional Edit Mode Bar) -->
+<div class="hidden items-center justify-between bg-surface-container-high border border-primary-container/30 px-space-md py-2.5 rounded-xl mb-space-lg animate-fade-in" id="selectionBar">
+<div class="flex items-center gap-space-md">
+<span class="text-label-md font-label-md text-on-surface font-semibold" id="selectedCountText">تم تحديد 0 عناصر</span>
+<button class="text-primary text-label-sm font-label-sm hover:underline" onclick="selectAll()">تحديد الكل</button>
+</div>
+<button class="bg-error-container text-white px-space-md py-1 rounded-lg text-label-sm font-label-sm flex items-center gap-1 active:scale-95 duration-150" onclick="deleteSelected()">
+<span class="material-symbols-outlined text-[16px]" data-icon="delete">delete</span>
+        حذف المحدد
+      </button>
+</div>
+<!-- Media Posters Grid (Strict 6 Items) -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-gutter-mobile md:gap-gutter">
+<!-- Card 1: أصداء طويق -->
+<div class="group relative flex flex-col bg-surface-container-low rounded-xl overflow-hidden border border-white/5 hover:border-primary-container/40 transition-all duration-300 hover:-translate-y-1" data-type="series">
+<!-- Checkbox overlay for Edit Mode -->
+<label class="edit-checkbox hidden absolute top-2 right-2 z-30 cursor-pointer">
+<input class="w-5 h-5 rounded border-white/30 bg-surface-container text-primary-container focus:ring-0 focus:ring-offset-0 transition-all" type="checkbox"/>
+</label>
+<div class="relative aspect-[2/3] w-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A dramatic cinematic vertical film poster for an epic Saudi drama series set in Jabal Tuwaiq. Majestic ancient limestone cliffs loom over a lone figure draped in traditional dark embroidered robes during a moody twilight. The visual tone is deep royal purple, obsidian shadows, and subtle bronze rim lighting, evoking mystery, legacy, and cinematic gravitas with high contrast." src="../../shared/images/496d0745662a12582576.jpg"/>
+<!-- Gradient Mask -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-black/30"></div>
+<!-- Bookmark Badge -->
+<div class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-primary border border-white/10">
+<span class="material-symbols-outlined text-[16px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+<!-- Quality Badge -->
+<div class="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-label-sm font-label-sm text-on-surface">
+            4K HDR
+          </div>
+</div>
+<div class="p-2.5 flex flex-col flex-1 justify-between gap-1">
+<div>
+<div class="flex items-center justify-between gap-1 text-label-sm font-label-sm text-outline mb-0.5">
+<span>مسلسل</span>
+<div class="flex items-center gap-0.5 text-secondary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">9.3</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-on-surface truncate group-hover:text-primary transition-colors">أصداء طويق</h2>
+</div>
+<span class="text-body-sm text-[12px] text-on-surface-variant/80">الموسم 2 • 10 حلقات</span>
+</div>
+</div>
+<!-- Card 2: صقر الجزيرة -->
+<div class="group relative flex flex-col bg-surface-container-low rounded-xl overflow-hidden border border-white/5 hover:border-primary-container/40 transition-all duration-300 hover:-translate-y-1" data-type="movie">
+<label class="edit-checkbox hidden absolute top-2 right-2 z-30 cursor-pointer">
+<input class="w-5 h-5 rounded border-white/30 bg-surface-container text-primary-container focus:ring-0 focus:ring-offset-0 transition-all" type="checkbox"/>
+</label>
+<div class="relative aspect-[2/3] w-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A striking cinematic action movie poster depicting a fierce falcon hunter on the golden desert dunes under a celestial purple-tinted night sky. The hero silhouette holds a grand falcon with piercing eyes, with dynamic wind-blown sand textures, cinematic deep navy shadows, and delicate starlight reflections capturing high-stakes desert bravery." src="../../shared/images/47780c81aabf23c9e4bd.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-black/30"></div>
+<div class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-primary border border-white/10">
+<span class="material-symbols-outlined text-[16px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+<div class="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-label-sm font-label-sm text-on-surface">
+            4K
+          </div>
+</div>
+<div class="p-2.5 flex flex-col flex-1 justify-between gap-1">
+<div>
+<div class="flex items-center justify-between gap-1 text-label-sm font-label-sm text-outline mb-0.5">
+<span>فيلم</span>
+<div class="flex items-center gap-0.5 text-secondary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">8.8</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-on-surface truncate group-hover:text-primary transition-colors">صقر الجزيرة</h2>
+</div>
+<span class="text-body-sm text-[12px] text-on-surface-variant/80">ساعتان و14 دقيقة</span>
+</div>
+</div>
+<!-- Card 3: رحلة نحو النجوم -->
+<div class="group relative flex flex-col bg-surface-container-low rounded-xl overflow-hidden border border-white/5 hover:border-primary-container/40 transition-all duration-300 hover:-translate-y-1" data-type="doc">
+<label class="edit-checkbox hidden absolute top-2 right-2 z-30 cursor-pointer">
+<input class="w-5 h-5 rounded border-white/30 bg-surface-container text-primary-container focus:ring-0 focus:ring-offset-0 transition-all" type="checkbox"/>
+</label>
+<div class="relative aspect-[2/3] w-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A modern documentary film poster portraying a space exploration observatory located in a quiet desert valley. Massive radio telescope dishes point upward toward a breathtaking, photorealistic Milky Way galaxy with subtle violet nebula bands and stardust. Minimalist typography, deep void blacks, and ambient royal purple lighting evoke awe and scientific precision." src="../../shared/images/6a1ce30420d3eb9ec84d.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-black/30"></div>
+<div class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-primary border border-white/10">
+<span class="material-symbols-outlined text-[16px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+<div class="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-label-sm font-label-sm text-on-surface">
+            HDR
+          </div>
+</div>
+<div class="p-2.5 flex flex-col flex-1 justify-between gap-1">
+<div>
+<div class="flex items-center justify-between gap-1 text-label-sm font-label-sm text-outline mb-0.5">
+<span>وثائقي</span>
+<div class="flex items-center gap-0.5 text-secondary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">9.0</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-on-surface truncate group-hover:text-primary transition-colors">رحلة نحو النجوم</h2>
+</div>
+<span class="text-body-sm text-[12px] text-on-surface-variant/80">ساعة و48 دقيقة</span>
+</div>
+</div>
+<!-- Card 4: سراب المدينة -->
+<div class="group relative flex flex-col bg-surface-container-low rounded-xl overflow-hidden border border-white/5 hover:border-primary-container/40 transition-all duration-300 hover:-translate-y-1" data-type="series">
+<label class="edit-checkbox hidden absolute top-2 right-2 z-30 cursor-pointer">
+<input class="w-5 h-5 rounded border-white/30 bg-surface-container text-primary-container focus:ring-0 focus:ring-offset-0 transition-all" type="checkbox"/>
+</label>
+<div class="relative aspect-[2/3] w-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A neo-noir crime thriller poster set in an ultra-modern Middle Eastern metropolis with towering glass skyscrapers and rainy highway overpasses. Neon architectural reflections in dark purple and charcoal paint the scene, highlighting two intense characters locked in conversation through tinted vehicle glass. Moody cinematic lighting and atmospheric rain mist." src="../../shared/images/40131d31faaa1e929257.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-black/30"></div>
+<div class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-primary border border-white/10">
+<span class="material-symbols-outlined text-[16px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+<div class="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-label-sm font-label-sm text-on-surface">
+            HD
+          </div>
+</div>
+<div class="p-2.5 flex flex-col flex-1 justify-between gap-1">
+<div>
+<div class="flex items-center justify-between gap-1 text-label-sm font-label-sm text-outline mb-0.5">
+<span>مسلسل</span>
+<div class="flex items-center gap-0.5 text-secondary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">8.5</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-on-surface truncate group-hover:text-primary transition-colors">سراب المدينة</h2>
+</div>
+<span class="text-body-sm text-[12px] text-on-surface-variant/80">الموسم 1 • 8 حلقات</span>
+</div>
+</div>
+<!-- Card 5: سيف السديم -->
+<div class="group relative flex flex-col bg-surface-container-low rounded-xl overflow-hidden border border-white/5 hover:border-primary-container/40 transition-all duration-300 hover:-translate-y-1" data-type="movie">
+<label class="edit-checkbox hidden absolute top-2 right-2 z-30 cursor-pointer">
+<input class="w-5 h-5 rounded border-white/30 bg-surface-container text-primary-container focus:ring-0 focus:ring-offset-0 transition-all" type="checkbox"/>
+</label>
+<div class="relative aspect-[2/3] w-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="An atmospheric sci-fi fantasy film poster showcasing an ancient curved ceremonial blade glowing with cosmic energy against an interstellar violet nebula backdrop. Intricate engraved Damascus steel patterns illuminated by faint starlight, flanked by silhouette warriors standing in zero-gravity space. Cinematic, luxurious dark palette and refined cosmic glow." src="../../shared/images/9dfc6cac73c8f18f1f39.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-black/30"></div>
+<div class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-primary border border-white/10">
+<span class="material-symbols-outlined text-[16px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+<div class="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-label-sm font-label-sm text-on-surface">
+            4K HDR
+          </div>
+</div>
+<div class="p-2.5 flex flex-col flex-1 justify-between gap-1">
+<div>
+<div class="flex items-center justify-between gap-1 text-label-sm font-label-sm text-outline mb-0.5">
+<span>فيلم</span>
+<div class="flex items-center gap-0.5 text-secondary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">9.1</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-on-surface truncate group-hover:text-primary transition-colors">سيف السديم</h2>
+</div>
+<span class="text-body-sm text-[12px] text-on-surface-variant/80">ساعتان و28 دقيقة</span>
+</div>
+</div>
+<!-- Card 6: خيول الريح -->
+<div class="group relative flex flex-col bg-surface-container-low rounded-xl overflow-hidden border border-white/5 hover:border-primary-container/40 transition-all duration-300 hover:-translate-y-1" data-type="movie">
+<label class="edit-checkbox hidden absolute top-2 right-2 z-30 cursor-pointer">
+<input class="w-5 h-5 rounded border-white/30 bg-surface-container text-primary-container focus:ring-0 focus:ring-offset-0 transition-all" type="checkbox"/>
+</label>
+<div class="relative aspect-[2/3] w-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A grand historical cinematic poster featuring majestic purebred Arabian horses galloping across desert plains kicked up with golden dust at twilight. The background reveals deep purple silhouettes of traditional mudbrick palaces and towering date palms. Rich filmic grain, elegant high-contrast lighting, and dramatic motion blur." src="../../shared/images/17db80084a158e42243b.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-black/30"></div>
+<div class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-primary border border-white/10">
+<span class="material-symbols-outlined text-[16px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+<div class="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-label-sm font-label-sm text-on-surface">
+            4K
+          </div>
+</div>
+<div class="p-2.5 flex flex-col flex-1 justify-between gap-1">
+<div>
+<div class="flex items-center justify-between gap-1 text-label-sm font-label-sm text-outline mb-0.5">
+<span>فيلم</span>
+<div class="flex items-center gap-0.5 text-secondary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">8.7</span>
+</div>
+</div>
+<h2 class="font-headline-sm text-[15px] font-bold text-on-surface truncate group-hover:text-primary transition-colors">خيول الريح</h2>
+</div>
+<span class="text-body-sm text-[12px] text-on-surface-variant/80">ساعة و55 دقيقة</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Shared Components Anchor, MOBILE ONLY) -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 dark:bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- الرئيسية -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- البحث -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm mt-0.5">البحث</span>
+</a>
+<!-- قائمتي (نشط) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary font-bold bg-primary-container/20 dark:bg-primary-container/20 rounded-full px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="font-label-sm text-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- الإعدادات -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+<!-- Interactive script for categories and edit mode -->
+<script>
+    let isEditMode = false;
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const editBtnText = document.getElementById('editBtnText');
+      const selectionBar = document.getElementById('selectionBar');
+      const checkboxes = document.querySelectorAll('.edit-checkbox');
+
+      if (isEditMode) {
+        editBtnText.textContent = 'إلغاء';
+        selectionBar.classList.remove('hidden');
+        selectionBar.classList.add('flex');
+        checkboxes.forEach(cb => cb.classList.remove('hidden'));
+      } else {
+        editBtnText.textContent = 'تعديل';
+        selectionBar.classList.add('hidden');
+        selectionBar.classList.remove('flex');
+        checkboxes.forEach(cb => {
+          cb.classList.add('hidden');
+          cb.querySelector('input').checked = false;
+        });
+        updateCount();
+      }
+    }
+
+    function selectAll() {
+      const inputs = document.querySelectorAll('.edit-checkbox input');
+      const allChecked = Array.from(inputs).every(i => i.checked);
+      inputs.forEach(i => i.checked = !allChecked);
+      updateCount();
+    }
+
+    function updateCount() {
+      const checkedCount = document.querySelectorAll('.edit-checkbox input:checked').length;
+      document.getElementById('selectedCountText').textContent = `تم تحديد ${checkedCount} عناصر`;
+    }
+
+    function deleteSelected() {
+      const checkedBoxes = document.querySelectorAll('.edit-checkbox input:checked');
+      if (checkedBoxes.length === 0) return;
+      checkedBoxes.forEach(cb => {
+        const card = cb.closest('[data-type]');
+        if (card) {
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.9)';
+          setTimeout(() => card.remove(), 250);
+        }
+      });
+      setTimeout(() => {
+        toggleEditMode();
+      }, 300);
+    }
+
+    // Attach listeners to checkboxes
+    document.querySelectorAll('.edit-checkbox input').forEach(input => {
+      input.addEventListener('change', updateCount);
+    });
+
+    // Category Filter Chips Interaction
+    const filterChips = document.querySelectorAll('.filter-chip');
+    filterChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        // Reset styles
+        filterChips.forEach(c => {
+          c.className = 'filter-chip bg-surface-container-low border border-white/10 text-on-surface-variant hover:text-on-surface px-space-md py-1.5 rounded-full font-label-sm text-label-sm transition-all';
+        });
+        // Active style
+        chip.className = 'filter-chip bg-primary-container text-white px-space-md py-1.5 rounded-full font-label-sm text-label-sm transition-all';
+
+        const category = chip.getAttribute('data-category');
+        const cards = document.querySelectorAll('[data-type]');
+        cards.forEach(card => {
+          if (category === 'all' || card.getAttribute('data-type') === category) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body></html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>التحميلات - نجد تي في</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..700;1,300..700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-background": "#e5e1eb",
+            "secondary-container": "#57319e",
+            "on-error-container": "#ffdad6",
+            "surface": "#14121a",
+            "tertiary": "#d0c0e4",
+            "surface-container-highest": "#35343c",
+            "on-secondary": "#3d0e84",
+            "surface-variant": "#35343c",
+            "tertiary-fixed-dim": "#d0c0e4",
+            "surface-container-low": "#1c1b22",
+            "on-secondary-fixed-variant": "#552e9b",
+            "tertiary-container": "#665978",
+            "surface-tint": "#d0bcff",
+            "outline": "#948e9e",
+            "error": "#ffb4ab",
+            "inverse-on-surface": "#312f37",
+            "surface-container-high": "#2a2931",
+            "on-tertiary": "#362b47",
+            "background": "#14121a",
+            "on-primary-container": "#e1d2ff",
+            "on-error": "#690005",
+            "on-tertiary-fixed": "#211631",
+            "on-tertiary-fixed-variant": "#4d415f",
+            "on-tertiary-container": "#e3d2f7",
+            "secondary-fixed-dim": "#d2bbff",
+            "surface-container": "#201f26",
+            "surface-container-lowest": "#0e0d14",
+            "primary-container": "#6b46c1",
+            "secondary-fixed": "#eaddff",
+            "outline-variant": "#494453",
+            "surface-bright": "#3a3840",
+            "on-primary-fixed-variant": "#522aa7",
+            "on-surface": "#e5e1eb",
+            "secondary": "#d2bbff",
+            "error-container": "#93000a",
+            "inverse-surface": "#e5e1eb",
+            "on-secondary-container": "#c6aaff",
+            "primary-fixed": "#e9ddff",
+            "on-primary-fixed": "#23005c",
+            "tertiary-fixed": "#ecdcff",
+            "primary-fixed-dim": "#d0bcff",
+            "on-secondary-fixed": "#25005a",
+            "surface-dim": "#14121a",
+            "on-primary": "#3b0191",
+            "primary": "#d0bcff",
+            "inverse-primary": "#6b46c1",
+            "on-surface-variant": "#cbc3d5"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-mobile": "0.75rem",
+            "margin-tablet": "2rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-xl": "2.5rem",
+            "gutter": "1.5rem",
+            "margin": "3rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "display-hero": ["Outfit", "sans-serif"],
+            "body-lg": ["Hanken Grotesk", "sans-serif"],
+            "label-sm": ["Hanken Grotesk", "sans-serif"],
+            "headline-sm": ["Outfit", "sans-serif"],
+            "label-md": ["Hanken Grotesk", "sans-serif"],
+            "headline-lg": ["Outfit", "sans-serif"],
+            "body-md": ["Hanken Grotesk", "sans-serif"],
+            "headline-xl": ["Outfit", "sans-serif"],
+            "headline-xl-mobile": ["Outfit", "sans-serif"],
+            "label-lg": ["Hanken Grotesk", "sans-serif"],
+            "display-hero-mobile": ["Outfit", "sans-serif"],
+            "body-sm": ["Hanken Grotesk", "sans-serif"],
+            "headline-md": ["Outfit", "sans-serif"]
+          },
+          "fontSize": {
+            "display-hero": ["56px", { "lineHeight": "64px", "fontWeight": "700" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "label-md": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "fontWeight": "600" }],
+            "headline-xl-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "label-lg": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "display-hero-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen antialiased flex flex-col font-body-md text-body-md select-none pb-28">
+<!-- Top App Bar (Task Sub-Screen Header) -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-md px-margin-mobile h-16 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<button aria-label="رجوع" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:text-primary active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">التحميلات</h1>
+</div>
+<button class="font-label-lg text-label-lg text-primary px-space-sm py-space-xs rounded hover:bg-surface-container-highest/40 active:scale-95 transition-all" type="button">
+      تعديل
+    </button>
+</header>
+<!-- Segmented Tabs -->
+<nav class="px-margin-mobile pt-space-xs pb-space-sm bg-surface">
+<div class="flex items-center p-1 bg-surface-container-low rounded-xl border border-white/[0.06]">
+<!-- Tab: Completed (Inactive) -->
+<button class="flex-1 py-2 text-center rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+        المكتملة (4)
+      </button>
+<!-- Tab: Downloading (Active) -->
+<button class="flex-1 py-2 text-center rounded-lg font-label-md text-label-md text-on-background font-semibold bg-primary-container shadow-sm border border-primary/20 transition-all" type="button">
+        قيد التحميل (2)
+      </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin-mobile space-y-space-lg pt-space-sm">
+<!-- Device Storage Overview Bento Card -->
+<section class="p-space-md rounded-xl bg-surface-container-low border border-white/[0.06] space-y-space-md"><div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary" data-icon="smartphone">smartphone</span>
+<span class="font-label-md text-label-md text-on-surface">سعة تخزين الجهاز</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">3.6 جيجابايت مستخدم من 128 جيجابايت</span>
+</div>
+<!-- Segmented Visual Gauge -->
+<div class="h-2.5 w-full bg-surface-container-highest rounded-full overflow-hidden flex dir-ltr" dir="ltr">
+<!-- Najd TV Downloads Segment (2.8%) -->
+<div class="h-full bg-primary-container" style="width: 2.8%;" title="نجد تي في: 3.6 جيجابايت"></div>
+<!-- Other Apps & Files Segment (69.2%) -->
+<div class="h-full bg-outline-variant" style="width: 69.2%;" title="تطبيقات وملفات أخرى: 88.6 جيجابايت"></div>
+<!-- Available Space (28.0%) -->
+<div class="h-full bg-transparent flex-1" title="المتاح: 35.8 جيجابايت"></div>
+</div>
+<!-- Storage Legend Details -->
+<div class="grid grid-cols-3 gap-1 font-label-sm text-label-sm pt-space-xs text-[12px]">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container flex-shrink-0 inline-block"></span>
+<span class="text-on-surface-variant truncate">نجد تي في:</span>
+<span class="text-primary font-medium flex-shrink-0">3.6 ج.ب</span>
+</div>
+<div class="flex items-center gap-1.5 min-w-0 justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-outline-variant flex-shrink-0 inline-block"></span>
+<span class="text-on-surface-variant truncate">أخرى:</span>
+<span class="text-on-surface font-medium flex-shrink-0">88.6 ج.ب</span>
+</div>
+<div class="flex items-center gap-1.5 min-w-0 justify-end">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-container-highest border border-white/20 flex-shrink-0 inline-block"></span>
+<span class="text-on-surface-variant truncate">المتاح:</span>
+<span class="text-on-surface font-medium flex-shrink-0">35.8 ج.ب</span>
+</div>
+</div></section>
+<!-- Active Queue Section -->
+<section class="space-y-space-md">
+<!-- Section Header with Real-time Rate -->
+<div class="flex items-center justify-between pb-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-medium">
+          جاري التنزيل حالياً (2)
+        </h2>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-white/[0.06] text-primary">
+<span class="material-symbols-outlined text-[16px] animate-pulse" data-icon="download">download</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide">4.2 م.ب/ث</span>
+</div>
+</div>
+<!-- Queue Item 1: Active Progressing Download -->
+<article class="p-space-md rounded-xl bg-surface-container-low border border-white/[0.06] flex flex-col gap-space-md">
+<div class="flex items-start gap-space-md">
+<!-- Thumbnail Poster -->
+<div class="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest relative border border-white/[0.06]">
+<img class="w-full h-full object-cover" data-alt="A cinematic widescreen landscape photograph of Tuwaiq desert cliffs at dusk under a dramatic violet and indigo sky. The lighting features warm cinematic ambient glimmers across rugged sandstone ridges, conveying refined regional drama in a dark mode palette with Najdi purple nuances." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_4eUwgOEa5oVHNMU2VefASyECeCvExIIMhQ0qcoAtWmTHnPirzy9i-_nC8Vp5cuG03zVhHzImL-_ErPHx3nk1-iIQOTlyCBXmn3oRw_Q00W407b-MS5a8MpgoDBJM3WlYqDue5ffCLD_DCtKBnVGVMTpGiWTeB9eIta1_4h0I0yizmeccWgvq8w79f5uPRjDhcofTEvw6pkTkAWL3iwHS_biJdzGQvXjykjNJRD0"/>
+<div class="absolute bottom-1 right-1 bg-surface-container-lowest/80 backdrop-blur-sm text-[10px] px-1 py-0.5 rounded text-white font-label-sm font-medium">
+              حلقة 4
+            </div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex-1 min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface font-medium">
+              أصداء طويق
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+              الموسم 1 · الحلقة 4
+            </p>
+<p class="font-label-sm text-label-sm text-tertiary-fixed-dim mt-1">
+              420 ميجابايت من 650 ميجابايت
+            </p>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-1.5">
+<button aria-label="إيقاف مؤقت" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high border border-white/[0.08] flex items-center justify-center text-on-surface active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="pause">pause</span>
+</button>
+<button aria-label="إلغاء التحميل" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high border border-white/[0.08] flex items-center justify-center text-on-surface-variant hover:text-error active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Progress Bar & Status -->
+<div class="space-y-1.5 pt-1 border-t border-white/[0.04]">
+<div class="flex justify-between items-center font-label-sm text-label-sm text-on-surface-variant">
+<span>التقدم</span>
+<span class="text-primary font-semibold">65%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden flex" dir="ltr">
+<div class="h-full bg-primary-container rounded-full transition-all duration-300" style="width: 65%;"></div>
+</div>
+</div>
+</article>
+<!-- Queue Item 2: Failed Download Item -->
+<article class="p-space-md rounded-xl bg-surface-container-low border border-white/[0.06] flex flex-col gap-space-md">
+<div class="flex items-start gap-space-md">
+<!-- Thumbnail Poster -->
+<div class="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest relative border border-white/[0.06]">
+<img class="w-full h-full object-cover filter brightness-75" data-alt="A striking documentary frame of a noble falcon perched majestically in golden hour desert light, surrounded by deep shadows and dark purple twilight tones. The composition embodies high-end cinematic documentary style with minimal noise and profound atmospheric depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWRmiy1zO8yDIIy4L_aVcj1Qt_kFSOHd9nCabS8HrEscFEIJmAUtGwZ6wZV7x3eQpjm1h-pp-FWT8Jb_tccnW9ZbhWWofSaixGB4VYRAJELbtD4LGIs-AVd-cn0wwW9yoUi7dsUvDLecgYnEPiczCtWRt0GQizIOz4I4fJ2NgGGqEPvsNiy-KXrnyETmAiXRuaJiWvvYwmCyho2xf4IxilLI1ciUsSA89YiGs4rIc"/>
+<div class="absolute inset-0 bg-error-container/30 backdrop-blur-[1px] flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[22px]" data-icon="error_outline">error_outline</span>
+</div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5">
+<h3 class="font-label-lg text-label-lg text-on-surface font-medium">
+                صقر الجزيرة
+              </h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+              فيلم وثائقي
+            </p>
+<div class="flex items-center gap-1 text-error mt-1 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px] flex-shrink-0" data-icon="warning">warning</span>
+<span>تعذر إكمال التحميل. حاول مجددًا</span></div>
+</div>
+<!-- Quick Delete -->
+<button aria-label="حذف وإلغاء" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high border border-white/[0.08] flex items-center justify-center text-on-surface-variant hover:text-error active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+<!-- Failure Action Banner -->
+<div class="pt-2 border-t border-white/[0.04] flex items-center justify-between gap-space-md">
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[12px] leading-tight">
+            توقف عند 1.2 جيجابايت
+          </p>
+<button class="px-space-md py-1.5 rounded-lg bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-label-md text-label-md font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="refresh">refresh</span>
+<span>إعادة المحاولة</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Catalog Quick Return Suggestion Banner -->
+</main>
+<!-- Bottom Nav Bar (Shared Component Blueprint executed for mobile) -->
+<nav class="fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg border-none">
+<!-- Item 1: Home (الرئيسية) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- Item 2: Search (البحث) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm mt-0.5">البحث</span>
+</a>
+<!-- Item 3: My List / Downloads (قائمتي - Active Tab Semantic Destination) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="font-label-sm text-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- Item 4: Settings (الإعدادات) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+</body></html>

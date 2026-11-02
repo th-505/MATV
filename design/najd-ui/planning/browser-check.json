@@ -1,0 +1,578 @@
+{
+  "screens": [
+    {
+      "id": "NJD-002",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-001",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-004",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-003",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-005",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-006",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-007",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-009",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-010",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-008",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-011",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-012",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-013",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-014",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-015",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-016",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-017",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-018",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-019",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-020",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-021",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-022",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-023",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-024",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-025",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-026",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-027",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-028",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-029",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-030",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-031",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-032",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-033",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-034",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-035",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-036",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-037",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-038",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-039",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-040",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-041",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-042",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-043",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-044",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-045",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-046",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-047",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-048",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-049",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-050",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-051",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-052",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-053",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-054",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-055",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-056",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-057",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-058",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-059",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-060",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-061",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-062",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-063",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-064",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-065",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-066",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-067",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-068",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-069",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-070",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-071",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-072",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-073",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-074",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-075",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-076",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-077",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-078",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-079",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-080",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    },
+    {
+      "id": "NJD-081",
+      "offlineResources": true,
+      "font": true,
+      "fontMode": "redistributable-fallback",
+      "jsErrors": []
+    }
+  ],
+  "failures": [],
+  "interactionChecks": [
+    "catalogue filter",
+    "watchlist bulk selection/removal preview",
+    "quality selection",
+    "TV keyboard input/delete/directional navigation"
+  ]
+}

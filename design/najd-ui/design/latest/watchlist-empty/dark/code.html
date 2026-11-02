@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>قائمتي - نجد تي في</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Outfit:wght@500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary": "#362b47",
+            "primary-container": "#6b46c1",
+            "tertiary-fixed": "#ecdcff",
+            "on-background": "#e5e1eb",
+            "tertiary-container": "#665978",
+            "secondary-fixed": "#eaddff",
+            "on-surface-variant": "#cbc3d5",
+            "on-primary-fixed": "#23005c",
+            "inverse-surface": "#e5e1eb",
+            "inverse-on-surface": "#312f37",
+            "inverse-primary": "#6b46c1",
+            "on-primary-container": "#e1d2ff",
+            "secondary-container": "#57319e",
+            "primary-fixed-dim": "#d0bcff",
+            "on-secondary-fixed": "#25005a",
+            "surface-container-low": "#1c1b22",
+            "secondary": "#d2bbff",
+            "surface-container-high": "#2a2931",
+            "primary-fixed": "#e9ddff",
+            "on-secondary": "#3d0e84",
+            "on-error": "#690005",
+            "surface-variant": "#35343c",
+            "on-secondary-container": "#c6aaff",
+            "surface-tint": "#d0bcff",
+            "secondary-fixed-dim": "#d2bbff",
+            "surface-container-highest": "#35343c",
+            "on-tertiary-container": "#e3d2f7",
+            "tertiary-fixed-dim": "#d0c0e4",
+            "on-primary": "#3b0191",
+            "on-secondary-fixed-variant": "#552e9b",
+            "on-tertiary-fixed-variant": "#4d415f",
+            "tertiary": "#d0c0e4",
+            "error-container": "#93000a",
+            "error": "#ffb4ab",
+            "surface-bright": "#3a3840",
+            "on-error-container": "#ffdad6",
+            "on-surface": "#e5e1eb",
+            "on-primary-fixed-variant": "#522aa7",
+            "primary": "#d0bcff",
+            "outline-variant": "#494453",
+            "background": "#14121a",
+            "surface-container-lowest": "#0e0d14",
+            "on-tertiary-fixed": "#211631",
+            "surface-container": "#201f26",
+            "surface": "#14121a",
+            "surface-dim": "#14121a",
+            "outline": "#948e9e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin-mobile": "1rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "margin": "3rem",
+            "space-xs": "0.25rem",
+            "margin-tablet": "2rem",
+            "gutter-mobile": "0.75rem",
+            "gutter": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "headline-xl": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "headline-md": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "headline-lg": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "display-hero": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "label-lg": ["Hanken Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "label-sm": ["Hanken Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "display-hero-mobile": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "headline-xl-mobile": ["Outfit", "Noto Sans Arabic", "sans-serif"],
+            "body-md": ["Hanken Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "body-lg": ["Hanken Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "label-md": ["Hanken Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "body-sm": ["Hanken Grotesk", "Noto Sans Arabic", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+            "headline-xl": ["40px", {"lineHeight": "48px", "fontWeight": "600"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+            "display-hero": ["56px", {"lineHeight": "64px", "fontWeight": "700"}],
+            "label-lg": ["15px", {"lineHeight": "20px", "fontWeight": "600"}],
+            "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "600"}],
+            "display-hero-mobile": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+            "headline-xl-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+            "body-md": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "500"}],
+            "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    body {
+      font-family: 'Hanken Grotesk', 'Noto Sans Arabic', sans-serif;
+      background-color: #14121a;
+      color: #e5e1eb;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col justify-between selection:bg-primary-container selection:text-white antialiased">
+<!-- TopAppBar Component (Rendered as Defined in JSON & Specs) -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile h-16 w-full bg-surface/80 backdrop-blur-md shadow-sm">
+<!-- Trailing Action in RTL (Notifications) -->
+<button aria-label="الإشعارات" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-highest/50 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+</button>
+<!-- Header Title / Brand Anchor -->
+<div class="flex items-center gap-space-xs">
+<h1 class="text-headline-md font-headline-md text-primary font-bold tracking-tight">قائمتي</h1>
+</div>
+<!-- Leading Action in RTL (Cast) -->
+<button aria-label="بث الشاشة" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-highest/50 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[24px]">cast</span>
+</button>
+</header>
+<!-- Main Canvas: Focused Empty State Experience -->
+<main class="flex-1 flex flex-col items-center justify-center px-margin-mobile pt-20 pb-24 text-center max-w-lg mx-auto w-full">
+<!-- Cinematic Artful Empty State Graphic -->
+<div class="relative mb-space-xl flex items-center justify-center">
+<!-- Subtle ambient depth radial glow -->
+<div class="absolute w-48 h-48 rounded-full bg-primary-container/10 filter blur-3xl pointer-events-none"></div>
+<!-- Outer Frame (Tonal Glass Surface) -->
+<div class="relative w-32 h-32 md:w-36 md:h-36 rounded-xl bg-surface-container-low border border-white/[0.06] flex items-center justify-center shadow-lg">
+<!-- Decorative cinematic film perforation strip accents -->
+<div class="absolute top-2 inset-x-3 flex justify-between opacity-20">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+</div>
+<div class="absolute bottom-2 inset-x-3 flex justify-between opacity-20">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+</div>
+<!-- Center Elegant Bookmark & Cinema Iconography -->
+<div class="w-16 h-16 rounded-full bg-surface-container-high/80 border border-white/[0.08] flex items-center justify-center text-primary transition-transform duration-300 hover:scale-105">
+<span class="material-symbols-outlined text-[36px]" style="font-variation-settings: 'FILL' 0, 'wght' 300;">bookmark</span>
+</div>
+</div>
+</div>
+<!-- Empty State Content & Headlines -->
+<div class="space-y-space-sm mb-space-xl px-space-xs">
+<h2 class="text-headline-lg font-headline-lg text-on-surface font-semibold tracking-tight">
+        قائمتك فارغة حالياً
+      </h2>
+<p class="text-body-md font-body-md text-on-surface-variant max-w-sm mx-auto leading-relaxed">
+        لم تقم بحفظ أي أفلام أو مسلسلات بعد. استكشف الأعمال المميزة وأضفها إلى قائمتك لمشاهدتها في أي وقت.
+      </p>
+</div>
+<!-- Primary Action Button (#6B46C1) -->
+<a class="inline-flex items-center justify-center gap-space-sm px-space-xl py-3.5 rounded-full bg-primary-container text-white font-label-lg text-label-lg hover:bg-[#7e57c2] focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-background active:scale-95 transition-all duration-200 shadow-md" href="#">
+<span class="material-symbols-outlined text-[20px]">movie</span>
+<span>استكشف الأعمال</span>
+</a>
+</main>
+<!-- BottomNavBar Component (Destination Shell with 'قائمتي' Active) -->
+<nav class="fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- 1. الرئيسية (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- 2. البحث (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- 3. قائمتي (Active - Direct Match) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- 4. الإعدادات (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+</body></html>

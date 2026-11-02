@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>سجل المشاهدة - نجد تي في</title>
+<!-- Material Symbols Outlined -->
+
+<!-- Typography: Space Grotesk & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+
+
+<!-- Tailwind CSS -->
+
+
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom card shadow matching design guidance level 1 */
+    .card-shadow {
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(107, 70, 193, 0.03);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<link rel="stylesheet" href="../../shared/icons.css"><link rel="stylesheet" href="../../shared/thmanyah.css"><script src="../../shared/baseline.js" defer></script><link rel="stylesheet" href="compiled.css"></head>
+<body class="bg-background text-on-surface min-h-screen font-body-md antialiased pb-28 flex flex-col items-center">
+<!-- Mobile Container Wrapper -->
+<div class="w-full max-w-md bg-background min-h-screen relative flex flex-col">
+<!-- Top Navigation Header -->
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md px-margin-mobile h-16 w-full flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<button aria-label="الرجوع" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<h1 class="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight">سجل المشاهدة</h1>
+</div>
+</header>
+<!-- Subtitle Meta Header -->
+<!-- Watch History Cards List -->
+<main class="px-margin-mobile flex flex-col gap-space-md mt-space-xs flex-1"><div class="flex-1 flex flex-col items-center justify-center text-center px-margin-mobile py-space-xl my-auto"><div class="w-24 h-24 rounded-full bg-primary-container/10 flex items-center justify-center mb-space-lg"><span class="material-symbols-outlined text-[48px] text-primary" data-icon="history">history</span></div><h2 class="text-headline-md font-headline-md font-bold text-on-surface mb-space-xs">سجل المشاهدة فارغ</h2><p class="text-body-md font-body-md text-on-surface-variant max-w-xs mb-space-xl">الأعمال التي تبدأ بمشاهدتها ستظهر هنا تلقائياً لمتابعتها بسهولة من حيث توقفت.</p><a class="w-full max-w-xs py-space-sm px-space-lg rounded-xl bg-primary-container text-on-primary text-label-lg font-label-lg font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-all active:scale-[0.98] shadow-sm" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="explore">explore</span><span>تصفح أحدث الأعمال</span></a></div></main>
+<!-- Bottom Navigation Bar (Unified Najd TV Component) -->
+<!-- Mapped: "قائمتي" is the closest active parent for History/Saved watchlist -->
+<nav class="fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- الرئيسية -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- البحث -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- قائمتي (Active State Applied as per Shared Components JSON) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- الإعدادات -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+</div>
+</body></html>
