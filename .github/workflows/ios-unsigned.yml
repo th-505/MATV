@@ -1,0 +1,80 @@
+name: Najd iPhone unsigned IPA
+
+on:
+  push:
+    branches: ['build/ios-unsigned-*']
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: Existing Najd API base URL
+        required: true
+        default: https://matv.onrender.com
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: najd-ios-unsigned-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+  MITV_SOURCE_COMMIT: ${{ github.sha }}
+
+jobs:
+  ios-unsigned:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26.3 for AVFoundation Swift isolation APIs
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+          xcodebuild -version
+          swift --version
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: stable
+          cache: true
+      - name: Create iOS scaffolding
+        working-directory: flutter_app
+        run: flutter create --platforms=ios --org com.mitv --project-name mitv .
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned icon packager
+        run: python -m pip install -r scripts/requirements-branding.txt
+      - name: Apply native branding
+        run: python3 scripts/apply_native_branding.py flutter_app
+      - name: Resolve dependencies
+        working-directory: flutter_app
+        run: flutter pub get --enforce-lockfile
+      - name: Build unsigned iPhone app
+        working-directory: flutter_app
+        run: flutter build ios --release --no-codesign --dart-define=MITV_TARGET=ios --dart-define="MITV_API_BASE=$MITV_API_BASE"
+      - name: Package unsigned IPA for external signing
+        run: |
+          set -euo pipefail
+          test -s flutter_app/build/ios/iphoneos/Runner.app/Runner
+          mkdir -p trial/Payload
+          cp -R flutter_app/build/ios/iphoneos/Runner.app trial/Payload/Runner.app
+          rm -rf trial/Payload/Runner.app/_CodeSignature
+          rm -f trial/Payload/Runner.app/embedded.mobileprovision
+          codesign --remove-signature trial/Payload/Runner.app 2>/dev/null || true
+          if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
+          lipo trial/Payload/Runner.app/Runner -verify_arch arm64
+          cd trial
+          ditto -c -k --keepParent Payload Najd-TV-iPhone-Unsigned.ipa
+          shasum -a 256 Najd-TV-iPhone-Unsigned.ipa > Najd-TV-iPhone-Unsigned.ipa.sha256
+          rm -rf Payload
+      - name: Record immutable source identity
+        run: python3 scripts/write_source_manifest.py --target ios-unsigned-arm64 --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Najd-TV-iPhone-Unsigned
+          path: trial/
+          retention-days: 14
+          if-no-files-found: error
+
