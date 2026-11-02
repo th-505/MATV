@@ -150,7 +150,7 @@ void main() {
     expect(engines.last.uri.queryParameters['id'], 'good');
     expect(engines.last.seeks.first, const Duration(seconds: 40));
     expect(find.byKey(const Key('test-video-surface')), findsOneWidget);
-    expect(find.byIcon(Icons.high_quality), findsOneWidget);
+    expect(find.byTooltip('السيرفر / الجودة'), findsOneWidget);
     if (const String.fromEnvironment('MITV_TARGET') != 'tv') {
       final area = find.byKey(const Key('test-video-surface'));
       final origin = tester.getTopRight(area) - const Offset(30, -40);
@@ -306,7 +306,7 @@ void main() {
       expect(engines.last.headers['Referer'], 'https://source.example/');
       expect(engines.last.value.isPlaying, true);
       expect(engines.last.seeks.every((p) => p == Duration.zero), true);
-      expect(find.byIcon(Icons.high_quality), findsOneWidget);
+      expect(find.byTooltip('السيرفر / الجودة'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       api.close();
     },

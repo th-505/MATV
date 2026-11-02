@@ -282,5 +282,12 @@
     "home",
     "favorites",
     "settings"
-  ]
+  ],
+  "native_theme_overrides": {
+    "background": "#121118",
+    "surface": "#1d1a25",
+    "accent": "#6b46c1",
+    "accent_light": "#b69ae9",
+    "accent_dark": "#55349c"
+  }
 }

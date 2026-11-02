@@ -1,3 +1,5 @@
+import 'stitch_design.dart';
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -511,29 +513,9 @@ class _DetailsPageState extends State<DetailsPage> {
           initialData: widget.api.cachedMetadata(widget.item.ref),
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              final cached = snapshot.data;
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (cached?.poster.isNotEmpty == true)
-                      SizedBox(
-                        height: 280,
-                        child: Image.network(
-                          cached!.poster,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    if (cached != null)
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(cached.title),
-                      ),
-                    const CircularProgressIndicator(),
-                  ],
-                ),
-              );
+              return const NajdSkeleton(details: true);
             }
+
             if (snapshot.hasError || snapshot.data == null) {
               return Center(
                 child: FilledButton.icon(
@@ -568,23 +550,39 @@ class _DetailsPageState extends State<DetailsPage> {
                     ),
                   ),
                 if (details.poster.isNotEmpty)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 420),
-                    child: Image.network(details.poster, fit: BoxFit.contain),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: SizedBox(
+                      height: 290,
+                      width: double.infinity,
+                      child: NajdPoster(url: details.poster),
+                    ),
                   ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Text(
                   details.title,
-                  style: Theme.of(context).textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    if (details.year != null)
+                      Chip(label: Text('${details.year}')),
+                    for (final genre in details.genres)
+                      Chip(label: Text(genre)),
+                  ],
+                ),
                 if (details.plot.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      details.plot,
-                      style: const TextStyle(height: 1.7),
+                  NajdSurface(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const NajdSectionHeading('قصة العمل'),
+                        Text(details.plot, style: const TextStyle(height: 1.8)),
+                      ],
                     ),
                   ),
                 if (details.directors.isNotEmpty)
@@ -650,10 +648,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     },
                   ),
                 if (!sourceCard && details.hasEpisodes) ...[
-                  Text(
-                    'الحلقات (${details.episodes.length})',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  NajdSectionHeading('الحلقات (${details.episodes.length})'),
                   TextButton.icon(
                     onPressed: () => _downloadSeason(details),
                     icon: Icon(

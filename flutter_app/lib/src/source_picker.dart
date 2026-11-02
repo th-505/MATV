@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_target.dart';
 import 'models.dart';
+import 'stitch_design.dart';
 
 class SourcePickerButton extends StatelessWidget {
   const SourcePickerButton({
@@ -19,69 +20,104 @@ class SourcePickerButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: 'السيرفر / الجودة',
-    icon: const Icon(Icons.high_quality),
+    icon: const Icon(Icons.dns_outlined),
     onPressed: () async {
       onOpened?.call();
-      final value = await showGeneralDialog<int>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'إغلاق السيرفرات',
-        barrierColor: Colors.black26,
-        transitionDuration: const Duration(milliseconds: 180),
-        pageBuilder: (context, _, _) => Align(
-          alignment: Alignment.centerRight,
-          child: SafeArea(
-            child: SizedBox(
-              width: (MediaQuery.sizeOf(context).width * .76).clamp(220, 420),
-              child: Material(
-                color: const Color(0xED14131F),
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(20),
-                ),
+      try {
+        final value = await showDialog<int>(
+          context: context,
+          builder: (context) => Dialog(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720, maxHeight: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ListTile(
-                      title: const Text(
-                        'السيرفرات المتاحة',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      trailing: IconButton(
-                        tooltip: 'إغلاق',
-                        color: Colors.white,
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: sources.length,
-                        itemBuilder: (context, index) => ListTile(
-                          minTileHeight: isTvTarget ? 72 : 56,
-                          autofocus: index == selected,
-                          selected: index == selected,
-                          selectedTileColor: const Color(0x338280FF),
-                          textColor: Colors.white,
-                          selectedColor: const Color(0xFFB4B2FF),
-                          leading: Icon(
-                            index == selected
-                                ? Icons.check_circle
-                                : Icons.play_circle_outline,
-                            color: const Color(0xFFB4B2FF),
+                    Row(
+                      children: [
+                        const Icon(Icons.dns_outlined),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'مصادر التشغيل',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                          title: Text(sources[index].displayLabel),
-                          onTap: () => Navigator.pop(context, index),
                         ),
-                      ),
+                        IconButton(
+                          tooltip: 'إغلاق',
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text('اختر المصدر المتاح لمتابعة المشاهدة'),
+                    ),
+                    const SizedBox(height: 14),
+                    Flexible(
+                      child: sources.isEmpty
+                          ? const NajdEmptyState(kind: NajdEmptyKind.source)
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: sources.length,
+                              itemBuilder: (context, index) => NajdSurface(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      minTileHeight: isTvTarget ? 72 : 56,
+                                      autofocus: index == selected,
+                                      onTap: index == selected
+                                          ? null
+                                          : () => Navigator.pop(context, index),
+                                      leading: Icon(
+                                        index == selected
+                                            ? Icons.play_circle
+                                            : Icons.dns_outlined,
+                                        color: NajdDesign.primary,
+                                      ),
+                                      title: Text(sources[index].displayLabel),
+                                      subtitle: Text(
+                                        index == selected
+                                            ? 'قيد التشغيل'
+                                            : 'مصدر متاح',
+                                      ),
+                                      trailing: index == selected
+                                          ? const Icon(
+                                              Icons.check_circle,
+                                              color: NajdDesign.primary,
+                                            )
+                                          : null,
+                                    ),
+                                    if (index != selected)
+                                      FilledButton.icon(
+                                        onPressed: () =>
+                                            Navigator.pop(context, index),
+                                        icon: const Icon(Icons.swap_horiz),
+                                        label: const Text('اختيار المصدر'),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-        ),
-      );
-      if (value != null) await onSelected(value);
-      onClosed?.call();
+        );
+        if (value != null) await onSelected(value);
+      } finally {
+        onClosed?.call();
+      }
     },
   );
 }

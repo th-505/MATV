@@ -31,29 +31,26 @@ class _SearchApi extends MitvApi {
 }
 
 void main() {
-  test(
-    'web and shared Flutter targets use the same product navigation and colors',
-    () {
-      expect(NajdUi.brand, 'نجد — Najd TV');
-      expect(NajdUi.pageIds, [
-        'home',
-        'movies',
-        'series',
-        'anime',
-        'turkish',
-        'search',
-        'live',
-        'favorites',
-        'settings',
-      ]);
-      expect(NajdUi.labels.length, NajdUi.pageIds.length);
-      expect(NajdUi.icons.length, NajdUi.pageIds.length);
-      expect(NajdUi.sidebarBreakpoint, 900);
-      expect(NajdUi.background, const Color(0xFF08080E));
-      expect(NajdUi.surface, const Color(0xFF14131F));
-      expect(NajdUi.accent, const Color(0xFF8280FF));
-    },
-  );
+  test('native Najd targets preserve destinations with the approved Stitch palette', () {
+    expect(NajdUi.brand, 'نجد — Najd TV');
+    expect(NajdUi.pageIds, [
+      'home',
+      'movies',
+      'series',
+      'anime',
+      'turkish',
+      'search',
+      'live',
+      'favorites',
+      'settings',
+    ]);
+    expect(NajdUi.labels.length, NajdUi.pageIds.length);
+    expect(NajdUi.icons.length, NajdUi.pageIds.length);
+    expect(NajdUi.sidebarBreakpoint, 900);
+    expect(NajdUi.background, const Color(0xFF121118));
+    expect(NajdUi.surface, const Color(0xFF1D1A25));
+    expect(NajdUi.accent, const Color(0xFF6B46C1));
+  });
   testWidgets(
     'advanced search is opt-in within search and uses only the selected source',
     (tester) async {

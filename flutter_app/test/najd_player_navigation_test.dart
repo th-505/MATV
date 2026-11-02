@@ -31,54 +31,54 @@ void main() {
       isNull,
     );
   });
-  testWidgets(
-    'source panel occupies only part of the screen and selects an actual source',
-    (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      int? selected;
-      final sources = [
-        const PlaybackSource(
-          mediaPath: 'https://cdn.example/a.mp4',
-          mediaType: 'mp4',
-          provider: 'الأول',
-        ),
-        const PlaybackSource(
-          mediaPath: 'https://cdn.example/b.m3u8',
-          mediaType: 'm3u8',
-          provider: 'الثاني',
-        ),
-      ];
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SourcePickerButton(
-              sources: sources,
-              selected: 0,
-              onSelected: (value) async => selected = value,
-            ),
+  testWidgets('source dialog fits the viewport and selects an actual source', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    int? selected;
+    final sources = [
+      const PlaybackSource(
+        mediaPath: 'https://cdn.example/a.mp4',
+        mediaType: 'mp4',
+        provider: 'الأول',
+      ),
+      const PlaybackSource(
+        mediaPath: 'https://cdn.example/b.m3u8',
+        mediaType: 'm3u8',
+        provider: 'الثاني',
+      ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SourcePickerButton(
+            sources: sources,
+            selected: 0,
+            onSelected: (value) async => selected = value,
           ),
         ),
-      );
-      await tester.tap(find.byIcon(Icons.high_quality));
-      await tester.pumpAndSettle();
-      final panel = tester.getRect(
-        find
-            .ancestor(
-              of: find.text('السيرفرات المتاحة'),
-              matching: find.byType(Material),
-            )
-            .first,
-      );
-      expect(panel.width, lessThan(390));
-      expect(panel.right, closeTo(390, 1));
-      expect(find.text(sources[1].displayLabel), findsOneWidget);
-      await tester.tap(find.text(sources[1].displayLabel));
-      await tester.pumpAndSettle();
-      expect(selected, 1);
-      expect(find.text('السيرفرات المتاحة'), findsNothing);
-    },
-  );
+      ),
+    );
+    await tester.tap(find.byTooltip('السيرفر / الجودة'));
+    await tester.pumpAndSettle();
+    final panel = tester.getRect(
+      find
+          .ancestor(
+            of: find.text('مصادر التشغيل'),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(panel.width, lessThan(390));
+    expect(panel.left, greaterThanOrEqualTo(0));
+    expect(panel.right, lessThanOrEqualTo(390));
+    expect(find.text(sources[1].displayLabel), findsOneWidget);
+    await tester.tap(find.text(sources[1].displayLabel));
+    await tester.pumpAndSettle();
+    expect(selected, 1);
+    expect(find.text('مصادر التشغيل'), findsNothing);
+  });
 }

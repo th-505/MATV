@@ -64,7 +64,12 @@ void main() {
         expect(api.requests, ['catalog:movie:all:1']);
         expect(find.byType(HomePage), findsOneWidget);
         expect(find.text('الأخبار'), findsNothing);
-        expect(find.byType(NavigationBar), findsOneWidget);
+        expect(
+          find.byType(NavigationBar),
+          !isTvTarget && dimensions.width < 900 && !isDesktopTarget
+              ? findsOneWidget
+              : findsNothing,
+        );
         expect(find.byType(AppBar), findsNothing);
         if (isTvTarget || (!isDesktopTarget && dimensions.width < 900)) {
           expect(find.byKey(const Key('tatv-open-navigation')), findsOneWidget);

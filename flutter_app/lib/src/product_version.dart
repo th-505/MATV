@@ -1,3 +1,3 @@
 /// Shared by client diagnostic requests; kept in sync with pubspec by CI.
 const productVersion = '1.1.7';
-const productBuild = 107;
+const productBuild = 108;
