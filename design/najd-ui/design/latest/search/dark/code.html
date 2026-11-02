@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>البحث والاستكشاف - نجد تي في</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-surface": "#e7defd",
+            "surface-dim": "#151026",
+            "tertiary": "#d4bbff",
+            "on-secondary": "#3d0e84",
+            "surface-container-highest": "#373149",
+            "on-primary-fixed-variant": "#522aa7",
+            "surface-container": "#211c33",
+            "surface-container-lowest": "#100b21",
+            "on-tertiary": "#3e1975",
+            "inverse-primary": "#6b46c1",
+            "on-surface-variant": "#cbc3d5",
+            "primary-fixed": "#e9ddff",
+            "tertiary-fixed": "#ebdcff",
+            "secondary": "#d2bbff",
+            "secondary-fixed": "#eaddff",
+            "error": "#ffb4ab",
+            "on-secondary-fixed-variant": "#552e9b",
+            "outline": "#948e9e",
+            "on-tertiary-fixed": "#270058",
+            "secondary-fixed-dim": "#d2bbff",
+            "outline-variant": "#494453",
+            "on-primary-fixed": "#23005c",
+            "tertiary-container": "#6e4da7",
+            "on-background": "#e7defd",
+            "primary-fixed-dim": "#d0bcff",
+            "on-tertiary-fixed-variant": "#55338d",
+            "on-surface": "#e7defd",
+            "on-error": "#690005",
+            "on-secondary-fixed": "#25005a",
+            "background": "#151026",
+            "surface-tint": "#d0bcff",
+            "primary": "#d0bcff",
+            "surface-container-low": "#1d182f",
+            "on-error-container": "#ffdad6",
+            "primary-container": "#6b46c1",
+            "on-secondary-container": "#c6aaff",
+            "tertiary-fixed-dim": "#d4bbff",
+            "on-primary": "#3b0191",
+            "surface": "#151026",
+            "surface-variant": "#373149",
+            "on-tertiary-container": "#e4d2ff",
+            "on-primary-container": "#e1d2ff",
+            "error-container": "#93000a",
+            "secondary-container": "#57319e",
+            "inverse-on-surface": "#322d45",
+            "surface-bright": "#3b364e",
+            "surface-container-high": "#2c273e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-lg": "1.5rem",
+            "margin-tablet": "2rem",
+            "space-sm": "0.5rem",
+            "space-3xl": "4.5rem",
+            "space-2xl": "3rem",
+            "space-xl": "2rem",
+            "margin-mobile": "1.25rem",
+            "space-md": "1rem",
+            "gutter": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin": "3rem",
+            "gutter-mobile": "1rem"
+          },
+          "fontFamily": {
+            "body-md": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "headline-sm": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "display-hero-mobile": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "body-sm": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "body-lg": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "headline-lg-mobile": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "headline-lg": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "label-lg": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "label-md": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "display-hero": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "title-sm": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "title-md": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "label-sm": ["IBM Plex Sans Arabic", "IBM Plex Sans"],
+            "headline-md": ["IBM Plex Sans Arabic", "IBM Plex Sans"]
+          },
+          "fontSize": {
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "0em", "fontWeight": "700" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "display-hero": ["56px", { "lineHeight": "68px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "title-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "title-md": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Hide scrollbar for category pills */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-md min-h-screen pb-28 selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Ambient Glow -->
+<div class="fixed top-0 inset-x-0 h-32 pointer-events-none opacity-20 z-0 bg-gradient-to-b from-primary-container/20 to-transparent blur-2xl"></div>
+<!-- SHARED COMPONENT: TopAppBar (Small variant, docked top, brand logo) -->
+<header class="bg-surface/80 dark:bg-surface/80 backdrop-blur-md fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile h-16 w-full shadow-sm bg-surface-container-low dark:bg-surface-container-low">
+<!-- Leading Action: cast (exact JSON icon) -->
+<button aria-label="بث الشاشة" class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-150 p-space-xs rounded-full flex items-center justify-center" type="button">
+<span class="material-symbols-outlined" data-icon="cast">cast</span>
+</button>
+<!-- Headline / Brand Anchor (exact JSON content "نجد تي في") -->
+<div class="flex items-center gap-space-xs">
+<span class="text-headline-md font-headline-md text-primary dark:text-primary font-bold tracking-tight">نجد تي في</span>
+</div>
+<!-- Trailing Action: notifications (exact JSON icon) -->
+<button aria-label="الإشعارات" class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-150 p-space-xs rounded-full relative flex items-center justify-center" type="button">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-container ring-2 ring-surface"></span>
+</button>
+</header>
+<!-- Main Canvas Container -->
+<main class="relative z-10 pt-20 max-w-7xl mx-auto px-margin-mobile md:px-margin">
+<!-- Title / Page Context Header -->
+<div class="flex items-center justify-between mt-space-sm mb-space-md"><div>
+<h1 class="text-2xl md:text-headline-lg font-headline-lg-mobile md:font-headline-lg text-on-surface font-bold tracking-tight">
+          البحث والاستكشاف
+        </h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">
+          اكتشف آلاف الأفلام والمسلسلات والأنمي بأعلى وضوح وجودة
+        </p>
+</div>
+<div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/40">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-label-md font-label-md text-secondary font-medium">تحديث يومي مستمر</span>
+</div></div>
+<!-- Search Input Bar Section -->
+<section aria-label="شريط البحث" class="mb-space-lg">
+<div class="relative w-full">
+<!-- Search Icon (Right side in RTL) -->
+<div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="search">search</span>
+</div>
+<!-- Search Text Input -->
+<input class="w-full h-14 pr-12 pl-12 rounded-xl bg-surface-container text-on-surface placeholder:text-on-surface-variant/60 font-body-md text-body-md border border-outline-variant/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-lg shadow-surface-container-lowest/60 transition-all duration-200" id="search-input" placeholder="ابحث عن فيلم، مسلسل، أنمي، أو ممثل..." type="text" value="المحقق"/>
+<!-- Clear / Action Icon (Left side in RTL) -->
+<button aria-label="مسح نص البحث" class="absolute inset-y-0 left-0 pl-3.5 pr-2 flex items-center text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-150" id="clear-btn" onclick="document.getElementById('search-input').value=''; document.getElementById('search-input').focus();" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="close">close</span>
+</button>
+</div>
+</section>
+<!-- Category Pills / Quick Horizontal Scroll -->
+<section aria-label="التصنيفات" class="mb-space-md -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-1"><!-- Active Filter Pill with #6b46c1 primary-container background -->
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg shadow-md ring-1 ring-primary/40 active:scale-95 transition-transform duration-150" type="button">
+          الكل
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          حركة وأكشن
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          دراما
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          أنمي ياباني
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          خيال علمي
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          كوميديا
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          وثائقي
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          رعب
+        </button>
+<button class="whitespace-nowrap px-space-md py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface hover:text-primary font-label-lg text-label-lg border border-outline-variant/30 active:scale-95 transition-all duration-150" type="button">
+          2024
+        </button></div>
+</section>
+<!-- Advanced Quick Filters Row -->
+<section aria-label="فلاتر متقدمة" class="mb-space-xl p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/20 flex flex-wrap items-center justify-between gap-space-sm"><div class="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto py-0.5">
+<span class="text-label-md font-label-md text-on-surface flex items-center gap-1 shrink-0 ml-1 font-medium">
+<span class="material-symbols-outlined text-base" data-icon="tune">tune</span>
+          فلترة:
+        </span>
+<!-- Filter dropdown button: النوع -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-outline-variant/40 text-on-surface font-label-lg text-label-lg transition-colors whitespace-nowrap active:scale-95" type="button">
+<span>النوع: الكل</span>
+<span class="material-symbols-outlined text-base" data-icon="expand_more">expand_more</span>
+</button>
+<!-- Filter dropdown button: سنة الإنتاج -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-outline-variant/40 text-on-surface font-label-lg text-label-lg transition-colors whitespace-nowrap active:scale-95" type="button">
+<span>السنة: 2024</span>
+<span class="material-symbols-outlined text-base" data-icon="expand_more">expand_more</span>
+</button>
+<!-- Filter dropdown button: التقييم الأعلى (محدد) -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg transition-colors whitespace-nowrap active:scale-95 shadow-sm" type="button">
+<span class="material-symbols-outlined text-base text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>الأعلى تقييماً</span>
+</button>
+</div>
+<!-- Results Count Counter with larger font -->
+<div class="text-body-md font-body-md text-on-surface-variant mr-auto sm:mr-0">
+        تم العثور على <span class="text-primary font-bold text-lg">148</span> نتيجة
+      </div></section>
+<!-- Search Results Grid (2 Columns on mobile, 3 on tablet, 4 on desktop) -->
+<section aria-label="نتائج البحث">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter-mobile md:gap-gutter"><!-- CARD 1: سولو ليفلينج -->
+<article class="group relative flex flex-col rounded-xl overflow-hidden bg-surface-container-low border border-outline-variant/20 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/20 hover:-translate-y-1">
+<div class="relative aspect-[2/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Solo Leveling anime poster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCllnhQhAGCdBrE1vYnuAq7tuA-gmdt_wdvuti7YCc8_pH_jS3TxPssYaCqUiQjmKPbUpLJNFEVijYil8yFUcG2acrNEawLc-8EcnKUwLNJ0LIXGqfy4IHwWbnRlynMliV72FJlT8G5uQQjWKpRp8rjT7o52MckqxTHONVNSEGC4HQM3fPH0A45Q0jZS5Qo1wEIUMSNGSoGBmInbqpXjk6SnpmfUYPntg3l3-LMmfI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<!-- Clean Category Badge Only (No 4K / VIP badges) -->
+<div class="absolute top-2 right-2 flex flex-col gap-1.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 text-on-surface font-label-md text-label-md font-bold">
+                أنمي
+              </span>
+</div>
+<!-- Star Rating Badge -->
+<div class="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+<span class="material-symbols-outlined text-sm text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-md font-label-md font-bold text-on-surface">8.9</span>
+</div>
+<button aria-label="تشغيل سولو ليفلينج" class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-2xl" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-3 flex flex-col justify-between flex-grow">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                سولو ليفلينج
+              </h2>
+<div class="flex items-center gap-2 mt-1.5 text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">2024</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-on-surface-variant">الموسم 1</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-primary font-medium">مترجم</span>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 2: المحقق كونان -->
+<article class="group relative flex flex-col rounded-xl overflow-hidden bg-surface-container-low border border-outline-variant/20 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/20 hover:-translate-y-1">
+<div class="relative aspect-[2/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Detective Conan anime poster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRuISdGLPoKAbEwRC9MN3H2nfo_a6N0n0P7DYwybKMmD8sWaac4SKA7v4c-02e343sKMpn5a7Uxv66a12CUoPz0YC-mEkWL0-8ayNZ48zEakPRRDqTPfjgjq3V7CK-QeyyZU1gwj11UpsrOOyBKcascE2NIqNOcjwsxvl8_rX3wc6w7oGCR7Pwu8HIckhIOHXNedTKSJ67PmKCAHK3hNEoO-3laBwjFuskMJ_hw3s"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<!-- Clean Category Badge Only -->
+<div class="absolute top-2 right-2 flex flex-col gap-1.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 text-on-surface font-label-md text-label-md font-bold">
+                أنمي
+              </span>
+</div>
+<!-- Rating -->
+<div class="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+<span class="material-symbols-outlined text-sm text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-md font-label-md font-bold text-on-surface">8.7</span>
+</div>
+<button aria-label="تشغيل المحقق كونان" class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-2xl" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-3 flex flex-col justify-between flex-grow">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                المحقق كونان: الغواصة الحديدية
+              </h2>
+<div class="flex items-center gap-2 mt-1.5 text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">2024</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-on-surface-variant">فيلم</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-secondary font-medium">دبلجة أصلية</span>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 3: شمس الرمال -->
+<article class="group relative flex flex-col rounded-xl overflow-hidden bg-surface-container-low border border-outline-variant/20 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/20 hover:-translate-y-1">
+<div class="relative aspect-[2/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Arabic drama poster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzjOFNoqD8BseJk7f4uDnKrDYaPVdskOaJEstn1PruCABSPSYmTsRFwVc3KM0Un4BgJcNfmajVHWHnUUX2rlPIsxM5bRvDYKuLA55tefPToTTW4jyt-F2O6SPVYGAxUnrcJWihUJfiQ_QXEbuzBgkMvLsedaLkp-Wb1bnxZNAMMvHJb9sYs7TzBarxC_5J6sBDcZ0Z9pmVi7FuhhroM89sEhTzW1YxIHGGUb4yb8I"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<!-- Clean Category Badge Only -->
+<div class="absolute top-2 right-2 flex flex-col gap-1.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 text-on-surface font-label-md text-label-md font-bold">
+                مسلسل
+              </span>
+</div>
+<!-- Rating -->
+<div class="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+<span class="material-symbols-outlined text-sm text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-md font-label-md font-bold text-on-surface">9.2</span>
+</div>
+<button aria-label="تشغيل شمس الرمال" class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-2xl" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-3 flex flex-col justify-between flex-grow">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                شمس الرمال
+              </h2>
+<div class="flex items-center gap-2 mt-1.5 text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">2024</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-on-surface-variant">الموسم 2</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-secondary font-medium">دراما وإثارة</span>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 4: المحقق -->
+<article class="group relative flex flex-col rounded-xl overflow-hidden bg-surface-container-low border border-outline-variant/20 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/20 hover:-translate-y-1">
+<div class="relative aspect-[2/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Mystery movie poster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4N4qHICsXF2rZh7yq8_L4kv2IpevkZeUluq4erPgBd7zdJAHSL-4SpJPzKUn1syLHy2hjeGmRw3tspEzabfOzU8bi9WmA75OO_2QzUmJ8nedbUfSldUkxwc-zV07GZRKszQJ_g3jIYuPe7jDZTgdeki8SNeC6E1gYQi5NWihmamJHl9-0SaG0ZG6EtzGLLMCsIb8ATHnMhZyb6KCcN2r3Q96niTzZOYSWj-EckRw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<!-- Clean Category Badge Only -->
+<div class="absolute top-2 right-2 flex flex-col gap-1.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 text-on-surface font-label-md text-label-md font-bold">
+                فيلم
+              </span>
+</div>
+<!-- Rating -->
+<div class="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+<span class="material-symbols-outlined text-sm text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-md font-label-md font-bold text-on-surface">8.4</span>
+</div>
+<button aria-label="تشغيل المحقق" class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-2xl" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-3 flex flex-col justify-between flex-grow">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                المحقق: القضية الأخيرة
+              </h2>
+<div class="flex items-center gap-2 mt-1.5 text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">2024</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-on-surface-variant">غموض وجريمة</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-secondary font-medium">ساعتان</span>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 5: قاتل الشياطين -->
+<article class="group relative flex flex-col rounded-xl overflow-hidden bg-surface-container-low border border-outline-variant/20 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/20 hover:-translate-y-1">
+<div class="relative aspect-[2/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Demon slayer anime poster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxXo4zLfM8nVMSmv_Zh4O0HTIIkDQkkuFbW8lD05JJCdRBu_VVSdcuQ8WYraIDfiZcwyfVxHasZjIeh0pMPPOuA5FKNA3G9j2e7baDG3HYX0QbzP0mmg3639s2B7cgd0WB_WqUpkSTLomEdpjepx3BgEhZMiZcDv9w983DQFeJ44DhuJs9YLT39WwVTbc9t_6Qd9Vv6pkT245iIBQwCHOfrs8HjMmfUYyIzylTxqo"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<!-- Clean Category Badge Only -->
+<div class="absolute top-2 right-2 flex flex-col gap-1.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 text-on-surface font-label-md text-label-md font-bold">
+                أنمي
+              </span>
+</div>
+<!-- Rating -->
+<div class="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+<span class="material-symbols-outlined text-sm text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-md font-label-md font-bold text-on-surface">9.1</span>
+</div>
+<button aria-label="تشغيل قاتل الشياطين" class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-2xl" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-3 flex flex-col justify-between flex-grow">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                قاتل الشياطين: تدريب الهاشيرا
+              </h2>
+<div class="flex items-center gap-2 mt-1.5 text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">2024</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-on-surface-variant">الموسم 4</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-secondary font-medium">مترجم حصرياً</span>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 6: حارس الظلال -->
+<article class="group relative flex flex-col rounded-xl overflow-hidden bg-surface-container-low border border-outline-variant/20 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/20 hover:-translate-y-1">
+<div class="relative aspect-[2/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Fantasy sci-fi poster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJVO6J0n4PKUduXEiiGUl_anR-DYjw2Z2u1fNq96c9_sQJfh7GJuNuX2OWLy-lrRuan308CXokkABBWRrCGas_ZDozGqvGjqLjfptIe9N4B9YNDr-ej0lPvYnwEFXEaHDmemtg0HCSR_D2IduOi23QHCUAkHRwSR7JOtiFgEGHrcAMSBSl_t8Zanw6k52rRwyzP5Bf4G0hEEP3q1MzuYW5MCujug_AbQ1pAGV2q5Q"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<!-- Clean Category Badge Only -->
+<div class="absolute top-2 right-2 flex flex-col gap-1.5">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40 text-on-surface font-label-md text-label-md font-bold">
+                فيلم
+              </span>
+</div>
+<!-- Rating -->
+<div class="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+<span class="material-symbols-outlined text-sm text-yellow-400" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-md font-label-md font-bold text-on-surface">8.6</span>
+</div>
+<button aria-label="تشغيل حارس الظلال" class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-2xl" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-3 flex flex-col justify-between flex-grow">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                حارس الظلال
+              </h2>
+<div class="flex items-center gap-2 mt-1.5 text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">2024</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-on-surface-variant">خيال علمي</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-secondary font-medium">أصلي</span>
+</div>
+</div>
+</div>
+</article></div>
+</section>
+<!-- Load More Button -->
+<div class="mt-space-xl flex justify-center">
+<button class="flex items-center gap-2 px-space-xl py-space-sm rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant/40 text-on-surface hover:text-primary font-label-lg text-label-lg active:scale-95 transition-all duration-200" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="refresh">refresh</span>
+<span>عرض المزيد من الأعمال</span>
+</button>
+</div>
+</main>
+<!-- SHARED COMPONENT: BottomNavBar (Fixed docked bottom, 4 destinations, active="البحث") -->
+<!-- Active state classes strictly applied from JSON style_active_navigation to index 1 ("البحث"):
+       "flex flex-col items-center justify-center text-primary dark:text-primary font-bold bg-primary-container/20 dark:bg-primary-container/20 rounded-full px-space-md py-space-xs"
+       Inactive state classes from style_inactive_navigation:
+       "flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs" -->
+<nav class="bg-surface-container-low/90 dark:bg-surface-container-low/90 backdrop-blur-xl fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe shadow-lg bg-surface-container-lowest dark:bg-surface-container-lowest"><!-- Item 0: الرئيسية -->
+<a aria-label="الرئيسية" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-space-md py-space-xs transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="home">home</span>
+<span class="text-label-md font-label-md mt-0.5">الرئيسية</span>
+</a>
+<!-- Item 1: البحث (نشط - محصور باللون الأساسي المخصص #6B46C1) -->
+<a aria-current="page" aria-label="البحث" class="flex flex-col items-center justify-center text-on-primary font-bold bg-primary-container rounded-full px-space-md py-space-xs transition-all active:scale-95 duration-200 shadow-md" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="search" data-weight="fill" style="font-variation-settings: 'FILL' 1;">search</span>
+<span class="text-label-md font-label-md mt-0.5">البحث</span>
+</a>
+<!-- Item 2: قائمتي -->
+<a aria-label="قائمتي" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-space-md py-space-xs transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="bookmark">bookmark</span>
+<span class="text-label-md font-label-md mt-0.5">قائمتي</span>
+</a>
+<!-- Item 3: الإعدادات -->
+<a aria-label="الإعدادات" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-space-md py-space-xs transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="settings">settings</span>
+<span class="text-label-md font-label-md mt-0.5">الإعدادات</span>
+</a></nav>
+<!-- Interactive script for dynamic filtering pill interaction -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('search-input');
+      const clearBtn = document.getElementById('clear-btn');
+
+      if (searchInput && clearBtn) {
+        searchInput.addEventListener('input', (e) => {
+          clearBtn.style.opacity = e.target.value.length > 0 ? '1' : '0.3';
+        });
+      }
+    });
+  </script>
+</body></html>

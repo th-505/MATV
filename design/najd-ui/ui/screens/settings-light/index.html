@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>نجد تي في - الإعدادات</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+
+<!-- Material Symbols Outlined -->
+
+
+<!-- Tailwind CSS CDN with forms and container-queries -->
+
+<!-- Tailwind Theme Configuration -->
+
+<style>
+    body {
+      background-color: #faf8ff;
+      color: #131b2e;
+      font-family: 'Plus Jakarta Sans', 'Noto Kufi Arabic', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  <link rel="stylesheet" href="../../shared/icons.css"><link rel="stylesheet" href="../../shared/thmanyah.css"><script src="../../shared/baseline.js" defer></script><link rel="stylesheet" href="compiled.css"></head>
+<body class="bg-background text-on-background min-h-screen flex flex-col antialiased selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar (from Shared Components JSON: docked full-width top-0, shadow-sm, backdrop-blur-md) -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin h-16 w-full bg-surface/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center gap-space-sm">
+<button aria-label="بث الشاشة" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest/50 active:scale-95 transition-all duration-150" type="button">
+<span class="material-symbols-outlined text-primary" data-icon="cast">cast</span>
+</button>
+<div class="hidden md:flex items-center gap-space-md mr-space-md">
+<span class="text-headline-md font-headline-md text-primary font-bold tracking-tight">نجد تي في</span>
+</div>
+</div>
+<!-- Center headline / Mobile brand anchor -->
+<div class="text-headline-md font-headline-md text-primary font-bold tracking-tight md:hidden">
+      نجد تي في
+    </div>
+<!-- Desktop Navigation Cluster (Shared Components Rule) -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">الرئيسية</a>
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">البحث</a>
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">قائمتي</a>
+<a class="text-body-md font-body-md text-primary font-bold" href="#">الإعدادات</a>
+</nav>
+<div class="flex items-center gap-space-xs">
+<button aria-label="الإشعارات" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest/50 active:scale-95 transition-all duration-150" type="button">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-4xl mx-auto pt-24 pb-32 px-margin-mobile md:px-margin">
+<!-- Page Header Bento Anchor -->
+<div class="mb-space-lg">
+<div class="flex items-center justify-between">
+<div>
+<span class="text-label-md font-label-md text-primary font-semibold block mb-1">مركز التحكم والتفضيلات</span>
+<h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg text-on-surface tracking-tight">الإعدادات</h1>
+</div>
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-[28px]" data-icon="tune">tune</span>
+</div>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-2 max-w-xl">
+        خصص تجربة البث الثقافي والرقمي لتناسب احتياجات المشاهدة اليومية مع حفظ خياراتك المفضلة تلقائياً.
+      </p>
+</div>
+<!-- Settings Sections Stack -->
+<div class="space-y-space-lg">
+<!-- 1. قسم "المظهر" -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md md:p-space-lg shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(107,70,193,0.03)] border border-surface-container-low transition-all">
+<div class="flex items-center gap-space-sm mb-space-md">
+<span class="material-symbols-outlined text-primary text-[24px]" data-icon="palette">palette</span>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">المظهر</h2>
+<p class="text-label-md font-label-md text-on-surface-variant">اختر أسلوب العرض المفضل للواجهة المرئية</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-md">
+<!-- خيار: فاتح (محدد بنشاط) -->
+<div class="relative group cursor-pointer rounded-xl p-space-md border-2 border-primary-container bg-surface-bright shadow-[0_4px_16px_rgba(107,70,193,0.12)] transition-all" role="button" tabindex="0">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="w-8 h-8 rounded-full bg-primary-container/15 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="light_mode">light_mode</span>
+</span>
+<span class="w-5 h-5 rounded-full bg-primary-container text-white flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+</div>
+<div class="text-label-lg font-label-lg text-primary font-bold">فاتح</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">شاشات ساطعة وألوان نقية وواضحة</div>
+<!-- Mini Visual Indicator -->
+<div class="mt-space-sm w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="w-full h-full bg-primary-container rounded-full"></div>
+</div>
+</div>
+<!-- خيار: داكن -->
+<div class="relative group cursor-pointer rounded-xl p-space-md border border-surface-container bg-surface-container-low/40 hover:bg-surface-container-low transition-all" role="button" tabindex="0">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="dark_mode">dark_mode</span>
+</span>
+<span class="w-5 h-5 rounded-full border border-outline-variant"></span>
+</div>
+<div class="text-label-lg font-label-lg text-on-surface font-semibold">داكن</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">مريح للعين أثناء المشاهدة الليلية</div>
+<div class="mt-space-sm w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="w-0 h-full bg-on-surface-variant rounded-full group-hover:w-1/3 transition-all duration-300"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 2. قسم "لغة التطبيق" -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md md:p-space-lg shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(107,70,193,0.03)] border border-surface-container-low">
+<div class="flex items-center gap-space-sm mb-space-md">
+<span class="material-symbols-outlined text-primary text-[24px]" data-icon="language">language</span>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">لغة التطبيق</h2>
+<p class="text-label-md font-label-md text-on-surface-variant">لغة القوائم والتنقل وعناصر النظام</p>
+</div>
+</div>
+<div class="relative max-w-md">
+<label class="sr-only" for="app-language">اختر لغة التطبيق</label>
+<div class="relative flex items-center">
+<select class="w-full appearance-none bg-surface-container-low/50 hover:bg-surface-container-low focus:bg-surface-container-lowest border border-surface-container-high text-on-surface rounded-lg py-3 px-space-md pr-11 text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" id="app-language">
+<option selected="" value="ar">العربية</option>
+<option value="en">English (الإنجليزية)</option>
+</select>
+<span class="absolute right-3.5 pointer-events-none text-primary flex items-center">
+<span class="material-symbols-outlined text-[20px]" data-icon="translate">translate</span>
+</span>
+<span class="absolute left-3.5 pointer-events-none text-on-surface-variant flex items-center">
+<span class="material-symbols-outlined text-[20px]" data-icon="expand_more">expand_more</span>
+</span>
+</div>
+</div>
+</section>
+<!-- 3. قسم "إعدادات التشغيل" -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md md:p-space-lg shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(107,70,193,0.03)] border border-surface-container-low space-y-space-md">
+<div class="flex items-center gap-space-sm pb-space-xs border-b border-surface-container-high/40">
+<span class="material-symbols-outlined text-primary text-[24px]" data-icon="smart_display">smart_display</span>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">إعدادات التشغيل</h2>
+<p class="text-label-md font-label-md text-on-surface-variant">تحكم بجودة البث وسلوك مشغّل الوسائط</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+<!-- جودة التشغيل الافتراضية -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-2 font-medium" for="video-quality">
+              جودة التشغيل الافتراضية
+            </label>
+<div class="relative flex items-center">
+<select class="w-full appearance-none bg-surface-container-low/50 hover:bg-surface-container-low focus:bg-surface-container-lowest border border-surface-container-high text-on-surface rounded-lg py-2.5 px-space-md pr-10 text-body-sm font-body-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" id="video-quality">
+<option selected="" value="auto">تلقائي (حسب سرعة الاتصال)</option>
+<option value="1080p">1080p FHD</option>
+<option value="720p">720p HD</option>
+</select>
+<span class="absolute right-3 pointer-events-none text-primary flex items-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="high_quality">high_quality</span>
+</span>
+<span class="absolute left-3 pointer-events-none text-on-surface-variant flex items-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="unfold_more">unfold_more</span>
+</span>
+</div>
+</div>
+<!-- لغة الصوت المفضلة -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-2 font-medium" for="audio-lang">
+              لغة الصوت المفضلة
+            </label>
+<div class="relative flex items-center">
+<select class="w-full appearance-none bg-surface-container-low/50 hover:bg-surface-container-low focus:bg-surface-container-lowest border border-surface-container-high text-on-surface rounded-lg py-2.5 px-space-md pr-10 text-body-sm font-body-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" id="audio-lang">
+<option selected="" value="ar">العربية</option>
+<option value="original">الصوت الأصلي للعمل</option>
+<option value="en">الإنجليزية</option>
+</select>
+<span class="absolute right-3 pointer-events-none text-primary flex items-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="volume_up">volume_up</span>
+</span>
+<span class="absolute left-3 pointer-events-none text-on-surface-variant flex items-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="unfold_more">unfold_more</span>
+</span>
+</div>
+</div>
+<!-- الترجمة المفضلة -->
+<div class="md:col-span-2">
+<label class="block text-label-md font-label-md text-on-surface mb-2 font-medium" for="sub-lang">
+              الترجمة المفضلة
+            </label>
+<div class="relative flex items-center max-w-md">
+<select class="w-full appearance-none bg-surface-container-low/50 hover:bg-surface-container-low focus:bg-surface-container-lowest border border-surface-container-high text-on-surface rounded-lg py-2.5 px-space-md pr-10 text-body-sm font-body-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" id="sub-lang">
+<option selected="" value="ar">العربية</option>
+<option value="none">إيقاف الترجمة</option>
+<option value="en">الإنجليزية</option>
+</select>
+<span class="absolute right-3 pointer-events-none text-primary flex items-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="subtitles">subtitles</span>
+</span>
+<span class="absolute left-3 pointer-events-none text-on-surface-variant flex items-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="unfold_more">unfold_more</span>
+</span>
+</div>
+</div>
+</div>
+<!-- مفتاح تبديل (Toggle) تشغيل الحلقة التالية تلقائياً -->
+<div class="mt-space-md pt-space-md border-t border-surface-container-high/40 flex items-center justify-between">
+<div class="pr-1">
+<div class="text-label-lg font-label-lg text-on-surface font-semibold">تشغيل الحلقة التالية تلقائياً</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">بدء تشغيل العمل اللاحق في القائمة بدون انقطاع</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer select-none">
+<input checked="" class="sr-only peer" id="auto-play-toggle" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-high peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-surface-container after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</section>
+<!-- 4. قسم "التخزين والتحميلات" -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md md:p-space-lg shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(107,70,193,0.03)] border border-surface-container-low">
+<div class="flex items-center gap-space-sm mb-space-md">
+<span class="material-symbols-outlined text-primary text-[24px]" data-icon="folder_zip">folder_zip</span>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">التخزين والتحميلات</h2>
+<p class="text-label-md font-label-md text-on-surface-variant">التحكم في المساحة المستهلكة والملفات غير المتصلة بالشبكة</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- زر إدارة التحميلات -->
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-low/40 border border-surface-container hover:bg-surface-container-low transition-all">
+<div class="flex items-center gap-space-sm">
+<span class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]" data-icon="download">download</span>
+</span>
+<div>
+<div class="text-label-lg font-label-lg text-on-surface font-semibold">إدارة التحميلات</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant">تصفح وعرض الحلقات المحفوظة</div>
+</div>
+</div>
+<button class="px-space-md py-2 bg-surface-container-lowest hover:bg-surface-container border border-outline-variant/40 rounded-lg text-label-md font-label-md text-primary font-bold shadow-xs active:scale-95 transition-all" type="button">
+              عرض
+            </button>
+</div>
+<!-- زر مسح ذاكرة التخزين المؤقت مع الحجم 184 ميجابايت -->
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-low/40 border border-surface-container hover:bg-surface-container-low transition-all">
+<div class="flex items-center gap-space-sm">
+<span class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]" data-icon="cleaning_services">cleaning_services</span>
+</span>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold">مسح ذاكرة التخزين المؤقت</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-label-sm font-bold">184 ميجابايت</span>
+</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant">تحرير الذاكرة دون حذف مقاطعك المفضلة</div>
+</div>
+</div>
+<button class="px-space-md py-2 bg-primary-container text-white hover:bg-secondary rounded-lg text-label-md font-label-md font-semibold shadow-xs active:scale-95 transition-all" type="button">
+              مسح
+            </button>
+</div>
+</div>
+</section>
+<!-- 5. تذييل بسيط -->
+<footer class="pt-space-md pb-space-lg text-center space-y-space-sm">
+<div class="flex items-center justify-center gap-space-lg text-body-sm font-body-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="help_center">help_center</span>
+            مركز المساعدة
+          </a>
+<span class="text-outline-variant">•</span>
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="policy">policy</span>
+            شروط الخدمة
+          </a>
+</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant/80 font-mono tracking-wide" dir="ltr">
+          v3.4.2 (240)
+        </div>
+<div class="text-label-sm font-label-sm text-on-surface-variant/60">
+          جميع الحقوق محفوظة © نجد تي في
+        </div>
+</footer>
+</div>
+</main>
+<!-- BottomNavBar (from Shared Components JSON: docked full-width bottom-0, shadow-lg, backdrop-blur-xl, md:hidden) -->
+<nav aria-label="شريط التنقل السفلي" class="md:hidden fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- 0: الرئيسية (inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- 1: البحث (inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- 2: قائمتي (inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="bookmark">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- 3: الإعدادات (ACTIVE: style_active_navigation = flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs) -->
+<a aria-current="page" class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>نجد تي في - مشغل الفيديو السينمائي الأفقي</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- IBM Plex Sans Arabic -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-surface": "#e7defd",
+            "surface-dim": "#151026",
+            "tertiary": "#d4bbff",
+            "on-secondary": "#3d0e84",
+            "surface-container-highest": "#373149",
+            "on-primary-fixed-variant": "#522aa7",
+            "surface-container": "#211c33",
+            "surface-container-lowest": "#100b21",
+            "on-tertiary": "#3e1975",
+            "inverse-primary": "#6b46c1",
+            "on-surface-variant": "#cbc3d5",
+            "primary-fixed": "#e9ddff",
+            "tertiary-fixed": "#ebdcff",
+            "secondary": "#d2bbff",
+            "secondary-fixed": "#eaddff",
+            "error": "#ffb4ab",
+            "on-secondary-fixed-variant": "#552e9b",
+            "outline": "#948e9e",
+            "on-tertiary-fixed": "#270058",
+            "secondary-fixed-dim": "#d2bbff",
+            "outline-variant": "#494453",
+            "on-primary-fixed": "#23005c",
+            "tertiary-container": "#6e4da7",
+            "on-background": "#e7defd",
+            "primary-fixed-dim": "#d0bcff",
+            "on-tertiary-fixed-variant": "#55338d",
+            "on-surface": "#e7defd",
+            "on-error": "#690005",
+            "on-secondary-fixed": "#25005a",
+            "background": "#151026",
+            "surface-tint": "#d0bcff",
+            "primary": "#d0bcff",
+            "surface-container-low": "#1d182f",
+            "on-error-container": "#ffdad6",
+            "primary-container": "#6b46c1",
+            "on-secondary-container": "#c6aaff",
+            "tertiary-fixed-dim": "#d4bbff",
+            "on-primary": "#3b0191",
+            "surface": "#151026",
+            "surface-variant": "#373149",
+            "on-tertiary-container": "#e4d2ff",
+            "on-primary-container": "#e1d2ff",
+            "error-container": "#93000a",
+            "secondary-container": "#57319e",
+            "inverse-on-surface": "#322d45",
+            "surface-bright": "#3b364e",
+            "surface-container-high": "#2c273e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-lg": "1.5rem",
+            "margin-tablet": "2rem",
+            "space-sm": "0.5rem",
+            "space-3xl": "4.5rem",
+            "space-2xl": "3rem",
+            "space-xl": "2rem",
+            "margin-mobile": "1.25rem",
+            "space-md": "1rem",
+            "gutter": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin": "3rem",
+            "gutter-mobile": "1rem"
+          },
+          "fontFamily": {
+            "body-md": ["IBM Plex Sans"],
+            "headline-sm": ["IBM Plex Sans"],
+            "display-hero-mobile": ["IBM Plex Sans"],
+            "body-sm": ["IBM Plex Sans"],
+            "body-lg": ["IBM Plex Sans"],
+            "headline-lg-mobile": ["IBM Plex Sans"],
+            "headline-lg": ["IBM Plex Sans"],
+            "label-lg": ["IBM Plex Sans"],
+            "label-md": ["IBM Plex Sans"],
+            "display-hero": ["IBM Plex Sans"],
+            "title-sm": ["IBM Plex Sans"],
+            "title-md": ["IBM Plex Sans"],
+            "label-sm": ["IBM Plex Sans"],
+            "headline-md": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "display-hero-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "0em", "fontWeight": "700" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "display-hero": ["56px", { "lineHeight": "68px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "title-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "title-md": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Glow Halo Utilities */
+    .glow-purple-halo {
+      box-shadow: 0 0 35px 4px rgba(107, 70, 193, 0.55), 0 0 0 2px rgba(208, 188, 255, 0.4);
+    }
+    .scrubber-thumb-glow {
+      box-shadow: 0 0 14px 3px rgba(208, 188, 255, 0.9), 0 0 0 2px #6b46c1;
+    }
+    /* Smooth transitions for player controls */
+    .glass-pill {
+      background: rgba(28, 21, 54, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(183, 148, 244, 0.2);
+    }
+    .glass-pill:hover {
+      background: rgba(43, 31, 78, 0.85);
+      border-color: rgba(208, 188, 255, 0.45);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface select-none overflow-hidden h-screen w-screen m-0 p-0 font-body-md flex items-center justify-center">
+<!-- Landscape Phone Simulation Shell (Native Full-bleed feel) -->
+<div class="relative w-full h-full bg-surface-container-lowest overflow-hidden flex flex-col justify-between">
+<!-- Video Player Frame / Cinematic Background -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover brightness-[0.72] contrast-[1.08] transform scale-105 filter blur-[0.2px]" data-alt="A cinematic widescreen drama still set in an ornate modern Arab metropolis at night. Rain droplets glisten on vast glass architectural surfaces with deep shadows, neon violet atmospheric rim lighting, and a brooding protagonist in a dark cloak gazing over the illuminated nocturnal cityscape. Moody, luxurious royal purple hues and cinematic cinematic color grading." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGarqSvomnXuSe1XddoWdwMa94n902xghBxTpgok-E8Ph5sSXdMG7CG6zRZoeJUkstiqHWZiAhiFwzv1R4wbDbdk_J-2ooFZ_9oAeEOspQVQRvupiGiMokLEj6Oy_vQWNJ67OYHFYaIoiTSiif-f-wHf4XNcx0KkLAE2kRS8BZ6jNUgvnabsET59uEZ9l52ex9zxXyQknajQysqAZ0e95CKZy4C2tjMQ0NZ6QMmSE"/>
+<!-- Vignette & Dual Directional Gradients for Legibility -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/95 via-surface-container-lowest/25 to-surface-container-lowest/85 pointer-events-none"></div>
+<div class="absolute inset-0 bg-radial-gradient from-transparent via-surface-container-lowest/30 to-surface-container-lowest/80 pointer-events-none"></div>
+</div>
+<!-- ========================================== -->
+<!-- 1. TOP BAR: Header Navigation & Status OSD -->
+<!-- ========================================== -->
+<header class="relative z-30 w-full px-margin-mobile md:px-margin-tablet pt-space-md pb-space-sm flex items-center justify-between transition-all duration-300">
+<!-- Leading: Back Action & Full Production Title Cluster -->
+<div class="flex items-center gap-space-md max-w-[65%]">
+<!-- Back Button -->
+<button aria-label="الرجوع للخلف" class="w-10 h-10 rounded-full glass-pill flex items-center justify-center text-on-surface hover:text-primary transition-all active:scale-90" type="button">
+<span class="material-symbols-outlined text-[24px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<!-- Live Title & Episode Metadata -->
+<div class="flex flex-col text-right">
+<div class="flex items-center gap-space-xs">
+<span class="text-label-sm font-label-sm uppercase px-space-xs py-0.5 rounded-full bg-primary-container text-on-primary-container tracking-wider">الحلقة 3</span>
+<span class="text-label-sm font-label-sm text-primary font-bold">فرسان الظلال</span>
+<span class="text-outline text-label-sm font-label-sm">• الموسم 1</span>
+</div>
+<h1 class="text-title-md font-title-md text-on-surface font-bold tracking-tight truncate drop-shadow-md">
+            "خيوط المؤامرة"
+          </h1>
+</div>
+</div>
+<!-- Trailing: Quick Actions (Cast, Screen Lock, Audio/Subtitles & Global Settings) -->
+<div class="flex items-center gap-space-sm">
+<!-- Touch Screen Lock Action -->
+<button class="glass-pill h-10 px-3 rounded-full flex items-center gap-space-xs text-on-surface-variant hover:text-primary transition-all active:scale-95" id="screen-lock-btn" title="قفل الشاشة ضد اللمس" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="lock_open">lock_open</span>
+<span class="text-label-sm font-label-sm hidden sm:inline">قفل اللمس</span>
+</button>
+<!-- Wireless Cast / AirPlay -->
+<button class="glass-pill w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-95" title="بث عبر الشاشة" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="cast">cast</span>
+</button>
+<!-- Stream Quality Indicator Pill (Header Quick Tag) -->
+<!-- Player Settings Modal Trigger -->
+<button class="glass-pill w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-95" title="إعدادات المشغل" type="button">
+<span class="material-symbols-outlined text-[22px]" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- ========================================== -->
+<!-- 2. CENTER: Cinema Scrubbing & Main Controls -->
+<!-- ========================================== -->
+<main class="relative z-20 flex-1 flex items-center justify-center w-full px-space-xl">
+<div class="flex items-center justify-center gap-space-2xl md:gap-space-3xl">
+<!-- Skip Backward -10 Seconds -->
+<button aria-label="إرجاع 10 ثوانٍ" class="group flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full glass-pill text-on-surface transition-all active:scale-90 hover:text-primary" type="button">
+<div class="relative flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px] md:text-[32px] group-hover:-rotate-45 transition-transform duration-200" data-icon="replay_10">replay_10</span>
+</div>
+<span class="text-[9px] font-label-sm text-outline group-hover:text-primary transition-colors mt-[-4px]">10 ثوانٍ</span>
+</button>
+<!-- Central Play / Pause Primary Button (Cinematic Violet Halo) -->
+<button aria-label="إيقاف مؤقت / تشغيل" class="relative group w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-primary-container via-secondary-container to-primary flex items-center justify-center text-on-primary glow-purple-halo transition-all duration-300 transform active:scale-95 hover:scale-105" id="main-play-pause" type="button">
+<!-- Ambient Pulsing Glow Circle -->
+<span class="absolute inset-0 rounded-full bg-primary/20 blur-xl group-hover:bg-primary/40 transition-all"></span>
+<!-- Play Icon Glyph -->
+<span class="material-symbols-outlined material-symbols-fill text-[44px] md:text-[52px] text-surface-container-lowest drop-shadow-lg relative z-10 transition-transform group-hover:scale-110" data-icon="pause">pause</span>
+</button>
+<!-- Skip Forward +10 Seconds -->
+<button aria-label="تقديم 10 ثوانٍ" class="group flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full glass-pill text-on-surface transition-all active:scale-90 hover:text-primary" type="button">
+<div class="relative flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px] md:text-[32px] group-hover:rotate-45 transition-transform duration-200" data-icon="forward_10">forward_10</span>
+</div>
+<span class="text-[9px] font-label-sm text-outline group-hover:text-primary transition-colors mt-[-4px]">10 ثوانٍ</span>
+</button>
+</div>
+</main>
+<!-- ========================================== -->
+<!-- 3. BOTTOM: Scrubber Timeline & Advanced Bar -->
+<!-- ========================================== -->
+<footer class="relative z-30 w-full px-margin-mobile md:px-margin-tablet pb-space-md pt-space-xs flex flex-col gap-space-xs bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent">
+<!-- Interactive Time Scrubber Line -->
+<div class="w-full flex items-center gap-space-md select-none group cursor-pointer"><span class="text-label-md font-label-md text-primary font-bold tracking-wider tabular-nums min-w-[45px] text-left" dir="ltr">24:15</span><div class="relative flex-1 h-3 flex items-center py-2" dir="ltr"><div class="w-full h-1.5 rounded-full bg-surface-container-highest/60 overflow-hidden relative"><div class="absolute left-0 top-0 bottom-0 bg-outline/40 rounded-full transition-all duration-300" style="width: 70%;"></div><div class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-primary-container to-primary rounded-full" style="width: 46%;"></div></div><div class="absolute left-[46%] -translate-x-1/2 w-4 h-4 rounded-full bg-primary-fixed border-2 border-primary scrubber-thumb-glow transform group-hover:scale-125 transition-transform duration-150"></div></div><span class="text-label-md font-label-md text-on-surface-variant font-medium tracking-wider tabular-nums min-w-[45px] text-right" dir="ltr">52:30</span></div>
+<!-- Advanced Functional Control Strip -->
+<div class="w-full flex items-center justify-between pt-1"><div class="flex items-center gap-space-xs sm:gap-space-sm"><button class="glass-pill px-3 py-1.5 rounded-full flex items-center gap-1.5 text-on-surface hover:text-primary transition-all" title="مصادر وسيرفرات البث" type="button"><span class="material-symbols-outlined text-[18px] text-primary" data-icon="dns">dns</span><span class="text-label-sm font-label-sm font-bold">مصادر التشغيل</span></button><button class="glass-pill px-3 py-1.5 rounded-full flex items-center gap-1.5 text-on-surface hover:text-primary transition-all" title="جودة الفيديو" type="button"><span class="material-symbols-outlined text-[18px] text-primary" data-icon="tune">tune</span><span class="text-label-sm font-label-sm font-bold text-primary">1080p FHD</span><span class="material-symbols-outlined text-[16px] text-outline" data-icon="expand_more">expand_more</span></button><button class="glass-pill px-3 py-1.5 rounded-full flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-all" title="الصوت والترجمة" type="button"><span class="material-symbols-outlined text-[18px]" data-icon="subtitles">subtitles</span><span class="text-label-sm font-label-sm font-medium">العربية [الصوت الأصلي]</span></button></div><div class="flex items-center gap-space-xs sm:gap-space-sm"><button class="flex items-center gap-2 px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container hover:bg-secondary-container transition-all active:scale-95 shadow-md shadow-primary-container/30" type="button"><span class="text-label-md font-label-md font-bold">الحلقة التالية</span><span class="material-symbols-outlined text-[18px]" data-icon="skip_next">skip_next</span></button><button class="glass-pill w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-all" title="نسبة العرض للشاشة (16:9)" type="button"><span class="material-symbols-outlined text-[18px]" data-icon="aspect_ratio">aspect_ratio</span></button><button class="glass-pill w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-95" title="ملء الشاشة" type="button"><span class="material-symbols-outlined text-[20px]" data-icon="fullscreen">fullscreen</span></button></div></div>
+</footer>
+</div>
+<!-- Interactive State Scripts for Fluid Player Actions -->
+<script>
+    // Play/Pause State Toggle
+    const playPauseBtn = document.getElementById('main-play-pause');
+    const playIcon = playPauseBtn.querySelector('span[data-icon]');
+    let isPlaying = true;
+
+    playPauseBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        playIcon.textContent = 'pause';
+        playIcon.setAttribute('data-icon', 'pause');
+      } else {
+        playIcon.textContent = 'play_arrow';
+        playIcon.setAttribute('data-icon', 'play_arrow');
+      }
+    });
+
+    // Screen Touch Lock Simulation
+    const lockBtn = document.getElementById('screen-lock-btn');
+    const lockIcon = lockBtn.querySelector('span[data-icon]');
+    let isLocked = false;
+
+    lockBtn.addEventListener('click', () => {
+      isLocked = !isLocked;
+      if (isLocked) {
+        lockIcon.textContent = 'lock';
+        lockIcon.setAttribute('data-icon', 'lock');
+        lockBtn.classList.add('bg-primary-container', 'text-on-primary-container', 'border-primary');
+      } else {
+        lockIcon.textContent = 'lock_open';
+        lockIcon.setAttribute('data-icon', 'lock_open');
+        lockBtn.classList.remove('bg-primary-container', 'text-on-primary-container', 'border-primary');
+      }
+    });
+  </script>
+</body></html>

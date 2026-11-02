@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>سجل المشاهدة - نجد تي في</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Typography: Space Grotesk & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary": "#00504f",
+            "on-surface": "#131b2e",
+            "outline-variant": "#cbc3d5",
+            "surface-container-low": "#f2f3ff",
+            "secondary-fixed": "#eaddff",
+            "on-primary-fixed-variant": "#522aa7",
+            "on-primary": "#ffffff",
+            "on-surface-variant": "#494453",
+            "on-secondary-container": "#3d0190",
+            "primary-fixed": "#e9ddff",
+            "surface-dim": "#d2d9f4",
+            "surface-container-highest": "#dae2fd",
+            "inverse-surface": "#283044",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed": "#24005b",
+            "secondary-container": "#a882ff",
+            "inverse-primary": "#d0bcff",
+            "primary": "#532aa8",
+            "error": "#ba1a1a",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed": "#00201f",
+            "tertiary-fixed-dim": "#77d6d3",
+            "primary-container": "#6b46c1",
+            "surface-container": "#eaedff",
+            "surface": "#faf8ff",
+            "on-background": "#131b2e",
+            "tertiary-fixed": "#94f2f0",
+            "on-tertiary-container": "#8ae9e6",
+            "on-error-container": "#93000a",
+            "on-secondary": "#ffffff",
+            "secondary": "#6c45c0",
+            "background": "#faf8ff",
+            "surface-variant": "#dae2fd",
+            "on-tertiary": "#ffffff",
+            "outline": "#7a7484",
+            "surface-tint": "#6b46c1",
+            "surface-bright": "#faf8ff",
+            "inverse-on-surface": "#eef0ff",
+            "tertiary-container": "#006a69",
+            "primary-fixed-dim": "#d0bcff",
+            "secondary-fixed-dim": "#d1bcff",
+            "on-secondary-fixed-variant": "#5429a6",
+            "surface-container-high": "#e2e7ff",
+            "on-tertiary-fixed-variant": "#00504e",
+            "on-primary-fixed": "#23005c",
+            "on-primary-container": "#e1d2ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-mobile": "0.75rem",
+            "space-lg": "1.5rem",
+            "margin-mobile": "1rem",
+            "space-xl": "2.5rem",
+            "space-md": "1rem",
+            "margin": "3rem",
+            "gutter": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "headline-xl-mobile": ["Space Grotesk"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "label-md": ["Plus Jakarta Sans"],
+            "headline-sm": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "headline-md": ["Space Grotesk"],
+            "body-sm": ["Plus Jakarta Sans"],
+            "headline-xl": ["Space Grotesk"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "headline-lg-mobile": ["Space Grotesk"]
+          },
+          "fontSize": {
+            "headline-xl-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-lg": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-xl": ["48px", { "lineHeight": "56px", "fontWeight": "700" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "700" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom card shadow matching design guidance level 1 */
+    .card-shadow {
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(107, 70, 193, 0.03);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen font-body-md antialiased pb-28 flex flex-col items-center">
+<!-- Mobile Container Wrapper -->
+<div class="w-full max-w-md bg-background min-h-screen relative flex flex-col">
+<!-- Top Navigation Header -->
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md px-margin-mobile h-16 w-full flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<button aria-label="الرجوع" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<h1 class="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight">سجل المشاهدة</h1>
+</div>
+<button class="text-label-md font-label-md text-error hover:bg-error-container/30 px-space-sm py-1.5 rounded-lg transition-colors active:scale-95 duration-150 flex items-center gap-1 font-semibold" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete_sweep">delete_sweep</span>
+<span>مسح السجل</span>
+</button>
+</header>
+<!-- Subtitle Meta Header -->
+<section class="px-margin-mobile pt-space-md pb-space-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<h2 class="text-label-lg font-label-lg text-on-surface-variant">4 أعمال مسجلة مؤخراً</h2>
+</div>
+<span class="text-label-sm font-label-sm text-outline bg-surface-container px-2 py-0.5 rounded-full">محفوظ محلياً</span>
+</section>
+<!-- Watch History Cards List -->
+<main class="px-margin-mobile flex flex-col gap-space-md mt-space-xs flex-1">
+<!-- Item 1: أصداء طويق - الموسم 1 · الحلقة 3 -->
+<article class="bg-surface-container-lowest rounded-2xl p-space-sm card-shadow border border-surface-container relative flex flex-col gap-space-sm transition-transform active:scale-[0.99] duration-150">
+<div class="flex gap-space-sm">
+<!-- Thumbnail with LTR progress bar overlay -->
+<div class="relative w-36 h-24 rounded-xl overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Cinematic still from a Saudi dramatic series showcasing the rugged majestic cliffs of Tuwaiq under a dramatic late afternoon sun. A lone modern protagonist stands overlooking the vast golden desert horizon. Rich ambient lighting with deep purple cinematic atmospheric tones, captured with clean editorial broadcast framing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0oWTwdhopzr2MgCA13tzjX6N5n9QW8IEsMTSHHJwEcLHHZPHxUfiRmiqR4jPZz2TE4skSwCuzU21XT2Od_nOCmAr5w9SupPyT7rFJABKhXdP8jPi-kmJNYTs_0z4slzM_a_vJ9ybgAT8RzXaUG5wIJl_hdHTufOBlE5_tEgyosfiXi2YN-ZCyip82Z32TLHOitj2SQ25PV0wNVksYPkJkkZPr-6gPp3TO584rwDY"/>
+<!-- Badge -->
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-sm text-surface-container-lowest px-2 py-0.5 rounded text-label-sm font-label-sm">
+              م1 · ح3
+            </div>
+<!-- Progress Bar (Left-to-Right LTR force) -->
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-variant" dir="ltr">
+<div class="h-full bg-primary-container" style="width: 65%;"></div>
+</div>
+</div>
+<!-- Content Info -->
+<div class="flex-1 flex flex-col justify-between py-0.5">
+<div class="flex items-start justify-between gap-1">
+<div>
+<h3 class="text-body-md font-body-md font-bold text-on-surface">أصداء طويق</h3>
+<p class="text-label-md font-label-md text-on-surface-variant mt-0.5">الموسم 1 · الحلقة 3</p>
+</div>
+<button aria-label="إزالة من السجل" class="text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline mt-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+<span>متبقي 18 دقيقة</span>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="pt-space-xs border-t border-surface-container-low flex items-center justify-end">
+<button class="w-full py-2 px-space-md rounded-xl bg-primary-container text-on-primary text-label-md font-label-md font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-all active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>متابعة المشاهدة</span>
+</button>
+</div>
+</article>
+<!-- Item 2: فيلم سيف السديم -->
+<article class="bg-surface-container-lowest rounded-2xl p-space-sm card-shadow border border-surface-container relative flex flex-col gap-space-sm transition-transform active:scale-[0.99] duration-150">
+<div class="flex gap-space-sm">
+<!-- Thumbnail with LTR progress bar overlay -->
+<div class="relative w-36 h-24 rounded-xl overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Futuristic Arabian sci-fi film still showing an astronaut in sleek white and violet spacesuit holding a glowing high-tech blade. Behind them is a vivid nebula swirl glowing in deep cosmic purple and soft cyan light. Shot with immaculate crisp editorial lighting and pristine visual balance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK1_0gomF97_lzbB-jQ_2_f37sRUClTKqEm9E_xtpOvuMQzOErqxiP9n_VfRhK-P8LtNZdoSoDuHYCUDm2U0lSnx5I76TJfE49gjBP03ANIbHOlTWYeutrBluL7ejFtuaT0ILos7Hd7gTZgTlr1w4I5m9lN3b1FekO64pRVRnEFOxPAeaW6XLEltsc-WwGdvshVULFoP2oTmCmGUcrmJNx0ZXmSja3M_lPXUpOsz0"/>
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-sm text-surface-container-lowest px-2 py-0.5 rounded text-label-sm font-label-sm">
+              فيلم
+            </div>
+<!-- Progress Bar (Left-to-Right LTR force) -->
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-variant" dir="ltr">
+<div class="h-full bg-primary-container" style="width: 40%;"></div>
+</div>
+</div>
+<!-- Content Info -->
+<div class="flex-1 flex flex-col justify-between py-0.5">
+<div class="flex items-start justify-between gap-1">
+<div>
+<h3 class="text-body-md font-body-md font-bold text-on-surface">سيف السديم</h3>
+<p class="text-label-md font-label-md text-on-surface-variant mt-0.5">فيلم سينمائي</p>
+</div>
+<button aria-label="إزالة من السجل" class="text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline mt-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+<span>متبقي 45 دقيقة</span>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="pt-space-xs border-t border-surface-container-low flex items-center justify-end">
+<button class="w-full py-2 px-space-md rounded-xl bg-primary-container text-on-primary text-label-md font-label-md font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-all active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>متابعة المشاهدة</span>
+</button>
+</div>
+</article>
+<!-- Item 3: مسلسل سراب المدينة - الموسم 1 · الحلقة 1 (مكتمل المشاهدة 100%) -->
+<article class="bg-surface-container-lowest rounded-2xl p-space-sm card-shadow border border-surface-container relative flex flex-col gap-space-sm transition-transform active:scale-[0.99] duration-150">
+<div class="flex gap-space-sm">
+<!-- Thumbnail with 100% completed progress bar -->
+<div class="relative w-36 h-24 rounded-xl overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Modern metropolitan cityscape at twilight showcasing Riyadh architectural skyline with glowing illuminated architectural glass skyscrapers. Elegant urban aesthetic drenched in soft dusk ambient violet and pale lavender lighting with sophisticated editorial realism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdiX2SOfpDvYGngnOSkyAg8mqQt2ZcdFBEA1il0vAgZq5ZczdeNw93sRA57rO9Xn3A_drYw3G6LZgkq87rYxqJ1b2RS84mRiLOTYWIALy-mpBxEHN_TYa81SQMmh4NgpGsJ1_vZpBtJ6EXZf1SR0Vs06fe2yf8cRhXa0qsuzEbJB4vxqVBG_GZ_Jxk3YF9cm5qFTiovt51EFaHmk_ZHhVQS4EtBVVS2HI2-sZ2HfY"/>
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-sm text-surface-container-lowest px-2 py-0.5 rounded text-label-sm font-label-sm">
+              م1 · ح1
+            </div>
+<!-- Progress Bar (Completed 100%) -->
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-variant" dir="ltr">
+<div class="h-full bg-primary-container" style="width: 100%;"></div>
+</div>
+</div>
+<!-- Content Info -->
+<div class="flex-1 flex flex-col justify-between py-0.5">
+<div class="flex items-start justify-between gap-1">
+<div>
+<h3 class="text-body-md font-body-md font-bold text-on-surface">سراب المدينة</h3>
+<p class="text-label-md font-label-md text-on-surface-variant mt-0.5">الموسم 1 · الحلقة 1</p>
+</div>
+<button aria-label="إزالة من السجل" class="text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-tertiary font-semibold mt-1">
+<span class="material-symbols-outlined text-[15px]" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>مكتمل المشاهدة</span>
+</div>
+</div>
+</div>
+<!-- Action Row: إعادة المشاهدة -->
+<div class="pt-space-xs border-t border-surface-container-low flex items-center justify-end">
+<button class="w-full py-2 px-space-md rounded-xl bg-surface border border-outline-variant/50 text-primary text-label-md font-label-md font-semibold flex items-center justify-center gap-2 hover:bg-surface-container transition-all active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="replay">replay</span>
+<span>إعادة المشاهدة</span>
+</button>
+</div>
+</article>
+<!-- Item 4: وثائقي صقر الجزيرة -->
+<article class="bg-surface-container-lowest rounded-2xl p-space-sm card-shadow border border-surface-container relative flex flex-col gap-space-sm transition-transform active:scale-[0.99] duration-150">
+<div class="flex gap-space-sm">
+<!-- Thumbnail with LTR progress bar overlay -->
+<div class="relative w-36 h-24 rounded-xl overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Stunning close-up wildlife photography of an Arabian falcon perched on leather falconer glove against sunlit desert sand dunes. Crisp ultra-detailed plumage with bright natural golden dawn illumination accented by a contemporary purple color grading palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQAA-cFSJ-V6nSKuucuhiYkeKu1YaVHJV4N9Qo0uOLjo8BqHxWqcQLQGOnELSoEkeenNwkUNW27R5lx3aQDRdrn3HbDkFc9pmm5BMTJN1vvszLf6mrAm4PaBPXTakyTWKvJ9r2x5rTwaBdGMurmMYcAFP37AUSFOsxmi9yG3QDzpBr0VN-v7iDkBXDOMLtOZwOc2rEzOYEjSoX-pE525imWg857yGYyWwKhHFbw2w"/>
+<div class="absolute top-2 right-2 bg-on-surface/85 backdrop-blur-sm text-surface-container-lowest px-2 py-0.5 rounded text-label-sm font-label-sm">
+              وثائقي
+            </div>
+<!-- Progress Bar (Left-to-Right LTR force) -->
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-variant" dir="ltr">
+<div class="h-full bg-primary-container" style="width: 82%;"></div>
+</div>
+</div>
+<!-- Content Info -->
+<div class="flex-1 flex flex-col justify-between py-0.5">
+<div class="flex items-start justify-between gap-1">
+<div>
+<h3 class="text-body-md font-body-md font-bold text-on-surface">صقر الجزيرة</h3>
+<p class="text-label-md font-label-md text-on-surface-variant mt-0.5">وثائقي تاريخي</p>
+</div>
+<button aria-label="إزالة من السجل" class="text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline mt-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+<span>متبقي 10 دقائق</span>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="pt-space-xs border-t border-surface-container-low flex items-center justify-end">
+<button class="w-full py-2 px-space-md rounded-xl bg-primary-container text-on-primary text-label-md font-label-md font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-all active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>متابعة المشاهدة</span>
+</button>
+</div>
+</article>
+</main>
+<!-- Bottom Navigation Bar (Unified Najd TV Component) -->
+<!-- Mapped: "قائمتي" is the closest active parent for History/Saved watchlist -->
+<nav class="fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- الرئيسية -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- البحث -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- قائمتي (Active State Applied as per Shared Components JSON) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold bg-primary-container/20 rounded-full px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- الإعدادات -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+<!-- Confirmation Modal Overlay -->
+<div aria-labelledby="modal-title" aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center p-margin-mobile bg-on-surface/40 backdrop-blur-sm" role="dialog">
+<div class="w-full max-w-sm bg-surface-container-lowest rounded-2xl p-space-lg card-shadow border border-surface-container flex flex-col gap-space-md">
+<div class="flex items-start gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center text-error shrink-0">
+<span class="material-symbols-outlined text-[24px]" data-icon="delete_sweep">delete_sweep</span>
+</div>
+<div class="flex-1">
+<h3 class="text-headline-sm font-headline-sm font-bold text-on-surface" id="modal-title">مسح سجل المشاهدة؟</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1 leading-relaxed">
+          سيتم إزالة تقدم المشاهدة لجميع الأعمال المسجلة. لن يؤثر ذلك على قائمة رغباتك (قائمتي) أو التحميلات المحفوظة على جهازك.
+        </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pt-space-xs border-t border-surface-container-low mt-1">
+<button class="flex-1 py-2 px-space-md rounded-xl bg-surface border border-outline-variant/50 text-on-surface hover:bg-surface-container text-label-md font-label-md font-semibold transition-colors active:scale-95 duration-150" type="button">
+        إلغاء
+      </button>
+<button class="flex-1 py-2 px-space-md rounded-xl bg-error text-on-error hover:bg-error/90 text-label-md font-label-md font-semibold transition-all active:scale-95 duration-150 flex items-center justify-center gap-1 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+<span>مسح السجل</span>
+</button>
+</div>
+</div>
+</div></div>
+</body></html>

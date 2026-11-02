@@ -1,0 +1,24 @@
+{
+  "code": {
+    "frames": 81,
+    "baseline": 31,
+    "new": 50,
+    "font": "Thmanyah through ignored assets/private-fonts; bundled Noto Sans Arabic fallback",
+    "validation": "81 browser screens passed with external network blocked; local resources and four interaction flows passed"
+  },
+  "figma": {
+    "file": "https://www.figma.com/design/19WsD5bc9rXj8VBwXtfD55",
+    "screen_frames_imported": 0,
+    "foundations_created": true,
+    "blocker": "Starter MCP tool-call limit reached",
+    "local_importer": "figma-import/manifest.json",
+    "importer_full_execution_verified": false
+  },
+  "github": {
+    "remote": "th-505/MATV",
+    "path": "design/najd-ui",
+    "branch": "feat/najd-ui-81",
+    "status": "prepared for review"
+  },
+  "backend_connected": false
+}

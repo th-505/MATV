@@ -1,0 +1,188 @@
+[
+  {
+    "path": "home/dark",
+    "source": "_35",
+    "title": "الرئيسية — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "home/light",
+    "source": "_14",
+    "title": "الرئيسية — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "search/dark",
+    "source": "_19",
+    "title": "البحث — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "search/light",
+    "source": "_29",
+    "title": "البحث — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "movie/dark",
+    "source": "_27",
+    "title": "تفاصيل فيلم — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "movie/light",
+    "source": "_3",
+    "title": "تفاصيل فيلم — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "series/dark",
+    "source": "_6",
+    "title": "تفاصيل مسلسل — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "series/light",
+    "source": "_1",
+    "title": "تفاصيل مسلسل — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "player/landscape",
+    "source": "16_9",
+    "title": "المشغل الأفقي",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "sources/dark",
+    "source": "_4",
+    "title": "مصادر التشغيل — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "sources/light",
+    "source": "_32",
+    "title": "مصادر التشغيل — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "settings/dark",
+    "source": "_37",
+    "title": "الإعدادات — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "settings/light",
+    "source": "_15",
+    "title": "الإعدادات — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "watchlist/dark",
+    "source": "_23",
+    "title": "قائمتي — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "watchlist/light",
+    "source": "_26",
+    "title": "قائمتي — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "watchlist-empty/dark",
+    "source": "_18",
+    "title": "قائمتي فارغة — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "watchlist-empty/light",
+    "source": "_30",
+    "title": "قائمتي فارغة — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "downloads-completed/dark",
+    "source": "_45",
+    "title": "التحميلات المكتملة — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "downloads-completed/light",
+    "source": "_47",
+    "title": "التحميلات المكتملة — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "downloads-active/dark",
+    "source": "_48",
+    "title": "قيد التحميل — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "downloads-active/light",
+    "source": "_46",
+    "title": "قيد التحميل — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "history/dark",
+    "source": "_49",
+    "title": "سجل المشاهدة — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "history/light",
+    "source": "_50",
+    "title": "سجل المشاهدة — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "downloads-empty/dark",
+    "source": "_51",
+    "title": "التحميلات فارغة — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "downloads-empty/light",
+    "source": "_52",
+    "title": "التحميلات فارغة — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "history-empty/dark",
+    "source": "_53",
+    "title": "السجل فارغ — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "history-empty/light",
+    "source": "_54",
+    "title": "السجل فارغ — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "confirm-clear-history/dark",
+    "source": "_55",
+    "title": "تأكيد مسح السجل — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "confirm-clear-history/light",
+    "source": "_56",
+    "title": "تأكيد مسح السجل — فاتح",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "confirm-cancel-download/dark",
+    "source": "_57",
+    "title": "تأكيد إلغاء التحميل — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  },
+  {
+    "path": "confirm-delete-download/dark",
+    "source": "_58",
+    "title": "تأكيد حذف التحميل — داكن",
+    "selection": "content-based; not verified creation timestamp"
+  }
+]

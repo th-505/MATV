@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>نجد تي في — الرئيسية</title>
+<!-- Material Symbols Outlined -->
+
+<!-- Google Fonts: IBM Plex Sans Arabic -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+
+
+<!-- Tailwind CSS CDN with plugins -->
+
+<!-- Tailwind Theme Configuration verbatim -->
+
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Hide scrollbar for clean carousel presentation */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Ambient Glow Effects */
+    .glow-purple {
+      box-shadow: 0 0 35px -5px rgba(107, 70, 193, 0.55);
+    }
+    .glow-card:hover {
+      box-shadow: 0 12px 32px -4px rgba(107, 70, 193, 0.45), 0 0 0 2px #9F7AEA;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  <link rel="stylesheet" href="../../shared/icons.css"><link rel="stylesheet" href="../../shared/thmanyah.css"><script src="../../shared/baseline.js" defer></script><link rel="stylesheet" href="compiled.css"></head>
+<body class="bg-surface text-on-surface min-h-screen selection:bg-primary-container selection:text-on-primary-container pb-28">
+<!-- ================= TOP APP BAR (Shared Component) ================= -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile h-16 w-full bg-surface/80 dark:bg-surface/80 backdrop-blur-md shadow-sm">
+<!-- Brand Anchor -->
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-container to-secondary flex items-center justify-center shadow-lg shadow-primary-container/40">
+<span class="material-symbols-outlined text-surface-container-lowest text-headline-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+<div class="flex flex-col">
+<span class="text-headline-md font-headline-md text-primary dark:text-primary font-bold tracking-tight">نجد تي في</span>
+<span class="text-label-sm font-label-sm text-outline tracking-wider -mt-1 font-mono uppercase">NAJD TV</span>
+</div>
+</div>
+<!-- Desktop Navigation Cluster (hidden on mobile, visible on desktop) -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-primary dark:text-primary font-bold text-label-lg font-label-lg transition-colors" href="#">الرئيسية</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary text-label-lg font-label-lg transition-colors" href="#">أفلام</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary text-label-lg font-label-lg transition-colors" href="#">مسلسلات</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary text-label-lg font-label-lg transition-colors" href="#">أنمي</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary text-label-lg font-label-lg transition-colors" href="#">قائمتي</a>
+</nav>
+<!-- Leading & Trailing Action Icons -->
+<div class="flex items-center gap-space-xs">
+<button aria-label="بث الشاشة" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest/50 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="cast">cast</span>
+</button>
+<button aria-label="الإشعارات" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest/50 transition-colors active:scale-95 duration-150 relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary-container ring-2 ring-surface"></span>
+</button>
+<div class="hidden sm:block w-8 h-8 rounded-full overflow-hidden border border-outline-variant mr-space-xs">
+<img class="w-full h-full object-cover" data-alt="A sophisticated Arabic cinephile user avatar portrait against a dark cinematic purple backdrop with soft rim illumination and high-end digital styling." src="../../shared/images/d0fb28acbdaf67cda092.jpg"/>
+</div>
+</div>
+</header>
+<!-- Main Viewport Canvas -->
+<main class="pt-16 max-w-[1600px] mx-auto overflow-x-hidden">
+<!-- ================= CATEGORY FILTER CHIPS ================= -->
+<section class="px-margin-mobile md:px-margin pt-space-md pb-space-sm">
+<div class="flex items-center gap-space-sm overflow-x-auto no-scrollbar py-space-xs">
+<!-- Active Chip -->
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-gradient-to-r from-primary-container to-secondary text-surface-container-lowest font-label-md text-label-md font-bold shadow-md shadow-primary-container/30 transition-transform active:scale-95">
+          الكل
+        </button>
+<!-- Inactive Chips -->
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-md text-label-md transition-all active:scale-95 border border-outline-variant/30">
+          أفلام
+        </button>
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-md text-label-md transition-all active:scale-95 border border-outline-variant/30">
+          مسلسلات
+        </button>
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-md text-label-md transition-all active:scale-95 border border-outline-variant/30">
+          عالم الأنمي
+        </button>
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-md text-label-md transition-all active:scale-95 border border-outline-variant/30">
+          الأكثر رواجاً
+        </button>
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-md text-label-md transition-all active:scale-95 border border-outline-variant/30">
+          وثائقيات
+        </button>
+<button class="flex-shrink-0 px-space-lg py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high font-label-md text-label-md transition-all active:scale-95 border border-outline-variant/30">
+          إنتاجات نجد الأصلية
+        </button>
+</div>
+</section>
+<!-- ================= CINEMATIC HERO BANNER ================= -->
+<section class="relative px-margin-mobile md:px-margin pt-space-xs pb-space-lg">
+<div class="relative w-full rounded-2xl md:rounded-3xl overflow-hidden min-h-[480px] md:min-h-[560px] flex items-end border border-outline-variant/30 glow-purple">
+<!-- Hero Background Artwork -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105" data-alt="An expansive cinematic Arabic desert sci-fi fantasy movie backdrop titled Desert Sands Epic with golden mystical sand dunes under a royal obsidian night sky with deep violet atmospheric nebulas and glowing cosmic lighting. Cinematic lighting highlights glowing ruins with futuristic violet energy beams." style="background-image: url('../../shared/images/8c57072669bb7c9a20be.jpg')">
+</div>
+<!-- Layered Cinematic Shadow Gradients -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-surface-dim/70 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-dim/90 via-surface-dim/40 to-transparent"></div>
+<div class="absolute -bottom-10 inset-x-0 h-40 bg-gradient-to-t from-surface to-transparent"></div>
+<!-- Hero Content Overlay -->
+<div class="relative z-10 p-space-md md:p-space-2xl max-w-2xl flex flex-col items-start gap-space-sm">
+<!-- Badges Cluster -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="px-space-sm py-0.5 rounded-full bg-primary-container/40 border border-primary text-primary text-label-sm font-label-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">stars</span>
+              VIP حصري
+            </span>
+<span class="px-space-sm py-0.5 rounded-full bg-surface-container-high/80 border border-outline-variant text-on-surface text-label-sm font-label-sm font-bold backdrop-blur-md">
+              4K Ultra HD
+            </span>
+<div class="px-space-sm py-0.5 rounded-full bg-surface-container-lowest/80 border border-outline-variant text-amber-400 text-label-sm font-label-sm font-bold flex items-center gap-1 backdrop-blur-md">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>9.2 تقييم نجد</span>
+</div>
+<span class="px-space-sm py-0.5 rounded-full bg-surface-container-high/80 text-on-surface-variant text-label-sm font-label-sm">
+              أكشن • مغامرة • خيال
+            </span>
+</div>
+<!-- Title & Hook -->
+<h1 class="text-headline-lg-mobile md:text-display-hero font-headline-lg-mobile md:font-display-hero text-on-background font-bold tracking-tight">
+            ملحمة الرمال الساحرة
+          </h1>
+<p class="text-body-md font-body-md text-on-surface-variant line-clamp-2 md:line-clamp-3 max-w-xl">
+            في أعماق صحراء نجد الأسطورية، يستيقظ حارس العروش القديمة لمواجهة قوى الظلام وحماية سر البوابة الكونية في مغامرة سينمائية ملحمية تتخطى حدود الزمان.
+          </p>
+<!-- CTAs -->
+<div class="flex items-center gap-space-sm pt-space-xs w-full sm:w-auto">
+<button class="flex-1 sm:flex-initial px-space-xl py-space-sm rounded-full bg-gradient-to-r from-primary-container to-secondary hover:brightness-110 text-on-primary font-title-sm font-bold flex items-center justify-center gap-space-xs shadow-lg shadow-primary-container/50 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-headline-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>مشاهدة الآن</span>
+</button>
+<button class="px-space-lg py-space-sm rounded-full bg-surface-container/80 hover:bg-surface-container-high border border-outline-variant/40 text-on-surface font-title-sm font-medium backdrop-blur-md flex items-center justify-center gap-space-xs active:scale-95 transition-all">
+<span class="material-symbols-outlined text-title-md">bookmark_add</span>
+<span>إضافة لقائمتي</span>
+</button>
+<button aria-label="معلومات إضافية" class="w-11 h-11 rounded-full bg-surface-container/80 hover:bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center backdrop-blur-md active:scale-95 transition-all">
+<span class="material-symbols-outlined">info</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 1: متابعة المشاهدة (Continue Watching) ================= -->
+<section class="pt-space-md pb-space-lg">
+<div class="px-margin-mobile md:px-margin flex justify-between items-center mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-5 rounded-full bg-primary-container"></span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold">متابعة المشاهدة</h2>
+</div>
+<a class="text-label-md font-label-md text-primary hover:underline flex items-center gap-1" href="#">
+          عرض الكل
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+</div>
+<!-- Horizontal Cards Scroll -->
+<div class="flex gap-space-md overflow-x-auto no-scrollbar px-margin-mobile md:px-margin py-space-xs">
+<!-- Continue Card 1 -->
+<div class="flex-shrink-0 w-72 md:w-80 rounded-xl bg-surface-container-low border border-outline-variant/20 overflow-hidden group hover:border-primary/50 transition-all">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Cinematic still from an epic Arabian drama series depicting noble falconers in traditional Arabian regal robes under a dusky desert sunset with royal purple skies and majestic scenery." src="../../shared/images/bff2157ff9303aae52bf.jpg"/>
+<!-- Overlay Play Button -->
+<div class="absolute inset-0 bg-surface-dim/40 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+<div class="w-10 h-10 rounded-full bg-primary-container text-surface-container-lowest flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-title-md" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface-variant text-label-sm font-mono backdrop-blur-sm">
+              متبقي 24 دقيقة
+            </span>
+<!-- Progress Bar -->
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-container-highest">
+<div class="h-full bg-primary-container rounded-r" style="width: 65%;"></div>
+</div>
+</div>
+<div class="p-space-sm flex justify-between items-start">
+<div>
+<h3 class="text-title-sm font-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors">مسلسل صقر الجزيرة</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">الموسم 2 • الحلقة 12</p>
+</div>
+<button aria-label="خيارات" class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-title-sm">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Continue Card 2 -->
+<div class="flex-shrink-0 w-72 md:w-80 rounded-xl bg-surface-container-low border border-outline-variant/20 overflow-hidden group hover:border-primary/50 transition-all">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="High intensity anime action scene from an apocalyptic titan battle with steam rising against royal violet and obsidian clouds, showing a hero soaring with grappling gear." src="../../shared/images/917ee2d171ffbde16462.jpg"/>
+<div class="absolute inset-0 bg-surface-dim/40 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+<div class="w-10 h-10 rounded-full bg-primary-container text-surface-container-lowest flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-title-md" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface-variant text-label-sm font-mono backdrop-blur-sm">
+              متبقي 8 دقائق
+            </span>
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-container-highest">
+<div class="h-full bg-primary-container rounded-r" style="width: 82%;"></div>
+</div>
+</div>
+<div class="p-space-sm flex justify-between items-start">
+<div>
+<h3 class="text-title-sm font-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors">هجوم العمالقة: الفصل الأخير</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">الحلقة 28 • مدبلج بالعربية</p>
+</div>
+<button aria-label="خيارات" class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-title-sm">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Continue Card 3 -->
+<div class="flex-shrink-0 w-72 md:w-80 rounded-xl bg-surface-container-low border border-outline-variant/20 overflow-hidden group hover:border-primary/50 transition-all">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Suspenseful cyberpunk crime drama still featuring neon reflective purple streets with a detective in a trench coat overlooking an illuminated metropolis." src="../../shared/images/667c48ed9a20da86c124.jpg"/>
+<div class="absolute inset-0 bg-surface-dim/40 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+<div class="w-10 h-10 rounded-full bg-primary-container text-surface-container-lowest flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-title-md" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface-variant text-label-sm font-mono backdrop-blur-sm">
+              متبقي 45 دقيقة
+            </span>
+<div class="absolute bottom-0 inset-x-0 h-1.5 bg-surface-container-highest">
+<div class="h-full bg-primary-container rounded-r" style="width: 35%;"></div>
+</div>
+</div>
+<div class="p-space-sm flex justify-between items-start">
+<div>
+<h3 class="text-title-sm font-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors">خيوط الظلام: مدينة الرياض 2099</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">فيلم سينمائي • 4K UHD</p>
+</div>
+<button aria-label="خيارات" class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-title-sm">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 2: أحدث الإضافات (New Releases Slider) ================= -->
+<section class="py-space-md">
+<div class="px-margin-mobile md:px-margin flex justify-between items-center mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-5 rounded-full bg-primary"></span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold">أحدث الإضافات</h2>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary text-label-sm font-label-sm mr-2">جديد هذا الأسبوع</span>
+</div>
+<a class="text-label-md font-label-md text-primary hover:underline flex items-center gap-1" href="#">
+          عرض المزيد
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+</div>
+<!-- Vertical Posters Slider -->
+<div class="flex gap-space-md overflow-x-auto no-scrollbar px-margin-mobile md:px-margin py-space-xs">
+<!-- Poster Card 1 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Vertical movie poster of an ancient warrior queen in ornate golden and purple armor looking out across a futuristic oasis city with violet dusk lighting." src="../../shared/images/66c8157a480c07a0f213.jpg"/>
+<!-- Badges -->
+<div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-surface-container-lowest font-bold text-label-sm shadow">جديد</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-primary text-label-sm backdrop-blur-sm border border-primary/20">4K</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.8
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">مملكة الأساطير</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">فانتازيا • أكشن • 2025</p>
+</div>
+<!-- Poster Card 2 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Vertical cinema poster for a high-octane interstellar sci-fi thriller featuring an astronaut gazing at a collapsing violet wormhole." src="../../shared/images/54a7ba8f4b324234d39f.jpg"/>
+<div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+<span class="px-1.5 py-0.5 rounded bg-secondary text-on-secondary font-bold text-label-sm shadow">حصري</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              9.1
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">أفق المجرة المفقود</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">خيال علمي • إثارة • 2025</p>
+</div>
+<!-- Poster Card 3 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Vertical poster for an emotional Arabian family mystery drama featuring an enigmatic vintage mansion illuminated by dim purple lantern glow." src="../../shared/images/18f06b81b9c5d36f071a.jpg"/>
+<div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-surface-container-lowest font-bold text-label-sm shadow">جديد</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.5
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">قصر الأسرار</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">غموض • تشويق • 2024</p>
+</div>
+<!-- Poster Card 4 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Vertical anime movie poster showing a dual-blade samurai warrior standing on a sacred cherry blossom mountaintop with a purple crescent moon overhead." src="../../shared/images/6e22db4f5d4efebdaee5.jpg"/>
+<div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-lowest/90 text-primary font-bold text-label-sm border border-primary/30">دبلجة عربية</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              9.4
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">سيف الظلال: المعركة الأخيرة</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">أنمي • أكشن • مترجم ومدبلج</p>
+</div>
+<!-- Poster Card 5 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Vertical poster of a high speed desert vehicle race with glowing purple plasma exhausts across golden dunes under a starry night sky." src="../../shared/images/289cd093070ede721206.jpg"/>
+<div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-surface-container-lowest font-bold text-label-sm shadow">جديد</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.9
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">سباق الصحراء القصوى</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">إثارة • سرعة • 2025</p>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 3: أفلام سينمائية (Cinema Movies Bento / Mix) ================= -->
+<section class="py-space-md">
+<div class="px-margin-mobile md:px-margin flex justify-between items-center mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-5 rounded-full bg-secondary"></span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold">أفلام سينمائية مختارة</h2>
+</div>
+<a class="text-label-md font-label-md text-primary hover:underline flex items-center gap-1" href="#">
+          استكشف الأفلام
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+</div>
+<!-- Bento-style Grid Section -->
+<div class="px-margin-mobile md:px-margin grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Large Featured Film Card -->
+<div class="md:col-span-2 relative rounded-2xl overflow-hidden min-h-[260px] md:min-h-[320px] bg-surface-container-low border border-outline-variant/30 group cursor-pointer glow-card">
+<div class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="Wide cinematic frame of a mysterious Arabian thriller movie involving a heist at a luxurious museum illuminated by deep purple security laser grids and dark ambient shadows." style="background-image: url('../../shared/images/63d8aef33c9dedc5e1f1.jpg')">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-surface-dim/60 to-transparent"></div>
+<div class="absolute bottom-0 inset-x-0 p-space-md md:p-space-lg flex flex-col items-start gap-space-xs">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-surface-container-lowest text-label-sm font-bold">العرض الأول</span>
+<span class="text-label-sm text-on-surface-variant">ساعتان و 15 دقيقة</span>
+</div>
+<h3 class="text-headline-sm md:text-headline-md font-headline-sm md:font-headline-md text-on-surface font-bold">
+              عملية جوهرة العاصمة
+            </h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant max-w-lg line-clamp-2">
+              فريق من النخبة يخوض أكثر المغامرات تعقيداً لاستعادة أقدم أثر تاريخي قبل أن يقع في أيدي المهربين الدوليين.
+            </p>
+<div class="flex items-center gap-space-sm pt-space-xs">
+<button class="px-space-md py-1.5 rounded-full bg-primary-container hover:bg-secondary text-on-primary font-label-md font-bold flex items-center gap-1 shadow-md transition-all">
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                تشغيل الفيلم
+              </button>
+<button class="w-8 h-8 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface flex items-center justify-center backdrop-blur-md">
+<span class="material-symbols-outlined text-base">bookmark_add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Stacked Film Card -->
+<div class="relative rounded-2xl overflow-hidden min-h-[260px] md:min-h-[320px] bg-surface-container-low border border-outline-variant/30 group cursor-pointer glow-card">
+<div class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="Cinematic frame of deep space voyage with violet stellar dust and a spaceship orbiting a crystalline planet with ethereal lighting effects." style="background-image: url('../../shared/images/d1e0cd6b5e63984522f5.jpg')">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-surface-dim/60 to-transparent"></div>
+<div class="absolute bottom-0 inset-x-0 p-space-md flex flex-col items-start gap-space-xs">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-label-sm font-bold">أصلي نجد</span>
+<h3 class="text-title-md font-title-md text-on-surface font-bold group-hover:text-primary transition-colors">
+              ما وراء الأفق البنفسجي
+            </h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant line-clamp-2">
+              رحلة استكشافية تقود فريقاً علمياً نحو أعظم لغز كوني عرفته البشرية.
+            </p>
+<div class="flex items-center gap-space-sm pt-1">
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md font-medium border border-outline-variant/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                مشاهدة
+              </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 4: عالم الأنمي (Anime Universe) ================= -->
+<section class="py-space-md">
+<div class="px-margin-mobile md:px-margin flex justify-between items-center mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-5 rounded-full bg-tertiary"></span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold">عالم الأنمي</h2>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/30 border border-primary/40 text-primary text-label-sm font-label-sm">مترجم ومدبلج</span>
+</div>
+<a class="text-label-md font-label-md text-primary hover:underline flex items-center gap-1" href="#">
+          تصفح الأنمي
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+</div>
+<!-- Anime Cards Row -->
+<div class="flex gap-space-md overflow-x-auto no-scrollbar px-margin-mobile md:px-margin py-space-xs">
+<!-- Anime 1 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime poster of magical academy sorcerer invoking violet lightning flames in an intense magical duel with glowing purple particle effects." src="../../shared/images/c734b0a576949a46dbb8.jpg"/>
+<div class="absolute top-2 right-2">
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-surface-container-lowest font-bold text-label-sm shadow">موسم جديد</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              9.6
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">صانع التعاويذ الأسطوري</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">سحر • مغامرة • الحلقة 18</p>
+</div>
+<!-- Anime 2 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime artwork portraying a cybernetic ninja warrior standing atop a rainy neon purple skyscraper in a futuristic Tokyo." src="../../shared/images/69b004405152157d9f8c.jpg"/>
+<div class="absolute top-2 right-2">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-lowest/90 text-primary font-bold text-label-sm border border-primary/30">مدبلج كامل</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              9.2
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">نينجا السايبر 2088</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">سايبربانك • أكشن • 24 حلقة</p>
+</div>
+<!-- Anime 3 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Stunning anime poster featuring an ancient spirit dragon spiraling in a starry violet night sky over a tranquil bamboo forest." src="../../shared/images/f2c00f7317ad6e19a158.jpg"/>
+<div class="absolute top-2 right-2">
+<span class="px-1.5 py-0.5 rounded bg-secondary text-on-secondary font-bold text-label-sm shadow">حصري</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              9.0
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">تنين الأرواح السماوية</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">فانتازيا • دراما • 12 حلقة</p>
+</div>
+<!-- Anime 4 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime poster of an energetic esports gaming prodigy wearing neon glowing purple headsets surrounded by holographic tournament displays." src="../../shared/images/e22498f2cb62601111e0.jpg"/>
+<div class="absolute top-2 right-2">
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-surface-container-lowest font-bold text-label-sm shadow">مكتمل</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.8
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">أبطال الساحة الرقمية</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">ألعاب • شبابي • مترجم</p>
+</div>
+<!-- Anime 5 -->
+<div class="flex-shrink-0 w-36 sm:w-44 md:w-52 group cursor-pointer">
+<div class="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1.5 shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Dark fantasy anime visual depicting a grim reaper hunter wielding an ethereal violet scythe amidst a shattered crystal dimension." src="../../shared/images/ea702afef6aa38f86585.jpg"/>
+<div class="absolute top-2 right-2">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-lowest/90 text-primary font-bold text-label-sm border border-primary/30">حلقات أسبوعية</span>
+</div>
+<div class="absolute bottom-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-amber-400 text-label-sm font-bold backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+              9.5
+            </div>
+</div>
+<h3 class="mt-space-xs text-title-sm font-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors">صياد الأبعاد المظلمة</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">ظلام • خارق للطبيعة • الحلقة 9</p>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 5: مسلسلات عربية وعالمية ================= -->
+<section class="py-space-md mb-space-xl">
+<div class="px-margin-mobile md:px-margin flex justify-between items-center mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-5 rounded-full bg-primary-container"></span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold">مسلسلات حصرية لا تفوتها</h2>
+</div>
+<a class="text-label-md font-label-md text-primary hover:underline flex items-center gap-1" href="#">
+          عرض الكل
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+</div>
+<!-- TV Series Horizontal Cards -->
+<div class="flex gap-space-md overflow-x-auto no-scrollbar px-margin-mobile md:px-margin py-space-xs">
+<!-- Series Card 1 -->
+<div class="flex-shrink-0 w-64 md:w-72 group cursor-pointer">
+<div class="relative aspect-video w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Dramatic series still showing Arabian detectives examining clues inside a high-tech intelligence center bathed in royal purple and cyan neon light." src="../../shared/images/78a295990fe047ab93f1.jpg"/>
+<span class="absolute top-2 right-2 px-2 py-0.5 rounded bg-primary-container text-surface-container-lowest font-bold text-label-sm">الموسم 3</span>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim/80 to-transparent flex items-end p-2.5">
+<span class="text-label-sm text-on-surface font-medium">10 حلقات متوفرة</span>
+</div>
+</div>
+<h3 class="mt-2 text-title-sm font-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors">شفرة نجد</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">تحقيق • إثارة مخابراتية</p>
+</div>
+<!-- Series Card 2 -->
+<div class="flex-shrink-0 w-64 md:w-72 group cursor-pointer">
+<div class="relative aspect-video w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Period drama series still portraying noble royal council members in luxurious embroidered robes inside an opulent palace hall with ambient purple evening candelabras." src="../../shared/images/b5be21cc5f663cda7480.jpg"/>
+<span class="absolute top-2 right-2 px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-bold text-label-sm">تاريخي</span>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim/80 to-transparent flex items-end p-2.5">
+<span class="text-label-sm text-on-surface font-medium">مكتمل • 30 حلقة</span>
+</div>
+</div>
+<h3 class="mt-2 text-title-sm font-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors">أيام الدولة الذهبية</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">تاريخ • سياسة • صراع عروش</p>
+</div>
+<!-- Series Card 3 -->
+<div class="flex-shrink-0 w-64 md:w-72 group cursor-pointer">
+<div class="relative aspect-video w-full rounded-xl overflow-hidden bg-surface-container border border-outline-variant/20 group-hover:border-primary transition-all duration-300 group-hover:-translate-y-1">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Medical emergency drama scene inside a high-tech modern hospital ICU with doctors working under soft violet surgical lights." src="../../shared/images/800fe685b584c57fdc41.jpg"/>
+<span class="absolute top-2 right-2 px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-bold text-label-sm">عالمي مدبلج</span>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim/80 to-transparent flex items-end p-2.5">
+<span class="text-label-sm text-on-surface font-medium">الموسم الأول</span>
+</div>
+</div>
+<h3 class="mt-2 text-title-sm font-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors">نبض الطوارئ</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">دراما إنسانية • تشويق طبي</p>
+</div>
+</div>
+</section>
+</main>
+<!-- ================= BOTTOM NAVIGATION BAR (Shared Component) ================= -->
+<!-- Renders on mobile screens and top-level destination as defined in Shared Components JSON -->
+<!-- Contextual State: Page intent is Home / الرئيسية -> Tab "الرئيسية" is active. -->
+<nav aria-label="التنقل السفلي" class="md:hidden fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 dark:bg-surface-container-low/90 backdrop-blur-xl shadow-lg border-none">
+<!-- Tab 1: الرئيسية (Active Tab according to Autonomous Active State Logic) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary font-bold bg-primary-container/20 dark:bg-primary-container/20 rounded-full px-space-md py-space-xs active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-headline-sm" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- Tab 2: البحث (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-headline-sm" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- Tab 3: قائمتي (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-headline-sm" data-icon="bookmark">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- Tab 4: الإعدادات (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined text-headline-sm" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>نجد تي في - قائمتي</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-container": "#006a69",
+            "on-surface-variant": "#494453",
+            "inverse-on-surface": "#eef0ff",
+            "surface-container-low": "#f2f3ff",
+            "surface-bright": "#faf8ff",
+            "surface-container-lowest": "#ffffff",
+            "outline-variant": "#cbc3d5",
+            "primary-container": "#6b46c1",
+            "on-primary-fixed-variant": "#522aa7",
+            "surface-tint": "#6b46c1",
+            "tertiary": "#00504f",
+            "secondary-container": "#a882ff",
+            "on-secondary-fixed-variant": "#5429a6",
+            "error-container": "#ffdad6",
+            "primary-fixed-dim": "#d0bcff",
+            "on-secondary-fixed": "#24005b",
+            "surface-dim": "#d2d9f4",
+            "on-tertiary-fixed-variant": "#00504e",
+            "primary-fixed": "#e9ddff",
+            "on-error": "#ffffff",
+            "error": "#ba1a1a",
+            "on-tertiary": "#ffffff",
+            "surface-variant": "#dae2fd",
+            "background": "#faf8ff",
+            "surface-container-highest": "#dae2fd",
+            "on-surface": "#131b2e",
+            "tertiary-fixed-dim": "#77d6d3",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#94f2f0",
+            "on-primary-fixed": "#23005c",
+            "outline": "#7a7484",
+            "surface-container": "#eaedff",
+            "inverse-surface": "#283044",
+            "secondary-fixed": "#eaddff",
+            "surface": "#faf8ff",
+            "on-primary-container": "#e1d2ff",
+            "inverse-primary": "#d0bcff",
+            "on-tertiary-container": "#8ae9e6",
+            "on-error-container": "#93000a",
+            "on-secondary-container": "#3d0190",
+            "on-primary": "#ffffff",
+            "on-tertiary-fixed": "#00201f",
+            "surface-container-high": "#e2e7ff",
+            "secondary-fixed-dim": "#d1bcff",
+            "primary": "#532aa8",
+            "secondary": "#6c45c0",
+            "on-background": "#131b2e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-xl": "2.5rem",
+            "gutter-mobile": "0.75rem",
+            "space-xs": "0.25rem",
+            "margin": "3rem",
+            "margin-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "gutter": "1.5rem"
+          },
+          "fontFamily": {
+            "body-sm": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "headline-xl-mobile": ["Space Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "label-lg": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-xl": ["Space Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "headline-md": ["Space Grotesk", "Noto Sans Arabic", "sans-serif"],
+            "label-md": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "Noto Sans Arabic", "sans-serif"]
+          },
+          "fontSize": {
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "700" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-xl-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "700" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-xl": ["48px", { "lineHeight": "56px", "fontWeight": "700" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+            "headline-lg": ["36px", { "lineHeight": "44px", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 24px;
+      line-height: 1;
+      display: inline-block;
+    }
+    .material-symbols-outlined.filled {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      background-color: #faf8ff;
+      color: #131b2e;
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Arabic', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen bg-surface text-on-surface flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Shared TopAppBar -->
+<header class="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin h-16 w-full bg-surface/80 dark:bg-surface/80 backdrop-blur-md shadow-sm">
+<!-- Leading Action -->
+<button aria-label="بث الشاشة" class="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:text-primary hover:bg-surface-container-highest/50 transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined" data-icon="cast">cast</span>
+</button>
+<!-- Center/Title Brand Headline -->
+<div class="flex items-center gap-space-xs">
+<h1 class="text-headline-sm font-headline-sm md:text-headline-md md:font-headline-md text-primary font-bold tracking-tight">
+        قائمتي
+      </h1>
+</div>
+<!-- Trailing Action -->
+<button aria-label="الإشعارات" class="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:text-primary hover:bg-surface-container-highest/50 transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- Main Content: Empty State Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-margin-mobile md:px-margin pt-20 pb-28 text-center max-w-xl mx-auto w-full">
+<!-- Cinematic Icon Pill Container -->
+<div class="relative mb-space-lg flex items-center justify-center">
+<!-- Ambient Glow aura -->
+<div class="absolute -inset-4 bg-primary-fixed/50 rounded-full blur-2xl opacity-70"></div>
+<!-- Icon Circle Backdrop -->
+<div class="relative w-28 h-28 md:w-32 md:h-32 rounded-full bg-surface-container-low flex items-center justify-center shadow-sm">
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-fixed/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container text-5xl md:text-6xl" data-icon="movie" style="font-size: 52px;">movie</span>
+</div>
+</div>
+<!-- Small Accent Badge for Bookmark/List Context -->
+<div class="absolute bottom-1 end-1 w-9 h-9 rounded-full bg-surface-container-lowest shadow-md flex items-center justify-center text-primary">
+<span class="material-symbols-outlined filled text-lg" data-icon="bookmark" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</div>
+</div>
+<!-- Empty State Headline -->
+<h2 class="text-headline-sm font-headline-sm md:text-headline-md md:font-headline-md text-on-surface mb-space-sm font-bold tracking-tight">
+      قائمتك فارغة حالياً
+    </h2>
+<!-- Subtitle / Descriptive Text -->
+<p class="text-body-md font-body-md text-on-surface-variant max-w-md mb-space-xl leading-relaxed">
+      لم تقم بحفظ أي أفلام أو مسلسلات بعد. استكشف الأعمال المميزة وأضفها إلى قائمتك لمشاهدتها في أي وقت.
+    </p>
+<!-- Primary Action Button -->
+<a class="inline-flex items-center justify-center gap-space-sm px-space-xl py-3.5 bg-primary-container text-on-primary font-label-lg text-label-lg rounded-full shadow-md hover:bg-secondary transition-colors active:scale-95 duration-150 group" href="#">
+<span>استكشف الأعمال</span>
+<span class="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1 duration-200" data-icon="arrow_back">arrow_back</span>
+</a>
+<!-- Subtle Quick Discovery Category Tags -->
+<div class="mt-12 flex flex-wrap items-center justify-center gap-2">
+<span class="text-label-md font-label-md text-on-surface-variant w-full mb-1">تصفح الفئات الشائعة:</span>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">أحدث الأفلام</button>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">مسلسلات وثائقية</button>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">بث مباشر ثقافي</button>
+</div>
+</main>
+<!-- Shared BottomNavBar -->
+<nav class="fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 dark:bg-surface-container-low/90 backdrop-blur-xl shadow-lg">
+<!-- Tab: الرئيسية -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- Tab: البحث -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-0.5">البحث</span>
+</a>
+<!-- Tab: قائمتي (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary font-bold bg-primary-container/20 dark:bg-primary-container/20 rounded-full px-space-md py-space-xs active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined filled" data-icon="bookmark" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="text-label-sm font-label-sm mt-0.5">قائمتي</span>
+</a>
+<!-- Tab: الإعدادات -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">الإعدادات</span>
+</a>
+</nav>
+</body></html>

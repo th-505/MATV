@@ -1,0 +1,51 @@
+﻿id,slug,platform,title,theme,status,acceptance
+NJD-032,confirm-cancel-download,جوال,تأكيد إلغاء تحميل جارٍ,light,code-ready; figma-import-pending,مطابق للنسخة الداكنة المعتمدة؛ اختلاف الألوان فقط
+NJD-033,confirm-delete-download,جوال,تأكيد حذف ملف مكتمل,light,code-ready; figma-import-pending,مطابق للنسخة الداكنة المعتمدة؛ اختلاف الألوان فقط
+NJD-034,offline,جوال,انقطاع الاتصال,dark,code-ready; figma-import-pending,إعادة المحاولة أو الوصول للتحميلات
+NJD-035,offline,جوال,انقطاع الاتصال,light,code-ready; figma-import-pending,إعادة المحاولة أو الوصول للتحميلات
+NJD-036,no-source,جوال,عدم توفر مصدر تشغيل,dark,code-ready; figma-import-pending,إعادة الفحص أو العودة للتفاصيل
+NJD-037,no-source,جوال,عدم توفر مصدر تشغيل,light,code-ready; figma-import-pending,إعادة الفحص أو العودة للتفاصيل
+NJD-038,no-results,جوال,بحث بلا نتائج,dark,code-ready; figma-import-pending,تعديل البحث ومسح الفلاتر
+NJD-039,no-results,جوال,بحث بلا نتائج,light,code-ready; figma-import-pending,تعديل البحث ومسح الفلاتر
+NJD-040,home-loading,جوال,تحميل الرئيسية,dark,code-ready; figma-import-pending,هيكل مؤقت يحافظ على التخطيط
+NJD-041,home-loading,جوال,تحميل الرئيسية,light,code-ready; figma-import-pending,هيكل مؤقت يحافظ على التخطيط
+NJD-042,search-loading,جوال,تحميل نتائج البحث,dark,code-ready; figma-import-pending,الحفاظ على الاستعلام والفلاتر
+NJD-043,search-loading,جوال,تحميل نتائج البحث,light,code-ready; figma-import-pending,الحفاظ على الاستعلام والفلاتر
+NJD-044,details-loading,جوال,تحميل تفاصيل العمل,dark,code-ready; figma-import-pending,تدرج ظهور البيانات دون تأكيد مصدر وهمي
+NJD-045,details-loading,جوال,تحميل تفاصيل العمل,light,code-ready; figma-import-pending,تدرج ظهور البيانات دون تأكيد مصدر وهمي
+NJD-046,player-buffering,جوال,انتظار تحميل الفيديو,dark,code-ready; figma-import-pending,إلغاء الانتظار أو فتح المصادر
+NJD-047,player-buffering,جوال,انتظار تحميل الفيديو,light,code-ready; figma-import-pending,إلغاء الانتظار أو فتح المصادر
+NJD-048,player-error,جوال,تعذر تشغيل الفيديو,dark,code-ready; figma-import-pending,إعادة المحاولة أو اختيار مصدر
+NJD-049,player-error,جوال,تعذر تشغيل الفيديو,light,code-ready; figma-import-pending,إعادة المحاولة أو اختيار مصدر
+NJD-050,link-refresh,جوال,تجديد رابط منتهي,dark,code-ready; figma-import-pending,الحفاظ على موضع المشاهدة والمصدر المختار
+NJD-051,link-refresh,جوال,تجديد رابط منتهي,light,code-ready; figma-import-pending,الحفاظ على موضع المشاهدة والمصدر المختار
+NJD-052,quality-picker,جوال,اختيار الجودة,dark,code-ready; figma-import-pending,تلقائي والجودات المتوفرة فعليًا
+NJD-053,quality-picker,جوال,اختيار الجودة,light,code-ready; figma-import-pending,تلقائي والجودات المتوفرة فعليًا
+NJD-054,audio-picker,جوال,اختيار المسار الصوتي,dark,code-ready; figma-import-pending,اللغات المتوفرة للمصدر
+NJD-055,audio-picker,جوال,اختيار المسار الصوتي,light,code-ready; figma-import-pending,اللغات المتوفرة للمصدر
+NJD-056,subtitle-picker,جوال,اختيار الترجمة,dark,code-ready; figma-import-pending,إيقاف والترجمات المتوفرة
+NJD-057,subtitle-picker,جوال,اختيار الترجمة,light,code-ready; figma-import-pending,إيقاف والترجمات المتوفرة
+NJD-058,next-episode,جوال,الانتقال للحلقة التالية,dark,code-ready; figma-import-pending,عد تنازلي وإلغاء وتشغيل الآن
+NJD-059,next-episode,جوال,الانتقال للحلقة التالية,light,code-ready; figma-import-pending,عد تنازلي وإلغاء وتشغيل الآن
+NJD-060,provider-picker,جوال,اختيار مزود الاستكشاف,dark,code-ready; figma-import-pending,قدرات المزود وحالة الوصول دون ادعاء تشغيل مثبت
+NJD-061,provider-picker,جوال,اختيار مزود الاستكشاف,light,code-ready; figma-import-pending,قدرات المزود وحالة الوصول دون ادعاء تشغيل مثبت
+NJD-062,provider-catalog,جوال,مكتبة مزود محدد,dark,code-ready; figma-import-pending,إظهار اسم المزود والحفاظ على مرجع العمل
+NJD-063,provider-catalog,جوال,مكتبة مزود محدد,light,code-ready; figma-import-pending,إظهار اسم المزود والحفاظ على مرجع العمل
+NJD-064,provider-search,جوال,البحث داخل مزود محدد,dark,code-ready; figma-import-pending,النتائج مرتبطة بالمزود المختار
+NJD-065,provider-search,جوال,البحث داخل مزود محدد,light,code-ready; figma-import-pending,النتائج مرتبطة بالمزود المختار
+NJD-066,download-quality,جوال,اختيار جودة التحميل,dark,code-ready; figma-import-pending,الجودة والحجم إن كان معلومًا
+NJD-067,download-quality,جوال,اختيار جودة التحميل,light,code-ready; figma-import-pending,الجودة والحجم إن كان معلومًا
+NJD-068,storage-full,جوال,عدم كفاية مساحة التخزين,dark,code-ready; figma-import-pending,إدارة التحميلات أو إلغاء
+NJD-069,storage-full,جوال,عدم كفاية مساحة التخزين,light,code-ready; figma-import-pending,إدارة التحميلات أو إلغاء
+NJD-070,watchlist-edit,جوال,تعديل قائمتي,dark,code-ready; figma-import-pending,تحديد متعدد وإزالة من القائمة فقط
+NJD-071,watchlist-edit,جوال,تعديل قائمتي,light,code-ready; figma-import-pending,تحديد متعدد وإزالة من القائمة فقط
+NJD-072,tv-home,تلفزيون,رئيسية التلفزيون,dark,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-073,tv-home,تلفزيون,رئيسية التلفزيون,light,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-074,tv-search,تلفزيون,بحث التلفزيون ولوحة المفاتيح,dark,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-075,tv-search,تلفزيون,بحث التلفزيون ولوحة المفاتيح,light,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-076,tv-series,تلفزيون,تفاصيل مسلسل وحلقاته للتلفزيون,dark,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-077,tv-series,تلفزيون,تفاصيل مسلسل وحلقاته للتلفزيون,light,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-078,tv-player,تلفزيون,مشغل التلفزيون,dark,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-079,tv-player,تلفزيون,مشغل التلفزيون,light,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-080,tv-sources,تلفزيون,مصادر تشغيل التلفزيون,dark,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق
+NJD-081,tv-sources,تلفزيون,مصادر تشغيل التلفزيون,light,code-ready; figma-import-pending,تركيز ريموت واحد وتنقل منطقي وعودة تحفظ السياق

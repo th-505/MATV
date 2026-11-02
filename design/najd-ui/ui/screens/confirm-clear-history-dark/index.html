@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>نجد تي في - سجل المشاهدة</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+
+<!-- Material Symbols -->
+
+
+<!-- Tailwind CSS -->
+
+
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Direction containment for accurate timeline scrubbing */
+    .ltr-timeline {
+      direction: ltr;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<link rel="stylesheet" href="../../shared/icons.css"><link rel="stylesheet" href="../../shared/thmanyah.css"><script src="../../shared/baseline.js" defer></script><link rel="stylesheet" href="compiled.css"></head>
+<body class="bg-background text-on-background min-h-screen selection:bg-primary-container selection:text-on-primary-container font-body-md text-body-md antialiased pb-28">
+<!-- TOP BAR: Navigation & Actions -->
+<header class="fixed top-0 inset-x-0 z-40 bg-surface/85 backdrop-blur-xl h-16 px-margin-mobile flex items-center justify-between shadow-sm border-b border-white/[0.04]">
+<div class="flex items-center gap-space-sm">
+<button aria-label="رجوع" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-highest/60 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[22px] rotate-180" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">سجل المشاهدة</h1>
+</div>
+<!-- Action: Clear History -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary hover:text-on-primary-container hover:bg-primary-container/20 active:scale-95 transition-all duration-150" id="clear-all-btn">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete_sweep">delete_sweep</span>
+<span class="font-label-md text-label-md font-medium">مسح السجل</span>
+</button>
+</header>
+<!-- MAIN VIEWPORT CONTAINER -->
+<main class="pt-20 px-margin-mobile max-w-md mx-auto">
+<!-- SUBTITLE & STATS HEADER -->
+<div class="py-space-md flex items-center justify-between border-b border-white/[0.05] mb-space-lg">
+<div class="flex items-center gap-2">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container ring-4 ring-primary-container/20"></span>
+<p class="font-label-lg text-label-lg text-on-surface-variant font-medium">4 أعمال مسجلة مؤخراً</p>
+</div>
+<span class="font-label-sm text-label-sm text-outline px-2.5 py-0.5 rounded-full bg-surface-container-low border border-white/[0.06]">مُحدث الآن</span>
+</div>
+<!-- CARDS FEED (Vertical Stack) -->
+<div class="flex flex-col gap-space-md" id="watch-history-list">
+<!-- ITEM 1: أصداء طويق -->
+<article class="group relative bg-surface-container-low hover:bg-surface-container rounded-xl overflow-hidden border border-white/[0.06] transition-all duration-200" id="item-tuwaiq">
+<div class="flex p-space-sm gap-space-md">
+<!-- Poster / Thumbnail (16:9 Cinema Aspect) -->
+<div class="relative w-36 sm:w-40 aspect-video shrink-0 rounded-lg overflow-hidden bg-surface-container-lowest">
+<img class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" data-alt="Cinematic still from an epic drama set against the illuminated ridges of Tuwaiq mountain under a dramatic twilight sky, with warm architectural lighting reflecting against textured desert stone, cinematic high-contrast grading with subtle deep purple shadows." src="../../shared/images/7a7ef730c277f6a8376f.jpg"/>
+<!-- Remaining Time Pill -->
+<div class="absolute bottom-1.5 right-1.5 bg-surface-container-lowest/85 backdrop-blur-md px-1.5 py-0.5 rounded text-on-surface text-[10px] font-label-sm font-semibold border border-white/10">
+              متبقي 18 د
+            </div>
+<!-- LTR Continuous Progress Bar -->
+<div class="ltr-timeline absolute bottom-0 inset-x-0 h-1 bg-white/20">
+<div class="h-full bg-primary-container transition-all" style="width: 65%;"></div>
+</div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<div class="flex items-start justify-between gap-1">
+<div class="min-w-0">
+<span class="inline-block text-[11px] font-label-sm text-primary mb-0.5">مسلسل درامي</span>
+<h2 class="font-headline-sm text-[16px] leading-tight text-on-surface font-semibold">أصداء طويق</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">الموسم 1 · الحلقة 3</p>
+</div>
+<!-- Delete Action Button (✕) -->
+<button aria-label="حذف من السجل" class="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-white/[0.08] active:scale-90 transition-all shrink-0" onclick="document.getElementById('item-tuwaiq').remove()">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- CTA Row -->
+<div class="pt-2 flex items-center gap-2">
+<button class="flex-1 bg-primary-container hover:bg-[#7e57c2] active:scale-95 text-white font-label-md text-label-md py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150 shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill">play_arrow</span>
+<span>متابعة المشاهدة</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- ITEM 2: سيف السديم -->
+<article class="group relative bg-surface-container-low hover:bg-surface-container rounded-xl overflow-hidden border border-white/[0.06] transition-all duration-200" id="item-sadeem">
+<div class="flex p-space-sm gap-space-md">
+<!-- Poster / Thumbnail -->
+<div class="relative w-36 sm:w-40 aspect-video shrink-0 rounded-lg overflow-hidden bg-surface-container-lowest">
+<img class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" data-alt="Atmospheric sci-fi fantasy scene showing a warrior standing in deep cosmic twilight holding a faintly luminous sword, deep violet stellar clouds and sharp silhouette edges with a cinematic moody lighting style and rich dark tones." src="../../shared/images/5979e04068380ebf6d29.jpg"/>
+<div class="absolute bottom-1.5 right-1.5 bg-surface-container-lowest/85 backdrop-blur-md px-1.5 py-0.5 rounded text-on-surface text-[10px] font-label-sm font-semibold border border-white/10">
+              متبقي 45 د
+            </div>
+<!-- LTR Continuous Progress Bar -->
+<div class="ltr-timeline absolute bottom-0 inset-x-0 h-1 bg-white/20">
+<div class="h-full bg-primary-container transition-all" style="width: 40%;"></div>
+</div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<div class="flex items-start justify-between gap-1">
+<div class="min-w-0">
+<span class="inline-block text-[11px] font-label-sm text-primary mb-0.5">فيلم خيال علمي</span>
+<h2 class="font-headline-sm text-[16px] leading-tight text-on-surface font-semibold">سيف السديم</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">عمل سينمائي أصلي · ساعتان</p>
+</div>
+<!-- Delete Action Button (✕) -->
+<button aria-label="حذف من السجل" class="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-white/[0.08] active:scale-90 transition-all shrink-0" onclick="document.getElementById('item-sadeem').remove()">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- CTA Row -->
+<div class="pt-2 flex items-center gap-2">
+<button class="flex-1 bg-primary-container hover:bg-[#7e57c2] active:scale-95 text-white font-label-md text-label-md py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150 shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill">play_arrow</span>
+<span>متابعة المشاهدة</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- ITEM 3: سراب المدينة (مكتمل بالكامل 100%) -->
+<article class="group relative bg-surface-container-low hover:bg-surface-container rounded-xl overflow-hidden border border-white/[0.06] transition-all duration-200" id="item-sarab">
+<div class="flex p-space-sm gap-space-md">
+<!-- Poster / Thumbnail with 100% Indicator -->
+<div class="relative w-36 sm:w-40 aspect-video shrink-0 rounded-lg overflow-hidden bg-surface-container-lowest">
+<img class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 opacity-90" data-alt="Moody cinematic urban thriller shot of high-rise skyscrapers shrouded in evening desert fog and ambient neon reflections, deep shadows, crisp modern architectural lines, and subtle purple tone rim lights." src="../../shared/images/ae6ca2f783f2c3445d3a.jpg"/>
+<!-- Completed Pill Indicator -->
+<div class="absolute bottom-1.5 right-1.5 bg-surface-container-lowest/90 backdrop-blur-md px-1.5 py-0.5 rounded text-primary text-[10px] font-label-sm font-bold border border-primary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle" data-weight="fill">check_circle</span>
+<span>مكتمل 100%</span>
+</div>
+<!-- 100% Completed Progress Bar (Full) -->
+<div class="ltr-timeline absolute bottom-0 inset-x-0 h-1 bg-white/20">
+<div class="h-full bg-primary-container w-full"></div>
+</div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<div class="flex items-start justify-between gap-1">
+<div class="min-w-0">
+<span class="inline-block text-[11px] font-label-sm text-outline mb-0.5">مسلسل تشويق</span>
+<h2 class="font-headline-sm text-[16px] leading-tight text-on-surface font-semibold">سراب المدينة</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">الموسم 1 · الحلقة 1</p>
+</div>
+<!-- Delete Action Button (✕) -->
+<button aria-label="حذف من السجل" class="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-white/[0.08] active:scale-90 transition-all shrink-0" onclick="document.getElementById('item-sarab').remove()">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- CTA Row: Replay Button -->
+<div class="pt-2 flex items-center gap-2">
+<button class="flex-1 bg-surface-container-highest hover:bg-white/[0.12] text-on-surface border border-white/10 active:scale-95 font-label-md text-label-md py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150">
+<span class="material-symbols-outlined text-[18px]" data-icon="replay">replay</span>
+<span>إعادة المشاهدة</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- ITEM 4: صقر الجزيرة -->
+<article class="group relative bg-surface-container-low hover:bg-surface-container rounded-xl overflow-hidden border border-white/[0.06] transition-all duration-200" id="item-saqr">
+<div class="flex p-space-sm gap-space-md">
+<!-- Poster / Thumbnail -->
+<div class="relative w-36 sm:w-40 aspect-video shrink-0 rounded-lg overflow-hidden bg-surface-container-lowest">
+<img class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" data-alt="Majestic falcon soaring over dramatic desert canyon ridges in golden hour light fading into purple dusk, documentary cinematography with sharp feathers detail, natural contrast, and minimalist expansive horizons." src="../../shared/images/b38a2637c9d149be8706.jpg"/>
+<div class="absolute bottom-1.5 right-1.5 bg-surface-container-lowest/85 backdrop-blur-md px-1.5 py-0.5 rounded text-on-surface text-[10px] font-label-sm font-semibold border border-white/10">
+              متبقي 10 د
+            </div>
+<!-- LTR Continuous Progress Bar -->
+<div class="ltr-timeline absolute bottom-0 inset-x-0 h-1 bg-white/20">
+<div class="h-full bg-primary-container transition-all" style="width: 82%;"></div>
+</div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<div class="flex items-start justify-between gap-1">
+<div class="min-w-0">
+<span class="inline-block text-[11px] font-label-sm text-primary mb-0.5">وثائقي تاريخي</span>
+<h2 class="font-headline-sm text-[16px] leading-tight text-on-surface font-semibold">صقر الجزيرة</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">فيلم وثائقي · 52 دقيقة</p>
+</div>
+<!-- Delete Action Button (✕) -->
+<button aria-label="حذف من السجل" class="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-white/[0.08] active:scale-90 transition-all shrink-0" onclick="document.getElementById('item-saqr').remove()">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- CTA Row -->
+<div class="pt-2 flex items-center gap-2">
+<button class="flex-1 bg-primary-container hover:bg-[#7e57c2] active:scale-95 text-white font-label-md text-label-md py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150 shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill">play_arrow</span>
+<span>متابعة المشاهدة</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Empty State Helper (Hidden by default) -->
+<div class="hidden text-center py-20 px-4" id="empty-state">
+<div class="w-16 h-16 rounded-full bg-surface-container-high mx-auto flex items-center justify-center text-outline mb-4">
+<span class="material-symbols-outlined text-[32px]" data-icon="history">history</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">السجل فارغ</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs mx-auto">لم تقم بمشاهدة أي محتوى مؤخراً. تصفح مكتبة الأفلام والمسلسلات للبدء.</p>
+</div>
+</main>
+<!-- SHARED COMPONENT: BottomNavBar (Active on 'قائمتي' or Top-Level Watch History Destination) -->
+<nav aria-label="التنقل السفلي" class="fixed bottom-0 inset-x-0 w-full z-50 flex justify-around items-center px-margin-mobile py-space-xs pb-safe bg-surface-container-low/90 dark:bg-surface-container-low/90 backdrop-blur-xl shadow-lg border-t-0">
+<!-- 1. الرئيسية -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-1">الرئيسية</span>
+</a>
+<!-- 2. البحث -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="search">search</span>
+<span class="text-label-sm font-label-sm mt-1">البحث</span>
+</a>
+<!-- 3. قائمتي (ACTIVE STATE - Hosts Watch History & Saved Lists) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary font-bold bg-primary-container/20 dark:bg-primary-container/20 rounded-full px-space-md py-space-xs active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="bookmark" data-weight="fill">bookmark</span>
+<span class="text-label-sm font-label-sm mt-1">قائمتي</span>
+</a>
+<!-- 4. الإعدادات -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-space-md py-space-xs hover:text-primary-fixed dark:hover:text-primary-fixed transition-colors active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="settings">settings</span>
+<span class="text-label-sm font-label-sm mt-1">الإعدادات</span>
+</a>
+</nav>
+<!-- Interactive script for clear history micro-interaction -->
+<script>
+    document.getElementById('clear-all-btn')?.addEventListener('click', function() {
+      const list = document.getElementById('watch-history-list');
+      const emptyState = document.getElementById('empty-state');
+      if (list && list.children.length > 0) {
+        list.innerHTML = '';
+        if (emptyState) emptyState.classList.remove('hidden');
+      }
+    });
+  </script>
+<div aria-labelledby="modal-title" aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-surface-container-lowest/85 backdrop-blur-md transition-all duration-300" id="clear-history-modal" role="dialog"><div class="relative w-full max-w-sm bg-surface-container-low border border-white/10 rounded-xl p-space-lg shadow-lg flex flex-col items-center text-center"><div class="w-16 h-16 rounded-full bg-error-container/20 border border-error/20 flex items-center justify-center text-error mb-4"><span class="material-symbols-outlined text-[32px]" data-icon="delete_sweep">delete_sweep</span></div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface mb-2" id="modal-title">مسح سجل المشاهدة؟</h2><p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed mb-space-lg">سيتم إزالة تقدم المشاهدة لجميع الأعمال المسجلة. لن يؤثر ذلك على قائمة رغباتك (قائمتي) أو التحميلات المحفوظة على جهازك.</p><div class="flex items-center gap-space-sm w-full"><button class="flex-1 py-2.5 px-4 rounded-lg bg-surface-container-highest hover:bg-white/[0.12] text-on-surface font-label-md text-label-md font-medium transition-colors active:scale-95" onclick="document.getElementById('clear-history-modal').remove()" type="button">إلغاء</button><button class="flex-1 py-2.5 px-4 rounded-lg bg-error text-[#380004] hover:bg-error/90 font-label-md text-label-md font-bold transition-all active:scale-95 shadow-sm" onclick="const list = document.getElementById('watch-history-list'); const empty = document.getElementById('empty-state'); if(list) list.innerHTML = ''; if(empty) empty.classList.remove('hidden'); document.getElementById('clear-history-modal').remove();" type="button">مسح السجل</button></div></div></div></body></html>

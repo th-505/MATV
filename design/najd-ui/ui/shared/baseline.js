@@ -1,0 +1,6 @@
+// Route the preserved Stitch screens into the local interface catalogue.
+const dark=document.documentElement.classList.contains('dark');const theme=dark?'dark':'light';
+const route=slug=>'../'+slug+'-'+(slug==='player'?'dark':theme)+'/index.html';
+const labels=new Map([['الرئيسية','home'],['البحث','search'],['قائمتي','watchlist'],['الإعدادات','settings'],['إدارة التحميلات','downloads-completed'],['مصادر التشغيل','sources'],['مسح السجل','confirm-clear-history'],['استكشف الأعمال','home'],['تصفح أحدث الأعمال','home']]);
+for(const link of document.querySelectorAll('a')){const label=link.textContent.replace(/\s+/g,' ').trim();for(const [text,slug] of labels)if(label===text||label.endsWith(' '+text)){link.href=route(slug);break;}}
+document.addEventListener('click',e=>{const el=e.target.closest('button,a');if(!el)return;const label=el.textContent.replace(/\s+/g,' ').trim();let slug;if(/مشاهدة الفيلم|مشاهدة الآن|متابعة المشاهدة|إعادة المشاهدة/.test(label))slug='player';else if(/مصادر التشغيل/.test(label))slug='sources';else if(/اختيار.*الجودة|1080p FHD/.test(label))slug='quality-picker';else if(/الصوت والترجمة/.test(label))slug='audio-picker';else if(/تنزيل|تحميل/.test(label)&&!label.includes('إلغاء')&&!label.includes('حذف'))slug='download-quality';if(slug&&!el.closest('[role="dialog"]')){e.preventDefault();location.href=route(slug)}});
