@@ -94,6 +94,65 @@ class NajdThemes {
         centerTitle: true,
         elevation: 0,
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: scheme.outline.withAlpha(90)),
+        ),
+        titleTextStyle: TextStyle(
+          fontFamily: NajdAppearance.instance.fontFamily ?? 'ThmanyahSans',
+          fontFamilyFallback: const ['NajdArabicFallback'],
+          color: text,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+        ),
+        contentTextStyle: TextStyle(
+          fontFamily: NajdAppearance.instance.fontFamily ?? 'ThmanyahSans',
+          fontFamilyFallback: const ['NajdArabicFallback'],
+          color: text,
+          height: 1.7,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: Size(48, isTvTarget ? 64 : 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: Size(48, isTvTarget ? 64 : 48),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: Size(isTvTarget ? 64 : 48, isTvTarget ? 64 : 48),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outline.withAlpha(65),
+        space: 24,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: background,
+        indicatorColor: primary.withAlpha(dark ? 100 : 40),
+      ),
       cardTheme: CardThemeData(
         color: surface,
         shape: RoundedRectangleBorder(

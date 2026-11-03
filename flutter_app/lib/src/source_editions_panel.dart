@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'api_client.dart';
 import 'app_target.dart';
+import 'stitch_design.dart';
 
 String sourceHarvestMessage(String? reason) => switch (reason) {
   'ACCESS_BLOCKED' || 'SOURCE_ENTRY_REQUIRED' =>
@@ -166,16 +167,34 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
     final issues = (_snapshot?['issues'] as List? ?? const [])
         .whereType<Map>()
         .toList();
-    return Card(
+    return NajdSurface(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('نسخ المصادر', style: Theme.of(context).textTheme.titleLarge),
+            const NajdSectionHeading('مصادر هذا العمل'),
             const SizedBox(height: 8),
             const Text(
-              'المواسم والحلقات تتبع فهرس كل موقع. المدبلج مستقل لكل مصدر، والفهرسة وحدها لا تعني أن التشغيل اجتاز الفحص.',
+              'اختر نسخة للمشاهدة. تحتفظ كل نسخة بمواسمها وحلقاتها، ويُفحص رابط التشغيل عند فتحها.',
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.video_library_outlined, size: 18),
+                  label: Text(
+                    '${editions.where((e) => e['available'] == true).length} نسخ مفهرسة',
+                  ),
+                ),
+                if (_busy)
+                  const Chip(
+                    avatar: Icon(Icons.sync, size: 18),
+                    label: Text('جارٍ البحث'),
+                  ),
+              ],
             ),
             if (_busy)
               const Padding(
@@ -216,12 +235,39 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
                   'لم تصل نسخة مفهرسة حتى الآن. هذا لا يثبت أن العمل غير موجود في المواقع.',
                 ),
               ),
-            for (final issue in issues.take(8))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  '${issue['provider'] ?? 'مصدر'}: ${sourceHarvestMessage('${issue['reason'] ?? ''}')}',
-                ),
+            if (issues.isNotEmpty)
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                leading: const Icon(Icons.info_outline),
+                title: Text('حالة المصادر (${issues.length})'),
+                subtitle: const Text('تفاصيل المصادر التي لم يكتمل فحصها'),
+                children: [
+                  for (final issue in issues)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            widget.api.explorationSourceLabel(
+                              '${issue['provider'] ?? 'مصدر'}',
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            sourceHarvestMessage('${issue['reason'] ?? ''}'),
+                            style: TextStyle(
+                              height: 1.6,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -262,6 +308,7 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
       child: OutlinedButton(
         key: ValueKey('source-edition-${edition['ref']}'),
         style: OutlinedButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
           minimumSize: Size(48, isTvTarget ? 64 : 48),
           padding: const EdgeInsets.all(14),
           alignment: AlignmentDirectional.centerStart,
@@ -270,8 +317,39 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${edition['title'] ?? 'العمل'} — $provider'),
-            Text(kind),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.dns_outlined),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${edition['title'] ?? 'العمل'} — $provider',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(available ? Icons.chevron_left : Icons.hourglass_empty),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                Chip(label: Text(kind)),
+                Chip(label: Text(available ? 'فهرس متاح' : 'قيد الفهرسة')),
+              ],
+            ),
             if (domain.isNotEmpty) Text(domain),
             if (summary.isNotEmpty) Text(summary),
             Text(

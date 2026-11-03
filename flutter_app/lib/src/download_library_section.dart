@@ -1,3 +1,5 @@
+import 'najd_panels.dart';
+
 import 'dart:io';
 
 import 'stitch_design.dart';
@@ -323,21 +325,36 @@ class _DownloadLibrarySectionState extends State<DownloadLibrarySection> {
                         size: 36,
                       ),
                     ),
-                    PopupMenuButton<String>(
+                    IconButton(
                       tooltip: 'خيارات التحميل',
-                      onSelected: (v) =>
-                          v == 'delete' ? _delete(item) : _share(item),
-                      itemBuilder: (_) => [
-                        if (!isTvTarget)
-                          const PopupMenuItem(
-                            value: 'share',
-                            child: Text('حفظ في الملفات / مشاركة'),
-                          ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('حذف من الجهاز'),
-                        ),
-                      ],
+                      icon: const Icon(Icons.more_vert),
+                      onPressed: () async {
+                        final action = await showNajdOptions<String>(
+                          context,
+                          title: 'خيارات التحميل',
+                          description: item.name,
+                          icon: Icons.download_outlined,
+                          options: [
+                            if (!isTvTarget)
+                              const NajdOption(
+                                'share',
+                                'حفظ في الملفات / مشاركة',
+                                icon: Icons.ios_share,
+                              ),
+                            const NajdOption(
+                              'delete',
+                              'حذف من الجهاز',
+                              icon: Icons.delete_outline,
+                            ),
+                          ],
+                        );
+                        if (!mounted || action == null) return;
+                        if (action == 'delete') {
+                          await _delete(item);
+                        } else {
+                          await _share(item);
+                        }
+                      },
                     ),
                   ],
                 ),

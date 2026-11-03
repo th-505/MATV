@@ -253,7 +253,12 @@ void main() {
                   )
                   .decoration!
               as BoxDecoration;
-      expect((border.border! as Border).top.color, const Color(0xFF8480FF));
+      expect(
+        (border.border! as Border).top.color,
+        Theme.of(
+          tester.element(find.byKey(const Key('focus-highlight-border')).first),
+        ).colorScheme.primary,
+      );
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
       expect(selections, 1);

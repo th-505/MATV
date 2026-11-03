@@ -1,3 +1,5 @@
+import 'source_selection_memory.dart';
+import 'najd_panels.dart';
 import 'stitch_design.dart';
 
 import 'dart:async';
@@ -29,12 +31,17 @@ class DetailsPage extends StatefulWidget {
     required this.store,
     required this.item,
     this.downloads,
+    this.onPlaySelection,
+    this.providerCatalogRef = '',
   });
 
   final MitvApi api;
   final LocalLibraryStore store;
   final CatalogItem item;
+  final String providerCatalogRef;
   final DownloadService? downloads;
+  final Future<void> Function(CatalogItem, TitleDetails, EpisodeItem?)?
+  onPlaySelection;
 
   @override
   State<DetailsPage> createState() => _DetailsPageState();
@@ -43,6 +50,7 @@ class DetailsPage extends StatefulWidget {
 class _DetailsPageState extends State<DetailsPage> {
   late Future<TitleDetails> future;
   bool _cardHarvestError = false;
+  String _primaryDownloadKey = 'direct';
   int selectedSeason = 1;
   late final DownloadService _downloads;
   late final bool _ownsDownloads;
@@ -118,22 +126,14 @@ class _DetailsPageState extends State<DetailsPage> {
 
   Future<void> _toggleFavorite() async {
     await widget.store.toggleFavorite(widget.item);
+    if (!mounted) return;
     if (!widget.store.isFavorite(widget.item.ref)) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('أضيف إلى قائمتك')));
     try {
       await widget.api.requestHarvest(widget.item.ref, reason: 'favorite');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حُفظت المفضلة وأُرسل طلب فحص المصادر.')),
-      );
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'حُفظت المفضلة محليًا، لكن لم يصل تأكيد طلب القشط. أعد فحص المصادر عند عودة الاتصال.',
-          ),
-        ),
-      );
+      if (mounted) setState(() => _cardHarvestError = true);
     }
   }
 
@@ -153,11 +153,153 @@ class _DetailsPageState extends State<DetailsPage> {
     );
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) =>
-            DetailsPage(api: widget.api, store: widget.store, item: item),
+        builder: (_) => DetailsPage(
+          api: widget.api,
+          store: widget.store,
+          item: item,
+          onPlaySelection: widget.onPlaySelection,
+        ),
       ),
     );
   }
+
+  Future<void> _showProviders() => showNajdPanel<void>(
+    context,
+    title: 'المصادر والمزودون',
+    icon: Icons.dns_outlined,
+    description:
+        'اختر المزود لعرض الاسم والملخص والمواسم والحلقات كما وردت في موقعه.',
+    body: (_) => SourceEditionsPanel(
+      api: widget.api,
+      workRef: _providersRef,
+      onOpen: (edition) {
+        Navigator.pop(context);
+        unawaited(_openSourceEdition(edition));
+      },
+    ),
+  );
+
+  Future<void> _watch(TitleDetails details) async {
+    if (widget.onPlaySelection == null &&
+        SourceSelectionMemory.canonical(widget.item.ref)) {
+      final choice = await SourceSelectionMemory.read(widget.item.ref);
+      if (!mounted) return;
+      if (choice != null) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => PlayerPage(
+              api: widget.api,
+              store: widget.store,
+              item: CatalogItem(
+                id: choice.workRef,
+                ref: choice.workRef,
+                title: choice.title.isEmpty ? details.title : choice.title,
+                poster: details.poster,
+                type: widget.item.type,
+                source: choice.provider,
+                season: choice.season,
+                episode: choice.number,
+              ),
+              title: choice.title.isEmpty ? details.title : choice.title,
+              sourceRef: choice.episodeRef,
+              episodeId: choice.episodeId,
+              episodeNumber: choice.number,
+              providerCatalogRef: widget.item.ref,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    final episodes = details.episodes
+        .where((e) => e.watchAvailable && e.ref.isNotEmpty)
+        .toList();
+    if (episodes.isNotEmpty) {
+      final saved = widget.store.history
+          .where((e) => e.contentRef == widget.item.ref)
+          .firstOrNull;
+      final episode =
+          episodes.where((e) => e.id == saved?.episodeId).firstOrNull ??
+          episodes.first;
+      await _openEpisode(
+        episode,
+        _episodeFocus(episode),
+        queue: details.episodes,
+      );
+    } else {
+      await _openDirect(details);
+    }
+  }
+
+  Future<void> _downloadPrimary(TitleDetails details) async {
+    if (_activeDownloads.contains(_primaryDownloadKey)) {
+      await _cancelDownload(_primaryDownloadKey);
+      return;
+    }
+    if (SourceSelectionMemory.canonical(widget.item.ref)) {
+      final choice = await SourceSelectionMemory.read(widget.item.ref);
+      if (!mounted) return;
+      if (choice != null) {
+        final key = 'selected:${choice.episodeRef}';
+        setState(() => _primaryDownloadKey = key);
+        await _download(
+          key: key,
+          title: choice.number == null
+              ? details.title
+              : '${details.title} — الحلقة ${choice.number}',
+          sourceRef: choice.episodeRef,
+        );
+        return;
+      }
+    }
+    final episodes = details.episodes
+        .where((e) => e.watchAvailable && e.ref.isNotEmpty)
+        .toList();
+    if (episodes.isNotEmpty) {
+      final episode = await showNajdOptions<EpisodeItem>(
+        context,
+        title: 'تحميل حلقة',
+        icon: Icons.download_outlined,
+        options: [
+          for (final ep in episodes)
+            NajdOption(
+              ep,
+              ep.title.isEmpty ? 'الحلقة ${ep.number}' : ep.title,
+              subtitle:
+                  'الموسم ${ep.season ?? selectedSeason} • الحلقة ${ep.number}',
+              icon: Icons.download_outlined,
+            ),
+        ],
+      );
+      if (episode == null || !mounted) return;
+      setState(
+        () => _primaryDownloadKey = 'episode:${episode.id}:${episode.number}',
+      );
+      await _download(
+        key: _primaryDownloadKey,
+        title: '${details.title} — الحلقة ${episode.number}',
+        sourceRef: episode.ref,
+      );
+    } else {
+      final target = _directContext;
+      setState(
+        () => _primaryDownloadKey = target.number == null
+            ? 'direct'
+            : 'episode:${target.ref}',
+      );
+      await _download(
+        key: _primaryDownloadKey,
+        title: target.number == null
+            ? details.title
+            : '${details.title} — الحلقة ${target.number}',
+        sourceRef: target.ref,
+      );
+    }
+  }
+
+  String get _providersRef => widget.providerCatalogRef.isEmpty
+      ? widget.item.ref
+      : widget.providerCatalogRef;
 
   bool _loadingEpisodePage = false;
   Future<void> _moreEpisodes() async {
@@ -217,6 +359,15 @@ class _DetailsPageState extends State<DetailsPage> {
   CatalogItem _playItem(TitleDetails? details) => details == null
       ? widget.item
       : widget.item.copyWith(
+          title: details.title,
+          type:
+              details.sourceWorkRef.isNotEmpty &&
+                  ['movie', 'series'].contains(details.contentType)
+              ? details.contentType
+              : widget.item.type,
+          poster: details.poster.isNotEmpty
+              ? details.poster
+              : widget.item.poster,
           year: details.year,
           genres: details.genres,
           audioLanguage: details.audioLanguage,
@@ -226,7 +377,30 @@ class _DetailsPageState extends State<DetailsPage> {
           workIdentityVerified: details.workIdentityVerified,
         );
 
+  ({String ref, String id, int? number}) get _directContext {
+    if (!RegExp(r'^tmdb:tv:[1-9][0-9]*$').hasMatch(widget.item.ref)) {
+      return (ref: widget.item.ref, id: '', number: null);
+    }
+    final saved = widget.store.history
+        .where((entry) => entry.contentRef == widget.item.ref)
+        .firstOrNull;
+    final season = widget.item.season ?? saved?.metadata?.season;
+    final number = widget.item.episode ?? saved?.episodeNumber;
+    if (season == null || number == null) {
+      return (ref: widget.item.ref, id: '', number: null);
+    }
+    return (
+      ref: '${widget.item.ref}:s$season:e$number',
+      id: saved?.episodeNumber == number ? saved!.episodeId : '',
+      number: number,
+    );
+  }
+
   Future<void> _openDirect(TitleDetails details) async {
+    if (widget.onPlaySelection != null) {
+      await widget.onPlaySelection!(_playItem(details), details, null);
+      return;
+    }
     await RouteFocusRestorer.push<void>(
       context,
       returnFocus: _directPlayFocus,
@@ -240,7 +414,10 @@ class _DetailsPageState extends State<DetailsPage> {
           mediaType: details.mediaType,
           playbackMode: details.playbackMode,
           playbackHeaders: details.playbackHeaders,
-          sourceRef: widget.item.ref,
+          sourceRef: _directContext.ref,
+          episodeId: _directContext.id,
+          episodeNumber: _directContext.number,
+          providerCatalogRef: _providersRef,
         ),
       ),
     );
@@ -252,6 +429,14 @@ class _DetailsPageState extends State<DetailsPage> {
     List<EpisodeItem> queue = const [],
   }) async {
     if (episode.ref.isEmpty || !episode.watchAvailable) return;
+    if (widget.onPlaySelection != null) {
+      await widget.onPlaySelection!(
+        _playItem(await future),
+        await future,
+        episode,
+      );
+      return;
+    }
     final label = episode.title.trim().isEmpty
         ? (episode.hasEpisodeNumber ? 'الحلقة ${episode.number}' : 'حلقة')
         : episode.title;
@@ -263,9 +448,10 @@ class _DetailsPageState extends State<DetailsPage> {
           api: widget.api,
           store: widget.store,
           item: _playItem(widget.api.cachedMetadata(widget.item.ref))
-              .copyWith(season: episode.season),
+              .copyWith(season: episode.season, episode: episode.number),
           title: label,
           sourceRef: episode.ref,
+          providerCatalogRef: _providersRef,
           episodeId: episode.id,
           episodeQueue: queue,
           episodeNumber: episode.hasEpisodeNumber ? episode.number : null,
@@ -299,9 +485,18 @@ class _DetailsPageState extends State<DetailsPage> {
     setState(() => _downloadProgress[key] = progress);
   }
 
-  void _cancelDownload(String key) {
+  Future<void> _cancelDownload(String key) async {
     final token = _downloadTokens[key];
     if (token == null || token.isCancelled) return;
+    if (!await najdConfirm(
+      context,
+      title: 'إلغاء التحميل الجاري؟',
+      description: 'سيتم إيقاف التنزيل وحذف الملف الجزئي من الجهاز.',
+      confirm: 'إلغاء التحميل',
+      cancel: 'متابعة التحميل',
+    )) {
+      return;
+    }
     token.cancel();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -417,7 +612,6 @@ class _DetailsPageState extends State<DetailsPage> {
   Future<void> _download({
     required String key,
     required String title,
-    String mediaPath = '',
     String sourceRef = '',
   }) async {
     if (_activeDownloads.contains(key)) return;
@@ -502,8 +696,8 @@ class _DetailsPageState extends State<DetailsPage> {
               onPressed: _toggleFavorite,
               icon: Icon(
                 widget.store.isFavorite(widget.item.ref)
-                    ? Icons.favorite
-                    : Icons.favorite_border,
+                    ? Icons.bookmark
+                    : Icons.bookmark_border,
               ),
             ),
           ],
@@ -536,19 +730,6 @@ class _DetailsPageState extends State<DetailsPage> {
             return ListView(
               padding: EdgeInsets.all(isTvTarget ? 28 : 16),
               children: [
-                if (_cardHarvestError && !sourceCard)
-                  ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text('لم يصل تأكيد بدء فحص المصادر.'),
-                    subtitle: const Text(
-                      'بيانات العمل متاحة؛ أعد إرسال طلب الفحص عند عودة الاتصال.',
-                    ),
-                    trailing: IconButton(
-                      tooltip: 'إعادة إرسال طلب الفحص',
-                      onPressed: () => unawaited(_queueCard(retry: true)),
-                      icon: const Icon(Icons.refresh),
-                    ),
-                  ),
                 if (details.poster.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
@@ -585,6 +766,45 @@ class _DetailsPageState extends State<DetailsPage> {
                       ],
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      FilledButton.icon(
+                        key: const Key('title-watch'),
+                        focusNode: details.hasEpisodes
+                            ? null
+                            : _directPlayFocus,
+                        onPressed: () => _watch(details),
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('مشاهدة'),
+                      ),
+                      if (!kIsWeb)
+                        OutlinedButton.icon(
+                          key: const Key('title-download'),
+                          onPressed: () => _downloadPrimary(details),
+                          icon: Icon(
+                            _activeDownloads.contains(_primaryDownloadKey)
+                                ? Icons.cancel_outlined
+                                : Icons.download_outlined,
+                          ),
+                          label: Text(
+                            _activeDownloads.contains(_primaryDownloadKey)
+                                ? _downloadLabel(_primaryDownloadKey)
+                                : 'تحميل',
+                          ),
+                        ),
+                      OutlinedButton.icon(
+                        key: const Key('title-providers'),
+                        onPressed: _showProviders,
+                        icon: const Icon(Icons.dns_outlined),
+                        label: const Text('المصادر'),
+                      ),
+                    ],
+                  ),
+                ),
                 if (details.directors.isNotEmpty)
                   Text('إخراج: ${details.directors.join('، ')}'),
                 if (details.cast.isNotEmpty)
@@ -604,12 +824,6 @@ class _DetailsPageState extends State<DetailsPage> {
                       ],
                     ),
                   ),
-                if (sourceCard)
-                  SourceEditionsPanel(
-                    api: widget.api,
-                    workRef: widget.item.ref,
-                    onOpen: _openSourceEdition,
-                  ),
                 if (details.sourceWorkRef.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -625,27 +839,42 @@ class _DetailsPageState extends State<DetailsPage> {
                     details.availableSeasons.length > 1 &&
                     (widget.item.ref.startsWith('tmdb:tv:') ||
                         details.sourceWorkRef.isNotEmpty))
-                  DropdownButton<int>(
-                    key: const Key('title-season-selector'),
-                    value: details.availableSeasons.contains(selectedSeason)
-                        ? selectedSeason
-                        : details.availableSeasons.first,
-                    items: [
-                      for (final number in details.availableSeasons)
-                        DropdownMenuItem(
-                          value: number,
-                          child: Text('الموسم $number'),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        selectedSeason = value;
-                        future = _loadDetails(
-                          '${details.sourceWorkRef.isNotEmpty ? details.sourceWorkRef : widget.item.ref}:s$value:e1',
+                  NajdSurface(
+                    padding: EdgeInsets.zero,
+                    child: ListTile(
+                      key: const Key('title-season-selector'),
+                      leading: const Icon(Icons.video_library_outlined),
+                      title: const Text('الموسم'),
+                      subtitle: Text('الموسم $selectedSeason'),
+                      trailing: const Icon(Icons.expand_more),
+                      onTap: () async {
+                        final value = await showNajdOptions<int>(
+                          context,
+                          title: 'اختيار الموسم',
+                          icon: Icons.video_library_outlined,
+                          options: [
+                            for (final number in details.availableSeasons)
+                              NajdOption(
+                                number,
+                                'الموسم $number',
+                                selected: number == selectedSeason,
+                                icon: Icons.video_library_outlined,
+                              ),
+                          ],
                         );
-                      });
-                    },
+                        if (!mounted ||
+                            value == null ||
+                            value == selectedSeason) {
+                          return;
+                        }
+                        setState(() {
+                          selectedSeason = value;
+                          future = _loadDetails(
+                            '${details.sourceWorkRef.isNotEmpty ? details.sourceWorkRef : widget.item.ref}:s$value:e1',
+                          );
+                        });
+                      },
+                    ),
                   ),
                 if (!sourceCard && details.hasEpisodes) ...[
                   NajdSectionHeading('الحلقات (${details.episodes.length})'),
@@ -700,60 +929,7 @@ class _DetailsPageState extends State<DetailsPage> {
                             : 'تحميل المزيد من حلقات المصدر',
                       ),
                     ),
-                ] else if (!sourceCard &&
-                    (details.canPlay ||
-                        widget.item.ref.startsWith('tmdb:movie:') ||
-                        widget.item.ref.startsWith('source:') &&
-                            widget.item.type == 'movie')) ...[
-                  Card(
-                    child: ListTile(
-                      focusNode: _directPlayFocus,
-                      leading: const Icon(Icons.play_circle_outline),
-                      title: const Text('مشاهدة داخل التطبيق'),
-                      subtitle: const Text(
-                        'تشغيل تلقائي للصيغ المدعومة مع تبديل المصدر عند الحاجة',
-                      ),
-                      trailing: const Icon(Icons.play_arrow),
-                      onTap: () => _openDirect(details),
-                    ),
-                  ),
-                  if (!kIsWeb && details.downloadAvailable)
-                    Card(
-                      child: ListTile(
-                        leading: _activeDownloads.contains('direct')
-                            ? const Icon(Icons.cancel_outlined)
-                            : const Icon(Icons.download_outlined),
-                        title: Text(
-                          _activeDownloads.contains('direct')
-                              ? _downloadLabel('direct')
-                              : 'تنزيل داخل التطبيق',
-                        ),
-                        subtitle: Text(
-                          _activeDownloads.contains('direct')
-                              ? 'اضغط لإلغاء التنزيل وحذف الملف الجزئي'
-                              : 'يحفظ الملف داخل مساحة التطبيق مع متابعة فعلية للتقدم',
-                        ),
-                        onTap: _activeDownloads.contains('direct')
-                            ? () => _cancelDownload('direct')
-                            : () => _download(
-                                key: 'direct',
-                                title: details.title,
-                                mediaPath: details.mediaPath,
-                              ),
-                      ),
-                    ),
-                ] else if (!sourceCard && details.playbackUnavailable)
-                  const ListTile(
-                    leading: Icon(Icons.info_outline),
-                    title: Text('المشاهدة غير متاحة من هذا المصدر حاليًا'),
-                    subtitle: Text(
-                      'يمكن إعادة المحاولة لاحقًا دون فتح روابط خارجية.',
-                    ),
-                  )
-                else if (!sourceCard)
-                  const ListTile(
-                    title: Text('لا توجد حلقات أو وسائط متاحة حاليًا'),
-                  ),
+                ],
               ],
             );
           },

@@ -120,7 +120,7 @@ void main() {
 
   for (final automatic in [true, false]) {
     testWidgets(
-      '${automatic ? 'automatic' : 'manual'} unverified cross-provider change never reuses a 23-second playhead',
+      '${automatic ? 'automatic fallback stays guarded; ' : ''}explicit source selection preserves the requested 23-second clock',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         final store = await LocalLibraryStore.create();
@@ -178,10 +178,10 @@ void main() {
         menu.onSelected(alternative);
         await settle(tester);
         expect(engines.last.uri.path, '/unverified.mp4');
-        expect(engines.last.seeks, [Duration.zero]);
+        expect(engines.last.seeks, [const Duration(seconds: 23)]);
         expect(
           find.text('نسخة هذا المصدر غير متطابقة؛ يبدأ التشغيل من البداية.'),
-          findsOneWidget,
+          findsNothing,
         );
         await tester.pumpWidget(const SizedBox());
         api.close();

@@ -104,7 +104,9 @@ class NajdWorkCard extends StatelessWidget {
     required this.onTap,
     this.selected = false,
     this.onSelect,
+    this.sourceLabel,
   });
+  final String? sourceLabel;
   final CatalogItem item;
   final VoidCallback onTap;
   final bool selected;
@@ -181,6 +183,14 @@ class NajdWorkCard extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
+                if (sourceLabel != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      sourceLabel!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
                 const SizedBox(height: 5),
                 Row(
                   children: [
@@ -360,10 +370,11 @@ class NajdEmptyState extends StatelessWidget {
     this.onRetry,
     this.onExplore,
     this.message,
+    this.exploreLabel,
   });
   final NajdEmptyKind kind;
   final VoidCallback? onRetry, onExplore;
-  final String? message;
+  final String? message, exploreLabel;
   @override
   Widget build(BuildContext context) {
     final (icon, title, description, action) = switch (kind) {
@@ -462,7 +473,10 @@ class NajdEmptyState extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onExplore,
                     child: Text(
-                      kind == NajdEmptyKind.offline ? 'التحميلات' : 'العودة',
+                      exploreLabel ??
+                          (kind == NajdEmptyKind.offline
+                              ? 'التحميلات'
+                              : 'العودة'),
                     ),
                   ),
                 ),

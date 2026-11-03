@@ -51,9 +51,9 @@ test('source cache excludes another source numbering and returns only direct cur
 });
 test('a movie keeps its private playback row without exposing an episode zero or a series grid',async()=>{
  const store=memoryStore(),api=createSourceApi({store,worker:{wake:()=>{}}}),ref=workReference('3cktv:movie');
- store.works.set(ref,{ref,title:'فيلم',type:'movie',metadata:{type:'movie',title:'فيلم المصدر',overview:'وصف المصدر',catalog_metadata:{title:'فيلم',overview:'وصف TMDB'},seasons:[]}});
+ store.works.set(ref,{ref,title:'فيلم',type:'movie',metadata:{type:'movie',title:'فيلم المصدر',poster:'https://images.example/source.jpg',overview:'وصف المصدر',catalog_metadata:{title:'فيلم',overview:'وصف TMDB'},seasons:[]}});
  await store.putEpisodes([{work_ref:ref,provider:'3cktv',source_ref:'3cktv:movie',season:0,episode:0}]);
- const result=await api.sourceDetails(ref);assert.equal(result.episodes.length,0);assert.equal(result.season_number,0);assert.equal(result.overview,'وصف TMDB');assert.equal(result.observed_overview,'وصف المصدر');assert.equal(store.episodeRows.size,1);
+ const result=await api.sourceDetails(ref);assert.equal(result.episodes.length,0);assert.equal(result.season_number,0);assert.equal(result.overview,'وصف TMDB');assert.equal(result.observed_overview,'وصف المصدر');assert.equal(result.source_title,'فيلم المصدر');assert.equal(result.source_poster,'https://images.example/source.jpg');assert.equal(store.episodeRows.size,1);
 });
 
 test('interactive playback forces refresh through polling, promotes queued work and retries failed work with cooldown',async()=>{

@@ -84,7 +84,7 @@ void main() {
         home: DetailsPage(
             api: api, store: store, item: item, downloads: downloads)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('تنزيل داخل التطبيق'));
+    await tester.tap(find.byKey(const Key('title-download')));
     await tester.pumpAndSettle();
 
     expect(downloads.resumeKeys, <String>['movie-501:direct']);

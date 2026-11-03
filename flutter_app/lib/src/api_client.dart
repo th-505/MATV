@@ -347,7 +347,24 @@ class MitvApi implements MediaRepository {
     return {
       ...data,
       'ref': data['ref'] ?? ref,
-      'plot': data['overview'],
+      'year': data.containsKey('observed_year')
+          ? data['observed_year']
+          : data['year'],
+      'title':
+          (data['source_title'] is String &&
+              (data['source_title'] as String).trim().isNotEmpty)
+          ? data['source_title']
+          : data['title'],
+      'poster':
+          (data['source_poster'] is String &&
+              (data['source_poster'] as String).trim().isNotEmpty)
+          ? data['source_poster']
+          : data['poster'],
+      'plot':
+          (data['observed_overview'] is String &&
+              (data['observed_overview'] as String).trim().isNotEmpty)
+          ? data['observed_overview']
+          : data['overview'],
       'available_seasons': _list(data['seasons'])
           .map((row) => row['season_number'])
           .whereType<int>()
@@ -781,6 +798,50 @@ class MitvApi implements MediaRepository {
         })
         .where((item) => item.ref.isNotEmpty)
         .toList(growable: false);
+  }
+
+  /// Search independent providers concurrently, preserving each source reference.
+  Future<List<CatalogItem>> exploreParallel(
+    String query, {
+    Iterable<String>? providers,
+    int concurrency = 6,
+    bool Function()? isCurrent,
+    void Function(List<CatalogItem>)? onResults,
+  }) async {
+    final available = (providers ?? await explorationSources())
+        .where((p) => RegExp(r'^[a-z0-9][a-z0-9_-]{1,29}$').hasMatch(p))
+        .toSet()
+        .toList();
+    if (available.isEmpty) throw const ApiException('NO_SEARCH_PROVIDERS');
+    final merged = <String, CatalogItem>{};
+    var next = 0, failures = 0;
+    Future<void> worker() async {
+      while (next < available.length && (isCurrent?.call() ?? true)) {
+        final provider = available[next++];
+        try {
+          final result = await explore(query, provider);
+          if (!(isCurrent?.call() ?? true)) return;
+          for (final item in result) {
+            merged['${item.source}|${item.ref}'] = item;
+          }
+          if (result.isNotEmpty) {
+            onResults?.call(List.unmodifiable(merged.values));
+          }
+        } catch (_) {
+          failures++;
+        }
+      }
+    }
+
+    final count = available.length < concurrency.clamp(1, 6)
+        ? available.length
+        : concurrency.clamp(1, 6);
+    await Future.wait(List.generate(count, (_) => worker()));
+    if (!(isCurrent?.call() ?? true)) return const [];
+    if (failures == available.length) {
+      throw const ApiException('PROVIDER_SEARCH_UNAVAILABLE');
+    }
+    return List.unmodifiable(merged.values);
   }
 
   Future<bool> tmdbAvailable() async {
