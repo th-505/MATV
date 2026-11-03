@@ -1,0 +1,54 @@
+name: Publish existing iPhone build 109
+on:
+  push:
+    branches: ['build/publish-ios109']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Najd-TV-iPhone-Unsigned
+          path: ipa
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 41663004838
+      - name: Verify immutable existing IPA and source
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,plistlib,zipfile
+          from pathlib import Path
+          root=Path('ipa')
+          old=root/'Najd-TV-iPhone-Unsigned.ipa'
+          digest=hashlib.sha256(old.read_bytes()).hexdigest()
+          assert digest=='83f95c6e8f505e27d68522c9435dd5723bc0a9270321c056fde0446c15cd82c5'
+          manifest=json.loads((root/'source-manifest.json').read_text())
+          assert manifest['source_commit']=='64f2c8f840b106f3d9de22ae20e2a896c9a749b1'
+          assert manifest['build']==109
+          with zipfile.ZipFile(old) as archive:
+              assert archive.testzip() is None
+              info=plistlib.loads(archive.read('Payload/Runner.app/Info.plist'))
+              assert info['CFBundleVersion']=='109'
+              assert info['CFBundleIdentifier']=='com.mitv.mitv'
+              assert 'Payload/Runner.app/embedded.mobileprovision' not in archive.namelist()
+          new=root/'Najd-TV-iPhone-Build109-Unsigned.ipa'
+          old.rename(new)
+          (root/(new.name+'.sha256')).write_text(digest+'  '+new.name+'\n')
+          PY
+      - name: Publish standalone download without replacing stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/notes.md <<'NOTES'
+          Najd TV for iPhone — version 1.1.7, build 109.
+
+          Unsigned arm64 IPA for external signing, with the original Thmanyah font and updated native player/provider interface.
+          This is the exact file from successful GitHub Actions run 41663004838, verified by SHA-256 before publication.
+          Source: 64f2c8f840b106f3d9de22ae20e2a896c9a749b1. Physical iPhone playback has not been certified.
+          NOTES
+          gh release create v1.1.7-build109 --repo "$GITHUB_REPOSITORY" --target 64f2c8f840b106f3d9de22ae20e2a896c9a749b1 --title 'Najd TV iPhone — Build 109 (Unsigned)' --notes-file /tmp/notes.md --prerelease --latest=false ipa/Najd-TV-iPhone-Build109-Unsigned.ipa ipa/Najd-TV-iPhone-Build109-Unsigned.ipa.sha256 ipa/source-manifest.json
