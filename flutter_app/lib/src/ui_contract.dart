@@ -83,7 +83,7 @@ class NajdUi {
     Icons.language,
     Icons.search,
     Icons.live_tv,
-    Icons.favorite_outline,
+    Icons.bookmark_border,
     Icons.settings_outlined,
   ];
 }

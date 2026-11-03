@@ -1,3 +1,6 @@
+import 'najd_panels.dart';
+import 'stitch_design.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -149,8 +152,8 @@ class _NajdAccountPageState extends State<NajdAccountPage> {
         ),
         if (message.isNotEmpty)
           Padding(padding: const EdgeInsets.all(12), child: Text(message)),
-        const Divider(),
-        const NajdLinkPanel(),
+        const SizedBox(height: 20),
+        const NajdSurface(child: NajdLinkPanel()),
       ],
     ),
   );
@@ -318,27 +321,44 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Text('ربط نجد بنقرة', style: Theme.of(context).textTheme.titleLarge),
+      const NajdSectionHeading('ربط أجهزتك'),
       const Text(
         'شارك المفضلة وتقدم المشاهدة مع جهازك الآخر بعد الموافقة. يمكنك إلغاء الربط.',
       ),
-      DropdownButton<String>(
-        value: kind,
-        items: const [
-          DropdownMenuItem(
-            value: 'browser',
-            child: Text('نسختي في المتصفح — ربط مستمر'),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: OutlinedButton.icon(
+          icon: const Icon(Icons.devices_outlined),
+          label: Text(
+            kind == 'browser'
+                ? 'نسختي في المتصفح — ربط مستمر'
+                : 'جهاز آخر — أسبوع واحد',
           ),
-          DropdownMenuItem(
-            value: 'device',
-            child: Text('جهاز آخر — أسبوع واحد'),
-          ),
-        ],
-        onChanged: busy
-            ? null
-            : (value) {
-                if (value != null) setState(() => kind = value);
-              },
+          onPressed: busy
+              ? null
+              : () async {
+                  final value = await showNajdOptions<String>(
+                    context,
+                    title: 'نوع الربط',
+                    icon: Icons.devices_outlined,
+                    options: [
+                      NajdOption(
+                        'browser',
+                        'نسختي في المتصفح — ربط مستمر',
+                        selected: kind == 'browser',
+                        icon: Icons.web,
+                      ),
+                      NajdOption(
+                        'device',
+                        'جهاز آخر — أسبوع واحد',
+                        selected: kind == 'device',
+                        icon: Icons.devices_outlined,
+                      ),
+                    ],
+                  );
+                  if (mounted && value != null) setState(() => kind = value);
+                },
+        ),
       ),
       FilledButton.tonal(
         onPressed: busy ? null : create,

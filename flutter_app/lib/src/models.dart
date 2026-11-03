@@ -340,6 +340,7 @@ class TitleDetails {
     this.sourceIndexAuthoritative = false,
     this.sourceEdition = 'unknown',
     this.sourceProvider = '',
+    this.contentType = '',
     this.sourceWorkRef = '',
     this.episodeNextOffset,
   });
@@ -352,6 +353,7 @@ class TitleDetails {
   final String sourceEdition;
   final String sourceProvider;
   final String sourceWorkRef;
+  final String contentType;
   final int? episodeNextOffset;
   final String mediaPath;
   final String mediaType;
@@ -387,6 +389,7 @@ class TitleDetails {
     bool? sourceIndexAuthoritative,
     String? sourceEdition,
     String? sourceProvider,
+    String? contentType,
     String? sourceWorkRef,
     int? episodeNextOffset,
     bool clearEpisodePagination = false,
@@ -422,6 +425,7 @@ class TitleDetails {
         sourceIndexAuthoritative ?? this.sourceIndexAuthoritative,
     sourceEdition: sourceEdition ?? this.sourceEdition,
     sourceProvider: sourceProvider ?? this.sourceProvider,
+    contentType: contentType ?? this.contentType,
     sourceWorkRef: sourceWorkRef ?? this.sourceWorkRef,
     episodeNextOffset: clearEpisodePagination
         ? null
@@ -477,6 +481,7 @@ class TitleDetails {
       sourceIndexAuthoritative: json['source_index_authoritative'] == true,
       sourceEdition: '${json['source_edition'] ?? 'unknown'}',
       sourceProvider: '${json['provider'] ?? ''}',
+      contentType: '${json['type'] ?? ''}',
       sourceWorkRef:
           RegExp(r'^source:[a-z0-9][a-z0-9_-]{1,29}:[a-f0-9]{24}$')
               .hasMatch('${json['ref'] ?? ''}')

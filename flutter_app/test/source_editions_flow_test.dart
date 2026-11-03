@@ -311,10 +311,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.tap(find.byIcon(Icons.bookmark_border));
       await tester.pumpAndSettle();
       expect(store.isFavorite(item.ref), true);
-      expect(find.textContaining('حُفظت المفضلة محليًا'), findsOneWidget);
+      expect(find.text('أضيف إلى قائمتك'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },
   );

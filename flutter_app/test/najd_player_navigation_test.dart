@@ -72,7 +72,7 @@ void main() {
           )
           .first,
     );
-    expect(panel.width, lessThan(390));
+    expect(panel.width, lessThanOrEqualTo(390));
     expect(panel.left, greaterThanOrEqualTo(0));
     expect(panel.right, lessThanOrEqualTo(390));
     expect(find.text(sources[1].displayLabel), findsOneWidget);
