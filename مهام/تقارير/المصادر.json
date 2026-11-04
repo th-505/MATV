@@ -293,8 +293,8 @@
       "code": "BR",
       "mirror_of": null,
       "path": "server/scrapers/sites/brstej.mjs",
-      "metadata_line": 10,
-      "source_sha256": "008a495a7b8b42d9301defbad30704adc208712eeb6fed546676e9f95f9b1330",
+      "metadata_line": 11,
+      "source_sha256": "d59e561fc18af5e18f5fe3aa2efa8397c83076d787381e9c0c2c0c3921c2c826",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

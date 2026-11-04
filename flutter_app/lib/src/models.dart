@@ -1,3 +1,20 @@
+Map<String, String> _safePlaybackHeaders(Object? raw) {
+  if (raw is! Map) return const {};
+  const names = {
+    'referer': 'Referer',
+    'origin': 'Origin',
+    'user-agent': 'User-Agent',
+  };
+  return Map.unmodifiable({
+    for (final entry in raw.entries)
+      if (names.containsKey('${entry.key}'.toLowerCase()) &&
+          entry.value is String &&
+          (entry.value as String).length <= 8192 &&
+          !(entry.value as String).contains(RegExp(r'[\r\n]')))
+        names['${entry.key}'.toLowerCase()]!: entry.value as String,
+  });
+}
+
 double _safeRating(Object? value) {
   final parsed = value is num ? value.toDouble() : double.tryParse('$value');
   return parsed != null && parsed.isFinite ? parsed.clamp(0, 10).toDouble() : 0;
@@ -15,6 +32,7 @@ class MediaItem {
     this.year,
     this.rating = 0,
     this.source = 'mitv',
+    this.discoveryScope = 'najd',
     this.genres = const [],
     this.season,
     this.episode,
@@ -33,6 +51,7 @@ class MediaItem {
   final int? year;
   final double rating;
   final String source;
+  final String discoveryScope;
   final List<String> genres;
   final int? season;
   final int? episode;
@@ -52,6 +71,7 @@ class MediaItem {
     int? year,
     double? rating,
     String? source,
+    String? discoveryScope,
     List<String>? genres,
     int? season,
     int? episode,
@@ -70,6 +90,7 @@ class MediaItem {
     year: year ?? this.year,
     rating: rating ?? this.rating,
     source: source ?? this.source,
+    discoveryScope: discoveryScope ?? this.discoveryScope,
     genres: List.unmodifiable(genres ?? this.genres),
     season: season ?? this.season,
     episode: episode ?? this.episode,
@@ -92,6 +113,7 @@ class MediaItem {
     'year': year,
     'rating': rating,
     'source': source,
+    if (discoveryScope == 'beta') 'discovery_scope': discoveryScope,
     'genres': genres,
     if (season != null) 'season_number': season,
     if (episode != null) 'episode_number': episode,
@@ -112,6 +134,7 @@ class MediaItem {
     year: int.tryParse('${json['year'] ?? ''}'),
     rating: _safeRating(json['rating']),
     source: '${json['source'] ?? 'mitv'}',
+    discoveryScope: json['discovery_scope'] == 'beta' ? 'beta' : 'najd',
     genres: _descriptiveGenres(json),
     season: _positiveIdentityNumber(json['season_number'] ?? json['season']),
     episode: _positiveIdentityNumber(json['episode_number'] ?? json['episode']),
@@ -301,13 +324,7 @@ class StreamSource {
             : json['format'] ?? json['media_type'] ?? ''}',
     label: '${json['quality'] ?? json['label'] ?? 'تلقائي'}',
     playbackMode: '${json['playback_mode'] ?? ''}',
-    headers: Map.unmodifiable({
-      for (final key in ['Referer', 'User-Agent', 'Origin'])
-        if (json['headers'] is Map &&
-            json['headers'][key] is String &&
-            !(json['headers'][key] as String).contains(RegExp(r'[\r\n]')))
-          key: json['headers'][key] as String,
-    }),
+    headers: _safePlaybackHeaders(json['headers']),
   );
 }
 
@@ -344,6 +361,7 @@ class TitleDetails {
     this.sourceRefs = const {},
     this.availableSeasons = const [],
     this.sourceIndexAuthoritative = false,
+    this.sourceIndexPartial = false,
     this.sourceEdition = 'unknown',
     this.sourceProvider = '',
     this.contentType = '',
@@ -356,6 +374,7 @@ class TitleDetails {
   final List<EpisodeItem> episodes;
   final List<int> availableSeasons;
   final bool sourceIndexAuthoritative;
+  final bool sourceIndexPartial;
   final String sourceEdition;
   final String sourceProvider;
   final String sourceWorkRef;
@@ -394,6 +413,7 @@ class TitleDetails {
     List<EpisodeItem>? episodes,
     List<int>? availableSeasons,
     bool? sourceIndexAuthoritative,
+    bool? sourceIndexPartial,
     String? sourceEdition,
     String? sourceProvider,
     String? contentType,
@@ -431,6 +451,7 @@ class TitleDetails {
     poster: poster ?? this.poster,
     sourceIndexAuthoritative:
         sourceIndexAuthoritative ?? this.sourceIndexAuthoritative,
+    sourceIndexPartial: sourceIndexPartial ?? this.sourceIndexPartial,
     sourceEdition: sourceEdition ?? this.sourceEdition,
     sourceProvider: sourceProvider ?? this.sourceProvider,
     contentType: contentType ?? this.contentType,
@@ -491,6 +512,9 @@ class TitleDetails {
       sourceEdition: '${json['source_edition'] ?? 'unknown'}',
       sourceProvider: '${json['provider'] ?? ''}',
       contentType: '${json['type'] ?? ''}',
+      sourceIndexPartial:
+          json['browser_progress'] is Map &&
+          json['browser_progress']['partial'] == true,
       sourceWorkRef:
           RegExp(r'^source:[a-z0-9][a-z0-9_-]{1,29}:[a-f0-9]{24}$')
               .hasMatch('${json['ref'] ?? ''}')
@@ -534,14 +558,9 @@ class TitleDetails {
               ))
             key: json['resolver_headers'][key] as String,
       }),
-      playbackHeaders: Map.unmodifiable({
-        for (final key in const ['Referer', 'User-Agent', 'Origin'])
-          if ((json['headers'] ?? json['playback_headers']) is Map &&
-              (json['headers'] ?? json['playback_headers'])[key] is String &&
-              !((json['headers'] ?? json['playback_headers'])[key] as String)
-                  .contains(RegExp(r'[\r\n]')))
-            key: (json['headers'] ?? json['playback_headers'])[key] as String,
-      }),
+      playbackHeaders: _safePlaybackHeaders(
+        json['headers'] ?? json['playback_headers'],
+      ),
       expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       downloadAvailable: json['download_available'] != false,
       year: int.tryParse('${json['year'] ?? ''}'),

@@ -46,7 +46,7 @@ test('Arabic dashboard is usable on mobile, desktop and TV with a downloadable s
    await page.locator('#disconnect').click();assert.equal(await page.locator('#dashboard').isVisible(),false);assert.equal(await page.locator('#technical-data').innerText(),'');
    await context.close();
   }
-  assert(requests.filter(r=>r.authorization==='Bearer fixture-admin-key').every(r=>r.url==='/api/v1/admin/report'));
+  assert(requests.filter(r=>r.authorization==='Bearer fixture-admin-key').every(r=>['/api/v1/admin/report','/api/v1/admin/provider-config'].includes(r.url)));
   assert(requests.every(r=>!r.url.includes('fixture-admin-key')));
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });

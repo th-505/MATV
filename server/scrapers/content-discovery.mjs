@@ -1,3 +1,5 @@
+import {directCandidate} from './shared/direct-candidate.mjs';
+import {resolveProviderMedia} from './shared/provider-media.mjs';
 import {supportsContent} from './content-scope.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 import {mapSourceEpisodes} from '../harvest/episode-mapping.mjs';
@@ -40,15 +42,9 @@ export function selectEpisode(episodes, season, episode) {
     Number(ep.episode_number ?? ep.episodeNumber ?? ep.number) === Number(episode));
 }
 
-export function directCandidate(server) {
-  if (server?.kind === 'embed' || server?.type === 'embed' || server?.streamType === 'embed') return false;
-  try {
-    const u = new URL(server?.url || '');
-    return u.protocol === 'https:' && /\.(mp4|m3u8)$/i.test(u.pathname);
-  } catch { return false; }
-}
+export {directCandidate} from './shared/direct-candidate.mjs';
 
-export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 200 } = {}) {
+export function createContentDiscovery({ entries, concurrency = 20, maxQueued = 200 } = {}) {
   const queue = createConcurrencyQueue({ concurrency, maxQueued });
   async function runProvider(entry, title, season = 1, episode = 1, options = {}) {
     const { meta, module: provider } = entry || {};
@@ -82,9 +78,8 @@ export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 2
         observedEpisode = ep;
         details = await provider.scrapeDetails(epTarget, network);
       }
-      let servers=[...(Array.isArray(details?.servers)?details.servers:[]),...(Array.isArray(details?.media_sources)?details.media_sources:[])].filter(directCandidate);
-      if(!servers.length&&typeof provider.scrapeServers==='function')servers=(await provider.scrapeServers(observedEpisode?.url||observedEpisode?.ref||observedEpisode?.id||target,network)||[]).filter(directCandidate);
-      return servers.map((server, i) => ({
+      return resolveProviderMedia(entry,observedEpisode?.url||observedEpisode?.ref||observedEpisode?.id||target,{details,network,accept:async servers=>{
+        const mapped=servers.map((server, i) => ({
         ...server, provider: meta.id, code: `${meta.code || meta.id}-${i + 1}`,
         kind: 'direct', content_ref: options.ref || hit.ref || hit.id || target,
         season: episodic ? Number(season) : 0, episode: episodic ? Number(episode) : 0,
@@ -93,6 +88,8 @@ export function createContentDiscovery({ entries, concurrency = 6, maxQueued = 2
           episode: observedEpisode?.episode_number ?? observedEpisode?.episodeNumber ?? observedEpisode?.number ?? null },
         identity_basis: 'provider-title-year', identity_verified: false,
       }));
+        return options.acceptSources?await options.acceptSources(mapped):mapped;
+      }});
     });
   }
   async function discover(title, season = 1, episode = 1, options = {}) {

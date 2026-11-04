@@ -1043,6 +1043,10 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   Future<void> _providerCatalogue() async {
+    if (widget.api.providerBrowser) {
+      await _episodeMenu();
+      return;
+    }
     await _endBoost();
     if (!mounted) return;
     final returnRoute = ModalRoute.of(context);
@@ -1629,7 +1633,13 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
             if (_pipAvailable)
               ('pip', 'صورة داخل صورة', Icons.picture_in_picture_alt),
             if (!widget.isLive && widget.localFileUri == null)
-              ('providers', 'المزودون والحلقات', Icons.travel_explore),
+              (
+                'providers',
+                widget.api.providerBrowser
+                    ? 'حلقات هذا الموقع'
+                    : 'المزودون والحلقات',
+                Icons.travel_explore,
+              ),
             if (controller.extendedPlayer?.state.tracks.video
                     .where((t) => t.id != 'no')
                     .length

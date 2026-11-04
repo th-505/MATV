@@ -1,3 +1,4 @@
+import 'src/service_checks_page.dart';
 import 'src/playback_resume.dart';
 import 'src/app_preferences.dart';
 import 'src/provider_browser_page.dart';
@@ -124,12 +125,19 @@ void openDetails(
   LocalLibraryStore store,
   CatalogItem item,
 ) {
-  api.rememberIdentity(item);
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => DetailsPage(api: api, store: store, item: item),
-    ),
-  );
+  final scopedApi = item.discoveryScope == 'beta' && !api.providerBrowser
+      ? api.browserSession(origin: item)
+      : api;
+  scopedApi.rememberIdentity(item);
+  Navigator.of(context)
+      .push(
+        MaterialPageRoute(
+          builder: (_) => DetailsPage(api: scopedApi, store: store, item: item),
+        ),
+      )
+      .whenComplete(() {
+        if (!identical(scopedApi, api)) scopedApi.close();
+      });
 }
 
 void openHistoryEntry(
@@ -138,21 +146,29 @@ void openHistoryEntry(
   LocalLibraryStore store,
   WatchEntry entry,
 ) {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => PlayerPage(
-        api: api,
-        store: store,
-        item: entry.catalogItem,
-        title: entry.title,
-        sourceRef: historyPlaybackReference(entry),
-        episodeId: entry.episodeId,
-        episodeNumber: entry.episodeNumber,
-        watchEntry: entry,
-        initialPosition: entry.progress >= .95 ? Duration.zero : null,
-      ),
-    ),
-  );
+  final scopedApi =
+      entry.catalogItem.discoveryScope == 'beta' && !api.providerBrowser
+      ? api.browserSession(origin: entry.catalogItem)
+      : api;
+  Navigator.of(context)
+      .push(
+        MaterialPageRoute(
+          builder: (_) => PlayerPage(
+            api: scopedApi,
+            store: store,
+            item: entry.catalogItem,
+            title: entry.title,
+            sourceRef: historyPlaybackReference(entry),
+            episodeId: entry.episodeId,
+            episodeNumber: entry.episodeNumber,
+            watchEntry: entry,
+            initialPosition: entry.progress >= .95 ? Duration.zero : null,
+          ),
+        ),
+      )
+      .whenComplete(() {
+        if (!identical(scopedApi, api)) scopedApi.close();
+      });
 }
 
 class _NajdMark extends StatelessWidget {
@@ -1064,6 +1080,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: EdgeInsets.only(bottom: 18),
                 child: Text('خصص تجربة المشاهدة واحفظ تفضيلاتك على هذا الجهاز'),
               ),
+              ListTile(
+                leading: const Icon(Icons.fact_check_outlined),
+                title: const Text('فحص الخدمات والقواشط'),
+                subtitle: const Text('نجد · بيتا · TMDB · الترجمة · المزامنة'),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ServiceChecksPage(api: widget.api, store: widget.store),
+                  ),
+                ),
+              ),
               const NajdSurface(child: _NajdAppearanceOptions()),
               const _PlaybackPreferencesPanel(),
               FocusHighlight(
@@ -1087,13 +1114,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   MaterialPageRoute(builder: (_) => const NajdAccountPage()),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.aspect_ratio),
-                title: const Text('قياسات الشاشة الحالية'),
-                subtitle: Text(
-                  '${MediaQuery.sizeOf(context).width.round()} × ${MediaQuery.sizeOf(context).height.round()} · كثافة ${MediaQuery.devicePixelRatioOf(context).toStringAsFixed(2)}\nحدود آمنة: ${MediaQuery.viewPaddingOf(context)}',
+              if (const bool.fromEnvironment('NAJD_DEVELOPER_DIAGNOSTICS'))
+                ListTile(
+                  leading: const Icon(Icons.aspect_ratio),
+                  title: const Text('قياسات الشاشة الحالية'),
+                  subtitle: Text(
+                    '${MediaQuery.sizeOf(context).width.round()} × ${MediaQuery.sizeOf(context).height.round()} · كثافة ${MediaQuery.devicePixelRatioOf(context).toStringAsFixed(2)}\nحدود آمنة: ${MediaQuery.viewPaddingOf(context)}',
+                  ),
                 ),
-              ),
 
               const NajdSurface(child: NajdFontAddonControl()),
               if (isTvTarget && widget.pointer != null)

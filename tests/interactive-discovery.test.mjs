@@ -87,10 +87,60 @@ test('real harvest store posts lane, legacy and identity RPC bodies without quer
   calls.push({path:url.pathname,query:url.search,method:options.method,body:JSON.parse(options.body)});
   return new Response('[]',{status:200});
  }});
- await store.claim('worker-id',2);await store.claimLane('worker-id',20,'search');await store.sourceIndexIdentities(['source:one:test']);
+ await store.claim('worker-id',2);await store.claimLane('worker-id',20,'search');await store.claimKnown('worker-id',20,'search',['job-1']);await store.sourceIndexIdentities(['source:one:test']);
  assert.deepEqual(calls,[
   {path:'/rest/v1/rpc/najd_claim_jobs',query:'',method:'POST',body:{p_worker:'worker-id',p_limit:2}},
   {path:'/rest/v1/rpc/najd_claim_jobs_lane',query:'',method:'POST',body:{p_worker:'worker-id',p_limit:20,p_lane:'search'}},
+  {path:'/rest/v1/rpc/najd_claim_known_jobs',query:'',method:'POST',body:{p_worker:'worker-id',p_limit:20,p_lane:'search',p_keys:['job-1']}},
   {path:'/rest/v1/rpc/najd_source_index_identities',query:'',method:'POST',body:{p_refs:['source:one:test']}}
  ]);
+});
+
+
+test('persisted enqueue notifications give the worker exact durable keys for twenty parallel searches',async()=>{
+ let notify;let claimedKeys=[],started=0;const release=[];
+ const store={onQueued:fn=>{notify=fn},claimLane:async()=>[],claimKnown:async(w,n,lane,keys)=>{
+  assert.equal(lane,'search');assert.equal(n,20);claimedKeys=keys;return keys.map(job_key=>({job_key,stage:'provider'}));
+ },heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{provider:()=>{started++;return new Promise(r=>release.push(r))}},pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));
+ for(let i=0;i<20;i++)notify({job_key:'durable-'+i,stage:'provider',payload:{phase:'search'}});
+ await new Promise(r=>setImmediate(r));assert.equal(claimedKeys.length,20);assert.equal(started,20);
+ for(const r of release)r({});await worker.stop();
+});
+
+test('the store only announces durable keys after a successful enqueue RPC',async()=>{
+ const rows=[{job_key:'one',stage:'provider',payload:{phase:'search'}}];let reject=true,announced=[];
+ const store=createHarvestStore({url:'https://fixture.supabase.co/',key:'sb_secret_fixture',fetchImpl:async()=>new Response(reject?'{}':'[]',{status:reject?503:200})});
+ store.onQueued(row=>announced.push(row.job_key));
+ await assert.rejects(store.enqueueMany(rows));assert.deepEqual(announced,[]);
+ reject=false;await store.enqueueMany(rows);assert.deepEqual(announced,['one']);
+});
+
+
+test('a missing keyed RPC retains twenty-slot lane claims without enabling the old two-slot worker',async()=>{
+ let lanes=0;const store={claimKnown:async()=>{throw Error('HARVEST_DB_HTTP_404')},claimLane:async()=>{lanes++;return[]},heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{},pollMs:60000});
+ worker.wake({jobs:[{job_key:'known-work',stage:'work'}]});await new Promise(r=>setImmediate(r));
+ assert(lanes>=3);assert.equal(worker.metrics().concurrency,26);await worker.stop();
+});
+
+test('database failures back off despite repeated interactive wakes and recover after the deadline',async()=>{
+ let clock=1000,calls=0,fail=true;
+ const store={claimLane:async()=>{calls++;if(fail)throw Error('HARVEST_DB_HTTP_503');return[]}};
+ const worker=createHarvestWorker({store,handlers:{},now:()=>clock,pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ for(let i=0;i<10;i++)worker.wake();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ clock+=5001;fail=false;worker.wake();await new Promise(r=>setImmediate(r));assert.equal(calls,6);
+ await worker.stop();
+});
+
+test('successful task completion does not immediately rescan every durable backlog lane',async()=>{
+ let notify,calls=0,clock=1000;
+ const store={onQueued:fn=>{notify=fn},claimLane:async()=>{calls++;return[]},claimKnown:async(w,n,lane,keys)=>keys.map(job_key=>({job_key,stage:'provider'})),complete:async()=>{},fail:async()=>{},heartbeat:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{provider:async()=>({})},now:()=>clock,pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ notify({job_key:'interactive',stage:'provider',payload:{phase:'search'}});
+ await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ await worker.stop();
 });

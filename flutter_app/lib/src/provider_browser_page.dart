@@ -28,6 +28,7 @@ class ProviderBrowserPage extends StatefulWidget {
 
 class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
   final _query = TextEditingController();
+  late final MitvApi _browserApi;
   List<Map<String, dynamic>> _sources = [];
   List<CatalogItem> _items = [];
   String? _provider, _error;
@@ -38,6 +39,7 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
   @override
   void initState() {
     super.initState();
+    _browserApi = widget.api.browserSession();
     _loadSources();
   }
 
@@ -45,6 +47,7 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
   void dispose() {
     ++_generation;
     _query.dispose();
+    _browserApi.close();
     super.dispose();
   }
 
@@ -54,7 +57,7 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
       _error = null;
     });
     try {
-      final sources = await widget.api.browserSources();
+      final sources = await _browserApi.browserSources();
       final prefs = await SharedPreferences.getInstance();
       Map saved = const {};
       try {
@@ -123,8 +126,8 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
     try {
       final query = _query.text.trim();
       final result = query.isNotEmpty
-          ? (items: await widget.api.explore(query, provider), hasMore: false)
-          : await widget.api.browserCatalog(provider, _category, page);
+          ? (items: await _browserApi.explore(query, provider), hasMore: false)
+          : await _browserApi.browserCatalog(provider, _category, page);
       if (!mounted || request != _generation) return;
       setState(() {
         final previousCount = _items.length;
@@ -283,7 +286,7 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailsPage(
-                            api: widget.api,
+                            api: _browserApi,
                             store: widget.store,
                             item: _items[index],
                           ),

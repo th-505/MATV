@@ -26,9 +26,12 @@ export function searchTraceEvent(stage, data = {}) {
 }
 export function hasSearchTrace() { return Boolean(context.getStore()); }
 export function diagnosticsAuthorized(req, token = process.env.DIAGNOSTICS_TOKEN || '') {
-  if (token.length < 24) return false;
   const supplied = String(req.headers.authorization || '').replace(/^Bearer /, '');
-  return timingSafeEqual(createHash('sha256').update(token).digest(), createHash('sha256').update(supplied).digest());
+  if (!supplied || supplied.length > 512) return false;
+  const actual=createHash('sha256').update(supplied).digest();
+  const passwordHash=process.env.NAJD_DASHBOARD_PASSWORD_HASH||'';
+  if (/^[a-f0-9]{64}$/.test(passwordHash)&&timingSafeEqual(Buffer.from(passwordHash,'hex'),actual)) return true;
+  return token.length>=24&&timingSafeEqual(createHash('sha256').update(token).digest(),actual);
 }
 export function createSearchTraces({ maxEntries = 400, ttlMs = 3600000, now = Date.now, logger = () => {} } = {}) {
   const records = new Map();

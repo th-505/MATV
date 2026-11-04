@@ -1,3 +1,10 @@
+import {createOptionalCacheReader} from './optional-cache.mjs';
+import {createBrowserConfiguration} from './browser/configuration.mjs';
+import {browserConfigs} from './browser/traffic.mjs';
+import {createServiceChecks} from './diagnostics/service-checks.mjs';
+import {createHarvestStore} from './harvest/store.mjs';
+import {createBrowserWorkService} from './browser/service.mjs';
+import {runInBrowserLane} from './browser/traffic.mjs';
 import {sourceManifest} from './scrapers/source-manifest.mjs';
 import { createProviderBrowser } from './scrapers/provider-browser.mjs';
 const providerBrowser = createProviderBrowser();
@@ -15,7 +22,7 @@ import { createSearchTraces, diagnosticsAuthorized } from './diagnostics/search-
 import { diagnosticsHtml, diagnosticsJs } from './diagnostics/dashboard.mjs';
 import { BROWSE_SECTIONS, browseCatalog } from './catalog-browser.mjs';
 import { createPinnedPlayback } from './pinned-playback.mjs';
-import { getProvider } from './scrapers/registry.mjs';
+import { PROVIDERS_MAP,listIndependentProviders,getProvider } from './scrapers/registry.mjs';
 import { createTmdbRuntime } from './tmdb-runtime.mjs';
 import { createMediaAuditor } from './media-audit.mjs';
 import { listSourceCapabilities } from './scrapers/source-registry.mjs';
@@ -507,7 +514,7 @@ export function assertCatalogReference(ref) {
 export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = createAlooyProvider(), larozaRuntime = createLarozaProvider(),
   traceStore=createSearchTraces({logger:data=>log(data.event,data)}), searchPinned=scrapePinnedSource,
   catalogStore=createSupabaseCatalogStore(), catalogNow=Date.now,
-  catalogLoader=null, harvestService=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
+  catalogLoader=null, harvestService=null, browserWorkService=null, browserConfigurationService=null, systemCheckService=null, runtimeService = createIntegratedContentRuntime(iskRuntime, { alooyRuntime, larozaRuntime }) } = {}) {
   const catalog=createCatalogMetadataCache({store:catalogStore,now:catalogNow,validateRef:assertCatalogReference,
     load:catalogLoader || (async(provider,ref)=>{
       if(provider==='laroza') return larozaRuntime.metadata(ref);
@@ -542,22 +549,23 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
   }) });
   const harvest=harvestService||createHarvestService({metadata:discoveryMetadata,logger:data=>log(data.event,data)});
   const feedbackSeen=new Map();
+  const optionalCache=createOptionalCacheReader();
   const discovery = createDiscoveryCoordinator({
-    load: async key => discoveryStore?.get('audited-v2:' + key) || null,
+    load: async key => optionalCache('job:'+key,()=>discoveryStore?.get('audited-v2:' + key)) || null,
     persist: async ({key,result,expiresAt}) => discoveryStore?.put('audited-v2:' + key,result,expiresAt),
     maxConcurrent: 3, maxQueued: 40, ttlMs: 60_000,
     discover: async ({ ref, season, episode, refresh }, publish) => {
-      const stored=refresh?null:await readCachedPlayback(harvest,{ref,season:season||1,episode:episode||1});
+      const stored=refresh?null:await optionalCache('verified:'+ref+':'+season+':'+episode,()=>readCachedPlayback(harvest,{ref,season:season||1,episode:episode||1}));
       if(stored)return stored;
       // The canonical TMDB identity is authoritative, never caller-supplied title/year.
-      const metadata=(await harvest.cachedWork(ref) || await discoveryMetadata.details(ref)).data;
+      const metadata=(await optionalCache('work:'+ref,()=>harvest.cachedWork(ref)) || await discoveryMetadata.details(ref)).data;
       const series=ref.startsWith('tmdb:tv:');
       if(series){
-        const episodes=(await harvest.cachedSeason(ref,season||1) || await discoveryMetadata.season(ref,season || 1)).data?.episodes || [];
+        const episodes=(await optionalCache('season:'+ref+':'+season,()=>harvest.cachedSeason(ref,season||1)) || await discoveryMetadata.season(ref,season || 1)).data?.episodes || [];
         if(!episodes.some(row=>Number(row.episode_number)===Number(episode || 1)))throw Error('EPISODE_NOT_FOUND');
       }
       const expected={title:metadata.title,aliases:[metadata.original_title,...(metadata.aliases||[])],year:metadata.year,season:series?season || 1:null,episode:series?episode || 1:null};
-      const cachedMedia=refresh?null:await harvest.media(ref,{season:series?season||1:0,episode:series?episode||1:0});
+      const cachedMedia=refresh?null:await optionalCache('media:'+ref+':'+season+':'+episode,()=>harvest.media(ref,{season:series?season||1:0,episode:series?episode||1:0}));
       if(cachedMedia?.length){
         // Cache stores evidence, not a permanent trust decision: re-probe and audit before release.
         const reviewed=await discoveryAudit.review(cachedMedia,expected);
@@ -566,7 +574,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       const approved=[],seen=new Set();let rejected=0;
       await activateAllScrapersForContent(metadata.title, season || 1, episode || 1, {
         ref,year:metadata.year,type:series?'series':'movie',canonicalSeasons:metadata.seasons||[],original_language:metadata.original_language,genres:metadata.genres,titleVariants:[metadata.original_title,...(metadata.aliases||[])],
-        onSources:async candidates=>{
+        acceptSources:async candidates=>{
           const reviewed=await discoveryAudit.review(candidates,expected);
           rejected+=reviewed.quarantine.length;
           for(const source of reviewed.approved){
@@ -576,11 +584,16 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
               headers:source.headers || {},identity_verified:source.identity_verified,verification_basis:source.verification_basis,audit_pending:source.audit_pending});
           }
           if(approved.length)publish({servers:[...approved],reason:null});
+          return reviewed.approved;
         },
       });
       return {servers:approved,reason:approved.length?null:rejected?'IDENTITY_NOT_VERIFIED':'NO_PLAYABLE_SOURCE'};
     },
   });
+  const browserConfiguration=browserConfigurationService||createBrowserConfiguration();
+  const browserWorks=browserWorkService||createBrowserWorkService();
+  const checkStore=createHarvestStore();
+  const serviceChecks=systemCheckService||createServiceChecks({tmdb:discoveryMetadata,database:checkStore?()=>checkStore.request('najd_provider_registry',{select:'provider',limit:1}):null});
   const maintenanceIdentity=createGithubIdentityVerifier();
   const internalWeb=createInternalWeb();
   const server = http.createServer(async (req, res) => {
@@ -598,12 +611,31 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     }
     res.setHeader("X-RateLimit-Remaining", String(rate.remaining));
     try {
+      if(url.pathname==='/api/v1/system/check'){
+        try{const id=url.searchParams.get('id');if((id&&req.method!=='GET')||(!id&&req.method!=='POST'))return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});return sendJson(req,res,200,{status:'success',data:id?serviceChecks.status(id):serviceChecks.start(url.searchParams.get('scope')||'all')});}
+        catch(error){return sendJson(req,res,429,{message:/^[A-Z_]+$/.test(error.message)?error.message:'CHECK_UNAVAILABLE'});}
+      }
       if(url.pathname==='/api/v1/providers/configuration'){
         if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
         return sendJson(req,res,200,{providers:listSourceCapabilities().map(source=>{
           const c=getProviderConfig(source.id);const {enabled=true,revision=0,...config}=c||{};
           return {id:source.id,revision,enabled,domain:source.domain,config};
         })});
+      }
+      if(url.pathname==='/api/v1/admin/provider-config'){
+        if(!diagnosticsAuthorized(req))return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
+        if(req.method==='GET')return sendJson(req,res,200,{providers:listIndependentProviders().map(p=>{
+          const config=getProviderConfig(p.id),beta=browserConfigs().find(r=>r.provider===p.id);
+          return{id:p.id,name:p.name,najd:{domain:config?.primary_domain||p.domains[0],revision:config?.revision||0},beta:{domain:beta?.config?.primary_domain||PROVIDERS_MAP.get(p.id)?.meta.domains[0]||p.domains[0],revision:beta?.revision||0}};
+        }),beta_cloud:browserConfiguration.status().cloud_available});
+        if(req.method!=='POST')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        let raw='';for await(const chunk of req){raw+=chunk.toString();if(Buffer.byteLength(raw)>8192)return sendJson(req,res,413,{message:'BODY_TOO_LARGE'});}
+        try{const body=JSON.parse(raw);if(!['beta','najd'].includes(body.scope)||!getProvider(body.provider))throw Error('INVALID_CONFIG_SCOPE');
+          let result;
+          if(body.scope==='beta')result=await browserConfiguration.set(body.provider,body.config,body.revision);
+          else{const{revision,enabled,...current}=getProviderConfig(body.provider)||{};result=await harvest.setConfig(body.provider,{...current,...body.config});}
+          return sendJson(req,res,200,result);
+        }catch(error){return sendJson(req,res,422,{message:/^[A-Z_]+$/.test(error.message)?error.message:'CONFIG_NOT_APPLIED'});}
       }
       if(url.pathname==='/api/v1/maintenance/provider-config'){
         if(req.method!=='POST')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
@@ -704,7 +736,29 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           return sendJson(req,res,400,{status:'error',message:/^PINNED_[A-Z_]+$/.test(message)?message:'PINNED_SOURCE_UNAVAILABLE'});
         }
       }
+      if(['/api/v1/browser/request','/api/v1/browser/status','/api/v1/browser/work','/api/v1/browser/playback','/api/v1/browser/search'].includes(url.pathname)){
+        const action=url.pathname.split('/').pop();
+        if(req.method!==(action==='request'?'POST':'GET'))return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        try{
+          const ref=url.searchParams.get('ref')||'';
+          let data;
+          if(action==='search'){
+            const provider=url.searchParams.get('provider'),query=url.searchParams.get('q')||'',page=Number(url.searchParams.get('page')||1);
+            const entry=runInBrowserLane(()=>getProvider(provider));if(!entry||runInBrowserLane(()=>entry.meta.enabled===false)||entry.meta.mirrorOf||!entry.module.scrapeSearch)throw Error('BROWSER_PROVIDER_UNAVAILABLE');
+            if(query.length<2||query.length>120||!Number.isSafeInteger(page)||page<1||page>500)throw Error('BROWSER_BAD_QUERY');
+            const items=await runInBrowserLane(()=>entry.module.scrapeSearch(query,page,{strict:true,allowHttp:false,timeoutMs:6500,maxRetries:0}));
+            if(items?._meta?.errorCode&&items._meta.errorCode!=='EMPTY_RESULT')throw Object.assign(Error('BROWSER_SOURCE_UNAVAILABLE'),{code:items._meta.errorCode});
+            return sendJson(req,res,200,{status:'success',items:(Array.isArray(items)?items:items?.items||[]).map(row=>({...row,rating:Number.isFinite(Number(row.rating))?Number(row.rating):0})),pagination:items?._meta||{}});
+          }
+          if(action==='request')data=await browserWorks.request(ref,{reason:url.searchParams.get('reason')||'card_open'});
+          if(action==='status')data=await browserWorks.status(ref);
+          if(action==='work')data=await browserWorks.details(ref,{season:Number(url.searchParams.get('season')||1),offset:Number(url.searchParams.get('offset')||0)});
+          if(action==='playback')data=await browserWorks.playback(ref,{season:Number(url.searchParams.get('season')||0),episode:Number(url.searchParams.get('episode')||0),platform:url.searchParams.get('platform')==='web'?'web':'native',refresh:url.searchParams.get('refresh')==='1',origin:url.searchParams.get('origin')||''});
+          return sendJson(req,res,200,{status:'success',data});
+        }catch(error){const code=/^[A-Z][A-Z0-9_]{2,79}$/.test(error.code||error.message)?error.code||error.message:'BROWSER_SOURCE_UNAVAILABLE';return sendJson(req,res,503,{message:code});}
+      }
       if (url.pathname === '/api/v1/browser/sources') {
+        await browserConfiguration.refresh();
         if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
         return sendJson(req,res,200,{status:'success',data:providerBrowser.sources()});
       }
@@ -928,6 +982,6 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
   server.searchTraceStore = traceStore;
   server.harvestService=harvest;
   if(process.env.NODE_ENV!=='test')server.once('listening',()=>harvest.start());
-  server.once('close',()=>void harvest.stop());
+  server.once('close',()=>{browserConfiguration.close?.();void harvest.stop()});
   return server;
 }

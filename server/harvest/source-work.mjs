@@ -38,7 +38,7 @@ export function createSourceWorkHandler({store,entries,now,fetchPage,job}){
   const cycle=input.started_at||input.payload.cycle||stamp;
   // Persist the full source index; direct video is resolved on explicit playback demand.
   // Thousands of unsolicited episode jobs must never delay interactive discovery.
-  for(const next of index.pages)await store.enqueueMany([job(workRef,id,'provider','source-page:'+next,{...input.payload,phase:'source_page',catalog_started_at:indexStarted,source_work_ref:workRef,url:next,source_ref:original,cycle,seen_fingerprints:[...(input.payload.seen_fingerprints||[]),index.page_fingerprint].slice(-32)},details.title)]);
+  for(const next of [...index.parents,...index.pages])await store.enqueueMany([job(workRef,id,'provider','source-page:'+next,{...input.payload,phase:'source_page',catalog_started_at:indexStarted,source_work_ref:workRef,url:next,source_ref:original,cycle,seen_fingerprints:[...(input.payload.seen_fingerprints||[]),index.page_fingerprint].slice(-32)},details.title)]);
   await store.event({work_ref:workRef,provider:id,stage:'catalog',outcome:rows.length?'source_indexed':'no_observed_episodes',reason:null,details:{edition:analysis.edition,source_seasons:sourceSeasons,observed_references:rows.length,pending_pages:index.pages.length,canonical_identity_verified:false}});
   return {progress:{outcome:'source_indexed',edition:analysis.edition,observed_episodes:rows.length,source_work_ref:workRef}};
  };
