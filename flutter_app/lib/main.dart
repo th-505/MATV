@@ -413,7 +413,7 @@ class _ShellState extends State<Shell> {
                         focusNode: _navFocus[i],
                         minTileHeight: isTvTarget ? 64 : 48,
                         leading: const Icon(Icons.science_outlined),
-                        title: const Text('تصفح المزود — بيتا 1'),
+                        title: const Text('تصفح المزود — تجريبي'),
                         subtitle: const Text('ميزة تحت التجربة'),
                         onTap: () {
                           if (drawer) _closeNavigation();
@@ -1240,7 +1240,7 @@ class _ProviderBetaPreferencesPanel extends StatelessWidget {
             SwitchListTile.adaptive(
               key: const Key('setting-provider-beta'),
               contentPadding: EdgeInsets.zero,
-              title: const Text('تصفح المزود — بيتا 1'),
+              title: const Text('تصفح المزود — تجريبي'),
               subtitle: const Text(
                 'افتح فهرس موقع مختار من القائمة الجانبية، مستقلاً عن التصفح المعتاد',
               ),

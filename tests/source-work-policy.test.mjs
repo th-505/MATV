@@ -25,7 +25,8 @@ test('the actual source 55+42 index stays 55+42 without a fabricated canonical y
  const p=createHarvestPipeline({store,metadata:{details:()=>{throw Error('TMDB_MUST_NOT_BE_REQUESTED')}},entries:[entry],fetchPage:async()=>({html})});const ref=workReference(original);
  await p.work({content_ref:ref,payload:{source_ref:original}});const work=store.works.get(ref);
  assert.equal(work.tmdb_id,null);assert.equal(work.metadata.year,null);assert.deepEqual(work.metadata.seasons.map(s=>s.episode_count),[55,42]);assert.equal(work.metadata.number_of_episodes,97);assert.equal(work.metadata.runtime_minutes,140);assert.equal(work.metadata.source_index_authoritative,true);assert.equal(work.metadata.canonical_identity_verified,false);
- assert.equal([...store.jobs.values()].filter(j=>j.stage==='episode').length,97);
+ assert.equal(store.episodeRows.size,97);
+ assert.equal([...store.jobs.values()].filter(j=>j.stage==='episode').length,0,'source index does not enqueue unsolicited media');
  assert.equal([...store.episodeRows.values()].filter(e=>e.season===2).length,42);
 });
 test('a dubbed fifth-part gap is detected and another provider cannot merge its edition',async()=>{

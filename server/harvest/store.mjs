@@ -8,7 +8,7 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
  if(key.startsWith('sb_publishable_'))throw Error('SUPABASE_SERVER_KEY_REQUIRED');
  const headers={apikey:key,'Content-Type':'application/json',...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key})};
  async function request(table,params={},method='GET',body,prefer='return=representation'){
-  if(!TABLES.has(table)&&!['rpc/najd_claim_jobs','rpc/najd_hourly_refresh','rpc/najd_upsert_episodes','rpc/najd_enqueue_jobs','rpc/najd_apply_provider_config','rpc/najd_harvest_counts'].includes(table))throw Error('HARVEST_TABLE_REJECTED');
+  if(!TABLES.has(table)&&!['rpc/najd_claim_jobs','rpc/najd_claim_jobs_lane','rpc/najd_source_index_identities','rpc/najd_hourly_refresh','rpc/najd_upsert_episodes','rpc/najd_enqueue_jobs','rpc/najd_apply_provider_config','rpc/najd_harvest_counts'].includes(table))throw Error('HARVEST_TABLE_REJECTED');
   const target=new URL('/rest/v1/'+table,base);for(const[k,v]of Object.entries(params))if(v!==undefined&&v!==null)target.searchParams.set(k,String(v));
   const r=await fetchImpl(target,{method,redirect:'error',signal:AbortSignal.timeout(8000),headers:{...headers,Prefer:prefer},...(body===undefined?{}:{body:JSON.stringify(body)})});
   if(!r.ok){await r.body?.cancel();throw Error('HARVEST_DB_HTTP_'+r.status)}
@@ -26,7 +26,9 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
  const upsert=(table,conflict,row)=>request(table,{on_conflict:conflict},'POST',row,'resolution=merge-duplicates,return=representation');
  return {
   request,ensureProviderRegistry,
-  claim:(worker,limit)=>request('rpc/najd_claim_jobs',{},'POST',{p_worker:worker,p_limit:limit}),
+  claim:(worker,limit)=>request('rpc/najd_claim_jobs','rpc/najd_claim_jobs_lane','rpc/najd_source_index_identities',{},'POST',{p_worker:worker,p_limit:limit}),
+  sourceIndexIdentities:refs=>request('rpc/najd_source_index_identities',{},'POST',{p_refs:refs.slice(0,1000)}),
+  claimLane:(worker,limit,lane)=>request('rpc/najd_claim_jobs_lane','rpc/najd_source_index_identities',{},'POST',{p_worker:worker,p_limit:limit,p_lane:lane}),
   heartbeat:(key,worker)=>request('matv_discovery_jobs',{job_key:'eq.'+key,worker_id:'eq.'+worker,status:'eq.running'},'PATCH',{lease_until:new Date(Date.now()+90000).toISOString()}),
   async complete(job,worker,result={}){
    const now=Date.now();return request('matv_discovery_jobs',{job_key:'eq.'+job.job_key,worker_id:'eq.'+worker,status:'eq.running'},'PATCH',{

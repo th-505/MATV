@@ -28,7 +28,7 @@ class MitvApi implements MediaRepository {
     Uri? edgeUri,
     bool? useEdge,
     this.sourcePlaybackTimeout = const Duration(seconds: 90),
-    this.sourceIndexTimeout = const Duration(seconds: 20),
+    this.sourceIndexTimeout = const Duration(seconds: 90),
     this.sourcePollInterval = const Duration(milliseconds: 1500),
   }) : _client = client ?? http.Client(),
        _useEdge = useEdge ?? (edgeUri != null || client == null),
@@ -855,7 +855,7 @@ class MitvApi implements MediaRepository {
   Future<List<CatalogItem>> exploreParallel(
     String query, {
     Iterable<String>? providers,
-    int concurrency = 6,
+    int concurrency = 20,
     bool Function()? isCurrent,
     void Function(List<CatalogItem>)? onResults,
   }) async {
@@ -884,9 +884,9 @@ class MitvApi implements MediaRepository {
       }
     }
 
-    final count = available.length < concurrency.clamp(1, 6)
+    final count = available.length < concurrency.clamp(1, 20)
         ? available.length
-        : concurrency.clamp(1, 6);
+        : concurrency.clamp(1, 20);
     await Future.wait(List.generate(count, (_) => worker()));
     if (!(isCurrent?.call() ?? true)) return const [];
     if (failures == available.length) {
@@ -1583,7 +1583,11 @@ class MitvApi implements MediaRepository {
       if (response.bodyBytes.length <= 128 * 1024) {
         try {
           final error = jsonDecode(response.body);
-          final code = error is Map ? error['message'] : null;
+          final code = error is Map
+              ? (path == '/api/v1/browser/catalog' && error['reason'] is String
+                    ? error['reason']
+                    : error['message'])
+              : null;
           if (code is String &&
               RegExp(r'^[A-Z][A-Z0-9_]{1,79}$').hasMatch(code)) {
             throw ApiException(code);

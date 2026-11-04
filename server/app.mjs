@@ -717,7 +717,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           return sendJson(req,res,200,await providerBrowser.catalog(provider, category, page));
         } catch (error) {
           const invalid = /^BROWSER_(?:BAD_PAGE|BAD_CATEGORY|PROVIDER_UNAVAILABLE)$/.test(error.message);
-          return sendJson(req,res,invalid ? 400 : 503,{status:'error',message: invalid ? error.message : 'BROWSER_SOURCE_UNAVAILABLE'});
+          return sendJson(req,res,invalid ? 400 : 503,{status:'error',message: invalid ? error.message : 'BROWSER_SOURCE_UNAVAILABLE',reason:/^[A-Z][A-Z0-9_]{2,79}$/.test(error.code||'')?error.code:'SOURCE_UNAVAILABLE'});
         }
       }
       if (url.pathname === '/api/v1/sources') {

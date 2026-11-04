@@ -59,7 +59,7 @@ const allSearch = createMultiSourceSearch({ search: async (query, provider) => {
 const combined = await allSearch('test');
 assert.equal(searched.length, SOURCE_REGISTRY.length);
 assert.equal(combined.length, SOURCE_REGISTRY.length - 1);
-assert.equal(maxActive, 6);
+assert.equal(maxActive, 20);
 const unavailable = createMultiSourceSearch({ search: async () => { throw Error('DOWN'); } });
 await assert.rejects(unavailable('test'), /SOURCES_UNAVAILABLE/);
-console.log('Unified search: all registered searchers, six concurrent provider calls, isolation and deduplication passed.');
+console.log('Unified search: all registered searchers, twenty concurrent provider calls, isolation and deduplication passed.');

@@ -85,7 +85,7 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   const series=cached.type==='series';const rows=series?mapSourceEpisodes(index.episodes,expected):[{source_ref:sourceRef,season:0,episode:0,title:details.title||expected.title}];
   // All observed rows are retained; batching is transport sizing, never an episode cap.
   await store.putEpisodes(rows.map(({source_ref,season,episode,title})=>({source_ref,season,episode,title,work_ref:ref,provider:entry.meta.id})));
-  const children=rows.map(row=>job(ref,entry.meta.id,'episode',row.source_ref,{source_ref:row.source_ref,cycle:payload.cycle,identity_evidence:identity.evidence,observed_identity:{title:observed.title,year:observed.year},observed_episode:{season:row.season,episode:row.episode,source_season:row.source_season,source_episode:row.source_episode,numbering_basis:row.numbering_basis,numbering_offset:row.numbering_offset}},expected.title,row.season,row.episode));
+  const children=rows.slice(0,1).map(row=>job(ref,entry.meta.id,'episode',row.source_ref,{source_ref:row.source_ref,cycle:payload.cycle,identity_evidence:identity.evidence,observed_identity:{title:observed.title,year:observed.year},observed_episode:{season:row.season,episode:row.episode,source_season:row.source_season,source_episode:row.source_episode,numbering_basis:row.numbering_basis,numbering_offset:row.numbering_offset}},expected.title,row.season,row.episode));
   for(const page of (repeatedPage?[]:[...index.parents,...index.pages]))children.push(job(ref,entry.meta.id,'provider','catalog:'+page,{...payload,phase:'catalog',url:page,source_ref:entry.meta.id+':'+Buffer.from(page).toString('base64url'),hit:payload.hit||{},page:(payload.page||1)+1,parent_fingerprint:index.page_fingerprint},expected.title));
   await store.enqueueMany(children);
   await event(ref,entry.meta.id,'catalog',partial?'partial':'indexed',null,{observed_episodes:rows.length,more_pages:index.pages.length,declared_episodes:expected.number_of_episodes||null});
@@ -111,6 +111,10 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   }else if(work.metadata.identity_scope==='source'?!containsWorkTitle(work.metadata,d.title):!matchHarvestIdentity(work.metadata,d).accepted)throw Error('HARVEST_WORK_IDENTITY_UNCONFIRMED');
   let candidates=[...(d?.media_sources||[]),...(d?.servers||[])].filter(directCandidate);
   if(!candidates.length&&typeof entry.module.scrapeServers==='function')candidates=(await entry.module.scrapeServers(source,network)).filter(directCandidate);
+  if(!candidates.length&&typeof entry.module.resolveStream==='function'){
+   const resolved=await entry.module.resolveStream(source,network);
+   candidates=(Array.isArray(resolved)?resolved:[...(resolved?.servers||[]),...(resolved?.sources||[]),resolved]).filter(Boolean).map(row=>({...row,url:row.url||row.streamUrl})).filter(directCandidate);
+  }
   if(!candidates.length){const target=referenceUrl(source,domains(entry));candidates=await unwrapEmbedToDirectStreams(target,target);}
   const media=[],probeFailures=[];
   for(const candidate of candidates){

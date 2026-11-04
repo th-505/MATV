@@ -27,6 +27,8 @@ const SEARCH_CACHE_TTL_MS = 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 64;
 const requestQueue = createConcurrencyQueue({ concurrency: 6, maxQueued: 30 });
 const withConcurrencyQueue = requestQueue.run;
+// Interactive source search has its own capacity; catalog/media tasks cannot occupy it.
+const sourceSearchQueue=createConcurrencyQueue({concurrency:20,maxQueued:100});
 
 const searchCache = new Map();
 const searchInFlight = new Map();
@@ -220,7 +222,7 @@ function cloneItems(items) {
 
 // Source-pinned exploration must never silently fall back to another scraper.
 export async function scrapePinnedSource(query, provider) {
-  return withConcurrencyQueue(() => searchSource(query, provider));
+  return sourceSearchQueue.run(() => searchSource(query, provider));
 }
 
 export async function scrapeRealSearch(query) {

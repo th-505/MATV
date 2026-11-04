@@ -1,10 +1,11 @@
+import {distinctSourceEditions,editionDisplayTitle} from './source-edition-identity.mjs';
 import {workReference,canonicalWorkRef,sourceWorkRef,providerForReference} from './work-reference.mjs';
 import {shortHash} from './episode-index.mjs';
 import {listSourceCapabilities} from '../scrapers/source-registry.mjs';
 import {directCandidate} from '../scrapers/content-discovery.mjs';
 
 export function createSourceApi({store,worker,now=Date.now}){
- const requests=new Map(),playbackRetries=new Map();
+ const requests=new Map(),playbackRetries=new Map(),indexProofCache=new Map();
  const labels=new Map(listSourceCapabilities().map(s=>[s.id,{provider_name:s.name_ar,domain:s.domain}]));
  const stamp=()=>new Date(now()).toISOString();
  async function request(ref,{reason='card_open'}={}){
@@ -24,11 +25,23 @@ export function createSourceApi({store,worker,now=Date.now}){
  async function status(ref){
   if(!store)throw Error('HARVEST_NOT_CONFIGURED');const key=workReference(ref);
   const [work,jobs,sources]=await Promise.all([store.getWork(key),store.request('matv_discovery_jobs',{content_ref:'eq.'+key,select:'provider,stage,status,error_code,progress,payload,updated_at',order:'updated_at.desc',limit:1000}),store.request('najd_source_catalog',{work_ref:'eq.'+key,select:'provider,source_ref,state,progress,updated_at',order:'updated_at.desc',limit:1000})]);
+  const discovery_counts={queued:0,running:0,ready:0,failed:0};
+  for(const row of jobs||[])if(row.stage!=='episode'&&row.status in discovery_counts)discovery_counts[row.status]++;
   const counts={queued:0,running:0,ready:0,failed:0};for(const row of jobs||[])if(row.status in counts)counts[row.status]++;
-  const source_editions=(sources||[]).filter(row=>sourceWorkRef(row.progress?.source_work_ref)).map(row=>({ref:row.progress.source_work_ref,source_ref:row.source_ref,provider:row.provider,...(labels.get(row.provider)||{}),...(row.progress.domain?{domain:row.progress.domain}:{}),title:row.progress.title||work?.title||'نسخة المصدر',edition:row.progress.edition||'unknown',seasons:(row.progress.catalog_decision?.index?.seasons||[]).map(s=>({season:s.season,episode_count:s.distinct_episodes})),available:Boolean(row.progress.catalog_decision),reason:row.state==='identity_unconfirmed'?'CANONICAL_IDENTITY_UNCONFIRMED':null}));
+  const legacy=(sources||[]).filter(row=>sourceWorkRef(row.progress?.source_work_ref)&&!row.progress?.index_identity).map(row=>row.progress.source_work_ref);
+  if(legacy.length&&store.sourceIndexIdentities){
+   const cacheKey=[...new Set(legacy)].sort().join('|');let proof=indexProofCache.get(cacheKey);
+   if(!proof||proof.expires<=now()){
+    const values=await store.sourceIndexIdentities(legacy).catch(()=>null);
+    proof={expires:now()+(values?60000:5000),values:new Map((values||[]).map(row=>[row.work_ref,row.index_identity]))};
+    indexProofCache.set(cacheKey,proof);if(indexProofCache.size>32)indexProofCache.delete(indexProofCache.keys().next().value);
+   }
+   for(const row of sources||[])if(proof.values.has(row.progress?.source_work_ref))row.progress={...row.progress,index_identity:proof.values.get(row.progress.source_work_ref)};
+  }
+  const source_editions=distinctSourceEditions((sources||[]).filter(row=>sourceWorkRef(row.progress?.source_work_ref)).map(row=>({ref:row.progress.source_work_ref,source_ref:row.source_ref,provider:row.provider,...(labels.get(row.provider)||{}),...(row.progress.domain?{domain:row.progress.domain}:{}),index_identity:row.progress.index_identity||null,title:editionDisplayTitle(row.progress.title||work?.title||'نسخة المصدر'),edition:row.progress.edition||'unknown',seasons:(row.progress.catalog_decision?.index?.seasons||[]).map(s=>({season:s.season,episode_count:s.distinct_episodes})),available:Boolean(row.progress.catalog_decision),reason:row.state==='identity_unconfirmed'?'CANONICAL_IDENTITY_UNCONFIRMED':null})));
   const indexJobs=(jobs||[]).filter(row=>row.stage==='work'||(row.stage==='provider'&&row.payload?.phase==='source_page'&&row.payload.catalog_started_at===work?.metadata?.index_started_at));
   const indexState=indexJobs.some(row=>row.status==='running')?'running':indexJobs.some(row=>row.status==='queued')?'queued':indexJobs.some(row=>row.status==='failed')?'failed':indexJobs.some(row=>row.stage==='work'&&row.status==='ready')?'ready':null;
-  return{ref:key,index_updated_at:work?.last_checked_at||work?.updated_at||null,index_state:indexState,state:counts.running||counts.queued?'running':work?'ready':counts.failed?'failed':'missing',phase:work?'source_indexing':'work',counts,source_editions,issues:(jobs||[]).filter(row=>row.error_code).map(row=>({provider:row.provider||null,reason:row.error_code})),updated_at:jobs?.[0]?.updated_at||work?.updated_at||null,poll_after_ms:3000,sample_limit:1000,sample_truncated:jobs?.length===1000};
+  return{ref:key,index_updated_at:work?.last_checked_at||work?.updated_at||null,index_state:indexState,state:counts.running||counts.queued?'running':work?'ready':counts.failed?'failed':'missing',discovery_counts,discovery_updated_at:(jobs||[]).find(row=>row.stage!=='episode')?.updated_at||null,phase:work?'source_indexing':'work',counts,source_editions,issues:(jobs||[]).filter(row=>row.stage!=='episode'&&row.error_code).map(row=>({provider:row.provider||null,reason:row.error_code})),updated_at:jobs?.[0]?.updated_at||work?.updated_at||null,poll_after_ms:3000,sample_limit:1000,sample_truncated:jobs?.length===1000};
  }
  async function details(ref,{season,offset=0}={}){
   if(!store)throw Error('HARVEST_NOT_CONFIGURED');const key=workReference(ref);if(!sourceWorkRef(key))throw Error('SOURCE_WORK_REQUIRED');

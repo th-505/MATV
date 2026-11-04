@@ -1,3 +1,4 @@
+import {classifyNetworkError} from './shared/errors.mjs';
 import { getProvider, listIndependentProviders } from './registry.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 
@@ -32,8 +33,12 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       const allowed = categories(id);
       const selected = category || allowed[0]?.id;
       if (selected && !allowed.some(item => item.id === selected)) throw Error('BROWSER_BAD_CATEGORY');
-      const result = await queue.run(() => provider.module.scrapeCatalog(selected, page));
-      if (result?._meta?.errorCode && result._meta.errorCode !== 'EMPTY_RESULT') throw Error('BROWSER_SOURCE_UNAVAILABLE');
+      let result;
+      try{result=await queue.run(()=>provider.module.scrapeCatalog(selected,page,{strict:true,allowHttp:false,timeoutMs:8000,maxRetries:0}));}
+      catch(error){const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=error.code||classifyNetworkError(error).code;throw failure;}
+      if(result?._meta?.errorCode&&result._meta.errorCode!=='EMPTY_RESULT'){
+        const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=result._meta.errorCode;throw failure;
+      }
       const items = Array.isArray(result) ? result : result?.items;
       if (!Array.isArray(items)) throw Error('BROWSER_INVALID_RESPONSE');
       const meta = result?._meta || {};
@@ -41,7 +46,13 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       const observedNext = Number.isInteger(nextPage) && nextPage > page;
       const explicitPagination = Object.hasOwn(meta, 'next_page') || Object.hasOwn(meta, 'has_more');
       return { status: 'success', provider: id, category: selected || null,
-        items: items.filter(item => item?.ref && item?.title).map(item => ({ ...item,
+        items: items.filter(item => item?.ref && item?.title).map(item => ({
+          id:item.id||item.ref,ref:item.ref,title:item.title,poster:item.poster||item.image||'',
+          type:item.type||'series',year:item.year||null,
+          rating:Number.isFinite(Number(item.rating))?Math.max(0,Math.min(10,Number(item.rating))):0,
+          genres:Array.isArray(item.genres)?item.genres:[],edition:item.edition||'',
+          audio_language:item.audio_language||'',imdb_id:item.imdb_id||'',
+          identity_verified:item.identity_verified===true,work_identity_verified:item.work_identity_verified===true,
           source: id, selected_source: id, source_refs: { [id]: item.ref } })),
         pagination: { page, next_page: observedNext ? nextPage : null,
           has_more: explicitPagination ? observedNext || meta.has_more === true : items.length > 0,

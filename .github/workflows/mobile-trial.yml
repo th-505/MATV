@@ -14,6 +14,14 @@ on:
         description: Private user font bundle URL for native builds only
         required: false
         type: string
+      apple_runner:
+        description: Apple build runner; Intel can cross-build iOS when arm64 capacity is unavailable
+        required: false
+        default: macos-15
+        type: choice
+        options:
+          - macos-15
+          - macos-15-intel
       api_base:
         description: Verified public metadata API URL
         required: true
@@ -175,7 +183,7 @@ jobs:
 
   ios-unsigned:
     needs: [verify-api, providers]
-    runs-on: macos-15
+    runs-on: ${{ inputs.apple_runner || 'macos-15' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -313,7 +321,7 @@ jobs:
 
   macos:
     needs: [verify-api, providers]
-    runs-on: macos-15
+    runs-on: ${{ inputs.apple_runner || 'macos-15' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -446,8 +454,8 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"Najd TV {version} — beta 2 (build {build}).\n\n"
-              "Independent Ahwak, Brstej and Fosta adapters, refreshable server-driven provider discovery and source-owned episode indexes. Durable watch checkpoints, resume/restart choice and selected-provider index refresh. OS Picture-in-Picture bridges for Android/iOS and supported Web browsers; physical-device PiP certification is pending. API: https://najdtv.onrender.com. Compact player controls, configurable temporary hold speed, synchronized manual source switching, cast filmographies and Arabic/English display metadata.\n\n"
+              f"Najd TV {version} — beta 3 (build {build}).\n\n"
+              "Independent Ahwak, Brstej and Fosta adapters, refreshable server-driven provider discovery and source-owned episode indexes. Twenty concurrent discovery searches with separate indexing/playback lanes. Source-browser rating parsing, saved provider selection and current MyCima poster metadata. Exact episode-index deduplication, source-specific media resolution and on-demand episode playback. Durable watch checkpoints, resume/restart choice and selected-provider index refresh. OS Picture-in-Picture bridges for Android/iOS and supported Web browsers; physical-device PiP certification is pending. API: https://najdtv.onrender.com. Compact player controls, configurable temporary hold speed, synchronized manual source switching, cast filmographies and Arabic/English display metadata.\n\n"
               "Adaptive layouts use the actual viewport, pixel ratio, safe insets and accessibility text scale. The latest layout profile is stored locally and hidden from the interface; physical screen inches are not guessed.\n\n"
               "Packages: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/portable ZIP and macOS DMG. Native packages include the privately supplied original Thmanyah font; public Web uses its licensed fallback and supports local font import.\n\n"
               "Public application: https://th-505.github.io/NajdTV/\n\n"

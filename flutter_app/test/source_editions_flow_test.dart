@@ -280,7 +280,7 @@ void main() {
       clock = clock.add(const Duration(seconds: 1));
       await tester.pump(const Duration(milliseconds: 20));
       await tester.pump();
-      expect(find.textContaining('توقفت المتابعة التلقائية'), findsOneWidget);
+      expect(find.textContaining('لم يصل تقدم جديد خلال المهلة'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       await tester.pumpWidget(const SizedBox());
     },
