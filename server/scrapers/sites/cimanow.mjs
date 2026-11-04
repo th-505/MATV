@@ -916,7 +916,10 @@ export async function scrapeServers(urlOrRef, options = {}) {
 
 export async function resolveStream(urlOrRef, options = {}) {
   const rawInput = typeof urlOrRef === 'object' && urlOrRef !== null ? (urlOrRef.url || '') : urlOrRef;
-  const rawUrl = String(rawInput || '').trim();
+  const input = String(rawInput || '').trim();
+  const rawUrl = input.startsWith('cimanow:')
+    ? resolveCimaNowTargetUrl(input)
+    : input;
   if (!rawUrl) {
     throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL, 'Stream URL is required');
   }
@@ -973,7 +976,13 @@ export async function resolveStream(urlOrRef, options = {}) {
       const watchUrl = params.get('watchUrl') || `${origin}/`;
 
       if (key && indexStr !== null && csrf) {
-        const postRes = await fetch(`${origin}/watch/resolve`, {
+        const postRes = await fetchSafeResponse(`${origin}/watch/resolve`, {
+          providerId: PROVIDER_META.id,
+          allowHttp: false,
+          allowedHosts: [new URL(origin).hostname],
+          maxBytes: 256 * 1024,
+          maxRetries: 0,
+          timeoutMs: Math.min(15000, Math.max(1000, Number(options.timeoutMs) || 8000)),
           method: 'POST',
           headers: {
             'Accept': 'application/json',
@@ -986,14 +995,14 @@ export async function resolveStream(urlOrRef, options = {}) {
           body: JSON.stringify({
             key,
             index: parseInt(indexStr, 10)
-          }),
-          signal: AbortSignal.timeout(options.timeoutMs || 8000)
+          })
         });
 
         if (postRes.ok) {
-          const json = await postRes.json();
+          const json = JSON.parse(postRes.html);
           if (json?.ok && typeof json.url === 'string' && json.url.trim()) {
             const resolvedTarget = json.url.trim();
+            assertSafeScraperUrl(resolvedTarget, { allowHttp: false });
             const unwrapped = await unwrapEmbedToDirectStreams(resolvedTarget, watchUrl);
             if (unwrapped && unwrapped.length > 0) {
               const top = unwrapped[0];

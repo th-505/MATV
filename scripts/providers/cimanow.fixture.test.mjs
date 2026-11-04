@@ -151,7 +151,7 @@ assert.equal(episodes.length, 5);
 const epNumbers = episodes.map((e) => e.number);
 assert.deepEqual(epNumbers, [1, 2, 3, 4, 5], 'Episodes must be strictly sorted ascending: 1 -> 5');
 for (const ep of episodes) {
-  assert.equal(ep.season, 1);
+  assert.equal(ep.season, 4, 'Observed season four in the episode URL must not reset to season one');
   assert.ok(ep.ref.startsWith('cimanow:'));
   assert.ok(ep.url.startsWith('https://cimanow.me/episode/'));
   assert.equal(ep.watch_available, true);

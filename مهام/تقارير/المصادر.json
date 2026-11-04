@@ -261,7 +261,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/cimanow.mjs",
       "metadata_line": 32,
-      "source_sha256": "6fbe8e6a4abd6283e2ba5294dcba94317b78befa354393dcaf99c0f2b1b82650",
+      "source_sha256": "bd67704fccfd0852adc3d3b8faf129358c7e6930e0586db08bff7eac9edbb0ba",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
