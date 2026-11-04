@@ -1,0 +1,186 @@
+{
+  "product": "Najd TV",
+  "version": "2.0.1",
+  "build": 201,
+  "source_commit": "a4c845612e184c731d65cc4362daa351107932d6",
+  "api_base": "https://najdtv.onrender.com",
+  "targets": [
+    "android-mobile-arm64",
+    "android-tv-armv7",
+    "ios-unsigned-arm64",
+    "macos-native",
+    "web",
+    "windows-x64"
+  ],
+  "artifacts": [
+    {
+      "file": "Najd-TV-Android-Mobile-ARM64.apk",
+      "target": "android-mobile-arm64",
+      "architecture": "arm64-v8a",
+      "sha256": "757dec8845c62ec9dea80236a215168ab03e415c9d9c18237c88555e56f4a2a2",
+      "bytes": 36158438,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Android-TV-ARM32.apk",
+      "target": "android-tv-armv7",
+      "architecture": "armeabi-v7a",
+      "sha256": "9eb76dc80dac3d22388ef7a3d529b14d6292908561854081a0b0dc081f146e45",
+      "bytes": 33126994,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-iPhone-Unsigned.ipa",
+      "target": "ios-unsigned-arm64",
+      "architecture": "arm64",
+      "sha256": "e8575bfc2b9624803453a8c128a300f204d66e41ae8941bd99830faad7461544",
+      "bytes": 16921415,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Windows-x64.zip",
+      "target": "windows-x64",
+      "architecture": "x64",
+      "sha256": "3e0b11e6f1898d16200f55a8c0456621347a92e66d2cb88ada312c44457d94ec",
+      "bytes": 35579514,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Windows-x64-Setup.exe",
+      "target": "windows-x64",
+      "architecture": "x64",
+      "sha256": "d18b433e3871d3b3d57085dc91651cf4f2283b830e78c01790cf1d7ce88b471d",
+      "bytes": 26655966,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-macOS-Unsigned.dmg",
+      "target": "macos-native",
+      "architecture": "arm64/x86_64",
+      "sha256": "7686ac41be253e65a9d9a66c28cf97061e9fefd963c4e90775a82f0190f7dc9e",
+      "bytes": 45171552,
+      "verified": true
+    },
+    {
+      "file": "Najd-TV-Web.zip",
+      "target": "web",
+      "architecture": "browser",
+      "sha256": "c0f17ba879ef79f8d6953104954462086c117cac979a4a8495d1d16923b84678",
+      "bytes": 14200148,
+      "verified": true
+    }
+  ],
+  "release_url": "https://github.com/th-505/NajdTV/releases/tag/v2.0.1",
+  "release_workflow": "https://github.com/th-505/NajdTV/actions/runs/41813513131",
+  "source_index_refresh": {
+    "api": "https://najdtv.onrender.com",
+    "source": "ahwak",
+    "stages": [
+      {
+        "phase": "initial",
+        "index_state": "ready",
+        "requested_at": "2026-11-04T10:31:03.350Z",
+        "index_updated_at": "2026-11-04T10:31:11.252+00:00",
+        "episode_count": 15,
+        "providers": [
+          "ahwak"
+        ]
+      },
+      {
+        "phase": "source_refresh",
+        "index_state": "ready",
+        "requested_at": "2026-11-04T10:31:03.350Z",
+        "index_updated_at": "2026-11-04T10:31:11.252+00:00",
+        "episode_count": 15,
+        "providers": [
+          "ahwak"
+        ]
+      }
+    ],
+    "ref": "source:ahwak:801725c63832e9d3951c1920",
+    "verified": true
+  },
+  "ios_independent_verification": {
+    "version": "2.0.1",
+    "build": 201,
+    "architecture": "arm64",
+    "unsigned_main_executable": true,
+    "background_audio_declared": true,
+    "sha256": "e8575bfc2b9624803453a8c128a300f204d66e41ae8941bd99830faad7461544",
+    "bytes": 16921415,
+    "physical_device_tested": false
+  },
+  "remaining_limits": [
+    "Physical-device PiP/playback certification pending",
+    "Brstej ACCESS_BLOCKED from Render network",
+    "iOS requires external signing; macOS not notarized; Windows not Authenticode signed",
+    "Offline HLS downloading unsupported"
+  ],
+  "website": {
+    "url": "https://th-505.github.io/NajdTV/",
+    "verified": true,
+    "source_manifest": {
+      "api_base": "https://najdtv.onrender.com",
+      "build": 201,
+      "product": "Najd TV",
+      "schema_version": 1,
+      "source_commit": "a4c845612e184c731d65cc4362daa351107932d6",
+      "target": "web",
+      "version": "2.0.1"
+    },
+    "deployment_commit": "c8e5549f58121a65ea299be7a98f3acd4d487cc3",
+    "pages_workflow": "https://github.com/th-505/NajdTV/actions/runs/41815497445",
+    "private_paths_http_404": true
+  },
+  "download_checks": [
+    {
+      "file": "Najd-TV-iPhone-Unsigned.ipa",
+      "http": 200,
+      "bytes": 16921415
+    },
+    {
+      "file": "Najd-TV-Android-Mobile-ARM64.apk",
+      "http": 200,
+      "bytes": 36158438
+    },
+    {
+      "file": "Najd-TV-Android-TV-ARM32.apk",
+      "http": 200,
+      "bytes": 33126994
+    },
+    {
+      "file": "Najd-TV-Windows-x64-Setup.exe",
+      "http": 200,
+      "bytes": 26655966
+    },
+    {
+      "file": "Najd-TV-macOS-Unsigned.dmg",
+      "http": 200,
+      "bytes": 45171552
+    }
+  ],
+  "backend": {
+    "url": "https://najdtv.onrender.com",
+    "version": "2.0.1",
+    "independent_providers": 22,
+    "mirrors": 2,
+    "dynamic_registry_migrations": [
+      "20261104102904",
+      "20261104103013"
+    ],
+    "user_data_renamed": false
+  },
+  "checks": {
+    "node_tests": 146,
+    "node_failed": 0,
+    "offline_provider_fixtures": 75,
+    "flutter_mobile_tests": 351,
+    "flutter_mobile_skipped": 7,
+    "flutter_tv_tests": 351,
+    "flutter_tv_skipped": 8,
+    "extra_pip_handoff_test_passed": true,
+    "chromium_mp4_hls_decode": true,
+    "chromium_system_pip_enter_exit": true,
+    "physical_device_tested": false
+  }
+}

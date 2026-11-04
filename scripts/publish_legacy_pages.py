@@ -26,6 +26,7 @@ for path in source.rglob('*'):
     assert rel.parts[0] in allowed, f'Unexpected public path: {rel}'
     assert rel.parts[:2] != ('assets', 'brand'), 'Do not overwrite brand source inputs'
     files.append(rel)
+files.sort(key=lambda path: path.as_posix())
 # Validate the whole input before mutating the checked-out repository.
 for rel in files:
     target = repo / rel
