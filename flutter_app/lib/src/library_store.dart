@@ -189,6 +189,12 @@ class LocalLibraryStore extends ChangeNotifier {
         (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
       );
     }
+    if (_librarySort == 'rating') {
+      values.sort((a, b) {
+        final comparison = b.rating.compareTo(a.rating);
+        return comparison == 0 ? a.title.compareTo(b.title) : comparison;
+      });
+    }
     return List.unmodifiable(values);
   }
 
@@ -238,7 +244,8 @@ class LocalLibraryStore extends ChangeNotifier {
   }
 
   Future<void> setLibrarySort(String value) async {
-    final normalized = const {'recent', 'title', 'progress'}.contains(value)
+    final normalized =
+        const {'recent', 'title', 'progress', 'rating'}.contains(value)
         ? value
         : 'recent';
     if (_librarySort == normalized) return;
@@ -522,7 +529,8 @@ class LocalLibraryStore extends ChangeNotifier {
         ? 'tmdb'
         : 'basri';
     final sort = _prefs.getString(_librarySortKey) ?? 'recent';
-    _librarySort = const {'recent', 'title', 'progress'}.contains(sort)
+    _librarySort =
+        const {'recent', 'title', 'progress', 'rating'}.contains(sort)
         ? sort
         : 'recent';
   }

@@ -164,6 +164,8 @@ void main() {
               ? VideoPlayerValue.erroneous('HTTP 503')
               : engines.first.value.copyWith(errorDescription: 'HTTP 403');
         } else {
+          await tester.tap(find.byKey(const Key('player-more')));
+          await tester.pumpAndSettle();
           final button = tester.widget<SourcePickerButton>(
             find.byType(SourcePickerButton),
           );
@@ -177,6 +179,8 @@ void main() {
         expect(engines.length, 2);
         expect(engines.last.uri.path, '/akoam.mp4');
         expect(engines.last.seeks.first, Duration(seconds: seconds));
+        await tester.tap(find.byKey(const Key('player-more')));
+        await tester.pumpAndSettle();
         final button = tester.widget<SourcePickerButton>(
           find.byType(SourcePickerButton),
         );

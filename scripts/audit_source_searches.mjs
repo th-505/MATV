@@ -15,7 +15,13 @@ async function worker(){while(cursor<sources.length){const source=sources[cursor
   row.catalog_count=catalog.length||0;row.catalog_meta=catalog?._meta?.errorCode||null;
   const item=catalog.find(x=>x.title&&x.title.length>=3);
   const sample=item?.title || ({'3cktv':'مرعشلي',witanime:'Naruto',laroza:'مرعشلي'}[source.id] || 'Interstellar');
-  const query=sample.replace(/\([^)]*\)/g,' ').replace(/الحلقة\s*\d+|الموسم\s*\d+|مترجم|مدبلج|مشاهدة|تحميل|فيلم|مسلسل|\b(?:HD|1080p|720p)\b/gi,' ').replace(/\s+/g,' ').trim().slice(0,100);
+  const query=sample.replace(/\([^)]*\)/g,' ')
+    .replace(/\s+(?:الحلقة|الحلقه|حلقة|حلقه|الموسم|موسم)\s+.*$/iu,'')
+    .replace(/\s+(?:season\s*\d+|episode\s*\d+|s\d+\s*e\d+).*$/iu,'')
+    .replace(/\s+(?:مترجم[ةه]?|مدبلج[ةه]?|بجودة|كامل|HD|1080p|720p)(?:\s|$).*$/iu,'')
+    .replace(/^(?:مشاهدة|تحميل|فيلم|مسلسل|انمي|أنمي)\s+/u,'')
+    .replace(/\s+/g,' ').trim().slice(0,100);
+
   row.query=query;row.known_title=item?.title||null;
   const search=createSourceSearch();const items=await bounded(()=>search(query,source.id));
   row.count=items.length;row.outcome=items.length?(item?'RESULTS_FOR_KNOWN_TITLE':'RESULTS_WITHOUT_CATALOG_SAMPLE'):(item?'KNOWN_TITLE_NOT_RETURNED':'EMPTY_WITHOUT_KNOWN_POSITIVE');return items;

@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://th-505.github.io/MATV/sitemap.xml
+Sitemap: https://th-505.github.io/NajdTV/sitemap.xml

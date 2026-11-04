@@ -54,7 +54,7 @@ export const masterDashboardJs=String.raw`'use strict';
   byId('scope').textContent=report.totals?'البطاقات تعرض الإجمالي من قاعدة البيانات. تفاصيل الأقسام تعرض عينة حديثة بحد أقصى '+fmt(report.scope.recent_limit)+' سجل لكل قسم.':'الأعداد تخص العينة الحديثة فقط، بحد أقصى '+fmt(report.scope.recent_limit)+' سجل لكل قسم. لا تمثل إجمالي قاعدة البيانات.';
   if(report.scope.unavailable.length)add(byId('health'),'p','تعذر تحميل بعض الأقسام: '+report.scope.unavailable.map(x=>({jobs:'الطلبات',works:'الأعمال',sources:'المصادر',events:'الأحداث',providers:'الإعدادات'}[x]||x)).join('، '),'muted');
   byId('report-meta').textContent='آخر تحديث: '+when(report.generated_at)+' · إصدار الخادم: '+(server.version||'غير مسجل')+' · مرجع التقرير: '+report.report_ref;
-  const codeLink=byId('source-code');codeLink.hidden=!server.source_commit;if(server.source_commit)codeLink.href='https://github.com/th-505/MATV/archive/'+server.source_commit+'.zip';else codeLink.removeAttribute('href');
+  const codeLink=byId('source-code');codeLink.hidden=!server.source_commit;if(server.source_commit)codeLink.href='https://github.com/th-505/NajdTV/archive/'+server.source_commit+'.zip';else codeLink.removeAttribute('href');
   byId('technical-data').textContent=JSON.stringify(report,null,2);
  }
  function renderOverview(){

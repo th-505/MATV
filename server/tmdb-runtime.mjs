@@ -129,6 +129,11 @@ function normalizeDetails(body = {}, mediaType, id) {
         character: text(person?.character),
         photo: posterUrl(person?.profile_path, "w185"),
       })).filter((person) => person.name) : [],
+      director_people: (Array.isArray(body.credits?.crew) ? body.credits.crew : [])
+        .filter(person => person.job === 'Director')
+        .map(person => ({ id: Number(person.id) || null, name: text(person.name),
+          photo: posterUrl(person.profile_path, "w185"), role: "Director" }))
+        .filter(person => person.id && person.name),
       directors: [...new Set((Array.isArray(body.credits?.crew) ? body.credits.crew : []).filter(person=>person.job==='Director').map(person=>text(person.name)).filter(Boolean))],
       imdb_id: text(body.external_ids?.imdb_id),
       similar: [...(Array.isArray(body.recommendations?.results) ? body.recommendations.results : []), ...(Array.isArray(body.similar?.results) ? body.similar.results : [])]
@@ -316,17 +321,25 @@ export function createTmdbRuntime({
     return cachedRequest('person:'+id,async()=>{
       const body=await request('/3/person/'+id+'/combined_credits',{});
       const seen=new Set();
-      const data=(Array.isArray(body.cast)?body.cast:[]).filter(row=>row.adult!==true).map(normalizeResult).filter(item=>item&&seen.add(item.ref));
+      const data=[...(Array.isArray(body.cast)?body.cast:[]), ...(Array.isArray(body.crew)?body.crew:[]).filter(row=>row.job==='Director')].filter(row=>row.adult!==true).map(normalizeResult).filter(item=>item&&!seen.has(item.ref)&&seen.add(item.ref));
       return {status:'success',source:'tmdb',data};
     },30*60000);
   }
 
-  async function details(ref) {
+  async function details(ref, language = "ar-SA") {
+    if (!["ar-SA", "en-US", "auto"].includes(language)) throw new Error("TMDB_BAD_LANGUAGE");
     const { mediaType, id } = parseRef(ref);
-    return cachedRequest(`details:${mediaType}:${id}`, async () => {
-      const body = await request(`/3/${mediaType}/${id}`, {
+    return cachedRequest(`details:${mediaType}:${id}:${language}`, async () => {
+      let body = await request(`/3/${mediaType}/${id}`, {
         append_to_response: "credits,similar,recommendations,external_ids,alternative_titles,translations",
+        language: language === "en-US" ? "en-US" : "ar-SA",
       });
+      if (language === "auto" && body.original_language === "en") {
+        body = await request(`/3/${mediaType}/${id}`, {
+          append_to_response: "credits,similar,recommendations,external_ids,alternative_titles,translations",
+          language: "en-US",
+        });
+      }
       return normalizeDetails(body, mediaType, id);
     });
   }

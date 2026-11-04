@@ -4,6 +4,7 @@ import io
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import urllib.request
 import zipfile
@@ -25,4 +26,4 @@ with tempfile.TemporaryDirectory(prefix='najd-font-') as directory:
             if not destination.is_relative_to(Path(directory).resolve()):
                 raise SystemExit('Unsafe font archive path.')
         archive.extractall(directory)
-    subprocess.run(['python3', 'scripts/prepare_private_fonts.py', '--source', directory], check=True)
+    subprocess.run([sys.executable, 'scripts/prepare_private_fonts.py', '--source', directory], check=True)

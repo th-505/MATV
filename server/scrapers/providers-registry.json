@@ -90,6 +90,16 @@
       "id": "kooralive",
       "url": "https://koora.live",
       "enabled": true
+    },
+    {
+      "id": "fosta",
+      "url": "https://ffosta-tv.autos",
+      "enabled": true
+    },
+    {
+      "id": "brstej",
+      "url": "https://brstejj.beer",
+      "enabled": true
     }
   ]
 }

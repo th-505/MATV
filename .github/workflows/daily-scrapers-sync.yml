@@ -11,6 +11,12 @@ on:
       - scripts/najd_provider_forms.mjs
       - scripts/najd_provider_report_registry.mjs
   workflow_dispatch:
+    inputs:
+      api_probe_only:
+        description: Verify Gemini API availability without repairs or issue updates
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: '0 21 * * *'
 permissions:
@@ -21,7 +27,31 @@ concurrency:
   group: najd-production-source
   cancel-in-progress: false
 jobs:
+  probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.api_probe_only == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test privacy and bounded Gemini behavior
+        run: python -m unittest discover -s scripts -p 'test_najd*.py'
+      - name: Probe the configured low-cost Gemini API
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_BACKUP: ${{ secrets.GEMINI_API_KEY_BACKUP }}
+        run: python scripts/najd_gemini.py > gemini-api-probe.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: najd-gemini-api-probe
+          path: gemini-api-probe.json
+          retention-days: 7
   analyze:
+    if: github.event_name != 'workflow_dispatch' || inputs.api_probe_only != true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

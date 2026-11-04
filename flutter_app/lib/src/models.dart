@@ -326,6 +326,7 @@ class TitleDetails {
     this.plot = '',
     this.cast = const [],
     this.directors = const [],
+    this.directorPeople = const [],
     this.genres = const [],
     this.season,
     this.episode,
@@ -370,6 +371,7 @@ class TitleDetails {
   final String plot;
   final List<Map<String, dynamic>> cast;
   final List<String> directors;
+  final List<Map<String, dynamic>> directorPeople;
   final List<String> genres;
   final int? season;
   final int? episode;
@@ -408,6 +410,7 @@ class TitleDetails {
     String? plot,
     List<Map<String, dynamic>>? cast,
     List<String>? directors,
+    List<Map<String, dynamic>>? directorPeople,
     List<String>? genres,
     int? season,
     int? episode,
@@ -449,6 +452,7 @@ class TitleDetails {
     plot: plot ?? this.plot,
     cast: List.unmodifiable(cast ?? this.cast),
     directors: List.unmodifiable(directors ?? this.directors),
+    directorPeople: List.unmodifiable(directorPeople ?? this.directorPeople),
     genres: List.unmodifiable(genres ?? this.genres),
     season: season ?? this.season,
     episode: episode ?? this.episode,
@@ -540,6 +544,16 @@ class TitleDetails {
           '${json['plot'] ?? json['overview'] ?? json['description'] ?? json['story'] ?? ''}',
       cast: json['cast'] is List
           ? (json['cast'] as List)
+                .whereType<Map>()
+                .map(
+                  (row) => Map<String, dynamic>.unmodifiable(
+                    row.cast<String, dynamic>(),
+                  ),
+                )
+                .toList(growable: false)
+          : const [],
+      directorPeople: (json['director_people'] is List)
+          ? (json['director_people'] as List)
                 .whereType<Map>()
                 .map(
                   (row) => Map<String, dynamic>.unmodifiable(

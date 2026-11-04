@@ -60,7 +60,11 @@ class _PlayerControlsState extends State<PlayerControls> {
               style: IconButton.styleFrom(
                 backgroundColor: Colors.black54,
                 foregroundColor: Colors.white,
-                minimumSize: Size(widget.isTv ? 64 : 56, widget.isTv ? 64 : 56),
+                minimumSize: Size(widget.isTv ? 88 : 76, widget.isTv ? 80 : 72),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                iconSize: 36,
                 side: const BorderSide(color: Colors.white24),
               ),
               key: const Key('player-rewind'),
@@ -74,7 +78,11 @@ class _PlayerControlsState extends State<PlayerControls> {
               style: IconButton.styleFrom(
                 backgroundColor: const Color(0xFF6B46C1),
                 foregroundColor: Colors.white,
-                minimumSize: const Size(64, 64),
+                minimumSize: Size(widget.isTv ? 96 : 84, widget.isTv ? 88 : 80),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                iconSize: 40,
               ),
               focusNode: _playFocus,
               autofocus: widget.isTv,
@@ -86,7 +94,11 @@ class _PlayerControlsState extends State<PlayerControls> {
               style: IconButton.styleFrom(
                 backgroundColor: Colors.black54,
                 foregroundColor: Colors.white,
-                minimumSize: Size(widget.isTv ? 64 : 56, widget.isTv ? 64 : 56),
+                minimumSize: Size(widget.isTv ? 88 : 76, widget.isTv ? 80 : 72),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                iconSize: 36,
                 side: const BorderSide(color: Colors.white24),
               ),
               key: const Key('player-forward'),

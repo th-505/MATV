@@ -169,6 +169,8 @@ void main() {
           );
         }
         // A blocked automatic handoff still leaves a manual source choice.
+        await tester.tap(find.byKey(const Key('player-more')));
+        await tester.pumpAndSettle();
         final menu = tester.widget<SourcePickerButton>(
           find.byType(SourcePickerButton),
         );

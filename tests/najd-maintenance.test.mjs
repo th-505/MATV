@@ -6,12 +6,12 @@ import {verifyProviderConfiguration} from '../server/maintenance/verify-config.m
 import {getProviderConfig,withProviderConfig} from '../server/scrapers/shared/provider-config.mjs';
 const {privateKey,publicKey}=generateKeyPairSync('rsa',{modulusLength:2048});
 const now=Date.now();
-const claims={iss:'https://token.actions.githubusercontent.com',aud:'najd-maintenance',repository:'th-505/MATV',ref:'refs/heads/main',workflow_ref:'th-505/MATV/.github/workflows/daily-scrapers-sync.yml@refs/heads/main',event_name:'schedule',iat:Math.floor(now/1000),exp:Math.floor(now/1000)+300};
+const claims={iss:'https://token.actions.githubusercontent.com',aud:'najd-maintenance',repository:'th-505/NajdTV',ref:'refs/heads/main',workflow_ref:'th-505/NajdTV/.github/workflows/daily-scrapers-sync.yml@refs/heads/main',event_name:'schedule',iat:Math.floor(now/1000),exp:Math.floor(now/1000)+300};
 function token(overrides={}){const parts=[{alg:'RS256',kid:'fixture'}, {...claims,...overrides}].map(x=>Buffer.from(JSON.stringify(x)).toString('base64url'));return parts.join('.')+'.'+sign('RSA-SHA256',Buffer.from(parts.join('.')),privateKey).toString('base64url')}
 test('maintenance identity accepts only signed main workflow tokens, not forks, other jobs or expiry',async()=>{
  let requests=0;const validate=createGithubIdentityVerifier({now:()=>now,fetchImpl:async()=>{requests++;return Response.json({keys:[{...publicKey.export({format:'jwk'}),kid:'fixture',alg:'RS256',use:'sig'}]})}});
- assert.equal((await validate(token())).repository,'th-505/MATV');
- for(const bad of [{repository:'other/MATV'},{ref:'refs/heads/fork'},{workflow_ref:'th-505/MATV/.github/workflows/other.yml@refs/heads/main'},{exp:Math.floor(now/1000)-1},{aud:'other'},{event_name:'pull_request'}])await assert.rejects(validate(token(bad)),/MAINTENANCE_AUTH_REQUIRED/);
+ assert.equal((await validate(token())).repository,'th-505/NajdTV');
+ for(const bad of [{repository:'other/MATV'},{ref:'refs/heads/fork'},{workflow_ref:'th-505/NajdTV/.github/workflows/other.yml@refs/heads/main'},{exp:Math.floor(now/1000)-1},{aud:'other'},{event_name:'pull_request'}])await assert.rejects(validate(token(bad)),/MAINTENANCE_AUTH_REQUIRED/);
  const parts=token().split('.');parts[2]=Buffer.from('fake').toString('base64url');await assert.rejects(validate(parts.join('.')),/MAINTENANCE_AUTH_REQUIRED/);
  assert.equal(requests,1);
 });

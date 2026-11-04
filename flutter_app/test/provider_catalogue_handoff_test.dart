@@ -209,6 +209,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       await engines.first.seekTo(const Duration(minutes: 20));
+      await tester.tap(find.byKey(const Key('player-more')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('player-providers')));
       await tester.tap(find.byKey(const Key('player-providers')));
       await tester.pumpAndSettle();
       final provider = find.byKey(const ValueKey('source-edition-$own'));
@@ -227,6 +230,9 @@ void main() {
             )
             .first,
       );
+      await Scrollable.ensureVisible(tester.element(episode), alignment: .25);
+      await tester.pumpAndSettle();
+      expect(episode.hitTestable(), findsOneWidget);
       await tester.tap(episode);
       await tester.pumpAndSettle();
       expect(engines.last.uri.path, '/second.mp4');

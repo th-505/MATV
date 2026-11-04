@@ -174,4 +174,22 @@ assert.equal(failedKeyAttempts, 1, "a rejected credential must not trigger hidde
 const empty = await runtime.search("a");
 assert.deepEqual(empty.data, []);
 
+const languageCalls = [];
+const localizedRuntime = createTmdbRuntime({ apiKey: 'test-key', fetchImpl: async url => {
+  const language = new URL(url).searchParams.get('language');
+  languageCalls.push(language);
+  return { ok: true, async json() { return {
+    id: 603, original_language: 'en', title: language === 'en-US' ? 'The Matrix' : 'المصفوفة',
+    credits: { crew: [{ id: 42, name: 'Director', job: 'Director', profile_path: '/director.jpg' }] },
+  }; } };
+} });
+assert.equal((await localizedRuntime.details('tmdb:movie:603', 'auto')).data.title, 'The Matrix');
+assert.equal((await localizedRuntime.details('tmdb:movie:603', 'ar-SA')).data.title, 'المصفوفة');
+const english = await localizedRuntime.details('tmdb:movie:603', 'en-US');
+assert.equal(english.data.title, 'The Matrix');
+assert.equal(english.data.director_people[0].id, 42);
+const beforeCache = languageCalls.length;
+await localizedRuntime.details('tmdb:movie:603', 'ar-SA');
+assert.equal(languageCalls.length, beforeCache, 'localized caches must stay separate');
+await assert.rejects(() => localizedRuntime.details('tmdb:movie:603', 'bad'), /TMDB_BAD_LANGUAGE/);
 console.log("tmdb runtime tests passed");

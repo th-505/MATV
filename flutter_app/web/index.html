@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="ltr">
 <head>
+  <!-- Flutter positions accessibility nodes in physical LTR coordinates.
+       App Directionality/localizations still render Arabic RTL. -->
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -34,7 +36,7 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body style="margin:0;background:#08080e;color:#f8f7ff">
-  <div id="najd-loading" role="status" style="position:fixed;inset:0;display:grid;place-items:center;font:20px system-ui;background:#08080e;color:#b4b2ff">جارٍ فتح نجد…</div>
+  <div id="najd-loading" role="status" dir="rtl" style="position:fixed;inset:0;display:grid;place-items:center;font:20px system-ui;background:#08080e;color:#b4b2ff">جارٍ فتح نجد…</div>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

@@ -19,7 +19,7 @@ export function explicitSeason(title='',url='') {
     let m=text.match(/(?:الموسم|موسم)\s*[:#_-]?\s*(\d{1,3})|(?:^|[\s_-])ج\s*(\d{1,3})(?=$|[\s_-])|\b(?:season|s)\s*[-_:]?\s*(\d{1,3})(?:e\d+)?\b/i);
     if(m)return positive(m[1]||m[2]||m[3]);
     const words=['الاول','الثاني','الثالث','الرابع','الخامس','السادس','السابع','الثامن','التاسع','العاشر'];
-    for(let i=0;i<words.length;i++)if(new RegExp('(?:الموسم|موسم)\\s+'+words[i]+'(?=$|[\\s_\\-])','i').test(text))return i+1;
+    for(let i=0;i<words.length;i++)if(new RegExp('(?:الموسم|موسم)[\\s_\\-]+'+words[i]+'(?=$|[\\s_\\-])','i').test(text))return i+1;
     return null;
   };
   let decoded=String(url||'');try{decoded=decodeURIComponent(decoded)}catch{}

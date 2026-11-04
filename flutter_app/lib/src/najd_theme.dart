@@ -1,8 +1,10 @@
+import 'viewport_profile.dart';
 import 'app_target.dart';
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -230,7 +232,7 @@ class NajdIntro extends StatefulWidget {
   const NajdIntro({
     super.key,
     required this.child,
-    this.duration = const Duration(seconds: 14),
+    this.duration = const Duration(seconds: 10),
   });
   final Widget child;
   final Duration duration;
@@ -240,6 +242,8 @@ class NajdIntro extends StatefulWidget {
 
 class _NajdIntroState extends State<NajdIntro> {
   Timer? _timer;
+  Timer? _continueTimer;
+  bool _canContinue = false;
   late bool _visible;
   @override
   void initState() {
@@ -247,16 +251,23 @@ class _NajdIntroState extends State<NajdIntro> {
     _visible =
         !Uri.base.queryParameters.containsKey('ref') &&
         !Uri.base.fragment.contains('najd_link=');
-    if (_visible) _timer = Timer(widget.duration, _dismiss);
+    if (_visible) {
+      _timer = Timer(widget.duration, _dismiss);
+      _continueTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted && _visible) setState(() => _canContinue = true);
+      });
+    }
   }
 
   void _dismiss() {
+    _continueTimer?.cancel();
     _timer?.cancel();
     if (mounted) setState(() => _visible = false);
   }
 
   @override
   void dispose() {
+    _continueTimer?.cancel();
     _timer?.cancel();
     super.dispose();
   }
@@ -311,10 +322,17 @@ class _NajdIntroState extends State<NajdIntro> {
                         const SizedBox(height: 20),
                         const Text('محمد بن قرملة'),
                         const SizedBox(height: 24),
-                        TextButton(
-                          autofocus: true,
-                          onPressed: _dismiss,
-                          child: const Text('متابعة إلى نجد'),
+                        SizedBox(
+                          height: 52,
+                          child: _canContinue
+                              ? FilledButton.icon(
+                                  key: const Key('najd-intro-continue'),
+                                  autofocus: true,
+                                  onPressed: _dismiss,
+                                  icon: const Icon(Icons.arrow_forward),
+                                  label: const Text('متابعة'),
+                                )
+                              : const SizedBox.shrink(),
                         ),
                       ],
                     ),
@@ -328,19 +346,39 @@ class _NajdIntroState extends State<NajdIntro> {
   );
 }
 
-class NajdTvViewport extends StatelessWidget {
+class NajdTvViewport extends StatefulWidget {
   const NajdTvViewport({super.key, required this.child});
   final Widget child;
   @override
+  State<NajdTvViewport> createState() => _NajdTvViewportState();
+}
+
+class _NajdTvViewportState extends State<NajdTvViewport> {
+  Map<String, Object>? _lastProfile;
+  Future<void> _writes = Future<void>.value();
+  @override
   Widget build(BuildContext context) {
-    if (!isTvTarget) return child;
     final media = MediaQuery.of(context);
-    final scale = (media.size.width / 1280).clamp(1.1, 1.6);
+    final profile = NajdViewportProfile.measure(media);
+    if (_lastProfile == null || !mapEquals(_lastProfile, profile)) {
+      _lastProfile = profile;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !identical(_lastProfile, profile)) return;
+        // Serial writes prevent an older resize overwriting the latest metrics.
+        // Failure to save diagnostics must never block layout or playback.
+        _writes = _writes
+            .then((_) => NajdViewportProfile.save(profile))
+            .catchError((Object _) {});
+      });
+    }
+    if (!isTvTarget) return widget.child;
     return MediaQuery(
       data: media.copyWith(
-        textScaler: TextScaler.linear(media.textScaler.scale(1) * scale),
+        textScaler: TextScaler.linear(
+          media.textScaler.scale(1) * NajdViewportProfile.tvScale(media.size),
+        ),
       ),
-      child: child,
+      child: widget.child,
     );
   }
 }

@@ -84,7 +84,8 @@ void main() {
                 format: ui.ImageByteFormat.png,
               );
               final root = Directory(
-                '/workspace/artifacts/najd-build109-proof',
+                Platform.environment['NAJD_CAPTURE_DIR'] ??
+                    '/workspace/artifacts/najd-build109-proof',
               );
               await root.create(recursive: true);
               await File(
@@ -122,7 +123,14 @@ void main() {
           await tester.tap(find.byTooltip('السيرفر / الجودة'));
           await tester.pumpAndSettle();
           await capture('sources');
-          await tester.tap(find.text('المزود الثاني • المصدر البديل'));
+          final alternative = find.text('المزود الثاني • المصدر البديل');
+          await Scrollable.ensureVisible(
+            tester.element(alternative),
+            alignment: .5,
+          );
+          await tester.pumpAndSettle();
+          expect(alternative.hitTestable(), findsOneWidget);
+          await tester.tap(alternative);
           await tester.pumpAndSettle();
           expect(selected, 1);
           await mount(
@@ -177,6 +185,11 @@ void main() {
               ),
             );
             await capture('player');
+            await tester.tap(find.byKey(const Key('player-more')));
+            await tester.pumpAndSettle();
+            await tester.ensureVisible(
+              find.byKey(const Key('player-providers')),
+            );
             await tester.tap(find.byKey(const Key('player-providers')));
             await tester.pumpAndSettle();
             await capture('providers');

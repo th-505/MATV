@@ -1,10 +1,36 @@
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mitv/src/api_client.dart';
 
 void main() {
+  test('server availability codes survive HTTP errors without exposing gateway HTML', () async {
+    final api = MitvApi(
+      client: MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'status': 'error',
+            'message': 'SOURCE_TEMPORARILY_UNAVAILABLE',
+          }),
+          503,
+        ),
+      ),
+    );
+    addTearDown(api.close);
+    await expectLater(
+      api.explore('عمل', 'fosta'),
+      throwsA(
+        isA<ApiException>().having(
+          (e) => e.code,
+          'code',
+          'SOURCE_TEMPORARILY_UNAVAILABLE',
+        ),
+      ),
+    );
+    expect(api.lastSearchStage, 'http_503');
+  });
   test(
     'search exposes a support ID and sends an anonymous session/platform',
     () async {
@@ -33,21 +59,18 @@ void main() {
       expect(api.lastSearchStage, 'http_503');
     },
   );
-  test(
-    'connection failure is distinct from a server reply and never invents a support ID',
-    () async {
-      final api = MitvApi(
-        client: MockClient((_) async => throw http.ClientException('offline')),
-      );
-      addTearDown(api.close);
-      await expectLater(
-        api.explore('مرعشلي', '3isk'),
-        throwsA(isA<http.ClientException>()),
-      );
-      expect(api.lastSearchTrace, isNull);
-      expect(api.lastSearchStage, 'client_no_response');
-    },
-  );
+  test('connection failure is distinct from a server reply and never invents a support ID', () async {
+    final api = MitvApi(
+      client: MockClient((_) async => throw http.ClientException('offline')),
+    );
+    addTearDown(api.close);
+    await expectLater(
+      api.explore('مرعشلي', '3isk'),
+      throwsA(isA<http.ClientException>()),
+    );
+    expect(api.lastSearchTrace, isNull);
+    expect(api.lastSearchStage, 'client_no_response');
+  });
   test('source display name and domain come from the server', () async {
     final api = MitvApi(
       client: MockClient(

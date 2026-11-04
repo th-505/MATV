@@ -42,6 +42,27 @@ void main() {
       'keep',
     );
   });
+  testWidgets('intro opens Continue after 3 seconds and closes itself at 10', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: NajdThemes.light,
+        home: const NajdIntro(child: Text('automatic-home')),
+      ),
+    );
+    expect(find.byKey(const Key('najd-intro-continue')), findsNothing);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byKey(const Key('najd-intro-continue')), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(const Key('najd-intro-continue')), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6));
+    expect(find.byKey(const Key('najd-intro-continue')), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('automatic-home'), findsOneWidget);
+    expect(find.byKey(const Key('najd-intro-continue')), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
   for (final size in [
     const Size(320, 568),
     const Size(390, 844),
@@ -62,7 +83,9 @@ void main() {
         ),
       );
       expect(find.text('محمد بن قرملة'), findsOneWidget);
-      final skip = find.text('متابعة إلى نجد');
+      expect(find.byKey(const Key('najd-intro-continue')), findsNothing);
+      await tester.pump(const Duration(seconds: 3));
+      final skip = find.byKey(const Key('najd-intro-continue'));
       await tester.ensureVisible(skip);
       await tester.tap(skip);
       await tester.pump();

@@ -2,13 +2,13 @@
   "schema_version": 1,
   "scope": "static repository declarations; no network requests",
   "counts": {
-    "site_modules_with_metadata": 21,
-    "registered_modules": 21,
+    "site_modules_with_metadata": 23,
+    "registered_modules": 23,
     "explicit_mirrors": 2,
-    "not_marked_as_mirror": 19,
+    "not_marked_as_mirror": 21,
     "ui_spellings": 0,
     "static_ui_array_entries": 0,
-    "pinned_search_modules": 19,
+    "pinned_search_modules": 21,
     "seed_only_entries": 6
   },
   "ui_delivery": {
@@ -255,13 +255,46 @@
       "live_validation": "not_run"
     },
     {
+      "id": "brstej",
+      "name": "برستيج",
+      "code": "BR",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/brstej.mjs",
+      "metadata_line": 10,
+      "source_sha256": "552b6f1c41164bca0a804bbb66e9d90d0433ad8d7c8f47ee28a0811364be5468",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [
+        "brstej"
+      ],
+      "live_validation": "not_run"
+    },
+    {
       "id": "cimanow",
       "name": "سيما ناو (CimaNow)",
       "code": "CW",
       "mirror_of": null,
       "path": "server/scrapers/sites/cimanow.mjs",
       "metadata_line": 32,
-      "source_sha256": "6fbe8e6a4abd6283e2ba5294dcba94317b78befa354393dcaf99c0f2b1b82650",
+      "source_sha256": "bd67704fccfd0852adc3d3b8faf129358c7e6930e0586db08bff7eac9edbb0ba",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -352,6 +385,39 @@
       "live_validation": "not_run"
     },
     {
+      "id": "fosta",
+      "name": "فوستا",
+      "code": "FO",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/fosta.mjs",
+      "metadata_line": 11,
+      "source_sha256": "c00ebe6b09f526f3ddba7db6555364a976704dbbcfc963f830358001e041de90",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [
+        "fosta"
+      ],
+      "live_validation": "not_run"
+    },
+    {
       "id": "ipauniverse",
       "name": "IPA Universe",
       "code": "IE",
@@ -424,7 +490,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/mewsry.mjs",
       "metadata_line": 51,
-      "source_sha256": "b186c60c6ecebbabb4349080843a196fa2a84616f4d23aa5a40408ee7baed481",
+      "source_sha256": "566238f297dbbbc415817c66c063963b0412a16d04e667f93e240868940685cc",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -801,6 +867,8 @@
     "server/match-production.mjs"
   ],
   "aggregation_modules": [
+    "server/scrapers/sites/brstej-categories.mjs",
+    "server/scrapers/sites/fosta-categories.mjs",
     "server/scrapers/sites/specialized-portals.mjs"
   ],
   "warnings": [
