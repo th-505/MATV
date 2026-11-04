@@ -144,3 +144,13 @@ test('successful task completion does not immediately rescan every durable backl
  await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));assert.equal(calls,3);
  await worker.stop();
 });
+
+test('on-demand mode never sweeps the global backlog and still starts twenty persisted searches',async()=>{
+ let sweeps=0,started=0;const releases=[];
+ const store={claimLane:async()=>{sweeps++;return[]},claimKnown:async(w,n,lane,keys)=>keys.map(job_key=>({job_key,stage:'provider'})),complete:async()=>{},heartbeat:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,scanBacklog:false,handlers:{provider:()=>{started++;return new Promise(r=>releases.push(r))}},pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));worker.wake();await new Promise(r=>setImmediate(r));assert.equal(sweeps,0);
+ worker.wake({jobs:Array.from({length:20},(_,i)=>({job_key:'ondemand-'+i,stage:'provider',payload:{phase:'search'}}))});
+ await new Promise(r=>setImmediate(r));assert.equal(started,20);assert.equal(sweeps,0);
+ for(const release of releases)release({});await worker.stop();
+});

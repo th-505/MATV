@@ -24,9 +24,10 @@ export function createSourceApi({store,worker,now=Date.now}){
  }
  async function status(ref){
   if(!store)throw Error('HARVEST_NOT_CONFIGURED');const key=workReference(ref);
-  const [work,jobs,sources]=await Promise.all([store.getWork(key),store.request('matv_discovery_jobs',{content_ref:'eq.'+key,select:'provider,stage,status,error_code,progress,payload,updated_at',order:'updated_at.desc',limit:1000}),store.request('najd_source_catalog',{work_ref:'eq.'+key,select:'provider,source_ref,state,progress,updated_at',order:'updated_at.desc',limit:1000})]);
+  const [work,jobs,sources]=await Promise.all([store.getWork(key),store.request('matv_discovery_jobs',{content_ref:'eq.'+key,select:'job_key,provider,stage,status,error_code,progress,payload,updated_at',order:'updated_at.desc',limit:1000}),store.request('najd_source_catalog',{work_ref:'eq.'+key,select:'provider,source_ref,state,progress,updated_at',order:'updated_at.desc',limit:1000})]);
   const discovery_counts={queued:0,running:0,ready:0,failed:0};
   for(const row of jobs||[])if(row.stage!=='episode'&&row.status in discovery_counts)discovery_counts[row.status]++;
+  worker.wake({jobs:(jobs||[]).filter(row=>row.stage!=='episode'&&['queued','running'].includes(row.status))});
   const counts={queued:0,running:0,ready:0,failed:0};for(const row of jobs||[])if(row.status in counts)counts[row.status]++;
   const legacy=(sources||[]).filter(row=>sourceWorkRef(row.progress?.source_work_ref)&&!row.progress?.index_identity).map(row=>row.progress.source_work_ref);
   if(legacy.length&&store.sourceIndexIdentities){
@@ -59,7 +60,7 @@ export function createSourceApi({store,worker,now=Date.now}){
   const rows=await store.episodes(key,{season,episode,limit:100,indexedSince:work.metadata.index_started_at});if(!rows?.length)return{state:'unavailable',reason:'SOURCE_EPISODE_NOT_FOUND'};
   const matching=await store.request('matv_discovery_jobs',{content_ref:'eq.'+key,stage:'eq.episode',season_number:'eq.'+season,episode_number:'eq.'+episode,select:'job_key,status,error_code,payload,updated_at',limit:100});
   const forcing=(matching||[]).find(j=>['queued','running'].includes(j.status)&&j.payload?.force_refresh===true);
-  if(forcing){worker.wake();return{state:forcing.status,poll_after_ms:1500};}
+  if(forcing){worker.wake({jobs:[{job_key:forcing.job_key,stage:'episode'}]});return{state:forcing.status,poll_after_ms:1500};}
   const servers=[],seen=new Set();
   for(const row of rows)for(const media of row.media||[]){
    if(refresh||row.state!=='playable'||!directCandidate(media)||media.identity_verified!==true||!(Date.parse(media.expires_at)>now()+30000)||(platform==='web'&&media.web_playable!==true)||Number(media.observed_identity?.season)!==season||Number(media.observed_identity?.episode)!==episode||seen.has(media.url))continue;
