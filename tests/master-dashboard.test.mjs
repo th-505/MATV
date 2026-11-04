@@ -21,6 +21,7 @@ test('Arabic dashboard is usable on mobile, desktop and TV with a downloadable s
   requests.push({url:req.url,authorization:req.headers.authorization});
   const paths={'/admin':['text/html',masterDashboardHtml],'/admin/style.css':['text/css',masterDashboardCss],'/admin/app.js':['text/javascript',masterDashboardJs]};
   if(paths[req.url]){res.writeHead(200,{'Content-Type':paths[req.url][0],'Cache-Control':'no-store','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"});res.end(paths[req.url][1]);return;}
+  if(req.url==='/api/v1/admin/database-health'){res.writeHead(req.headers.authorization==='Bearer fixture-admin-key'?200:401,{'Content-Type':'application/json'});res.end(JSON.stringify({cpu_percent:12.5,sample_interval_seconds:60,state:'ok'}));return;}
   if(req.url==='/api/v1/admin/report'){res.writeHead(req.headers.authorization==='Bearer fixture-admin-key'?200:401,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(req.headers.authorization==='Bearer fixture-admin-key'?report:{message:'DIAGNOSTICS_AUTH_REQUIRED'}));return;}
   res.writeHead(404);res.end();
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -33,6 +34,7 @@ test('Arabic dashboard is usable on mobile, desktop and TV with a downloadable s
    assert.match(await page.locator('#status').innerText(),/غير صحيح/);
    await page.locator('#key').fill('fixture-admin-key');await page.locator('#connect').click();await page.locator('#dashboard').waitFor({state:'visible'});
    assert.equal(await page.locator('#key').inputValue(),'');assert.match(await page.locator('#scope').innerText(),/الإجمالي/);
+   await page.locator('#measure-database').click();await page.waitForFunction(()=>document.getElementById('database-metrics').textContent.includes('12.5%'));
    const counter=await page.locator('#counters .counter strong').allTextContents();assert.deepEqual(counter,['١٢','٢','١٣٣','٣٦']);
    await page.locator('[data-view="works"]').click();assert.match(await page.locator('#view').innerText(),/مدبلج · نسخة مستقلة/);assert.match(await page.locator('#view').innerText(),/توجد فجوات/);
    await page.locator('[data-view="traces"]').click();assert.match(await page.locator('#view').innerText(),/أُرسل الطلب للمصدر/);assert.match(await page.locator('#view').innerText(),/إصدار التطبيق: 1\.1\.6/);assert.match(await page.locator('#view').innerText(),/داخل مشغل التطبيق/);assert.match(await page.locator('#report-meta').innerText(),/إصدار الخادم: 1\.1\.7/);
@@ -46,7 +48,7 @@ test('Arabic dashboard is usable on mobile, desktop and TV with a downloadable s
    await page.locator('#disconnect').click();assert.equal(await page.locator('#dashboard').isVisible(),false);assert.equal(await page.locator('#technical-data').innerText(),'');
    await context.close();
   }
-  assert(requests.filter(r=>r.authorization==='Bearer fixture-admin-key').every(r=>['/api/v1/admin/report','/api/v1/admin/provider-config'].includes(r.url)));
+  assert(requests.filter(r=>r.authorization==='Bearer fixture-admin-key').every(r=>['/api/v1/admin/report','/api/v1/admin/provider-config','/api/v1/admin/database-health'].includes(r.url)));
   assert(requests.every(r=>!r.url.includes('fixture-admin-key')));
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
