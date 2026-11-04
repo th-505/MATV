@@ -46,3 +46,7 @@ Date: 2026-11-04. This is a verification checkpoint, not a release certificate.
 - New worker change limits idle lane sweeps to 30 seconds, prevents immediate sweep after every completion, and applies 5–120 second exponential database-failure backoff. Exact persisted interactive keys still dispatch immediately when the database is healthy. Full Node suite: 181 passed.
 - Six-target review build 41908273318 succeeded, including release verification. It contains fec7fed, before the worker-only follow-up. No release was published from that run.
 - At 21:19 UTC an active management advisor query was observed; expensive advisor checks will not be repeated during the incident. CPU 95% remains reported by the dashboard and must not be declared fixed from empty pg_stat_activity samples.
+
+### Duplicate deployment discovered
+
+The legacy service `matv.onrender.com` remains live in the older NajdTV workspace, in addition to `najdtv.onrender.com`. Its logs also contain repeated harvest failures. Background harvesting was disabled on the legacy service as well; legacy HTTP service was preserved for installed clients. Track deployment dep-dblq3ut9el5s73eeo1e0 before considering the duplicate producer stopped. Do not re-enable both producers. No proof of a reduced CPU percentage has been obtained yet.
