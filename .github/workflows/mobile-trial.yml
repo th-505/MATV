@@ -14,6 +14,14 @@ on:
         description: Private user font bundle URL for native builds only
         required: false
         type: string
+      apple_runner:
+        description: Apple build runner; Intel can cross-build iOS when arm64 capacity is unavailable
+        required: false
+        default: macos-15
+        type: choice
+        options:
+          - macos-15
+          - macos-15-intel
       api_base:
         description: Verified public metadata API URL
         required: true
@@ -175,7 +183,7 @@ jobs:
 
   ios-unsigned:
     needs: [verify-api, providers]
-    runs-on: macos-15
+    runs-on: ${{ inputs.apple_runner || 'macos-15' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -313,7 +321,7 @@ jobs:
 
   macos:
     needs: [verify-api, providers]
-    runs-on: macos-15
+    runs-on: ${{ inputs.apple_runner || 'macos-15' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
