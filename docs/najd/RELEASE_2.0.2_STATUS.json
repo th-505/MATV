@@ -1,0 +1,35 @@
+{
+  "version": "2.0.2",
+  "build": 202,
+  "source_commit": "3e31f5d58b46a17b5023b3a96bc56d6ef4985d76",
+  "site": "https://th-505.github.io/NajdTV/",
+  "api": "https://najdtv.onrender.com",
+  "public_workflow": 41885371672,
+  "native_build_workflow": 41885377058,
+  "published_native_release": false,
+  "local_tests": {
+    "server_deployed": 155,
+    "flutter_passed": 355,
+    "flutter_skipped": 7,
+    "analyzer": "no issues"
+  },
+  "live_browser_checks": [
+    {
+      "provider": "ahwak",
+      "items": 53,
+      "posters": 53,
+      "numeric_ratings": true
+    },
+    {
+      "provider": "mycima",
+      "items": 53,
+      "posters": 53,
+      "numeric_ratings": true
+    }
+  ],
+  "remaining": [
+    "Supabase connection and queue claim performance verification",
+    "Native six-target artifact verification and release",
+    "Live multi-provider playback validation; blocked providers remain unverified"
+  ]
+}
