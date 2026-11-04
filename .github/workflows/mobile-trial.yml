@@ -145,6 +145,8 @@ jobs:
           grep -q android.permission.INTERNET /tmp/mitv-permissions.txt
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/mitv-manifest.txt
           grep -q networkSecurityConfig /tmp/mitv-manifest.txt
+          grep -q 'supportsPictureInPicture.*0xffffffff' /tmp/mitv-manifest.txt
+          grep -q 'resizeableActivity.*0xffffffff' /tmp/mitv-manifest.txt
           "$AAPT" dump badging "$APK" > /tmp/mitv-badging.txt
           grep -q "package: name='com.mitv.mitv'" /tmp/mitv-badging.txt
           grep -q "application-label:'Najd TV'" /tmp/mitv-badging.txt
