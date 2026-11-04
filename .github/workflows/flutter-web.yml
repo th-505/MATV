@@ -56,11 +56,11 @@ jobs:
         env:
           CHROMIUM_BIN: /usr/bin/google-chrome
         run: node scripts/episode_identity_browser_test.mjs
-      - name: Verify Chromium MP4 playback with offline Auth fixtures
+      - name: Verify Chromium MP4 and OS PiP with offline Auth fixtures
         timeout-minutes: 2
         env:
           CHROMIUM_BIN: /usr/bin/google-chrome
-        run: node scripts/flutter_web_smoke.mjs
+        run: NAJD_TEST_PIP=1 node scripts/flutter_web_smoke.mjs
       - name: Verify Chromium HLS playback with offline Auth fixtures
         timeout-minutes: 2
         env:

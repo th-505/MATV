@@ -173,6 +173,16 @@ try {
     null,
     { timeout: 25000 },
   );
+  if (process.env.NAJD_TEST_PIP === '1') {
+    await page.locator('video').evaluate(v => { v.loop = true; });
+    await page.waitForTimeout(1500);
+    await page.keyboard.press('a');
+    await page.getByRole('button', {name: 'المزيد', exact: true}).evaluate(el => el.click());
+    await page.getByText('صورة داخل صورة', {exact: true}).evaluate(el => el.click());
+    await page.waitForFunction(() => document.pictureInPictureElement != null, null, {timeout: 10000});
+    await page.evaluate(() => document.exitPictureInPicture());
+    await page.waitForFunction(() => document.pictureInPictureElement == null);
+  }
   const video = await page.locator("video").evaluate((v) => ({
     width: v.videoWidth,
     height: v.videoHeight,
@@ -192,6 +202,7 @@ try {
       format,
       app_booted: true,
       video_decoded: true,
+      system_pip_entered_and_exited: process.env.NAJD_TEST_PIP === '1',
       ...video,
       exceptions: errors.length,
       fixture: true,

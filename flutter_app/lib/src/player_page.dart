@@ -1226,7 +1226,17 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   Future<void> _configurePip(UniversalPlayer player) async {
-    final supported = await _pip.supported(_currentMediaType);
+    var supported = await _pip.supported(_currentMediaType);
+    // HTML platform views can attach after the media controller is initialized.
+    for (
+      var attempt = 0;
+      kIsWeb && !supported && attempt < 4 && mounted && player == _controller;
+      attempt++
+    ) {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!mounted || player != _controller) return;
+      supported = await _pip.supported(_currentMediaType);
+    }
     if (!mounted || player != _controller) return;
     setState(() => _pipAvailable = supported);
     _lastPipPlaying = null;
@@ -1571,7 +1581,8 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
 
   Future<void> _moreMenu(UniversalPlayer controller) async {
     await _endBoost();
-    if (!mounted) return;
+    if (kIsWeb && !_pipAvailable) await _configurePip(controller);
+    if (!mounted || controller != _controller) return;
     _controlsTimer?.cancel();
     final action = await showNajdPanel<String>(
       context,
