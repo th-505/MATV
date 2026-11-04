@@ -10,7 +10,7 @@ import {createSourceApi} from './source-api.mjs';
 const canonical=ref=>/^tmdb:(movie|tv):[1-9]\d{0,9}$/.test(String(ref));
 export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='1'?createHarvestStore():null,metadata=createTmdbRuntime(),logger=()=>{},now=Date.now}={}){
  const entries=listProviders().map(meta=>getProvider(meta.id));
- const worker=createHarvestWorker({store,handlers:store?createHarvestPipeline({store,metadata,entries,now}):{},logger});
+ const worker=createHarvestWorker({store,handlers:store?createHarvestPipeline({store,metadata,entries,now}):{},scanBacklog:process.env.NAJD_HARVEST_SCAN_BACKLOG!=='0',logger});
  let configTimer=null,hourlyTimer=null,lastWake=0;
  async function refreshConfig(){if(store){await store.ensureProviderRegistry?.();installProviderConfigs(await store.config())}}
  function start(){
@@ -18,7 +18,7 @@ export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='
   void refreshConfig().catch(()=>logger({event:'najd_config_refresh',reason:'CONFIG_UNAVAILABLE'}));
   worker.start();
   configTimer=setInterval(()=>void refreshConfig().catch(()=>{}),30000);configTimer.unref?.();
-  hourlyTimer=setInterval(()=>void store.hourly().then(()=>worker.wake()).catch(()=>{}),3600000);hourlyTimer.unref?.();
+  if(process.env.NAJD_HARVEST_HOURLY_ENABLED!=='0')hourlyTimer=setInterval(()=>void store.hourly().then(()=>worker.wake()).catch(()=>{}),3600000);hourlyTimer?.unref?.();
  }
  async function stop(){clearInterval(configTimer);clearInterval(hourlyTimer);configTimer=null;await worker.stop()}
  async function cachedWork(ref){

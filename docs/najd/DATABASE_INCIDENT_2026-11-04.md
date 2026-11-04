@@ -28,3 +28,9 @@ A managed pause was accepted by Supabase. The project subsequently reported PAUS
 - Dashboard includes a manual CPU measurement action. No extra automatic metrics polling or support-report scans are added.
 - Tests: 183 Node cases passed before the dashboard measurement button; dedicated metrics/dashboard tests passed after the UI change, including mobile/desktop/TV and credential destination checks.
 - After restore: verify schema, service-only grants, account/library tables, keyed RPC, one actual source index, metrics samples and authenticated cloud writes. Retain release hold until availability and data are verified.
+
+## On-demand recovery mode
+
+Use `NAJD_HARVEST_SCAN_BACKLOG=0` and `NAJD_HARVEST_HOURLY_ENABLED=0` on the current service before re-enabling `NAJD_HARVEST_ENABLED=1`. This permits exact-key interactive tasks and prevents global backlog scans and hourly mass enqueue from starting automatically. Work-status requests recover pending non-media jobs for that specific work; playback recovers the specific episode key. The legacy service retains `NAJD_HARVEST_ENABLED=0`.
+
+The on-demand test confirms zero global lane scans while twenty persisted search tasks start concurrently. Complete Node suite after this change: 185 passed. This is prevention of the identified workload pattern, not a guarantee against upstream platform incidents.

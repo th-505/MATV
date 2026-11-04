@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 /** Atomic DB leases, bounded work, heartbeat and restart recovery. No in-memory-only queue. */
-export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,backgroundPollMs=30000,now=Date.now,logger=()=>{}}={}){
+export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,backgroundPollMs=30000,scanBacklog=true,now=Date.now,logger=()=>{}}={}){
  const worker=randomUUID();let active=0,polling=false,stopped=true,timer=null;const running=new Set();
  let lanes=typeof store?.claimLane==='function'?{search:20,index:4,media:2}:null;
  const nextSweep={search:0,index:0,media:0};const retryAt={search:0,index:0,media:0};const failures={search:0,index:0,media:0};
@@ -32,6 +32,7 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,ba
     const claimed=await Promise.allSettled(Object.entries(lanes).map(async([lane,limit])=>{
      const capacity=limit-laneActive[lane];if(capacity<=0||lanePolling.has(lane))return;
      const keys=knownSupported?[...known[lane]].slice(0,capacity):[];
+     if(!scanBacklog&&!keys.length)return;
      if(now()<retryAt[lane]||(!force&&!keys.length&&now()<nextSweep[lane]))return;
      lanePolling.add(lane);
      try{
@@ -49,7 +50,7 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,ba
      // A temporarily older DB schema keeps the compatible worker, never a dead queue.
      if(result.reason?.message==='HARVEST_DB_HTTP_404')lanes=null;
     }
-   }else{const jobs=await store.claim(worker,concurrency-active);for(const job of jobs||[])void run(job)}
+   }else{if(!scanBacklog)return;const jobs=await store.claim(worker,concurrency-active);for(const job of jobs||[])void run(job)}
   }catch(e){logger({event:'najd_harvest_poll',reason:reason(e)})}finally{polling=lanePolling.size>0}
  }
  function start(){if(!stopped||!store)return;stopped=false;timer=setInterval(pulse,pollMs);timer.unref?.();void pulse()}
