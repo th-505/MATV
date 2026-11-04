@@ -9,6 +9,7 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,lo
   active++;if(lane)laneActive[lane]++;let heartbeat;
   const task=(async()=>{
    await Promise.resolve(); // Register the task before a synchronous failure can finalize it.
+   logger({event:'najd_harvest_start',stage:job.stage,provider:job.provider||null,phase:job.payload?.phase||job.stage,lane,active:lane?laneActive[lane]:active});
    heartbeat=setInterval(()=>store.heartbeat(job.job_key,worker).catch(()=>{}),25000);heartbeat.unref?.();
    try{const handler=handlers[job.stage];if(!handler)throw Error('HARVEST_STAGE_NOT_SUPPORTED');
     const result=await handler(job);clearInterval(heartbeat);await store.complete(job,worker,result);

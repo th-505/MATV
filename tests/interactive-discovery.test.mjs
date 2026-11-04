@@ -51,3 +51,9 @@ test('browser retains actual blocked/timeout codes instead of flattening all fai
  const browser=createProviderBrowser({lookup:()=>entry});
  await assert.rejects(browser.catalog('one','all',1),e=>e.message==='BROWSER_SOURCE_UNAVAILABLE'&&e.code==='NETWORK_TIMEOUT');
 });
+
+test('browser emits compact numeric ratings for already installed clients',async()=>{
+ const meta={id:'one',domains:['https://one.example'],capabilities:{catalog:true}};
+ const browser=createProviderBrowser({lookup:()=>({meta,module:{CONFIG:{categories:{all:'/'}},scrapeCatalog:async()=>[{id:'x',ref:'one:x',title:'Work',rating:'8.5',image:'https://one.example/poster.jpg',unused:'x'.repeat(200000)}]}})});
+ const result=await browser.catalog('one','all',1);assert.equal(result.items[0].rating,8.5);assert.equal(result.items[0].poster,'https://one.example/poster.jpg');assert(JSON.stringify(result).length<2000);
+});

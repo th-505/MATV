@@ -46,7 +46,13 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       const observedNext = Number.isInteger(nextPage) && nextPage > page;
       const explicitPagination = Object.hasOwn(meta, 'next_page') || Object.hasOwn(meta, 'has_more');
       return { status: 'success', provider: id, category: selected || null,
-        items: items.filter(item => item?.ref && item?.title).map(item => ({ ...item,
+        items: items.filter(item => item?.ref && item?.title).map(item => ({
+          id:item.id||item.ref,ref:item.ref,title:item.title,poster:item.poster||item.image||'',
+          type:item.type||'series',year:item.year||null,
+          rating:Number.isFinite(Number(item.rating))?Math.max(0,Math.min(10,Number(item.rating))):0,
+          genres:Array.isArray(item.genres)?item.genres:[],edition:item.edition||'',
+          audio_language:item.audio_language||'',imdb_id:item.imdb_id||'',
+          identity_verified:item.identity_verified===true,work_identity_verified:item.work_identity_verified===true,
           source: id, selected_source: id, source_refs: { [id]: item.ref } })),
         pagination: { page, next_page: observedNext ? nextPage : null,
           has_more: explicitPagination ? observedNext || meta.has_more === true : items.length > 0,

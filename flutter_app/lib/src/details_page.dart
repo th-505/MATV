@@ -115,6 +115,9 @@ class _DetailsPageState extends State<DetailsPage> {
 
   Future<TitleDetails> _loadDetails(String ref) async {
     var details = await widget.api.details(ref);
+    if (details.poster.isEmpty && widget.item.poster.isNotEmpty) {
+      details = details.copyWith(poster: widget.item.poster);
+    }
     if (ref.startsWith('tmdb:')) {
       try {
         final localized = await widget.api.localizedMetadata(
