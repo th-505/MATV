@@ -31,7 +31,8 @@ export function installProviderConfigs(entries){
   try{next.set(row.provider,{...validateProviderConfig(row.config||{}),enabled:row.enabled!==false,revision:row.revision||1})}catch{continue}}
  rows.clear();for(const[k,v]of next)rows.set(k,v);return rows.size;
 }
-export function getProviderConfig(id){return configScope.getStore()?.get(id)||rows.get(id)||null}
+export function getProviderConfig(id){const scoped=configScope.getStore();if(scoped?.exclusive)return scoped.values.get(id)||null;return scoped?.get(id)||rows.get(id)||null}
+export function withProviderConfigs(entries,callback){const values=new Map();for(const row of entries||[])values.set(row.provider,{...validateProviderConfig(row.config||{}),enabled:row.enabled!==false,revision:row.revision||0});return configScope.run({exclusive:true,values},callback)}
 export function withProviderConfig(id,config,callback){return configScope.run(new Map([[id,{...validateProviderConfig(config),enabled:true,revision:0}]]),callback)}
 export function effectiveProviderDomains(id,defaults){const c=getProviderConfig(id);return c?.primary_domain?[new URL(c.primary_domain).hostname,...defaults.map(x=>{try{return new URL(x).hostname}catch{return x}})]:defaults.map(x=>{try{return new URL(x).hostname}catch{return x}})}
 function moveOrigin(value,origin){try{const u=new URL(value);return origin+u.pathname+u.search+u.hash}catch{return value}}

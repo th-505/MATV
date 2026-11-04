@@ -15,7 +15,8 @@ const cleanTitle=x=>identityTitle(x).replace(/^(?:انمي|أنمي|anime)\s+/i,
 export function scanEpisodeIndex(html,url,{provider,domains,title='',episodes=[]}={}){
  const $=cheerio.load(html);const byRef=new Map();const parentSeason=explicitSeason(title,url);
  function add(raw){
-  const target=safePage(raw.url||raw.link||raw.ref?.replace(/^[a-z0-9_-]+:/i,'')||'',url,domains);if(!target)return;
+  let candidate=raw.url||raw.link||'';if(!candidate&&raw.ref){try{candidate=referenceUrl(raw.ref,domains)}catch{return}}
+  const target=safePage(candidate,url,domains);if(!target)return;
   const text=String(raw.title||raw.name||'').trim().slice(0,500);const number=explicitEpisode(text,target)||Number(raw.episode_number??raw.number??raw.num);
   if(!Number.isSafeInteger(number)||number<1||number>100000)return;
   const season=Number(raw.season_number??raw.season)||explicitSeason(text,target)||parentSeason||1;

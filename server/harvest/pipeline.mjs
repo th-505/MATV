@@ -1,3 +1,5 @@
+import {sourceEpisodeEvidence} from '../scrapers/shared/source-episode-evidence.mjs';
+import {resolveProviderMedia} from '../scrapers/shared/provider-media.mjs';
 import {supportsContent} from '../scrapers/content-scope.mjs';
 import {shortHash,referenceUrl,scanEpisodeIndex} from './episode-index.mjs';
 import {matchHarvestIdentity,harvestQueryVariants,mediaExpiry,containsWorkTitle} from './identity.mjs';
@@ -102,28 +104,25 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
   await store.setEpisode(ref,entry.meta.id,source,{state:'resolving'});
   try{
   const d=await entry.module.scrapeDetails(source,network);
-  const identity={...contentIdentity(d)};
+  const identity={...contentIdentity(d),...sourceEpisodeEvidence(d,source,domains(entry))};
   const work=await store.getWork(ref);if(!work)throw Error('HARVEST_WORK_MISSING');
   if(work.metadata.identity_scope==='source'&&!explicitSeason(d.title,d.sourceUrl||''))identity.season_number=input.payload.observed_episode?.source_season||identity.season_number;
   if(input.episode_number){
     if(!episodeMatchesMapping(identity,input))throw Error('HARVEST_EPISODE_IDENTITY_CONFLICT');
     if(!containsWorkTitle(work.metadata,d.title||d.series_title||d.parent_title))throw Error('HARVEST_EPISODE_WORK_UNCONFIRMED');
   }else if(work.metadata.identity_scope==='source'?!containsWorkTitle(work.metadata,d.title):!matchHarvestIdentity(work.metadata,d).accepted)throw Error('HARVEST_WORK_IDENTITY_UNCONFIRMED');
-  let candidates=[...(d?.media_sources||[]),...(d?.servers||[])].filter(directCandidate);
-  if(!candidates.length&&typeof entry.module.scrapeServers==='function')candidates=(await entry.module.scrapeServers(source,network)).filter(directCandidate);
-  if(!candidates.length&&typeof entry.module.resolveStream==='function'){
-   const resolved=await entry.module.resolveStream(source,network);
-   candidates=(Array.isArray(resolved)?resolved:[...(resolved?.servers||[]),...(resolved?.sources||[]),resolved]).filter(Boolean).map(row=>({...row,url:row.url||row.streamUrl})).filter(directCandidate);
-  }
-  if(!candidates.length){const target=referenceUrl(source,domains(entry));candidates=await unwrapEmbedToDirectStreams(target,target);}
-  const media=[],probeFailures=[];
+  const probeFailures=[];
+  const inspect=async candidates=>{const accepted=[];
   for(const candidate of candidates){
    if(!directCandidate(candidate))continue;const expires=mediaExpiry(candidate,now());if(!expires)continue;
    let technical;try{technical=await probe(candidate,{platform:'native'})}catch(error){probeFailures.push({reason:/^[A-Z_]{2,80}$/.test(error.code||'')?error.code:'MEDIA_READ_FAILED'});continue}
    if(!technical.playable){probeFailures.push({reason:'MEDIA_CONTAINER_UNAVAILABLE',status:technical.statusCode||null});continue;}
    const publicHeaders={};for(const[k,v]of Object.entries(candidate.headers||{}))if(['referer','origin','user-agent','cookie'].includes(k.toLowerCase())&&typeof v==='string'&&!/[\r\n]/.test(v))publicHeaders[k]=v;
-   media.push({...candidate,provider:entry.meta.id,kind:'direct',headers:publicHeaders,expires_at:new Date(expires).toISOString(),identity_verified:true,observed_identity:{...(input.payload.observed_identity||{}),season:input.payload.observed_episode?.season||0,episode:input.payload.observed_episode?.episode||0},source_identity:input.payload.observed_episode||null,canonical_identity_verified:work.metadata.identity_scope!=='source',source_edition:work.metadata.source_edition||'unknown',edition:work.metadata.edition||entry.meta.id+':'+shortHash(source),source_ref:source,verification_basis:(work.metadata.identity_scope==='source'?'source-own-index-and-':'canonical-work-source-metadata-and-')+(technical.container_verified?'container-bytes':'probe'),web_playable:technical.webPlayable===true,season:input.season_number,episode:input.episode_number});
+   accepted.push({...candidate,provider:entry.meta.id,kind:'direct',headers:publicHeaders,expires_at:new Date(expires).toISOString(),identity_verified:true,observed_identity:{...(input.payload.observed_identity||{}),season:input.payload.observed_episode?.season||0,episode:input.payload.observed_episode?.episode||0},source_identity:input.payload.observed_episode||null,canonical_identity_verified:work.metadata.identity_scope!=='source',source_edition:work.metadata.source_edition||'unknown',edition:work.metadata.edition||entry.meta.id+':'+shortHash(source),source_ref:source,verification_basis:(work.metadata.identity_scope==='source'?'source-own-index-and-':'canonical-work-source-metadata-and-')+(technical.container_verified?'container-bytes':'probe'),web_playable:technical.webPlayable===true,season:input.season_number,episode:input.episode_number});
   }
+   return accepted;};
+  let media=await resolveProviderMedia(entry,source,{details:d,network,accept:inspect});
+  if(!media.length){const target=referenceUrl(source,domains(entry));media=await inspect(await unwrapEmbedToDirectStreams(target,target));}
   const expiry=media.length?Math.min(...media.map(x=>Date.parse(x.expires_at))):null;
   await store.setEpisode(ref,entry.meta.id,source,{state:media.length?'playable':'unavailable',media,media_expires_at:expiry?new Date(expiry).toISOString():null,last_checked_at:new Date(now()).toISOString()});
   if(media.length)await store.request('najd_work_catalog',{ref:'eq.'+ref},'PATCH',{state:'playable',updated_at:new Date(now()).toISOString()});

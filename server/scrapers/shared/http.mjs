@@ -1,3 +1,4 @@
+import {isBrowserTraffic} from '../../browser/traffic.mjs';
 import {rewriteProviderRequest} from './provider-config.mjs';
 import { searchTraceEvent } from '../../diagnostics/search-trace.mjs';
 import { searchTraceHtml } from '../../diagnostics/search-forms.mjs';
@@ -297,6 +298,12 @@ export function resolveSafeUrl(href, baseUrl, options = {}) {
   }
 }
 
+const BROWSER_HOST_SLOTS=new Map();
+async function acquireBrowserSlot(host){
+ let state=BROWSER_HOST_SLOTS.get(host);if(!state){state={active:false,waiting:[]};BROWSER_HOST_SLOTS.set(host,state)}
+ if(state.active)await new Promise(resolve=>state.waiting.push(resolve));else state.active=true;
+ return()=>{const next=state.waiting.shift();if(next)next();else{state.active=false;BROWSER_HOST_SLOTS.delete(host)}};
+}
 async function acquireHostSlot(hostname) {
   let state = HOST_SEMAPHORES.get(hostname);
   if (!state) {
@@ -306,9 +313,9 @@ async function acquireHostSlot(hostname) {
 
   if (state.active >= MAX_CONCURRENT_PER_HOST) {
     await new Promise((resolve) => state.queue.push(resolve));
+  } else {
+    state.active += 1;
   }
-
-  state.active += 1;
   const now = Date.now();
   const waitMs = Math.max(0, state.lastAt + MIN_DELAY_BETWEEN_REQ_MS - now);
   state.lastAt = now + waitMs;
@@ -317,9 +324,9 @@ async function acquireHostSlot(hostname) {
   }
 
   return () => {
-    state.active = Math.max(0, state.active - 1);
     const next = state.queue.shift();
     if (next) next();
+    else state.active = Math.max(0, state.active - 1);
   };
 }
 
@@ -395,7 +402,9 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
           searchTraceEvent('dns_resolved',{url:hopUrl});
         }
 
-        const releaseSlot = await acquireHostSlot(parsedHop.hostname);
+        const releaseBrowser=isBrowserTraffic()?await acquireBrowserSlot(parsedHop.hostname):()=>{};
+        let releaseHost;try{releaseHost=await acquireHostSlot(parsedHop.hostname)}catch(error){releaseBrowser();throw error}
+        const releaseSlot=()=>{releaseHost();releaseBrowser()};
 
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);

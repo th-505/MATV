@@ -874,6 +874,12 @@ class _DetailsPageState extends State<DetailsPage> {
                       Chip(label: Text(genre)),
                   ],
                 ),
+                if (details.sourceIndexPartial)
+                  const NajdSurface(
+                    child: Text(
+                      'فهرسة الموقع غير مكتملة. يمكنك تشغيل الحلقات الظاهرة أو تحديث الفهرس لمحاولة استكماله.',
+                    ),
+                  ),
                 if (details.plot.isNotEmpty)
                   NajdSurface(
                     child: Column(
@@ -914,12 +920,13 @@ class _DetailsPageState extends State<DetailsPage> {
                                 : 'تحميل',
                           ),
                         ),
-                      OutlinedButton.icon(
-                        key: const Key('title-providers'),
-                        onPressed: _showProviders,
-                        icon: const Icon(Icons.dns_outlined),
-                        label: const Text('المصادر'),
-                      ),
+                      if (!widget.api.providerBrowser)
+                        OutlinedButton.icon(
+                          key: const Key('title-providers'),
+                          onPressed: _showProviders,
+                          icon: const Icon(Icons.dns_outlined),
+                          label: const Text('المصادر'),
+                        ),
                     ],
                   ),
                 ),

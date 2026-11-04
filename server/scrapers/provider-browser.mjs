@@ -1,3 +1,4 @@
+import {runInBrowserLane} from '../browser/traffic.mjs';
 import {classifyNetworkError} from './shared/errors.mjs';
 import { getProvider, listIndependentProviders } from './registry.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
@@ -22,11 +23,11 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       label: config?.categoryLabels?.[key] || labels[key] || key.replace(/[-_]/g, ' ') }));
   }
   return {
-    sources: () => providers().filter(meta => meta.enabled !== false && meta.capabilities?.catalog
+    sources: () => runInBrowserLane(()=>providers().filter(meta => meta.enabled !== false && meta.capabilities?.catalog
       && typeof lookup(meta.id)?.module.scrapeCatalog === 'function')
       .map(meta => ({ id: meta.id, name: meta.name, domain: new URL(meta.domains[0]).hostname,
-        categories: categories(meta.id) })),
-    async catalog(id, category, page = 1) {
+        categories: categories(meta.id) }))),
+    async catalog(id, category, page = 1) { return runInBrowserLane(async()=>{
       const provider = entry(id);
       if (typeof provider.module.scrapeCatalog !== 'function') throw Error('BROWSER_CATALOG_UNSUPPORTED');
       if (!Number.isInteger(page) || page < 1 || page > 500) throw Error('BROWSER_BAD_PAGE');
@@ -34,7 +35,7 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       const selected = category || allowed[0]?.id;
       if (selected && !allowed.some(item => item.id === selected)) throw Error('BROWSER_BAD_CATEGORY');
       let result;
-      try{result=await queue.run(()=>provider.module.scrapeCatalog(selected,page,{strict:true,allowHttp:false,timeoutMs:8000,maxRetries:0}));}
+      try{result=await queue.run(()=>runInBrowserLane(()=>provider.module.scrapeCatalog(selected,page,{strict:true,allowHttp:false,timeoutMs:8000,maxRetries:0})));}
       catch(error){const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=error.code||classifyNetworkError(error).code;throw failure;}
       if(result?._meta?.errorCode&&result._meta.errorCode!=='EMPTY_RESULT'){
         const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=result._meta.errorCode;throw failure;
@@ -57,6 +58,6 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
         pagination: { page, next_page: observedNext ? nextPage : null,
           has_more: explicitPagination ? observedNext || meta.has_more === true : items.length > 0,
           basis: explicitPagination ? 'observed-source-pagination' : 'adapter-page-probe' } };
-    },
+    });},
   };
 }

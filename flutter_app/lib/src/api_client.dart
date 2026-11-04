@@ -24,6 +24,9 @@ class MitvApi implements MediaRepository {
   String explorationSourceLabel(String id) => _sourceLabels[id] ?? id;
   MitvApi({
     http.Client? client,
+    this.providerBrowser = false,
+    this.browserOrigin = '',
+    this.ownsClient = true,
     Uri? baseUri,
     Uri? edgeUri,
     bool? useEdge,
@@ -50,6 +53,21 @@ class MitvApi implements MediaRepository {
              ),
            );
 
+  final bool providerBrowser;
+  final String browserOrigin;
+  final bool ownsClient;
+  MitvApi browserSession({CatalogItem? origin}) => MitvApi(
+    client: _client,
+    baseUri: _baseUri,
+    edgeUri: _edgeUri,
+    useEdge: false,
+    providerBrowser: true,
+    browserOrigin: origin == null
+        ? ''
+        : origin.sourceRefs.values.where(_providerReference).firstOrNull ??
+              (_providerReference(origin.ref) ? origin.ref : ''),
+    ownsClient: false,
+  );
   final Duration sourcePlaybackTimeout;
   final Duration sourceIndexTimeout;
   final Duration sourcePollInterval;
@@ -194,9 +212,11 @@ class MitvApi implements MediaRepository {
       final status = await harvestStatus(ref).timeout(remaining());
       final editions = (status['source_editions'] as List? ?? const [])
           .whereType<Map>();
-      if (editions.any(
-        (row) => row['ref'] == ref && row['available'] == true,
-      )) {
+      if ((!providerBrowser ||
+              const ['ready', 'partial'].contains(status['index_state'])) &&
+          editions.any(
+            (row) => row['ref'] == ref && row['available'] == true,
+          )) {
         return sourceWorkMetadata(ref).timeout(remaining());
       }
       if (['failed', 'unavailable'].contains(status['state'])) {
@@ -499,6 +519,12 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
     bool metadataOnly = false,
   }) async {
+    if (providerBrowser && ref.startsWith('tmdb:')) {
+      throw const ApiException('BROWSER_SOURCE_REQUIRED');
+    }
+    if (providerBrowser && _providerReference(ref)) {
+      return _providerSourceMetadata(ref);
+    }
     final source = _sourceWorkPattern.firstMatch(ref);
     if (source != null) {
       return sourceWorkMetadata(
@@ -715,6 +741,7 @@ class MitvApi implements MediaRepository {
     final item = CatalogItem.fromJson(json);
     final rawPoster = item.poster.trim();
     return item.copyWith(
+      discoveryScope: providerBrowser ? 'beta' : item.discoveryScope,
       poster: rawPoster.startsWith('/')
           ? _baseUri.resolve(rawPoster).toString()
           : rawPoster,
@@ -816,6 +843,22 @@ class MitvApi implements MediaRepository {
         .toSet()
         .toList(growable: false);
   }
+
+  Future<Map<String, dynamic>> startServiceCheck(String scope) async =>
+      _harvestData(
+        await _getJson(
+          '/api/v1/system/check',
+          {'scope': scope},
+          const Duration(seconds: 15),
+          'POST',
+        ),
+      );
+  Future<Map<String, dynamic>> serviceCheckStatus(String id) async =>
+      _harvestData(
+        await _getJson('/api/v1/system/check', {
+          'id': id,
+        }, const Duration(seconds: 15)),
+      );
 
   Future<List<CatalogItem>> explore(String query, String provider) async {
     final generation = _cacheGeneration;
@@ -1090,6 +1133,19 @@ class MitvApi implements MediaRepository {
     bool refresh = false,
   }) async {
     final generation = _cacheGeneration;
+    if (providerBrowser && _providerReference(ref)) {
+      final metadata = await _providerSourceMetadata(ref);
+      final work = _sourceWorkPattern.firstMatch('${metadata['ref']}');
+      if (work == null) {
+        throw const ApiException('INVALID_SOURCE_WORK_REFERENCE');
+      }
+      final resolved = await _resolveSourceWorkPlayback(work, refresh: refresh);
+      _playbackCache[ref] = resolved;
+      return resolved;
+    }
+    if (providerBrowser && ref.startsWith('tmdb:')) {
+      throw const ApiException('BROWSER_SOURCE_REQUIRED');
+    }
     final source = _sourceWorkPattern.firstMatch(ref);
     if (source != null) {
       try {
@@ -1554,6 +1610,18 @@ class MitvApi implements MediaRepository {
     String method = 'GET',
   ]) async {
     final generation = _cacheGeneration;
+    if (providerBrowser) {
+      if (path.startsWith('/api/v1/harvest/')) {
+        path = path.replaceFirst('/api/v1/harvest/', '/api/v1/browser/');
+      } else if (path == '/api/v1/explore') {
+        path = '/api/v1/browser/search';
+      }
+    }
+    if (providerBrowser &&
+        browserOrigin.isNotEmpty &&
+        path == '/api/v1/browser/playback') {
+      query = {...?query, 'origin': browserOrigin};
+    }
     final uri = _baseUri.replace(path: path, queryParameters: query);
     final isSearch = path == '/api/v1/explore' || path == '/api/v1/tmdb/search';
     if (isSearch) lastSearchStage = 'sending';
@@ -1628,7 +1696,7 @@ class MitvApi implements MediaRepository {
     if (_closed) return;
     _closed = true;
     _cacheGeneration++;
-    _client.close();
+    if (ownsClient) _client.close();
   }
 }
 
