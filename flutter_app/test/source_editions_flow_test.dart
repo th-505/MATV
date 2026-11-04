@@ -375,12 +375,22 @@ void main() {
     expect(find.text('الحلقة 3'), findsOneWidget);
     expect(find.text('الحلقة 2'), findsNothing);
     final more = find.text('تحميل المزيد من حلقات المصدر');
-    await tester.ensureVisible(more);
+    await tester.scrollUntilVisible(
+      more,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(more);
     await tester.pumpAndSettle();
     expect(requests.last['season'], '5');
     expect(requests.last['offset'], '2');
+    await tester.scrollUntilVisible(
+      find.text('الحلقة 4'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('الحلقة 4'), findsOneWidget);
     expect(find.text('الحلقة 2'), findsNothing);
     expect(find.text('تحميل المزيد من حلقات المصدر'), findsNothing);
