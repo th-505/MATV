@@ -73,6 +73,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Select GitHub Actions as the Pages publishing source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow
       - name: Deploy the verified application
         id: deployment
         uses: actions/deploy-pages@v4
