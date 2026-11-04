@@ -2,6 +2,7 @@ import {wrapConfiguredProvider} from './configurable-provider.mjs';
 // server/scrapers/registry.mjs
 // Central Capability Registry for all MATV scrapers & providers
 
+import * as fostaMod from './sites/fosta.mjs';
 import * as mycimaMod from './sites/mycima.mjs';
 import * as akwamMod from './sites/akwam.mjs';
 import * as cimanowMod from './sites/cimanow.mjs';
@@ -25,6 +26,7 @@ import * as alooyMod from './sites/alooy.mjs';
 import * as larozaMod from './sites/laroza.mjs';
 
 const PROVIDER_ENTRIES = [
+  { meta: fostaMod.PROVIDER_META, module: fostaMod },
   { meta: mycimaMod.PROVIDER_META, module: mycimaMod },
   { meta: akwamMod.PROVIDER_META, module: akwamMod },
   { meta: cimanowMod.PROVIDER_META, module: cimanowMod },

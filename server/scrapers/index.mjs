@@ -286,6 +286,14 @@ function decodeRefUrl(ref, prefix) {
  */
 export async function scrapeRealDetails(refOrUrl) {
   if (!refOrUrl || typeof refOrUrl !== 'string') return null;
+  if (refOrUrl.startsWith('fosta:')) {
+    const adapter = getProvider('fosta').module;
+    const details = await adapter.scrapeDetails(refOrUrl);
+    if (details.episodes?.length) return sanitizeDetailsPayload(details, 'fosta');
+    const resolved = await adapter.resolveStream(refOrUrl);
+    return sanitizeDetailsPayload({ ...details, ...resolved, media_sources: resolved.servers }, 'fosta');
+  }
+
 
   // 1. MyCima (MA)
   if (refOrUrl.startsWith('mycima:') || refOrUrl.includes('mycima.') || refOrUrl.includes('wecima.')) {

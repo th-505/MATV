@@ -321,23 +321,30 @@ void main() {
         tester.getSize(find.byKey(const Key('fullscreen-video-viewport'))),
         const Size(844, 390),
       );
-      final fitRect = tester.getRect(
-        find.byKey(const Key('player-fit-toggle')),
-      );
-      expect(fitRect.right, lessThanOrEqualTo(844 - 20));
-      await tester.tap(find.byKey(const Key('player-fit-toggle')));
-      await tester.pump();
+      expect(find.byKey(const Key('player-fit-toggle')), findsNothing);
+      Future<void> chooseFit(String label) async {
+        await tester.tap(find.byKey(const Key('player-more')));
+        await tester.pumpAndSettle();
+        final fit = find.byKey(const Key('player-more-fit'));
+        await tester.ensureVisible(fit);
+        await tester.tap(fit);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+      }
+
+      await chooseFit('ملء الشاشة — قص الأطراف');
       expect(
         tester
             .widget<FullscreenVideoSurface>(find.byType(FullscreenVideoSurface))
             .fit,
         BoxFit.cover,
       );
-      final video = tester.getRect(find.byKey(const Key('test-video-surface')));
-      expect(video.width, greaterThanOrEqualTo(844));
-      expect(video.height, greaterThanOrEqualTo(390));
-      await tester.tap(find.byKey(const Key('player-fit-toggle')));
-      await tester.pump();
+      expect(
+        tester.getSize(find.byKey(const Key('fullscreen-video-viewport'))),
+        const Size(844, 390),
+      );
+      await chooseFit('احتواء — إظهار الإطار كاملاً');
       expect(
         tester
             .widget<FullscreenVideoSurface>(find.byType(FullscreenVideoSurface))

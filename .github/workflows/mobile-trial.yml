@@ -5,6 +5,15 @@ on:
     branches: ['build/mitv-*']
   workflow_dispatch:
     inputs:
+      publish_release:
+        description: Publish only after verification; false produces reviewable artifacts without deploying
+        required: false
+        default: true
+        type: boolean
+      font_bundle_url:
+        description: Private user font bundle URL for native builds only
+        required: false
+        type: string
       api_base:
         description: Verified public metadata API URL
         required: true
@@ -102,6 +111,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Prepare private native typography without committing originals
+        if: inputs.font_bundle_url != ''
+        env:
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+        run: python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding and TV manifest
@@ -179,6 +193,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Prepare private native typography without committing originals
+        if: inputs.font_bundle_url != ''
+        env:
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+        run: python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding
@@ -230,6 +249,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Prepare private native typography without committing originals
+        if: inputs.font_bundle_url != ''
+        env:
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+        run: python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV desktop identity
@@ -307,6 +331,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Prepare private native typography without committing originals
+        if: inputs.font_bundle_url != ''
+        env:
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+        run: python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV identity and sandbox entitlements
@@ -373,6 +402,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Deploy verified Web bundle only behind server authentication
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_release == true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -403,6 +433,7 @@ jobs:
             git push origin main
           fi
       - name: Publish all verified packages together
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_release == true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

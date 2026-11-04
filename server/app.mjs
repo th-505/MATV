@@ -1,3 +1,5 @@
+import { createProviderBrowser } from './scrapers/provider-browser.mjs';
+const providerBrowser = createProviderBrowser();
 import {readCachedPlayback} from './harvest/cached-playback.mjs';
 import {getProviderConfig} from './scrapers/shared/provider-config.mjs';
 import {createGithubIdentityVerifier} from './maintenance/github-identity.mjs';
@@ -521,7 +523,12 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     }
     const scraper=getProvider(provider)?.module;
     if(!scraper?.scrapeDetails)throw Error('PINNED_SOURCE_NOT_SUPPORTED');
-    return scraper.scrapeDetails(ref,{strict:true,timeoutMs:6000,maxRetries:0});
+    const details = await scraper.scrapeDetails(ref,{strict:true,timeoutMs:6000,maxRetries:0});
+    if (provider === 'fosta' && (phase !== 'metadata' || details.type === 'movie')) {
+      const resolved = await scraper.resolveStream(ref,{strict:true,timeoutMs:6000,maxRetries:0});
+      return { ...details, ...resolved, media_sources: resolved.servers || [] };
+    }
+    return details;
   }});
   const discoveryMetadata = createTmdbRuntime();
   const discoveryStore = createSupabaseDiscoveryStore();
@@ -672,7 +679,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if (req.method !== 'GET') return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
         return sendJson(req,res,200,{items:traceStore.list({provider:url.searchParams.get('provider')||'',query:url.searchParams.get('q')||'',id:url.searchParams.get('id')||''}),runtime:{node:process.version,openssl:process.versions.openssl},retention_seconds:traceStore.retention_seconds});
       }
-      if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", cinema_source: "basri-original" });
+      if (url.pathname === "/health" || url.pathname === "/api/v1/health") return sendJson(req, res, 200, { status: "ok", version: PRODUCT_VERSION, cinema_source: "basri-original" });
       if (url.pathname === "/api/runtime/status") return sendJson(req, res, 200, runtimeService.status());
       if (url.pathname === "/api/v1/categories") return sendJson(req, res, 200, { status: 'success', data: CatalogCategories });
       if(url.pathname==='/api/v1/catalog/sections')return sendJson(req,res,200,{status:'success',data:BROWSE_SECTIONS});
@@ -693,6 +700,22 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         }catch(error){
           const message=String(error?.message || 'PINNED_SOURCE_UNAVAILABLE');
           return sendJson(req,res,400,{status:'error',message:/^PINNED_[A-Z_]+$/.test(message)?message:'PINNED_SOURCE_UNAVAILABLE'});
+        }
+      }
+      if (url.pathname === '/api/v1/browser/sources') {
+        if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,200,{status:'success',data:providerBrowser.sources()});
+      }
+      if (url.pathname === '/api/v1/browser/catalog') {
+        if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        const provider = url.searchParams.get('provider') || '';
+        const category = url.searchParams.get('category') || '';
+        const page = Number(url.searchParams.get('page') || '1');
+        try {
+          return sendJson(req,res,200,await providerBrowser.catalog(provider, category, page));
+        } catch (error) {
+          const invalid = /^BROWSER_(?:BAD_PAGE|BAD_CATEGORY|PROVIDER_UNAVAILABLE)$/.test(error.message);
+          return sendJson(req,res,invalid ? 400 : 503,{status:'error',message: invalid ? error.message : 'BROWSER_SOURCE_UNAVAILABLE'});
         }
       }
       if (url.pathname === '/api/v1/explore/sources') {

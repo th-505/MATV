@@ -84,7 +84,7 @@ void main() {
                 format: ui.ImageByteFormat.png,
               );
               final root = Directory(
-                '/workspace/artifacts/najd-build109-proof',
+                Platform.environment['NAJD_CAPTURE_DIR'] ?? '/workspace/artifacts/najd-build109-proof',
               );
               await root.create(recursive: true);
               await File(
@@ -177,6 +177,11 @@ void main() {
               ),
             );
             await capture('player');
+            await tester.tap(find.byKey(const Key('player-more')));
+            await tester.pumpAndSettle();
+            await tester.ensureVisible(
+              find.byKey(const Key('player-providers')),
+            );
             await tester.tap(find.byKey(const Key('player-providers')));
             await tester.pumpAndSettle();
             await capture('providers');

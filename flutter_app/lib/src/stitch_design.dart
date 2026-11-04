@@ -354,6 +354,7 @@ class _HeroTag extends StatelessWidget {
 }
 
 enum NajdEmptyKind {
+  failure,
   offline,
   source,
   search,
@@ -378,6 +379,12 @@ class NajdEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, title, description, action) = switch (kind) {
+      NajdEmptyKind.failure => (
+        Icons.cloud_off_outlined,
+        'تعذر إكمال الطلب',
+        'لم تصل نتيجة صالحة من الخدمة. أعد المحاولة بعد قليل.',
+        'إعادة المحاولة',
+      ),
       NajdEmptyKind.offline => (
         Icons.wifi_off_rounded,
         'لا يوجد اتصال بالإنترنت',

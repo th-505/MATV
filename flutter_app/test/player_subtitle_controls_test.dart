@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -13,6 +14,7 @@ import 'package:mitv/src/player_page.dart';
 import 'package:mitv/src/subtitle_service.dart';
 import 'package:mitv/src/universal_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'support/recording_media_kit.dart';
 
 class CaptionPlatform extends RecordingMediaKitPlatform {
@@ -159,6 +161,8 @@ void main() {
       expect(platform.captions.single.uri, true);
       expect(platform.captions.single.id, 'file:///normalized.srt');
       expect(platform.captions.single.language, 'ara');
+      await tester.tap(find.byKey(const Key('player-audio-subtitles')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('الترجمة'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('إيقاف الترجمة'));

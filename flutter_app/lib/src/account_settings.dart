@@ -171,6 +171,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   Map<String, dynamic>? ticket, status;
   String message = '', kind = 'browser';
   bool busy = false, ownsTicket = false;
+  bool _checking = false;
   List<Map<String, dynamic>> members = [];
   Future<void> loadMembers() async {
     try {
@@ -191,7 +192,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   String get link {
     const base = String.fromEnvironment(
       'MITV_INTERNAL_WEB_BASE',
-      defaultValue: 'https://matv.onrender.com/internal/',
+      defaultValue: 'https://th-505.github.io/MATV/',
     );
     return Uri.parse(base)
         .replace(
@@ -231,10 +232,21 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
     setState(() => busy = true);
     try {
       await work();
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
+        final detail = error.toString();
         setState(
-          () => message = 'تعذر إكمال الربط؛ تحقق من الاتصال وصلاحية الطلب',
+          () => message = detail.contains('LINK_RATE_LIMITED')
+              ? 'انتظر قليلاً قبل إنشاء أو إدخال طلب آخر'
+              : detail.contains('LINK_OWNER_REQUIRED') ||
+                    detail.contains('LINK_OWNER_CONFLICT')
+              ? 'هذا الجهاز مرتبط بمكتبة جهاز آخر؛ أنشئ الطلب من الجهاز الأصلي'
+              : detail.contains('ACCOUNT_UNAVAILABLE') ||
+                    detail.contains('NAJD_AUTH_REQUIRED')
+              ? 'لم يكتمل اتصال حساب نجد. أعد المحاولة بعد اتصال الجهاز'
+              : detail.contains('LINK_NOT_APPROVABLE')
+              ? 'انتهى الطلب أو لم يستقبله الجهاز الآخر؛ أنشئ طلباً جديداً'
+              : 'تعذر إكمال الربط؛ تحقق من الاتصال وصلاحية الطلب',
         );
       }
     } finally {
@@ -260,7 +272,8 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
     );
   });
   Future<void> check() async {
-    if (ticket == null) return;
+    if (ticket == null || _checking) return;
+    _checking = true;
     try {
       final value = await CloudLibrarySync.accountRpc('najd_link_status', {
         'p_id': ticket!['id'],
@@ -275,7 +288,13 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
         poll?.cancel();
       }
     } catch (_) {
-      poll?.cancel();
+      if (mounted) {
+        setState(
+          () => message = 'تعذر تحديث حالة الطلب؛ سنحاول مجدداً تلقائياً',
+        );
+      }
+    } finally {
+      _checking = false;
     }
   }
 
@@ -323,16 +342,14 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
     children: [
       const NajdSectionHeading('ربط أجهزتك'),
       const Text(
-        'شارك المفضلة وتقدم المشاهدة مع جهازك الآخر بعد الموافقة. يمكنك إلغاء الربط.',
+        'شارك قائمتي وتقدم المشاهدة مع جهاز آخر. التحميلات تبقى على كل جهاز.\n1. أنشئ الطلب على الجهاز الذي يحتوي مكتبتك.\n2. انسخ الرابط وافتحه أو الصقه في الجهاز الآخر واضغط استقبال الطلب.\n3. ارجع للجهاز الأصلي ووافق على الربط.\nالطلب صالح 3 دقائق. مدة الربط أسبوع أو مستمرة حتى تلغيه بحسب اختيارك.',
       ),
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: OutlinedButton.icon(
           icon: const Icon(Icons.devices_outlined),
           label: Text(
-            kind == 'browser'
-                ? 'نسختي في المتصفح — ربط مستمر'
-                : 'جهاز آخر — أسبوع واحد',
+            kind == 'browser' ? 'ربط مستمر حتى الإلغاء' : 'ربط مؤقت — 7 أيام',
           ),
           onPressed: busy
               ? null
@@ -344,13 +361,13 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
                     options: [
                       NajdOption(
                         'browser',
-                        'نسختي في المتصفح — ربط مستمر',
+                        'ربط مستمر حتى الإلغاء',
                         selected: kind == 'browser',
                         icon: Icons.web,
                       ),
                       NajdOption(
                         'device',
-                        'جهاز آخر — أسبوع واحد',
+                        'ربط مؤقت — 7 أيام',
                         selected: kind == 'device',
                         icon: Icons.devices_outlined,
                       ),
@@ -370,7 +387,15 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
           spacing: 8,
           children: [
             TextButton(
-              onPressed: () => Clipboard.setData(ClipboardData(text: link)),
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: link));
+                if (mounted) {
+                  setState(
+                    () => message =
+                        'نُسخ الرابط؛ افتحه على الجهاز الآخر ثم استقبل الطلب',
+                  );
+                }
+              },
               child: const Text('نسخ رابط الربط'),
             ),
             TextButton(

@@ -7,7 +7,7 @@ try {
   const response = await fetch(base + '/api/v1/explore/sources');
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.data.length, 19);
+  assert.equal(body.data.length, 20);
   assert(body.data.some(source => source.id === 'anime4up_rest'));
   assert(body.data.every(source => source.search === true && !('module' in source)));
   assert.equal((await fetch(base + '/api/v1/explore/sources', { method: 'POST' })).status, 405);

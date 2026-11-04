@@ -2,13 +2,13 @@
   "schema_version": 1,
   "scope": "static repository declarations; no network requests",
   "counts": {
-    "site_modules_with_metadata": 21,
-    "registered_modules": 21,
+    "site_modules_with_metadata": 22,
+    "registered_modules": 22,
     "explicit_mirrors": 2,
-    "not_marked_as_mirror": 19,
+    "not_marked_as_mirror": 20,
     "ui_spellings": 0,
     "static_ui_array_entries": 0,
-    "pinned_search_modules": 19,
+    "pinned_search_modules": 20,
     "seed_only_entries": 6
   },
   "ui_delivery": {
@@ -352,6 +352,39 @@
       "live_validation": "not_run"
     },
     {
+      "id": "fosta",
+      "name": "فوستا",
+      "code": "FO",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/fosta.mjs",
+      "metadata_line": 11,
+      "source_sha256": "c00ebe6b09f526f3ddba7db6555364a976704dbbcfc963f830358001e041de90",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [
+        "fosta"
+      ],
+      "live_validation": "not_run"
+    },
+    {
       "id": "ipauniverse",
       "name": "IPA Universe",
       "code": "IE",
@@ -424,7 +457,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/mewsry.mjs",
       "metadata_line": 51,
-      "source_sha256": "b186c60c6ecebbabb4349080843a196fa2a84616f4d23aa5a40408ee7baed481",
+      "source_sha256": "566238f297dbbbc415817c66c063963b0412a16d04e667f93e240868940685cc",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -801,6 +834,7 @@
     "server/match-production.mjs"
   ],
   "aggregation_modules": [
+    "server/scrapers/sites/fosta-categories.mjs",
     "server/scrapers/sites/specialized-portals.mjs"
   ],
   "warnings": [

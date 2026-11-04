@@ -1,3 +1,6 @@
+import 'src/app_preferences.dart';
+import 'src/provider_browser_page.dart';
+import 'src/search_work_groups.dart';
 import 'src/account_settings.dart';
 import 'src/stitch_design.dart';
 import 'src/najd_panels.dart';
@@ -51,6 +54,7 @@ class _MitvAppState extends State<MitvApp> {
   @override
   void initState() {
     super.initState();
+    unawaited(NajdPreferences.instance.load());
     if (!_fontLicensesRegistered) {
       _fontLicensesRegistered = true;
       LicenseRegistry.addLicense(() async* {
@@ -201,10 +205,10 @@ class _ShellState extends State<Shell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _menuFocus = FocusNode(debugLabel: 'open-navigation');
   final _navFocus = List.generate(
-    NajdUi.pageIds.length + NajdUi.regions.length,
+    NajdUi.pageIds.length + 1,
     (i) => FocusNode(
       debugLabel:
-          'nav-${i < NajdUi.pageIds.length ? NajdUi.pageIds[i] : NajdUi.regions[i - NajdUi.pageIds.length].id}',
+          'nav-${i < NajdUi.pageIds.length ? NajdUi.pageIds[i] : 'provider-beta'}',
     ),
   );
   int _pageGeneration = 0;
@@ -377,30 +381,34 @@ class _ShellState extends State<Shell> {
                     horizontal: 10,
                     vertical: 8,
                   ),
-                  itemCount: NajdUi.pageIds.length + NajdUi.regions.length,
+                  itemCount: NajdUi.pageIds.length + 1,
                   itemBuilder: (context, i) {
                     if (i >= NajdUi.pageIds.length) {
-                      final region = NajdUi.regions[i - NajdUi.pageIds.length];
                       return ListTile(
-                        key: ValueKey('region-${region.id}'),
+                        key: const Key('nav-provider-beta'),
                         focusNode: _navFocus[i],
                         minTileHeight: isTvTarget ? 64 : 48,
-                        leading: Icon(region.icon),
-                        title: Text(region.label),
+                        leading: const Icon(Icons.science_outlined),
+                        title: const Text('تصفح المزود — بيتا 1'),
+                        subtitle: const Text('ميزة تحت التجربة'),
                         onTap: () {
                           if (drawer) _closeNavigation();
+                          if (!NajdPreferences.instance.providerBeta) {
+                            _selectPage(8);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'فعّل تصفح المزود التجريبي من الإعدادات',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => Scaffold(
-                                appBar: AppBar(title: Text(region.label)),
-                                body: CatalogPage(
-                                  api: api,
-                                  store: widget.store,
-                                  title: region.label,
-                                  categoryId: region.category,
-                                  mediaKind: region.kind,
-                                  unified: true,
-                                ),
+                              builder: (_) => ProviderBrowserPage(
+                                api: api,
+                                store: widget.store,
                               ),
                             ),
                           );
@@ -505,11 +513,7 @@ class _ShellState extends State<Shell> {
                   icon: const Icon(Icons.menu_rounded),
                 ),
               const Expanded(child: Center(child: _BrandTitle())),
-              IconButton(
-                tooltip: 'البحث',
-                onPressed: () => _selectPage(5),
-                icon: const Icon(Icons.search_rounded),
-              ),
+              const SizedBox(width: 48),
             ],
           ),
           if (index == 0 || index == 1 || index == 2 || index == 3)
@@ -1040,6 +1044,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Text('خصص تجربة المشاهدة واحفظ تفضيلاتك على هذا الجهاز'),
               ),
               const NajdSurface(child: _NajdAppearanceOptions()),
+              const _PlaybackPreferencesPanel(),
               FocusHighlight(
                 child: ListTile(
                   title: const Text('مكتبتي والتنزيلات'),
@@ -1047,7 +1052,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('المفضلة والتنزيلات')),
+                        appBar: AppBar(title: const Text('قائمتي والتنزيلات')),
                         body: LibraryPage(api: widget.api, store: widget.store),
                       ),
                     ),
@@ -1112,9 +1117,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 onTap: () =>
                     _clear('مسح سجل البحث', widget.store.clearSearchHistory),
               ),
+              const _ProviderBetaPreferencesPanel(),
               const AboutListTile(
                 applicationName: NajdUi.brand,
-                applicationVersion: '$productVersion ($productBuild)',
+                applicationVersion:
+                    '$productVersion $productChannel ($productBuild)',
                 child: Text('عن نجد والتراخيص'),
               ),
               if (_busy) const LinearProgressIndicator(),
@@ -1125,6 +1132,104 @@ class _SettingsPageState extends State<SettingsPage> {
                   : child,
             )
             .toList(),
+  );
+}
+
+class _PlaybackPreferencesPanel extends StatelessWidget {
+  const _PlaybackPreferencesPanel();
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: NajdPreferences.instance,
+    builder: (context, _) {
+      final prefs = NajdPreferences.instance;
+      return NajdSurface(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const NajdSectionHeading('إعدادات المشغل'),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              key: const Key('setting-hold-boost'),
+              title: const Text('التسريع بالضغط المطوّل'),
+              subtitle: const Text(
+                'اضغط مطولاً على الفيديو للتسريع، وارفع إصبعك لاستعادة السرعة السابقة',
+              ),
+              value: prefs.holdToBoost,
+              onChanged: prefs.setHold,
+            ),
+            NajdChoiceButton<double>(
+              label: 'سرعة الضغط المطوّل: ${prefs.holdSpeed}×',
+              icon: Icons.fast_forward_outlined,
+              options: [
+                for (final speed in NajdPreferences.holdSpeeds)
+                  NajdOption(
+                    speed,
+                    '$speed×',
+                    selected: speed == prefs.holdSpeed,
+                    icon: Icons.fast_forward_outlined,
+                  ),
+              ],
+              onSelected: prefs.setHoldSpeed,
+            ),
+            const SizedBox(height: 12),
+            NajdChoiceButton<String>(
+              label: 'لغة بيانات الأعمال',
+              icon: Icons.translate,
+              options: [
+                NajdOption(
+                  'auto',
+                  'تلقائي حسب لغة العمل',
+                  selected: prefs.metadataLanguage == 'auto',
+                  icon: Icons.auto_awesome_outlined,
+                ),
+                NajdOption(
+                  'ar',
+                  'العربية',
+                  selected: prefs.metadataLanguage == 'ar',
+                  icon: Icons.translate,
+                ),
+                NajdOption(
+                  'en',
+                  'English',
+                  selected: prefs.metadataLanguage == 'en',
+                  icon: Icons.translate,
+                ),
+              ],
+              onSelected: prefs.setMetadataLanguage,
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class _ProviderBetaPreferencesPanel extends StatelessWidget {
+  const _ProviderBetaPreferencesPanel();
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: NajdPreferences.instance,
+    builder: (context, _) {
+      final prefs = NajdPreferences.instance;
+      return NajdSurface(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const NajdSectionHeading('ميزات تحت التجربة'),
+            SwitchListTile.adaptive(
+              key: const Key('setting-provider-beta'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('تصفح المزود — بيتا 1'),
+              subtitle: const Text(
+                'افتح فهرس موقع مختار من القائمة الجانبية، مستقلاً عن التصفح المعتاد',
+              ),
+              value: prefs.providerBeta,
+              onChanged: prefs.setProviderBeta,
+            ),
+          ],
+        ),
+      );
+    },
   );
 }
 
@@ -1153,7 +1258,10 @@ class _NajdAppearanceOptions extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => NajdAppearance.instance.setMode(mode),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: mode == ThemeMode.dark
                             ? const Color(0xff211c2e)
@@ -1176,7 +1284,7 @@ class _NajdAppearanceOptions extends StatelessWidget {
                                 ? Colors.white
                                 : NajdDesign.primary,
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 4),
                           Text(
                             mode == ThemeMode.dark ? 'داكن' : 'فاتح',
                             style: TextStyle(
@@ -1185,7 +1293,7 @@ class _NajdAppearanceOptions extends StatelessWidget {
                                   : const Color(0xff211b30),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Icon(
                             NajdAppearance.instance.mode == mode
                                 ? Icons.check_circle
@@ -1906,6 +2014,35 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  List<CatalogItem>? _groupedInput;
+  bool? _groupedAdvanced;
+  List<SearchWorkGroup> _grouped = [];
+  final _liveSearchGroups = <String, SearchWorkGroup>{};
+  List<SearchWorkGroup> get _resultGroups {
+    if (!identical(_groupedInput, items) || _groupedAdvanced != advanced) {
+      _groupedInput = items;
+      _groupedAdvanced = advanced;
+      _grouped = groupSearchWorks(items, enabled: advanced)
+          .map((group) {
+            if (!advanced) return group;
+            final previous = _liveSearchGroups[group.key];
+            if (previous != null) {
+              previous.members
+                ..clear()
+                ..addAll(group.members);
+              return previous;
+            }
+            _liveSearchGroups[group.key] = group;
+            if (_liveSearchGroups.length > 256) {
+              _liveSearchGroups.remove(_liveSearchGroups.keys.first);
+            }
+            return group;
+          })
+          .toList(growable: false);
+    }
+    return _grouped;
+  }
+
   String _sourceLabel(String id) => widget.api.explorationSourceLabel(id);
 
   Timer? debounce;
@@ -2121,7 +2258,7 @@ class _SearchPageState extends State<SearchPage> {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
-                  Text('${items.length} نتيجة'),
+                  Text('${_resultGroups.length} عمل'),
                 ],
               ),
             ),
@@ -2130,7 +2267,7 @@ class _SearchPageState extends State<SearchPage> {
                 ? const NajdSkeleton()
                 : error != null
                 ? NajdEmptyState(
-                    kind: NajdEmptyKind.offline,
+                    kind: NajdEmptyKind.failure,
                     message: error,
                     onRetry: () => run(),
                   )
@@ -2159,8 +2296,8 @@ class _SearchPageState extends State<SearchPage> {
                       crossAxisSpacing: isTvTarget ? 18 : 10,
                       mainAxisSpacing: isTvTarget ? 18 : 10,
                     ),
-                    itemCount: items.length + (hasMore ? 1 : 0),
-                    itemBuilder: (context, i) => i == items.length
+                    itemCount: _resultGroups.length + (hasMore ? 1 : 0),
+                    itemBuilder: (context, i) => i == _resultGroups.length
                         ? Center(
                             child: loadingMore
                                 ? const CircularProgressIndicator()
@@ -2170,15 +2307,27 @@ class _SearchPageState extends State<SearchPage> {
                                   ),
                           )
                         : _CatalogCard(
-                            item: items[i],
+                            item: _resultGroups[i].representative.copyWith(
+                              title: _resultGroups[i].title,
+                            ),
                             sourceLabel: advanced
-                                ? _sourceLabel(items[i].source)
+                                ? _resultGroups[i].providerChoices.length > 1
+                                      ? '${_resultGroups[i].providerChoices.length} مزودين'
+                                      : _sourceLabel(
+                                          _resultGroups[i]
+                                              .representative
+                                              .source,
+                                        )
                                 : null,
-                            onTap: () => openDetails(
-                              context,
-                              widget.api,
-                              widget.store,
-                              items[i],
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => DetailsPage(
+                                  api: widget.api,
+                                  store: widget.store,
+                                  item: _resultGroups[i].representative,
+                                  searchMatches: _resultGroups[i].members,
+                                ),
+                              ),
                             ),
                           ),
                   ),
@@ -2209,6 +2358,7 @@ class _LibraryPageState extends State<LibraryPage> {
   late NajdLibraryMode mode = widget.mode;
   bool editing = false;
   String filter = 'all';
+  String _historyFilter = 'all', _historySort = 'recent';
   final selected = <String>{};
   Future<void> _clearHistory() async {
     if (await najdConfirm(
@@ -2244,7 +2394,21 @@ class _LibraryPageState extends State<LibraryPage> {
           .sortedFavorites()
           .where((e) => filter == 'all' || e.type == filter)
           .toList();
-      final history = widget.store.history;
+      final history = widget.store.history
+          .where(
+            (entry) =>
+                _historyFilter == 'all' ||
+                (_historyFilter == 'completed'
+                    ? entry.progress >= .95
+                    : entry.progress < .95),
+          )
+          .toList();
+      if (_historySort == 'title') {
+        history.sort((a, b) => a.title.compareTo(b.title));
+      }
+      if (_historySort == 'progress') {
+        history.sort((a, b) => b.progress.compareTo(a.progress));
+      }
       return ListView(
         key: ValueKey('stitch-library-${mode.name}'),
         padding: EdgeInsets.all(isTvTarget ? 28 : 18),
@@ -2320,7 +2484,9 @@ class _LibraryPageState extends State<LibraryPage> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 NajdChoiceButton<String>(
-                  label: widget.store.librarySort == 'title'
+                  label: widget.store.librarySort == 'rating'
+                      ? 'التقييم'
+                      : widget.store.librarySort == 'title'
                       ? 'الاسم'
                       : 'تاريخ الإضافة',
                   icon: Icons.sort,
@@ -2336,6 +2502,12 @@ class _LibraryPageState extends State<LibraryPage> {
                       'الاسم',
                       selected: widget.store.librarySort == 'title',
                       icon: Icons.sort_by_alpha,
+                    ),
+                    NajdOption(
+                      'rating',
+                      'التقييم',
+                      selected: widget.store.librarySort == 'rating',
+                      icon: Icons.star_outline,
                     ),
                   ],
                   onSelected: widget.store.setLibrarySort,
@@ -2383,7 +2555,54 @@ class _LibraryPageState extends State<LibraryPage> {
               ),
           ],
           if (mode == NajdLibraryMode.history) ...[
-            if (history.isEmpty)
+            if (widget.store.history.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final option in [
+                    ('all', 'الكل'),
+                    ('continue', 'قيد المتابعة'),
+                    ('completed', 'المكتملة'),
+                  ])
+                    ChoiceChip(
+                      label: Text(option.$2),
+                      selected: _historyFilter == option.$1,
+                      onSelected: (_) =>
+                          setState(() => _historyFilter = option.$1),
+                    ),
+                  NajdChoiceButton<String>(
+                    label: _historySort == 'title'
+                        ? 'الاسم'
+                        : _historySort == 'progress'
+                        ? 'تقدم المشاهدة'
+                        : 'آخر مشاهدة',
+                    icon: Icons.sort,
+                    options: [
+                      for (final option in [
+                        ('recent', 'آخر مشاهدة'),
+                        ('title', 'الاسم'),
+                        ('progress', 'تقدم المشاهدة'),
+                      ])
+                        NajdOption(
+                          option.$1,
+                          option.$2,
+                          selected: _historySort == option.$1,
+                        ),
+                    ],
+                    onSelected: (value) async {
+                      setState(() => _historySort = value);
+                    },
+                  ),
+                ],
+              ),
+            if (history.isEmpty && widget.store.history.isNotEmpty)
+              NajdEmptyState(
+                kind: NajdEmptyKind.search,
+                message: 'لا توجد أعمال ضمن هذا الفلتر',
+                onRetry: () => setState(() => _historyFilter = 'all'),
+              ),
+            if (widget.store.history.isEmpty)
               const NajdEmptyState(kind: NajdEmptyKind.history),
             for (final entry in history)
               NajdSurface(
@@ -2416,7 +2635,7 @@ class _LibraryPageState extends State<LibraryPage> {
                               ),
                               if (entry.episodeNumber != null)
                                 Text(
-                                  'الحلقة ${entry.episodeNumber}',
+                                  '${entry.metadata?.season != null ? 'الموسم ${entry.metadata?.season} • ' : ''}الحلقة ${entry.episodeNumber}',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               Text(

@@ -129,6 +129,7 @@ class MitvApi implements MediaRepository {
     '3ck',
     'anime4up',
     'qfilm',
+    'fosta',
     'ristoanime',
     'arabseed',
     'mewsry',
@@ -578,7 +579,10 @@ class MitvApi implements MediaRepository {
         cachedPlayback(ref)?.mediaSources ?? const <PlaybackSource>[];
     for (final source in sources) {
       if (source.mediaType == 'mp4' &&
-          source.expiresAt?.isAfter(DateTime.now()) == true &&
+          source.expiresAt?.isAfter(
+                DateTime.now().add(const Duration(seconds: 30)),
+              ) ==
+              true &&
           !ref.startsWith('match')) {
         return source;
       }
@@ -748,6 +752,31 @@ class MitvApi implements MediaRepository {
   }
 
   /// Server capabilities are authoritative; unsupported sources are not offered.
+  Future<List<Map<String, dynamic>>> browserSources() async {
+    final json = await _getJson('/api/v1/browser/sources');
+    return _list(json['data']);
+  }
+
+  Future<({List<CatalogItem> items, bool hasMore})> browserCatalog(
+    String provider,
+    String category,
+    int page,
+  ) async {
+    final json = await _getJson('/api/v1/browser/catalog', {
+      'provider': provider,
+      if (category.isNotEmpty) 'category': category,
+      'page': '$page',
+    });
+    final items = _list(json['items']).map(_catalogItem).toList();
+    for (final item in items) {
+      rememberIdentity(item);
+    }
+    return (
+      items: items,
+      hasMore: (json['pagination'] as Map?)?['has_more'] == true,
+    );
+  }
+
   Future<List<String>> explorationSources() async {
     final json = await _getJson('/api/v1/explore/sources');
     for (final source in _list(json['data'])) {
@@ -883,6 +912,23 @@ class MitvApi implements MediaRepository {
       items: result,
     );
     return result;
+  }
+
+  /// Display-only localization keeps observed provider indexes and playback IDs intact.
+  Future<TitleDetails> localizedMetadata(String ref, String language) async {
+    final match = RegExp(r'^tmdb:(movie|tv):(\d+)').firstMatch(ref);
+    if (match == null || !['auto', 'ar', 'en'].contains(language)) {
+      throw const ApiException('INVALID_METADATA_LANGUAGE');
+    }
+    final json = await _getJson('/api/v1/tmdb/details', {
+      'ref': 'tmdb:${match[1]}:${match[2]}',
+      'language': language == 'auto'
+          ? 'auto'
+          : language == 'en'
+          ? 'en-US'
+          : 'ar-SA',
+    });
+    return TitleDetails.fromJson((json['data'] as Map).cast<String, dynamic>());
   }
 
   Future<List<CatalogItem>> personWorks(int id) async {
@@ -1512,6 +1558,20 @@ class MitvApi implements MediaRepository {
       lastSearchStage = 'http_${response.statusCode}';
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.bodyBytes.length <= 128 * 1024) {
+        try {
+          final error = jsonDecode(response.body);
+          final code = error is Map ? error['message'] : null;
+          if (code is String &&
+              RegExp(r'^[A-Z][A-Z0-9_]{1,79}$').hasMatch(code)) {
+            throw ApiException(code);
+          }
+        } on ApiException {
+          rethrow;
+        } catch (_) {
+          // Non-JSON gateway errors retain their HTTP status, never HTML text.
+        }
+      }
       throw ApiException('HTTP ${response.statusCode}');
     }
     if (response.bodyBytes.length > 128 * 1024) {

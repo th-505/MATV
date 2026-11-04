@@ -691,7 +691,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
  * Performs minimal probe verification without downloading full stream.
  */
 export async function resolveStream(urlOrRef, options = {}) {
-  const streamUrl = typeof urlOrRef === 'object' && urlOrRef?.url ? urlOrRef.url : String(urlOrRef || '').trim();
+  const streamUrl = resolveTargetUrl(urlOrRef);
   if (!streamUrl) {
     throw new ScraperError(SCRAPER_ERROR_CODES.EMPTY_RESULT, 'Stream URL is missing or empty', {
       providerId: PROVIDER_ID

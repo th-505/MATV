@@ -1,0 +1,72 @@
+name: Najd TV public application on GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: Public metadata API used by the native applications
+        required: true
+        default: https://matv.onrender.com
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: najd-public-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MITV_API_BASE: ${{ inputs.api_base }}
+      MITV_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: stable
+          cache: true
+      - name: Verify public URL
+        run: |
+          python3 - <<'PY'
+          import os, urllib.parse
+          value = urllib.parse.urlsplit(os.environ['MITV_API_BASE'])
+          assert value.scheme == 'https' and value.hostname
+          assert not value.username and not value.password and not value.query and not value.fragment
+          PY
+      - name: Verify application
+        working-directory: flutter_app
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze
+          flutter test --dart-define=MITV_TARGET=web
+      - name: Build the complete public application
+        working-directory: flutter_app
+        run: |
+          flutter build web --release --no-web-resources-cdn --base-href=/MATV/ --dart-define=MITV_TARGET=web --dart-define="MITV_API_BASE=$MITV_API_BASE" --dart-define=MITV_INTERNAL_WEB_BASE=https://th-505.github.io/MATV/
+      - name: Verify bundle and immutable source identity
+        run: |
+          python3 scripts/write_source_manifest.py --target web --output flutter_app/build/web/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
+          python3 scripts/verify_public_web.py flutter_app/build/web
+          touch flutter_app/build/web/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: flutter_app/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the verified application
+        id: deployment
+        uses: actions/deploy-pages@v4

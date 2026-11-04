@@ -230,7 +230,7 @@ class NajdIntro extends StatefulWidget {
   const NajdIntro({
     super.key,
     required this.child,
-    this.duration = const Duration(seconds: 14),
+    this.duration = const Duration(seconds: 10),
   });
   final Widget child;
   final Duration duration;
@@ -240,6 +240,8 @@ class NajdIntro extends StatefulWidget {
 
 class _NajdIntroState extends State<NajdIntro> {
   Timer? _timer;
+  Timer? _continueTimer;
+  bool _canContinue = false;
   late bool _visible;
   @override
   void initState() {
@@ -247,16 +249,23 @@ class _NajdIntroState extends State<NajdIntro> {
     _visible =
         !Uri.base.queryParameters.containsKey('ref') &&
         !Uri.base.fragment.contains('najd_link=');
-    if (_visible) _timer = Timer(widget.duration, _dismiss);
+    if (_visible) {
+      _timer = Timer(widget.duration, _dismiss);
+      _continueTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted && _visible) setState(() => _canContinue = true);
+      });
+    }
   }
 
   void _dismiss() {
+    _continueTimer?.cancel();
     _timer?.cancel();
     if (mounted) setState(() => _visible = false);
   }
 
   @override
   void dispose() {
+    _continueTimer?.cancel();
     _timer?.cancel();
     super.dispose();
   }
@@ -311,10 +320,17 @@ class _NajdIntroState extends State<NajdIntro> {
                         const SizedBox(height: 20),
                         const Text('محمد بن قرملة'),
                         const SizedBox(height: 24),
-                        TextButton(
-                          autofocus: true,
-                          onPressed: _dismiss,
-                          child: const Text('متابعة إلى نجد'),
+                        SizedBox(
+                          height: 52,
+                          child: _canContinue
+                              ? FilledButton.icon(
+                                  key: const Key('najd-intro-continue'),
+                                  autofocus: true,
+                                  onPressed: _dismiss,
+                                  icon: const Icon(Icons.arrow_forward),
+                                  label: const Text('متابعة'),
+                                )
+                              : const SizedBox.shrink(),
                         ),
                       ],
                     ),

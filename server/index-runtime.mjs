@@ -134,7 +134,10 @@ export function createMitvRuntimeServer({
         if (!ref) return sendJson(req, res, 400, { status: "error", message: "TMDB_BAD_REFERENCE" });
         if (url.pathname === "/api/v1/tmdb/details") {
           void baseServer.harvestService?.requestWork?.(ref,{reason:'card_open'}).catch(()=>{});
-          const result=await baseServer.harvestService?.cachedWork(ref) || await tmdbRuntime.details(ref);
+          const language = url.searchParams.get('language');
+          const result = language
+            ? await tmdbRuntime.details(ref, language)
+            : await baseServer.harvestService?.cachedWork(ref) || await tmdbRuntime.details(ref);
           return sendJson(req,res,200,{...result,data:{...result.data,source_index_authoritative:true}});
         }
         const season = String(url.searchParams.get("season") || "").trim();
