@@ -1,3 +1,4 @@
+import {createDatabaseMetrics} from './diagnostics/database-metrics.mjs';
 import {createOptionalCacheReader} from './optional-cache.mjs';
 import {createBrowserConfiguration} from './browser/configuration.mjs';
 import {browserConfigs} from './browser/traffic.mjs';
@@ -593,6 +594,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
   const browserConfiguration=browserConfigurationService||createBrowserConfiguration();
   const browserWorks=browserWorkService||createBrowserWorkService();
   const checkStore=createHarvestStore();
+  const databaseMetrics=createDatabaseMetrics();
   const serviceChecks=systemCheckService||createServiceChecks({tmdb:discoveryMetadata,database:checkStore?()=>checkStore.request('najd_provider_registry',{select:'provider',limit:1}):null});
   const maintenanceIdentity=createGithubIdentityVerifier();
   const internalWeb=createInternalWeb();
@@ -621,6 +623,11 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           const c=getProviderConfig(source.id);const {enabled=true,revision=0,...config}=c||{};
           return {id:source.id,revision,enabled,domain:source.domain,config};
         })});
+      }
+      if(url.pathname==='/api/v1/admin/database-health'){
+        if(!diagnosticsAuthorized(req))return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
+        if(req.method!=='GET')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
+        res.setHeader('Cache-Control','no-store');return sendJson(req,res,200,await databaseMetrics());
       }
       if(url.pathname==='/api/v1/admin/provider-config'){
         if(!diagnosticsAuthorized(req))return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
