@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,logger=()=>{}}={}){
  const worker=randomUUID();let active=0,polling=false,stopped=true,timer=null;const running=new Set();
  let lanes=typeof store?.claimLane==='function'?{search:20,index:4,media:2}:null;
- const laneActive={search:0,index:0,media:0};
+ const laneActive={search:0,index:0,media:0};const lanePolling=new Set();
  const reason=e=>['AbortError','TimeoutError'].includes(e?.name)?'HARVEST_DB_TIMEOUT':/^[A-Z][A-Z0-9_]{2,79}$/.test(e?.code||e?.message)?e.code||e.message:'HARVEST_JOB_FAILED';
  async function run(job,lane=null){
   active++;if(lane)laneActive[lane]++;let heartbeat;
@@ -19,13 +19,15 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,lo
   })();running.add(task);return task;
  }
  async function pulse(){
-  if(stopped||polling||!store||(!lanes&&active>=concurrency))return;
+  if(stopped||!store||(!lanes&&(polling||active>=concurrency)))return;
   polling=true;try{
    if(lanes){
     const claimed=await Promise.allSettled(Object.entries(lanes).map(async([lane,limit])=>{
-     const capacity=limit-laneActive[lane];if(capacity<=0)return;
-     const jobs=await store.claimLane(worker,capacity,lane);
-     for(const job of jobs||[])void run(job,lane);
+     const capacity=limit-laneActive[lane];if(capacity<=0||lanePolling.has(lane))return;
+     lanePolling.add(lane);
+     try{const jobs=await store.claimLane(worker,capacity,lane);
+      for(const job of jobs||[])void run(job,lane);
+     }finally{lanePolling.delete(lane)}
     }));
     for(const result of claimed)if(result.status==='rejected'){
      logger({event:'najd_harvest_poll',reason:reason(result.reason)});
@@ -33,7 +35,7 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,lo
      if(result.reason?.message==='HARVEST_DB_HTTP_404')lanes=null;
     }
    }else{const jobs=await store.claim(worker,concurrency-active);for(const job of jobs||[])void run(job)}
-  }catch(e){logger({event:'najd_harvest_poll',reason:reason(e)})}finally{polling=false}
+  }catch(e){logger({event:'najd_harvest_poll',reason:reason(e)})}finally{polling=lanePolling.size>0}
  }
  function start(){if(!stopped||!store)return;stopped=false;timer=setInterval(pulse,pollMs);timer.unref?.();void pulse()}
  async function stop(){stopped=true;clearInterval(timer);await Promise.allSettled([...running])}

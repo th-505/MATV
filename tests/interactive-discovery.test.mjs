@@ -64,3 +64,17 @@ test('a not-yet-updated DB retains the compatible worker instead of stalling the
  const worker=createHarvestWorker({store,handlers:{},pollMs:60000});worker.start();await new Promise(r=>setImmediate(r));
  worker.wake();await new Promise(r=>setImmediate(r));await worker.stop();assert.equal(legacy,1);assert.equal(worker.metrics().concurrency,2);
 });
+
+
+test('a slow media DB claim does not hold up the next search batch',async()=>{
+ let searches=0,releaseMedia;
+ const store={claimLane:async(w,n,lane)=>{
+  if(lane==='search'){searches++;return[]}
+  if(lane==='media')await new Promise(r=>{releaseMedia=r});
+  return[];
+ },heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{},pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));
+ worker.wake();await new Promise(r=>setImmediate(r));
+ assert.equal(searches,2);releaseMedia();await worker.stop();
+});
