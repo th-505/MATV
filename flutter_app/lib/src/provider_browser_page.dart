@@ -43,6 +43,10 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
   }
 
   Future<void> _loadSources() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final sources = await widget.api.browserSources();
       if (!mounted) return;

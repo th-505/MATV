@@ -12,7 +12,7 @@ class NajdPipBridge {
   bool get needsNativeHandoff => false;
   Stream<NajdPipEvent> get events => _events.stream;
   JSObject? _video;
-  JSFunction? _leave;
+  JSFunction? _leave, _presentation;
   JSObject? _find() =>
       _document.callMethod<JSAny?>('querySelector'.toJS, 'video'.toJS)
           as JSObject?;
@@ -57,6 +57,19 @@ class NajdPipBridge {
             .callMethod<JSPromise<JSAny?>>('requestPictureInPicture'.toJS)
             .toDart;
       } else if (video.has('webkitSetPresentationMode')) {
+        _presentation ??= ((JSAny? _) {
+          final active =
+              video
+                  .getProperty<JSAny?>('webkitPresentationMode'.toJS)
+                  ?.dartify() ==
+              'picture-in-picture';
+          _events.add(NajdPipEvent(active: active));
+        }).toJS;
+        video.callMethod<JSAny?>(
+          'addEventListener'.toJS,
+          'webkitpresentationmodechanged'.toJS,
+          _presentation,
+        );
         video.callMethod<JSAny?>(
           'webkitSetPresentationMode'.toJS,
           'picture-in-picture'.toJS,
@@ -64,8 +77,12 @@ class NajdPipBridge {
       } else {
         return false;
       }
-      _events.add(const NajdPipEvent(active: true));
-      return true;
+      final active =
+          video.has('requestPictureInPicture') ||
+          video.getProperty<JSAny?>('webkitPresentationMode'.toJS)?.dartify() ==
+              'picture-in-picture';
+      if (active) _events.add(const NajdPipEvent(active: true));
+      return active;
     } catch (_) {
       return false;
     }
@@ -82,6 +99,13 @@ class NajdPipBridge {
         _video!.callMethod<JSAny?>(
           'webkitSetPresentationMode'.toJS,
           'inline'.toJS,
+        );
+      }
+      if (_presentation != null) {
+        _video?.callMethod<JSAny?>(
+          'removeEventListener'.toJS,
+          'webkitpresentationmodechanged'.toJS,
+          _presentation,
         );
       }
       if (_leave != null) {

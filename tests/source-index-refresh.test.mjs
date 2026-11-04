@@ -17,3 +17,19 @@ test('manual indexing queues only the selected source work and rejects a canonic
   await assert.rejects(api.requestWork('tmdb:tv:42',{reason:'source_refresh'}),/SOURCE_WORK_REQUIRED/);
   assert.equal(jobs.length,1);assert(wake>0);
 });
+
+test('index refresh remains pending through selected-source pagination, without waiting for media jobs',async()=>{
+  const ref='source:ahwak:aaaaaaaaaaaaaaaaaaaaaaaa';let status='queued';
+  const api=createSourceApi({worker:{wake(){}},store:{
+    async getWork(){return{metadata:{index_started_at:'cycle-new'},last_checked_at:'2026-11-04T12:00:01Z'}},
+    async request(table){return table==='matv_discovery_jobs'?[
+      {stage:'work',status:'ready'},
+      {stage:'provider',status,payload:{phase:'source_page',catalog_started_at:'cycle-new'}},
+      {stage:'provider',status:'failed',payload:{phase:'source_page',catalog_started_at:'cycle-old'}},
+      {stage:'episode',status:'running'},
+    ]:[]},
+  }});
+  assert.equal((await api.workStatus(ref)).index_state,'queued');
+  status='running';assert.equal((await api.workStatus(ref)).index_state,'running');
+  status='ready';assert.equal((await api.workStatus(ref)).index_state,'ready');
+});
