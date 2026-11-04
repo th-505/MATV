@@ -43,12 +43,21 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
   }
 
   Future<void> _loadSources() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final sources = await widget.api.browserSources();
       if (!mounted) return;
       setState(() {
         _sources = sources;
-        _provider = sources.firstOrNull?['id'] as String?;
+        if (_provider == null) {
+          _provider = sources.firstOrNull?['id'] as String?;
+        } else if (!sources.any((s) => s['id'] == _provider)) {
+          _provider = null;
+        }
+        if (!_categories.any((c) => c['id'] == _category)) _category = '';
       });
       if (_provider == null) {
         setState(() {
@@ -114,7 +123,16 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('تصفح المزود — بيتا 1')),
+    appBar: AppBar(
+      title: const Text('تصفح المزود — بيتا 2'),
+      actions: [
+        IconButton(
+          tooltip: 'تحديث قائمة المزودين',
+          onPressed: _loading ? null : _loadSources,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
     body: Column(
       children: [
         Padding(

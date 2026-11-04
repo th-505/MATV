@@ -32,4 +32,4 @@ jobs:
   internal-web:
     uses: ./.github/workflows/flutter-web.yml
     with:
-      api_base: https://matv.onrender.com
+      api_base: https://najdtv.onrender.com

@@ -59,7 +59,7 @@ await page.route('https://roqccichwszxamdpvhli.supabase.co/**',async route=>{
   const body=u.pathname.startsWith('/auth/')?{access_token:jwt,refresh_token:'fixture-refresh',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:fixtureUser}:[];
   return route.fulfill({status:200,headers:{...corsHeaders,'content-type':'application/json'},body:JSON.stringify(body)});
 });
-await page.route("https://matv.onrender.com/**", async (route) => {
+await page.route("https://najdtv.onrender.com/**", async (route) => {
   if (route.request().method() === "OPTIONS") {
     await route.fulfill({ status: 204, headers: corsHeaders });
     return;

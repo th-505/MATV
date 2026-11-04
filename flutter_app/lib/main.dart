@@ -1,3 +1,4 @@
+import 'src/playback_resume.dart';
 import 'src/app_preferences.dart';
 import 'src/provider_browser_page.dart';
 import 'src/search_work_groups.dart';
@@ -127,6 +128,29 @@ void openDetails(
   Navigator.of(context).push(
     MaterialPageRoute(
       builder: (_) => DetailsPage(api: api, store: store, item: item),
+    ),
+  );
+}
+
+void openHistoryEntry(
+  BuildContext context,
+  MitvApi api,
+  LocalLibraryStore store,
+  WatchEntry entry,
+) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => PlayerPage(
+        api: api,
+        store: store,
+        item: entry.catalogItem,
+        title: entry.title,
+        sourceRef: historyPlaybackReference(entry),
+        episodeId: entry.episodeId,
+        episodeNumber: entry.episodeNumber,
+        watchEntry: entry,
+        initialPosition: entry.progress >= .95 ? Duration.zero : null,
+      ),
     ),
   );
 }
@@ -821,11 +845,11 @@ class _HomePageState extends State<HomePage> {
                       child: NajdSurface(
                         padding: EdgeInsets.zero,
                         child: InkWell(
-                          onTap: () => openDetails(
+                          onTap: () => openHistoryEntry(
                             context,
                             widget.api,
                             widget.store,
-                            entry.catalogItem,
+                            entry,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1986,7 +2010,7 @@ class _SearchPageState extends State<SearchPage> {
       loading = false;
       error = null;
     });
-    if (!value || sources.isNotEmpty || loadingSources) return;
+    if (!value || loadingSources) return;
     setState(() {
       loadingSources = true;
       sourceError = null;
@@ -2086,12 +2110,19 @@ class _SearchPageState extends State<SearchPage> {
       error = null;
     });
     try {
+      // A newly registered source becomes searchable in this same app session.
+      var currentSources = sources;
+      if (advanced && selectedSource == null) {
+        currentSources = await widget.api.explorationSources();
+        if (!mounted || request != generation) return;
+        setState(() => sources = currentSources);
+      }
       final result = advanced
           ? selectedSource != null
                 ? await widget.api.explore(q, selectedSource!)
                 : await widget.api.exploreParallel(
                     q,
-                    providers: sources.isEmpty ? null : sources,
+                    providers: currentSources,
                     isCurrent: () =>
                         mounted &&
                         request == generation &&
@@ -2200,6 +2231,15 @@ class _SearchPageState extends State<SearchPage> {
                           ),
                           trailing: const Icon(Icons.expand_more),
                           onTap: () async {
+                            try {
+                              final latest = await widget.api
+                                  .explorationSources();
+                              if (!mounted) return;
+                              setState(() => sources = latest);
+                            } catch (_) {
+                              if (!mounted) return;
+                            }
+                            if (!context.mounted) return;
                             final value = await showNajdOptions<String>(
                               context,
                               title: 'مصادر البحث',
@@ -2663,11 +2703,11 @@ class _LibraryPageState extends State<LibraryPage> {
                     ),
                     const SizedBox(height: 12),
                     FilledButton.icon(
-                      onPressed: () => openDetails(
+                      onPressed: () => openHistoryEntry(
                         context,
                         widget.api,
                         widget.store,
-                        entry.catalogItem,
+                        entry,
                       ),
                       icon: Icon(
                         entry.progress >= .95 ? Icons.replay : Icons.play_arrow,

@@ -11,7 +11,7 @@ on:
       api_base:
         description: Public metadata API used by the native applications
         required: true
-        default: https://matv.onrender.com
+        default: https://najdtv.onrender.com
         type: string
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+      MITV_API_BASE: ${{ inputs.api_base || 'https://najdtv.onrender.com' }}
       MITV_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4

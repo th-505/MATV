@@ -7,6 +7,16 @@ MAX_FILE_SIZE_MB = 2.0
 
 # الامتدادات الممنوع وجودها داخل المستودع
 FORBIDDEN_EXTENSIONS = ['.zip', '.rar', '.7z', '.symbols', '.bak']
+# Public Flutter SDK JavaScript/Wasm name maps, included in verified Pages output.
+# Native application debug symbols remain forbidden everywhere else.
+PUBLIC_SDK_SYMBOLS = {
+    'canvaskit/canvaskit.js.symbols',
+    'canvaskit/chromium/canvaskit.js.symbols',
+    'canvaskit/skwasm.js.symbols',
+    'canvaskit/skwasm_heavy.js.symbols',
+    'canvaskit/webparagraph/canvaskit.js.symbols',
+    'canvaskit/wimp.js.symbols',
+}
 
 # المجلدات التي نتجاهل فحصها مثل مجلد git الداخلي
 IGNORED_DIRS = {'.git', 'node_modules', '.dart_tool', 'tmp', '.gemini'}
@@ -26,7 +36,7 @@ def check_repository(root_path="."):
         filename=os.path.basename(filepath)
         if not os.path.isfile(filepath): continue
         for ext in FORBIDDEN_EXTENSIONS:
-            if filename.endswith(ext): errors.append(f"❌ ملف ممنوع ({ext}): {filepath}")
+            if filename.endswith(ext) and not (ext == '.symbols' and relative in PUBLIC_SDK_SYMBOLS): errors.append(f"❌ ملف ممنوع ({ext}): {filepath}")
         if 'thmanyah' in relative.lower() and filename.lower().endswith(('.otf','.ttf','.woff','.woff2')):
             errors.append(f"❌ ملف خط خاص ممنوع النشر: {filepath}")
         size_mb=os.path.getsize(filepath)/(1024*1024)

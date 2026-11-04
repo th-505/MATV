@@ -106,7 +106,7 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
         self.assertIn('NajdUi.sidebarBreakpoint', self.dart)
         self.assertIn('TextDirection.rtl', self.dart)
         self.assertIn('isTvTarget', self.dart)
-        self.assertIn('isDesktopTarget', self.dart)
+        self.assertIn('viewport.size.width >= NajdUi.sidebarBreakpoint', self.dart)
         shell = self.dart[self.dart.index('class Shell'):self.dart.index('class HomePage')]
         self.assertIn('bottomNavigationBar:', shell)
         self.assertIn('NavigationBar(', shell)
@@ -175,7 +175,7 @@ console.log(JSON.stringify({contract:UI_CONTRACT,
             self.assertNotEqual(subprocess.run(invalid, capture_output=True).returncode, 0)
 
     def test_manifest_install_entrypoints_do_not_redirect_to_legacy_bundle(self):
-        manifest = json.loads(read('manifest.json'))
+        manifest = json.loads(read('flutter_app/web/manifest.json'))
         self.assertEqual(manifest['name'], CONTRACT['product'])
         self.assertEqual(manifest['start_url'], './')
         self.assertEqual(manifest['dir'], 'rtl')

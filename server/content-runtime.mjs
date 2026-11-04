@@ -1,4 +1,4 @@
-export const PRODUCT_VERSION = "2.0.0";
+export const PRODUCT_VERSION = "2.0.1";
 
 export class TtlCache {
   #entries = new Map();

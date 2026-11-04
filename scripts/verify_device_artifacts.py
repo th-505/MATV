@@ -92,6 +92,7 @@ with zipfile.ZipFile(ipa) as archive:
     assert info['CFBundleDisplayName'] == 'Najd TV'
     assert info['CFBundleIdentifier'] == 'com.mitv.mitv'
     assert info.get('UIFileSharingEnabled') is True
+    assert 'audio' in info.get('UIBackgroundModes', []), 'iOS PiP background playback mode missing'
     assert info.get('NSAppTransportSecurity', {}).get('NSAllowsLocalNetworking') is True
     runner = archive.read(app + 'Runner')
     assert struct.unpack('<I', runner[4:8])[0] == 0x100000C

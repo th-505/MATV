@@ -154,7 +154,7 @@ void main() {
     });
 
     for (final value in [
-      'https://matv.onrender.com/api/cinema/media?id=old&download=1',
+      'https://najdtv.onrender.com/api/cinema/media?id=old&download=1',
       'https://cdn.example.test/master.m3u8',
       'http://cdn.example.test/video.mp4',
       'https://127.0.0.1/video.mp4',

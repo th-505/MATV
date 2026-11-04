@@ -17,7 +17,7 @@ on:
       api_base:
         description: Verified public metadata API URL
         required: true
-        default: https://matv.onrender.com
+        default: https://najdtv.onrender.com
         type: string
 
 permissions:
@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+  MITV_API_BASE: ${{ inputs.api_base || 'https://najdtv.onrender.com' }}
   MITV_SOURCE_COMMIT: ${{ github.sha }}
 
 jobs:
@@ -145,6 +145,8 @@ jobs:
           grep -q android.permission.INTERNET /tmp/mitv-permissions.txt
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/mitv-manifest.txt
           grep -q networkSecurityConfig /tmp/mitv-manifest.txt
+          grep -q 'supportsPictureInPicture.*0xffffffff' /tmp/mitv-manifest.txt
+          grep -q 'resizeableActivity.*0xffffffff' /tmp/mitv-manifest.txt
           "$AAPT" dump badging "$APK" > /tmp/mitv-badging.txt
           grep -q "package: name='com.mitv.mitv'" /tmp/mitv-badging.txt
           grep -q "application-label:'Najd TV'" /tmp/mitv-badging.txt
@@ -367,7 +369,7 @@ jobs:
     needs: [verify-api, providers]
     uses: ./.github/workflows/flutter-web.yml
     with:
-      api_base: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+      api_base: ${{ inputs.api_base || 'https://najdtv.onrender.com' }}
 
   verify-release:
     needs: [android, ios-unsigned, windows, macos, web]
@@ -444,8 +446,8 @@ jobs:
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
           pathlib.Path('/tmp/release-notes.md').write_text(
-              f"Najd TV {version} — beta 1 (build {build}).\n\n"
-              "Independent Brstej and Fosta adapters, server-driven provider discovery, grouped parallel search and source-owned episode indexes. Compact player controls, configurable temporary hold speed, synchronized manual source switching, cast filmographies and Arabic/English display metadata.\n\n"
+              f"Najd TV {version} — beta 2 (build {build}).\n\n"
+              "Independent Ahwak, Brstej and Fosta adapters, refreshable server-driven provider discovery and source-owned episode indexes. Durable watch checkpoints, resume/restart choice and selected-provider index refresh. OS Picture-in-Picture bridges for Android/iOS and supported Web browsers; physical-device PiP certification is pending. API: https://najdtv.onrender.com. Compact player controls, configurable temporary hold speed, synchronized manual source switching, cast filmographies and Arabic/English display metadata.\n\n"
               "Adaptive layouts use the actual viewport, pixel ratio, safe insets and accessibility text scale. The latest layout profile is stored locally and hidden from the interface; physical screen inches are not guessed.\n\n"
               "Packages: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/portable ZIP and macOS DMG. Native packages include the privately supplied original Thmanyah font; public Web uses its licensed fallback and supports local font import.\n\n"
               "Public application: https://th-505.github.io/NajdTV/\n\n"

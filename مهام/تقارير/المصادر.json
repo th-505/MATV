@@ -2,13 +2,13 @@
   "schema_version": 1,
   "scope": "static repository declarations; no network requests",
   "counts": {
-    "site_modules_with_metadata": 23,
-    "registered_modules": 23,
+    "site_modules_with_metadata": 24,
+    "registered_modules": 24,
     "explicit_mirrors": 2,
-    "not_marked_as_mirror": 21,
+    "not_marked_as_mirror": 22,
     "ui_spellings": 0,
     "static_ui_array_entries": 0,
-    "pinned_search_modules": 21,
+    "pinned_search_modules": 22,
     "seed_only_entries": 6
   },
   "ui_delivery": {
@@ -85,6 +85,39 @@
       "ui_spellings": [],
       "pinned_search_spellings": [
         "3isk"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "ahwak",
+      "name": "أهواك تي في",
+      "code": "AH",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/ahwak.mjs",
+      "metadata_line": 11,
+      "source_sha256": "ab9bd7170e35a6718d5b059229a5389afc08613e14fcdee835c1ef32506e4a0c",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [
+        "ahwak"
       ],
       "live_validation": "not_run"
     },
@@ -261,7 +294,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/brstej.mjs",
       "metadata_line": 10,
-      "source_sha256": "552b6f1c41164bca0a804bbb66e9d90d0433ad8d7c8f47ee28a0811364be5468",
+      "source_sha256": "008a495a7b8b42d9301defbad30704adc208712eeb6fed546676e9f95f9b1330",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -391,7 +424,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/fosta.mjs",
       "metadata_line": 11,
-      "source_sha256": "c00ebe6b09f526f3ddba7db6555364a976704dbbcfc963f830358001e041de90",
+      "source_sha256": "d610b7e93a64ff37674a1c825b490774e48c845dc3e3c884e327ec77b412e377",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -867,6 +900,7 @@
     "server/match-production.mjs"
   ],
   "aggregation_modules": [
+    "server/scrapers/sites/ahwak-categories.mjs",
     "server/scrapers/sites/brstej-categories.mjs",
     "server/scrapers/sites/fosta-categories.mjs",
     "server/scrapers/sites/specialized-portals.mjs"

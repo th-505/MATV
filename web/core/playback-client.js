@@ -29,7 +29,7 @@ function tmdbReference(item){
 }
 export function createPlaybackClient({fetchImpl=globalThis.fetch, now=Date.now, delay=pause,
  maxWaitMs=90000, pollMs=1500}={}) {
- async function resolve(item,{season=1,episode=1,apiBase='https://matv.onrender.com',signal,onState=()=>{}}={}){
+ async function resolve(item,{season=1,episode=1,apiBase='https://najdtv.onrender.com',signal,onState=()=>{}}={}){
   const base=new URL(apiBase);
   if(base.protocol!=='https:' && !(base.protocol==='http:' && ['localhost','127.0.0.1'].includes(base.hostname)))throw Error('PLAYBACK_BAD_API_BASE');
   const started=now();

@@ -1,7 +1,7 @@
 {
   "name": "نجد — Najd TV",
   "short_name": "نجد",
-  "start_url": ".",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#08080e",
   "theme_color": "#08080e",
@@ -31,5 +31,7 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "dir": "rtl",
+  "lang": "ar"
 }

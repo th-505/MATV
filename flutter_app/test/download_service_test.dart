@@ -49,7 +49,7 @@ void main() {
       expect(
         () => service.download(
           Uri.parse(
-            'https://matv.onrender.com/api/cinema/media?id=opaque&download=1',
+            'https://najdtv.onrender.com/api/cinema/media?id=opaque&download=1',
           ),
         ),
         throwsA(isA<DownloadException>()),
