@@ -26,9 +26,9 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
  const upsert=(table,conflict,row)=>request(table,{on_conflict:conflict},'POST',row,'resolution=merge-duplicates,return=representation');
  return {
   request,ensureProviderRegistry,
-  claim:(worker,limit)=>request('rpc/najd_claim_jobs','rpc/najd_claim_jobs_lane','rpc/najd_source_index_identities',{},'POST',{p_worker:worker,p_limit:limit}),
+  claim:(worker,limit)=>request('rpc/najd_claim_jobs',{},'POST',{p_worker:worker,p_limit:limit}),
   sourceIndexIdentities:refs=>request('rpc/najd_source_index_identities',{},'POST',{p_refs:refs.slice(0,1000)}),
-  claimLane:(worker,limit,lane)=>request('rpc/najd_claim_jobs_lane','rpc/najd_source_index_identities',{},'POST',{p_worker:worker,p_limit:limit,p_lane:lane}),
+  claimLane:(worker,limit,lane)=>request('rpc/najd_claim_jobs_lane',{},'POST',{p_worker:worker,p_limit:limit,p_lane:lane}),
   heartbeat:(key,worker)=>request('matv_discovery_jobs',{job_key:'eq.'+key,worker_id:'eq.'+worker,status:'eq.running'},'PATCH',{lease_until:new Date(Date.now()+90000).toISOString()}),
   async complete(job,worker,result={}){
    const now=Date.now();return request('matv_discovery_jobs',{job_key:'eq.'+job.job_key,worker_id:'eq.'+worker,status:'eq.running'},'PATCH',{

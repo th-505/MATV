@@ -1,4 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
+import {createHarvestStore} from '../server/harvest/store.mjs';
 import {createHarvestWorker} from '../server/harvest/worker.mjs';
 import {createHarvestPipeline} from '../server/harvest/pipeline.mjs';
 import {sourceIndexIdentity,distinctSourceEditions} from '../server/harvest/source-edition-identity.mjs';
@@ -77,4 +78,19 @@ test('a slow media DB claim does not hold up the next search batch',async()=>{
  worker.start();await new Promise(r=>setImmediate(r));
  worker.wake();await new Promise(r=>setImmediate(r));
  assert.equal(searches,2);releaseMedia();await worker.stop();
+});
+
+
+test('real harvest store posts lane, legacy and identity RPC bodies without query pollution',async()=>{
+ const calls=[];
+ const store=createHarvestStore({url:'https://fixture.supabase.co/',key:'sb_secret_fixture',fetchImpl:async(url,options)=>{
+  calls.push({path:url.pathname,query:url.search,method:options.method,body:JSON.parse(options.body)});
+  return new Response('[]',{status:200});
+ }});
+ await store.claim('worker-id',2);await store.claimLane('worker-id',20,'search');await store.sourceIndexIdentities(['source:one:test']);
+ assert.deepEqual(calls,[
+  {path:'/rest/v1/rpc/najd_claim_jobs',query:'',method:'POST',body:{p_worker:'worker-id',p_limit:2}},
+  {path:'/rest/v1/rpc/najd_claim_jobs_lane',query:'',method:'POST',body:{p_worker:'worker-id',p_limit:20,p_lane:'search'}},
+  {path:'/rest/v1/rpc/najd_source_index_identities',query:'',method:'POST',body:{p_refs:['source:one:test']}}
+ ]);
 });
