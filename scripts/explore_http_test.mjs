@@ -7,7 +7,12 @@ try {
   const response = await fetch(base + '/api/v1/explore/sources');
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.data.length, 20);
+  assert.equal(body.data.length, 21);
+  assert(body.data.some(source => source.id === 'brstej'));
+  const manifest = await (await fetch(base + '/api/v1/sources')).json();
+  assert.equal(manifest.schema_version, 1);
+  assert(manifest.data.some(source => source.id === 'brstej' && source.reference_protocol === 'najd-source-v1'));
+  assert.equal((await fetch(base + '/api/v1/sources', {method:'POST'})).status, 405);
   assert(body.data.some(source => source.id === 'anime4up_rest'));
   assert(body.data.every(source => source.search === true && !('module' in source)));
   assert.equal((await fetch(base + '/api/v1/explore/sources', { method: 'POST' })).status, 405);

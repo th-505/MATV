@@ -192,7 +192,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   String get link {
     const base = String.fromEnvironment(
       'MITV_INTERNAL_WEB_BASE',
-      defaultValue: 'https://th-505.github.io/MATV/',
+      defaultValue: 'https://th-505.github.io/NajdTV/',
     );
     return Uri.parse(base)
         .replace(

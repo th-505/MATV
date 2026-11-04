@@ -1,3 +1,4 @@
+import {sourceManifest} from './scrapers/source-manifest.mjs';
 import { createProviderBrowser } from './scrapers/provider-browser.mjs';
 const providerBrowser = createProviderBrowser();
 import {readCachedPlayback} from './harvest/cached-playback.mjs';
@@ -524,7 +525,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
     const scraper=getProvider(provider)?.module;
     if(!scraper?.scrapeDetails)throw Error('PINNED_SOURCE_NOT_SUPPORTED');
     const details = await scraper.scrapeDetails(ref,{strict:true,timeoutMs:6000,maxRetries:0});
-    if (provider === 'fosta' && (phase !== 'metadata' || details.type === 'movie')) {
+    if (['fosta', 'brstej'].includes(provider) && (phase !== 'metadata' || details.type === 'movie')) {
       const resolved = await scraper.resolveStream(ref,{strict:true,timeoutMs:6000,maxRetries:0});
       return { ...details, ...resolved, media_sources: resolved.servers || [] };
     }
@@ -717,6 +718,10 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           const invalid = /^BROWSER_(?:BAD_PAGE|BAD_CATEGORY|PROVIDER_UNAVAILABLE)$/.test(error.message);
           return sendJson(req,res,invalid ? 400 : 503,{status:'error',message: invalid ? error.message : 'BROWSER_SOURCE_UNAVAILABLE'});
         }
+      }
+      if (url.pathname === '/api/v1/sources') {
+        if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});
+        return sendJson(req,res,200,sourceManifest());
       }
       if (url.pathname === '/api/v1/explore/sources') {
         if (req.method !== 'GET') return sendJson(req,res,405,{status:'error',message:'METHOD_NOT_ALLOWED'});

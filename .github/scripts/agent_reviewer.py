@@ -141,7 +141,7 @@ def validate_review_text(text: str) -> str:
 def openrouter_review(prompt: str) -> tuple[str,str]:
     key=os.getenv("OPENROUTER_API_KEY","").strip()
     if not key: raise RuntimeError("OPENROUTER_API_KEY unavailable")
-    headers={"Authorization":f"Bearer {key}","HTTP-Referer":"https://github.com/th-505/MATV","X-Title":"MA TV CI Reviewer"}
+    headers={"Authorization":f"Bearer {key}","HTTP-Referer":"https://github.com/th-505/NajdTV","X-Title":"Najd TV CI Reviewer"}
     variants=[
       {"model":OPENROUTER_MODEL,"temperature":0.1,"max_tokens":1800,"messages":[{"role":"user","content":prompt}]},
       {"model":OPENROUTER_MODEL,"temperature":0.1,"max_tokens":2400,"messages":[{"role":"system","content":"Return only the requested Markdown headings and verdict. INFO/MEDIUM findings are non-blocking; Samsung/Tizen NOT_CONFIGURED and DEVICE_REQUIRED_PENDING are not blockers for the requested software release targets."},{"role":"user","content":prompt}]},

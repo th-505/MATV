@@ -162,9 +162,9 @@ try {
   const placeholder = page.locator("flt-semantics-placeholder");
   await placeholder.waitFor();
   await placeholder.evaluate((el) => el.click());
-  await page
-    .getByText("مشاهدة", { exact: true })
-    .click({ timeout: 20000 });
+  const watch = page.getByText("مشاهدة", { exact: true });
+  await watch.waitFor({timeout: 20000});
+  await watch.click({timeout: 10000});
   await page.waitForFunction(
     () =>
       [...document.querySelectorAll("video")].some(

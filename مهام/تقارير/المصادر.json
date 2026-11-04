@@ -2,13 +2,13 @@
   "schema_version": 1,
   "scope": "static repository declarations; no network requests",
   "counts": {
-    "site_modules_with_metadata": 22,
-    "registered_modules": 22,
+    "site_modules_with_metadata": 23,
+    "registered_modules": 23,
     "explicit_mirrors": 2,
-    "not_marked_as_mirror": 20,
+    "not_marked_as_mirror": 21,
     "ui_spellings": 0,
     "static_ui_array_entries": 0,
-    "pinned_search_modules": 20,
+    "pinned_search_modules": 21,
     "seed_only_entries": 6
   },
   "ui_delivery": {
@@ -251,6 +251,39 @@
       "ui_spellings": [],
       "pinned_search_spellings": [
         "arabseed"
+      ],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "brstej",
+      "name": "برستيج",
+      "code": "BR",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/brstej.mjs",
+      "metadata_line": 10,
+      "source_sha256": "552b6f1c41164bca0a804bbb66e9d90d0433ad8d7c8f47ee28a0811364be5468",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [
+        "brstej"
       ],
       "live_validation": "not_run"
     },
@@ -834,6 +867,7 @@
     "server/match-production.mjs"
   ],
   "aggregation_modules": [
+    "server/scrapers/sites/brstej-categories.mjs",
     "server/scrapers/sites/fosta-categories.mjs",
     "server/scrapers/sites/specialized-portals.mjs"
   ],

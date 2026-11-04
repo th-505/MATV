@@ -52,7 +52,7 @@ jobs:
       - name: Build the complete public application
         working-directory: flutter_app
         run: |
-          flutter build web --release --no-web-resources-cdn --base-href=/MATV/ --dart-define=MITV_TARGET=web --dart-define="MITV_API_BASE=$MITV_API_BASE" --dart-define=MITV_INTERNAL_WEB_BASE=https://th-505.github.io/MATV/
+          flutter build web --release --no-web-resources-cdn --base-href=/NajdTV/ --dart-define=MITV_TARGET=web --dart-define="MITV_API_BASE=$MITV_API_BASE" --dart-define=MITV_INTERNAL_WEB_BASE=https://th-505.github.io/NajdTV/
       - name: Verify bundle and immutable source identity
         run: |
           python3 scripts/write_source_manifest.py --target web --output flutter_app/build/web/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"

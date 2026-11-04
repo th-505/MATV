@@ -5,7 +5,7 @@ import sys
 
 root = Path(sys.argv[1]).resolve()
 index = (root / 'index.html').read_text()
-assert '<base href="/MATV/">' in index, 'Pages assets must resolve under /MATV/'
+assert '<base href="/NajdTV/">' in index, 'Pages assets must resolve under /NajdTV/'
 for name in ('flutter_bootstrap.js', 'main.dart.js', 'assets/AssetManifest.bin'):
     assert (root / name).is_file(), f'Missing actual application output: {name}'
 manifest = json.loads((root / 'source-manifest.json').read_text())
@@ -16,4 +16,4 @@ for path in root.rglob('*'):
     assert not (path.suffix.lower() in ('.otf', '.ttf', '.woff', '.woff2')
                 and 'thmanyah' in path.name.lower()), 'Private original font must not be published'
     assert path.name not in ('.env', 'service-account.json'), 'Unexpected private input'
-print('Verified Flutter application, /MATV/ asset base, source manifest and private-font boundary.')
+print('Verified Flutter application, /NajdTV/ asset base, source manifest and private-font boundary.')

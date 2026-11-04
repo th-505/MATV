@@ -113,39 +113,36 @@ class MitvApi implements MediaRepository {
 
   final _harvestCardRequests =
       <String, ({DateTime at, Future<Map<String, dynamic>> result})>{};
-  static const _sourceCatalogProviders = {
-    'mycima',
-    'akwam',
-    'akoam',
-    'wecima',
-    'cimanow',
-    'shahid4u',
-    'shii4u',
-    'moviztime',
-    'moviz',
-    'egydead',
-    'ipauniverse',
-    '3cktv',
-    '3ck',
-    'anime4up',
-    'qfilm',
-    'fosta',
-    'ristoanime',
-    'arabseed',
-    'mewsry',
-    'anime4up_rest',
-    'witanime',
-  };
+  // Provider identifiers belong to the server registry, never an app allowlist.
+  // Only reference syntax is checked here; the server validates the provider,
+  // target host and source-owned identity before doing any network work.
+  static bool _providerId(String value) =>
+      RegExp(r'^[a-z0-9][a-z0-9_-]{1,29}$').hasMatch(value);
+  static bool _providerReference(String ref) =>
+      ref.length <= 1536 &&
+      !RegExp(r'[\x00-\x20\x7f]').hasMatch(ref) &&
+      RegExp(r'^[a-z0-9][a-z0-9_-]{1,29}:.+$').hasMatch(ref) &&
+      !{
+        'tmdb',
+        'source',
+        'matches',
+        'matchserver',
+        'http',
+        'https',
+        'ftp',
+        'file',
+        'data',
+        'javascript',
+        'mailto',
+      }.contains(ref.split(':').first);
+  static bool _serverCatalogReference(String ref) =>
+      _providerReference(ref) &&
+      !{'3isk', 'alooy', 'legacy', 'laroza'}.contains(ref.split(':').first);
+
   bool canRequestHarvest(String ref) =>
       RegExp(r'^tmdb:(movie|tv):[1-9]\d*$').hasMatch(ref) ||
       _sourceWorkPattern.hasMatch(ref) ||
-      {
-        ..._sourceCatalogProviders,
-        '3isk',
-        'alooy',
-        'legacy',
-        'laroza',
-      }.contains(ref.split(':').first);
+      _providerReference(ref);
 
   Future<Map<String, dynamic>> requestHarvest(
     String ref, {
@@ -271,18 +268,10 @@ class MitvApi implements MediaRepository {
       final body = jsonEncode({
         'ref': base,
         'provider':
-            {
-              ..._sourceCatalogProviders,
-              '3isk',
-              'alooy',
-              'legacy',
-              'laroza',
-              'unknown',
-              'egydead_live',
-              'yallashoot',
-              'matches',
-              'matchserver',
-            }.contains(provider)
+            _providerId(provider) &&
+                (_sourceLabels.containsKey(provider) ||
+                    (_sourceWorkPattern.hasMatch(base) &&
+                        base.split(':')[1] == provider))
             ? provider
             : 'unknown',
         'phase':
@@ -512,8 +501,7 @@ class MitvApi implements MediaRepository {
       }
       return normalized;
     }
-    if (!metadataOnly &&
-        _sourceCatalogProviders.contains(ref.split(':').first)) {
+    if (!metadataOnly && _serverCatalogReference(ref)) {
       try {
         return await _providerSourceMetadata(ref);
       } on TimeoutException {

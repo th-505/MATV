@@ -36,7 +36,7 @@ test('Arabic dashboard is usable on mobile, desktop and TV with a downloadable s
    const counter=await page.locator('#counters .counter strong').allTextContents();assert.deepEqual(counter,['١٢','٢','١٣٣','٣٦']);
    await page.locator('[data-view="works"]').click();assert.match(await page.locator('#view').innerText(),/مدبلج · نسخة مستقلة/);assert.match(await page.locator('#view').innerText(),/توجد فجوات/);
    await page.locator('[data-view="traces"]').click();assert.match(await page.locator('#view').innerText(),/أُرسل الطلب للمصدر/);assert.match(await page.locator('#view').innerText(),/إصدار التطبيق: 1\.1\.6/);assert.match(await page.locator('#view').innerText(),/داخل مشغل التطبيق/);assert.match(await page.locator('#report-meta').innerText(),/إصدار الخادم: 1\.1\.7/);
-   assert.equal(await page.locator('#source-code').getAttribute('href'),'https://github.com/th-505/MATV/archive/'+'a'.repeat(40)+'.zip');
+   assert.equal(await page.locator('#source-code').getAttribute('href'),'https://github.com/th-505/NajdTV/archive/'+'a'.repeat(40)+'.zip');
    const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#download').click()]);
    const stream=await download.createReadStream();let text='';for await(const chunk of stream)text+=chunk.toString('utf8');assert.deepEqual(JSON.parse(text),report);assert(!text.includes('fixture-admin-key'));
    const metrics=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,local:localStorage.length,session:sessionStorage.length,buttons:[...document.querySelectorAll('button:not([disabled]),a.button:not([hidden])')].filter(e=>e.getClientRects().length).map(e=>e.getBoundingClientRect().height)}));
