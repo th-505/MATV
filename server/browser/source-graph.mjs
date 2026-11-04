@@ -82,11 +82,11 @@ export function scanSourceGraph(
     const parentContext =
       a.is('[rel="up"]') ||
       a.closest(
-        ".breadcrumb,.breadcrumbs,.episode-parent,.series-info,.season-list,.seasons,.seasons-list",
+        ".breadcrumb,.breadcrumbs,.episode-parent,.series-info,.season-list,.seasons,.seasons-list,.SeasonsList",
       ).length > 0;
     if (
       !number &&
-      a.closest(".season-list,.seasons,.seasons-list").length &&
+      a.closest(".season-list,.seasons,.seasons-list,.SeasonsList").length &&
       /^(?:الموسم|موسم|season)\s*/i.test(label) &&
       explicitSeason(label, href)
     ) {
