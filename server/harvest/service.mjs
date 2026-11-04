@@ -12,7 +12,7 @@ export function createHarvestService({store=process.env.NAJD_HARVEST_ENABLED==='
  const entries=listProviders().map(meta=>getProvider(meta.id));
  const worker=createHarvestWorker({store,handlers:store?createHarvestPipeline({store,metadata,entries,now}):{},logger});
  let configTimer=null,hourlyTimer=null,lastWake=0;
- async function refreshConfig(){if(store)installProviderConfigs(await store.config())}
+ async function refreshConfig(){if(store){await store.ensureProviderRegistry?.();installProviderConfigs(await store.config())}}
  function start(){
   if(!store||configTimer)return;
   void refreshConfig().catch(()=>logger({event:'najd_config_refresh',reason:'CONFIG_UNAVAILABLE'}));

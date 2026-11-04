@@ -9,6 +9,7 @@ export function createSourceApi({store,worker,now=Date.now}){
  const stamp=()=>new Date(now()).toISOString();
  async function request(ref,{reason='card_open'}={}){
   if(!store)throw Error('HARVEST_NOT_CONFIGURED');const key=workReference(ref);
+  await store.ensureProviderRegistry?.();
   if(reason==='source_refresh'&&!sourceWorkRef(key))throw Error('SOURCE_WORK_REQUIRED');
   const existing=(await store.request('matv_discovery_jobs',{job_key:'eq.'+key+':work',select:'status,refresh_after,payload,updated_at',limit:1}))?.[0];
   if(existing&&(existing.status==='queued'||existing.status==='running'||(!['retry','source_refresh'].includes(reason)&&Date.parse(existing.refresh_after)>now()))) {worker.wake();return{ref:key,state:existing.status,poll_after_ms:1500,requested_at:existing.payload?.refresh_requested_at||existing.updated_at||stamp()};}

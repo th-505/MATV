@@ -1,5 +1,6 @@
+import {listProviders} from '../scrapers/registry.mjs';
 import {readBoundedText} from '../scrapers/shared/http.mjs';
-const TABLES=new Set(['matv_discovery_jobs','najd_work_catalog','najd_season_catalog','najd_source_catalog','najd_episode_cache','najd_provider_config','najd_harvest_events']);
+const TABLES=new Set(['matv_discovery_jobs','najd_work_catalog','najd_season_catalog','najd_source_catalog','najd_episode_cache','najd_provider_config','najd_harvest_events','najd_provider_registry']);
 /** Private PostgREST store; never expose this key to a browser or a worker report. */
 export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY,fetchImpl=globalThis.fetch}={}){
  if(!url||!key)return null;
@@ -14,9 +15,17 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
   if(r.status===204){await r.body?.cancel();return null}
   const text=await readBoundedText(r,2*1024*1024);return text?JSON.parse(text):null;
  }
+ let registryReady=null;
+ const ensureProviderRegistry=()=>{
+  if(!registryReady){
+   const ids=[...new Set([...listProviders().map(p=>p.id),'legacy','akoam','wecima','moviz','3ck'])];
+   registryReady=request('najd_provider_registry',{on_conflict:'provider'},'POST',ids.map(provider=>({provider})),'resolution=ignore-duplicates,return=minimal').catch(error=>{registryReady=null;throw error});
+  }
+  return registryReady;
+ };
  const upsert=(table,conflict,row)=>request(table,{on_conflict:conflict},'POST',row,'resolution=merge-duplicates,return=representation');
  return {
-  request,
+  request,ensureProviderRegistry,
   claim:(worker,limit)=>request('rpc/najd_claim_jobs',{},'POST',{p_worker:worker,p_limit:limit}),
   heartbeat:(key,worker)=>request('matv_discovery_jobs',{job_key:'eq.'+key,worker_id:'eq.'+worker,status:'eq.running'},'PATCH',{lease_until:new Date(Date.now()+90000).toISOString()}),
   async complete(job,worker,result={}){
