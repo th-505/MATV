@@ -9,7 +9,7 @@ import { FOSTA_CATEGORIES, FOSTA_CATEGORY_LABELS } from './fosta-categories.mjs'
 
 const ORIGIN = 'https://ffosta-tv.autos';
 export const PROVIDER_META = Object.freeze({ id: 'fosta', name: 'فوستا', code: 'FO',
-  domains: [ORIGIN], mirrorOf: null,
+  domains: [ORIGIN], mirrorOf: null, resolveOnDetails: true,
   capabilities: { catalog: true, search: true, details: true, episodes: true, servers: true, resolve: true, live: false },
   searchSpec: { method: 'GET', pathTemplate: '/search.php?keywords={query}', queryParam: 'keywords', encoding: 'utf-8', pagination: true },
   notImplemented: {},

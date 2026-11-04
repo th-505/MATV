@@ -10,7 +10,7 @@ on:
       api_base:
         description: Existing Najd API base URL
         required: true
-        default: https://matv.onrender.com
+        default: https://najdtv.onrender.com
         type: string
 
 permissions:
@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
+  MITV_API_BASE: ${{ inputs.api_base || 'https://najdtv.onrender.com' }}
   MITV_SOURCE_COMMIT: ${{ github.sha }}
 
 jobs:

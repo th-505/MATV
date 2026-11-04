@@ -103,7 +103,23 @@ def apply_android(root: Path):
 </network-security-config>''', encoding="utf-8")
         text = re.sub(r'(<application\b)', r'\1 android:networkSecurityConfig="@xml/network_security_config"', text, count=1) if 'android:networkSecurityConfig' not in text else text
         text = re.sub(r'android:label="[^"]*"', 'android:label="Najd TV"', text, count=1)
+        activity = re.search(r'<activity\b[^>]*android:name="\.MainActivity"[^>]*>', text)
+        if activity:
+            tag = activity.group(0)
+            for name in ('supportsPictureInPicture', 'resizeableActivity'):
+                key = 'android:' + name
+                if key + '=' in tag:
+                    tag = re.sub(key + r'="[^"]*"', key + '="true"', tag)
+                else:
+                    tag = tag[:-1] + ' ' + key + '="true">'
+            text = text.replace(activity.group(0), tag, 1)
         manifest.write_text(text, encoding="utf-8")
+    # These tracked platform templates survive flutter create in hosted builds.
+    source = Path(__file__).resolve().parents[1] / 'flutter_app/native/android/MainActivity.kt'
+    for activity in (android / 'app/src/main').rglob('MainActivity.kt'):
+        package = re.search(r'^package\s+([\w.]+)', activity.read_text(), re.M)
+        if package:
+            activity.write_text(source.read_text().replace('__NAJD_PACKAGE__', package.group(1)))
 
 
 def ios_pixel_size(entry: dict) -> int:
@@ -152,8 +168,15 @@ def apply_ios(root: Path):
         data["CFBundleName"] = "Najd TV"
         data["UIFileSharingEnabled"] = True
         data["LSSupportsOpeningDocumentsInPlace"] = True
+        data["UIBackgroundModes"] = sorted(set(data.get("UIBackgroundModes", [])) | {"audio"})
         with plist.open("wb") as fh:
             plistlib.dump(data, fh, sort_keys=False)
+
+
+    delegate = ios / "Runner/AppDelegate.swift"
+    if delegate.exists():
+        source = Path(__file__).resolve().parents[1] / 'flutter_app/native/ios/AppDelegate.swift'
+        delegate.write_text(source.read_text())
 
 
 def apply_web(root: Path):

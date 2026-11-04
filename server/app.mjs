@@ -522,10 +522,11 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
       if(phase==='metadata' && typeof runtime.metadata==='function')return runtime.metadata(ref);
       return runtime.details(ref,{platform:'web'});
     }
-    const scraper=getProvider(provider)?.module;
+    const entry=getProvider(provider);
+    const scraper=entry?.module;
     if(!scraper?.scrapeDetails)throw Error('PINNED_SOURCE_NOT_SUPPORTED');
     const details = await scraper.scrapeDetails(ref,{strict:true,timeoutMs:6000,maxRetries:0});
-    if (['fosta', 'brstej'].includes(provider) && (phase !== 'metadata' || details.type === 'movie')) {
+    if (entry.meta.resolveOnDetails === true && (phase !== 'metadata' || details.type === 'movie')) {
       const resolved = await scraper.resolveStream(ref,{strict:true,timeoutMs:6000,maxRetries:0});
       return { ...details, ...resolved, media_sources: resolved.servers || [] };
     }
@@ -647,7 +648,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         try{
           const ref=url.searchParams.get('ref')||'';
           if(requesting){
-            const reason=url.searchParams.get('reason')||'card_open';if(!['card_open','favorite','retry'].includes(reason))throw Error('INVALID_HARVEST_REASON');
+            const reason=url.searchParams.get('reason')||'card_open';if(!['card_open','favorite','retry','source_refresh'].includes(reason))throw Error('INVALID_HARVEST_REASON');
             const context=clientDiagnosticContext(Object.fromEntries(url.searchParams));
             const trace=traceStore.start({provider:'harvest',query:workReference(ref),work_ref:workReference(ref),...context});
             trace.events.push({stage:'server_received',at_ms:0});

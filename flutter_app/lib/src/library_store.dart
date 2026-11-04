@@ -33,6 +33,7 @@ class WatchEntry {
     this.episodeNumber,
     this.metadata,
     this.selectedSourceRef = '',
+    this.playbackRef = '',
     this.providerId = '',
     this.edition = '',
     this.timelineVerified = false,
@@ -50,6 +51,7 @@ class WatchEntry {
   final int? episodeNumber;
   final CatalogItem? metadata;
   final String selectedSourceRef;
+  final String playbackRef;
   final String providerId;
   final String edition;
   final bool timelineVerified;
@@ -79,6 +81,7 @@ class WatchEntry {
     'episode_number': episodeNumber,
     'catalog_item': catalogItem.toJson(),
     'selected_source_ref': _stableReference(selectedSourceRef),
+    'playback_ref': _stableReference(playbackRef),
     'provider_id': providerId,
     'edition': edition,
     'timeline_verified': timelineVerified,
@@ -107,6 +110,7 @@ class WatchEntry {
           )
         : null,
     selectedSourceRef: _stableReference('${json['selected_source_ref'] ?? ''}'),
+    playbackRef: _stableReference('${json['playback_ref'] ?? ''}'),
     providerId: '${json['provider_id'] ?? ''}',
     edition: '${json['edition'] ?? ''}',
     timelineVerified: json['timeline_verified'] == true,
@@ -118,6 +122,7 @@ class LocalLibraryStore extends ChangeNotifier {
   LocalLibraryStore._(this._prefs, this._clock);
   static const _favoritesKey = 'library.favorites.v1';
   static const _historyKey = 'library.history.v1';
+  static const _snapshotKey = 'library.snapshot.v2';
   static const _syncKey = 'library.sync.v1';
   static const _searchHistoryKey = 'search.history.v1';
   static const _searchSourceKey = 'search.source.v1';
@@ -308,6 +313,7 @@ class LocalLibraryStore extends ChangeNotifier {
     String episodeId = '',
     int? episodeNumber,
     String selectedSourceRef = '',
+    String playbackRef = '',
     String providerId = '',
     String edition = '',
     bool timelineVerified = false,
@@ -328,6 +334,7 @@ class LocalLibraryStore extends ChangeNotifier {
       episodeNumber: episodeNumber,
       metadata: CatalogItem.fromJson(item.toJson()),
       selectedSourceRef: _stableReference(selectedSourceRef),
+      playbackRef: _stableReference(playbackRef),
       providerId: providerId,
       edition: edition,
       timelineVerified: timelineVerified,
@@ -448,7 +455,24 @@ class LocalLibraryStore extends ChangeNotifier {
   }
 
   void _load() {
-    for (final raw in _prefs.getStringList(_favoritesKey) ?? const <String>[]) {
+    Map? snapshot;
+    try {
+      final raw = jsonDecode(_prefs.getString(_snapshotKey) ?? 'null');
+      if (raw is Map &&
+          raw['schema_version'] == 2 &&
+          [
+            raw['favorites'],
+            raw['history'],
+            raw['sync'],
+          ].every((v) => v is List)) {
+        snapshot = raw;
+      }
+    } catch (_) {}
+    List<String> rows(String oldKey, String field) => snapshot != null
+        ? (snapshot[field] as List).whereType<Map>().map(jsonEncode).toList()
+        : _prefs.getStringList(oldKey) ?? const <String>[];
+
+    for (final raw in rows(_favoritesKey, 'favorites')) {
       try {
         final item = CatalogItem.fromJson(
           jsonDecode(raw) as Map<String, dynamic>,
@@ -456,7 +480,7 @@ class LocalLibraryStore extends ChangeNotifier {
         if (item.ref.isNotEmpty) _favorites[item.ref] = item;
       } catch (_) {}
     }
-    for (final raw in _prefs.getStringList(_historyKey) ?? const <String>[]) {
+    for (final raw in rows(_historyKey, 'history')) {
       try {
         final entry = WatchEntry.fromJson(
           jsonDecode(raw) as Map<String, dynamic>,
@@ -464,10 +488,17 @@ class LocalLibraryStore extends ChangeNotifier {
         if (entry.contentRef.isNotEmpty) _history[entry.key] = entry;
       } catch (_) {}
     }
-    for (final raw in _prefs.getStringList(_syncKey) ?? const <String>[]) {
+    for (final raw in rows(_syncKey, 'sync')) {
       try {
         final json = jsonDecode(raw) as Map<String, dynamic>;
         final row = LibrarySyncRecord.fromJson(json);
+        // Recover legacy split writes: an older sync row must not rewind a
+        // newer checkpoint, including an older deletion of a rewatched item.
+        final local = row.kind == 'history' ? _history[row.itemKey] : null;
+        if (local != null &&
+            local.updatedAtMs > row.updatedAt.millisecondsSinceEpoch) {
+          continue;
+        }
         if (!_applyCloudRow(row)) continue;
         _lastMutationMs = _lastMutationMs > row.updatedAt.millisecondsSinceEpoch
             ? _lastMutationMs
@@ -545,6 +576,25 @@ class LocalLibraryStore extends ChangeNotifier {
       for (final row in oldTombstones.skip(128)) {
         _changes.remove(row.key);
         _attempted.remove(row.key);
+      }
+      // One atomic preference value keeps progress and pending sync changes
+      // consistent across process death. Legacy keys remain for compatibility.
+      final snapshot = jsonEncode({
+        'schema_version': 2,
+        'favorites': _favorites.values.map((v) => v.toJson()).toList(),
+        'history': history.map((v) => v.toJson()).toList(),
+        'sync': _changes.values
+            .map(
+              (row) => {
+                ...row.toJson(),
+                'pending': _pending.contains(row.key),
+                'attempted': _attempted.contains(row.key),
+              },
+            )
+            .toList(),
+      });
+      if (!await _prefs.setString(_snapshotKey, snapshot)) {
+        throw StateError('LIBRARY_CHECKPOINT_NOT_SAVED');
       }
       await _prefs.setStringList(
         _favoritesKey,

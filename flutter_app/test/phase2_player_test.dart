@@ -167,6 +167,9 @@ void main() {
       for (var i = 0; i < 12; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
+      expect(find.text('استئناف التشغيل'), findsOneWidget);
+      await tester.tap(find.text('استئناف التشغيل'));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(engines.length, 3);
       expect(engines[1].software, true);
       expect(engines.last.uri.queryParameters['id'], 'good');

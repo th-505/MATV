@@ -46,7 +46,7 @@ class MitvApi implements MediaRepository {
            Uri.parse(
              const String.fromEnvironment(
                'MITV_API_BASE',
-               defaultValue: 'https://matv.onrender.com',
+               defaultValue: 'https://najdtv.onrender.com',
              ),
            );
 
@@ -307,6 +307,40 @@ class MitvApi implements MediaRepository {
     } catch (_) {
       /* Telemetry never interrupts playback or displays raw errors. */
     }
+  }
+
+  /// Refresh only an explicitly selected source work, never canonical discovery.
+  Future<Map<String, dynamic>> refreshSourceIndex(
+    String ref, {
+    int season = 1,
+  }) async {
+    if (!RegExp(r'^source:[a-z0-9][a-z0-9_-]{1,29}:[a-f0-9]{24}$')
+        .hasMatch(ref)) {
+      throw const ApiException('SOURCE_WORK_REQUIRED');
+    }
+    final admitted = await requestHarvest(ref, reason: 'source_refresh');
+    final requestedAt = DateTime.tryParse('${admitted['requested_at'] ?? ''}');
+    if (requestedAt == null) {
+      throw const ApiException('SOURCE_REFRESH_CONFIRMATION_UNAVAILABLE');
+    }
+    final deadline = DateTime.now().add(sourceIndexTimeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final status = await harvestStatus(ref);
+      final indexedAt = DateTime.tryParse(
+        '${status['index_updated_at'] ?? ''}',
+      );
+      if (status['index_state'] == 'ready' &&
+          indexedAt != null &&
+          !indexedAt.isBefore(requestedAt)) {
+        _metadata.remove(ref);
+        return sourceWorkMetadata(ref, season: season);
+      }
+      if (status['index_state'] == 'failed') {
+        throw const ApiException('SOURCE_INDEX_REFRESH_FAILED');
+      }
+      await Future<void>.delayed(sourcePollInterval);
+    }
+    throw const ApiException('SOURCE_INDEX_STILL_PENDING');
   }
 
   Future<Map<String, dynamic>> harvestStatus(String ref) async => _harvestData(

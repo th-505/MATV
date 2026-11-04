@@ -158,6 +158,10 @@ void main() {
         for (var i = 0; i < 8; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
+        expect(find.text('استئناف التشغيل'), findsOneWidget);
+        await tester.tap(find.text('استئناف التشغيل'));
+        await tester.pumpAndSettle();
+        expect(engines.first.seeks, contains(const Duration(seconds: 40)));
         await engines.first.seekTo(Duration(seconds: seconds));
         if (automatic) {
           engines.first.state.value = seconds == 23

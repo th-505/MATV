@@ -365,6 +365,39 @@ class _DetailsPageState extends State<DetailsPage> {
       ? widget.item.ref
       : widget.providerCatalogRef;
 
+  bool _refreshingSourceIndex = false;
+  String? _sourceRefreshMessage;
+  Future<void> _refreshSourceIndex(String ref) async {
+    if (_refreshingSourceIndex) return;
+    setState(() {
+      _refreshingSourceIndex = true;
+      _sourceRefreshMessage = 'جاري تحديث فهرس هذا المصدر فقط…';
+    });
+    try {
+      final data = await widget.api.refreshSourceIndex(
+        ref,
+        season: selectedSeason,
+      );
+      if (!mounted) return;
+      setState(() {
+        future = Future.value(TitleDetails.fromJson(data));
+        _sourceRefreshMessage = 'وصل تحديث الفهرس من المصدر المحدد.';
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _sourceRefreshMessage =
+              error is ApiException &&
+                  error.code == 'SOURCE_INDEX_STILL_PENDING'
+              ? 'التحديث مستمر في الخلفية؛ الفهرس الحالي محفوظ. أعد التحقق بعد قليل.'
+              : 'تعذر تأكيد التحديث حاليًا؛ الفهرس الحالي محفوظ.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshingSourceIndex = false);
+    }
+  }
+
   bool _loadingEpisodePage = false;
   Future<void> _moreEpisodes() async {
     if (_loadingEpisodePage) return;
@@ -887,6 +920,44 @@ class _DetailsPageState extends State<DetailsPage> {
                     ],
                   ),
                 ),
+                if (details.sourceWorkRef.isNotEmpty ||
+                    widget.item.ref.startsWith('source:'))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        OutlinedButton.icon(
+                          key: const Key('source-index-refresh'),
+                          onPressed: _refreshingSourceIndex
+                              ? null
+                              : () => _refreshSourceIndex(
+                                  details.sourceWorkRef.isNotEmpty
+                                      ? details.sourceWorkRef
+                                      : widget.item.ref.replaceFirst(
+                                          RegExp(r':s\d+:e\d+$'),
+                                          '',
+                                        ),
+                                ),
+                          icon: _refreshingSourceIndex
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.sync),
+                          label: const Text('تحديث الفهرس الآن'),
+                        ),
+                        if (_sourceRefreshMessage != null)
+                          Text(
+                            _sourceRefreshMessage!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
+                    ),
+                  ),
                 if (widget.item.ref.startsWith('tmdb:'))
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),

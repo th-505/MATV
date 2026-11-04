@@ -21,7 +21,7 @@ function browserCatalogUrl(path, query) {
   const local = typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)
     ? 'http://127.0.0.1:3000' : '';
   try {
-    const url = new URL('/api/v1/tmdb/catalog', configured || local || 'https://matv.onrender.com');
+    const url = new URL('/api/v1/tmdb/catalog', configured || local || 'https://najdtv.onrender.com');
     if (url.protocol !== 'https:' && !(/^http:$/.test(url.protocol) && ['localhost', '127.0.0.1'].includes(url.hostname))) return null;
     url.searchParams.set('path', path);
     query.forEach((value, key) => url.searchParams.set(key, value));

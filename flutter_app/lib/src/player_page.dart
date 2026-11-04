@@ -1,3 +1,5 @@
+import 'pip_bridge.dart';
+import 'playback_resume.dart';
 import 'search_work_groups.dart';
 import 'app_preferences.dart';
 import 'source_selection_memory.dart';
@@ -161,8 +163,12 @@ class PlayerPage extends StatefulWidget {
     this.episodeQueue = const [],
     this.initialPosition,
     this.providerCatalogRef = '',
+    this.watchEntry,
+    this.pipBridge,
   });
 
+  final NajdPipBridge? pipBridge;
+  final WatchEntry? watchEntry;
   final Duration? initialPosition;
   final String providerCatalogRef;
   final List<EpisodeItem> episodeQueue;
@@ -203,6 +209,31 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   double _subtitleDelay = 0;
   bool _subtitleBusy = false;
   int _subtitleGeneration = 0;
+
+  late final NajdPipBridge _pip = widget.pipBridge ?? NajdPipBridge();
+  StreamSubscription<NajdPipEvent>? _pipSubscription;
+  bool _pipAvailable = false, _pipActive = false, _pipHandoff = false;
+  bool? _lastPipPlaying;
+  Size? _lastPipSize;
+  Duration? _pipPosition, _pipDuration;
+  bool _progressReady = false;
+  Duration? _pendingResumeTarget;
+  Timer? _resumeSeekTimer;
+  bool _resumeSeekInFlight = false;
+  int _resumeSeekAttempts = 0;
+  Future<ResumeAction?>? _resumePrompt;
+  ResumeAction? _resumeAction;
+  WatchEntry? get _savedEntry =>
+      widget.watchEntry ??
+      widget.store.resumeEntry(widget.item.ref, episodeId: widget.episodeId) ??
+      widget.store.history
+          .where(
+            (entry) =>
+                entry.contentRef == widget.item.ref &&
+                entry.playbackRef.isNotEmpty &&
+                entry.playbackRef == widget.sourceRef,
+          )
+          .firstOrNull;
 
   Timer? _progressTimer;
   Timer? _nativeStartupTimer;
@@ -251,6 +282,9 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     _displayOwner = this;
+    _pipSubscription = _pip.events.listen(
+      (event) => unawaited(_onPipEvent(event)),
+    );
     WidgetsBinding.instance.addObserver(this);
     _handoffPosition = widget.initialPosition;
     _initialize();
@@ -263,7 +297,10 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) unawaited(_endBoost());
+    if (state != AppLifecycleState.resumed) {
+      unawaited(_endBoost());
+      unawaited(_saveProgress(force: true));
+    }
   }
 
   List<EpisodeItem>? _loadedSourceQueue;
@@ -457,10 +494,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
           ),
         );
         if (previousSource == null) {
-          final saved = widget.store.resumeEntry(
-            widget.item.ref,
-            episodeId: widget.episodeId,
-          );
+          final saved = _savedEntry;
           if (saved != null && saved.providerId.isNotEmpty) {
             final preferred = _sources.indexWhere(
               (source) =>
@@ -579,24 +613,70 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
       await controller.setPlaybackSpeed(_playbackSpeed);
       await controller.setVolume(_volume);
       if (!mounted || controller != _controller) return;
-      final resume =
+      final saved = _savedEntry;
+      var resume =
           _handoffPosition ??
           historyPositionForSource(
-            widget.store.resumeEntry(
-              widget.item.ref,
-              episodeId: widget.episodeId,
-            ),
+            saved,
             _activeSource,
             requestedRef: widget.sourceRef.isNotEmpty
                 ? widget.sourceRef
                 : widget.item.ref,
           );
       if (!widget.isLive &&
-          (_handoffPosition != null || resume >= const Duration(seconds: 5)) &&
-          (controller.value.duration <= Duration.zero ||
-              resume < controller.value.duration)) {
-        await controller.seekTo(resume);
+          widget.initialPosition == null &&
+          _handoffPosition == null &&
+          saved != null &&
+          saved.positionMs >= 5000 &&
+          saved.progress < .95 &&
+          _resumeAction == null) {
+        _resumePrompt ??= showResumeChoice(
+          context,
+          saved,
+          differentSource: resume == Duration.zero,
+        );
+        final action = await _resumePrompt;
+        if (!mounted || controller != _controller) return;
+        if (action == null) {
+          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          return;
+        }
+        _resumeAction = action;
       }
+      if ((_handoffPosition == null && _resumeAction == ResumeAction.restart) ||
+          (_handoffPosition == null &&
+              saved != null &&
+              saved.progress >= .95 &&
+              widget.initialPosition == null)) {
+        resume = Duration.zero;
+      } else if (_handoffPosition == null &&
+          _resumeAction == ResumeAction.resume &&
+          resume == Duration.zero &&
+          saved != null) {
+        // Explicit user choice permits a clock handoff; it is not a verified cut mapping.
+        resume = Duration(milliseconds: saved.positionMs);
+      }
+      if (!widget.isLive && resume > Duration.zero) {
+        if (controller.value.duration > Duration.zero &&
+            resume >= controller.value.duration) {
+          throw StateError('SAVED_POSITION_OUTSIDE_SOURCE');
+        }
+        _pendingResumeTarget = resume;
+        _progressReady = false;
+        _resumeSeekAttempts = 0;
+        await controller.seekTo(resume);
+        _confirmResumePosition();
+      } else {
+        _pendingResumeTarget = null;
+        _progressReady = true;
+        if (!widget.isLive &&
+            (_resumeAction == ResumeAction.restart ||
+                _handoffPosition != null)) {
+          await controller.seekTo(Duration.zero);
+        }
+      }
+      _startResumeRetry(controller);
+      unawaited(_configurePip(controller));
       setState(() {
         _failed = false;
         _status = 'جاهز للمشاهدة • ${runtimeMediaLabel(mediaType)}';
@@ -645,12 +725,69 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     }
   }
 
+  void _confirmResumePosition() {
+    final target = _pendingResumeTarget, player = _controller;
+    if (target == null || player == null) return;
+    if ((player.value.position - target).inMilliseconds.abs() <= 2000) {
+      _pendingResumeTarget = null;
+      _progressReady = true;
+      _resumeSeekTimer?.cancel();
+    }
+  }
+
+  void _startResumeRetry(UniversalPlayer player) {
+    _resumeSeekTimer?.cancel();
+    if (_pendingResumeTarget == null) return;
+    final deadline = DateTime.now().add(const Duration(seconds: 25));
+    _resumeSeekTimer = Timer.periodic(const Duration(milliseconds: 500), (
+      timer,
+    ) async {
+      if (!mounted || player != _controller || _pendingResumeTarget == null) {
+        timer.cancel();
+        return;
+      }
+      _confirmResumePosition();
+      final target = _pendingResumeTarget;
+      if (target == null) return;
+      if (DateTime.now().isAfter(deadline)) {
+        timer.cancel();
+        await player.pause();
+        if (mounted) {
+          setState(() {
+            _failed = true;
+            _status = 'تعذر استئناف الدقيقة المحفوظة. أعد المحاولة أو اختر مصدرًا آخر.';
+          });
+        }
+        return;
+      }
+      if (_resumeSeekInFlight ||
+          _resumeSeekAttempts >= 3 ||
+          player.value.isBuffering ||
+          player.value.duration <= target) {
+        return;
+      }
+      _resumeSeekInFlight = true;
+      _resumeSeekAttempts++;
+      try {
+        await player.seekTo(target);
+        _confirmResumePosition();
+      } catch (_) {
+      } finally {
+        _resumeSeekInFlight = false;
+      }
+    });
+  }
+
   void _nativeValueChanged() {
+    _confirmResumePosition();
+    _updatePipPlayback();
     final controller = _controller;
     if (controller == null || _nativeFailureInFlight) {
       return;
     }
-    if (!controller.value.hasError && controller.value.isInitialized) {
+    if (_progressReady &&
+        !controller.value.hasError &&
+        controller.value.isInitialized) {
       _lastObservedPosition = controller.value.position;
     }
     final next = _nextEpisode;
@@ -1088,18 +1225,152 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _saveProgress({bool force = false}) async {
-    if (widget.isLive || !widget.persistProgress) return;
+  Future<void> _configurePip(UniversalPlayer player) async {
+    final supported = await _pip.supported(_currentMediaType);
+    if (!mounted || player != _controller) return;
+    setState(() => _pipAvailable = supported);
+    _lastPipPlaying = null;
+    _updatePipPlayback();
+  }
+
+  void _updatePipPlayback() {
+    final player = _controller;
+    if (!_pipAvailable || player == null || !player.value.isInitialized) return;
+    final playing = player.value.isPlaying && !player.value.hasError;
+    final size = player.value.size;
+    if (_lastPipPlaying == playing && _lastPipSize == size) return;
+    _lastPipPlaying = playing;
+    _lastPipSize = size;
+    unawaited(
+      _pip.update(playing: playing, width: size.width, height: size.height),
+    );
+  }
+
+  Future<void> _enterPip() async {
+    final player = _controller;
+    if (!_pipAvailable ||
+        player == null ||
+        !player.value.isInitialized ||
+        _pipActive) {
+      return;
+    }
+    if (!_progressReady || _pendingResumeTarget != null) {
+      _subtitleNotice('انتظر اكتمال استئناف التشغيل أولًا.');
+      return;
+    }
+    await _endBoost();
+    await _saveProgress(force: true);
+    final wasPlaying = player.value.isPlaying;
+    _pipPosition = player.value.position;
+    _pipDuration = player.value.duration;
+    if (_pip.needsNativeHandoff) {
+      _pipHandoff = true;
+      _requestedPlaying = false;
+      await player.pause();
+    }
+    final entered = await _pip.enter(
+      url: player.uri.toString(),
+      headers: player.headers,
+      position: _pipPosition!,
+      playing: wasPlaying,
+      rate: _playbackSpeed,
+      width: player.value.size.width,
+      height: player.value.size.height,
+    );
+    if (!mounted || player != _controller) return;
+    if (!entered) {
+      _pipHandoff = false;
+      _requestedPlaying = wasPlaying;
+      if (wasPlaying) await player.play();
+      _subtitleNotice('تعذر فتح صورة داخل صورة لهذا الفيديو على جهازك.');
+    } else {
+      setState(() {
+        _pipActive = true;
+        _controlsVisible = false;
+      });
+      unawaited(_keepScreenOn(false));
+    }
+  }
+
+  Future<void> _onPipEvent(NajdPipEvent event) async {
+    final player = _controller;
+    if (!mounted || player == null) return;
+    if (event.command == 'play' || event.command == 'pause') {
+      if (player.value.isPlaying != (event.command == 'play')) {
+        await _togglePlay(player);
+      }
+      return;
+    }
+    if (event.position != null) _pipPosition = event.position;
+    if (event.duration != null && event.duration! > Duration.zero) {
+      _pipDuration = event.duration;
+    }
+    setState(() => _pipActive = event.active);
+    if (_pipHandoff) {
+      await _saveProgress(
+        force: true,
+        positionOverride: _pipPosition,
+        durationOverride: _pipDuration,
+      );
+      if (!mounted || player != _controller) return;
+      if (!event.active) {
+        _pipHandoff = false;
+        final target = _pipPosition ?? player.value.position;
+        _pendingResumeTarget = target > Duration.zero ? target : null;
+        _progressReady = _pendingResumeTarget == null;
+        _resumeSeekAttempts = 0;
+        await player.seekTo(target);
+        _confirmResumePosition();
+        _startResumeRetry(player);
+        _requestedPlaying = event.playing == true;
+        if (_requestedPlaying) {
+          await player.play();
+        } else {
+          await player.pause();
+        }
+      }
+    }
+    if (!event.active && mounted) {
+      _revealControls();
+      unawaited(_keepScreenOn(true));
+    }
+  }
+
+  Future<void> _saveProgress({
+    bool force = false,
+    Duration? positionOverride,
+    Duration? durationOverride,
+  }) async {
+    if (widget.isLive ||
+        !widget.persistProgress ||
+        !_progressReady ||
+        _pendingResumeTarget != null) {
+      return;
+    }
     final controller = _controller;
     if (controller == null ||
         !controller.value.isInitialized ||
+        controller.value.hasError ||
         (!force && !controller.value.isPlaying)) {
       return;
     }
     await widget.store.recordProgress(
       item: widget.item,
-      position: controller.value.position,
-      duration: controller.value.duration,
+      position:
+          positionOverride ??
+          (_pipHandoff && _pipPosition != null
+              ? _pipPosition!
+              : controller.value.isCompleted
+              ? controller.value.duration
+              : controller.value.position),
+      playbackRef: widget.sourceRef.isNotEmpty
+          ? widget.sourceRef
+          : widget.item.ref,
+      duration:
+          durationOverride ??
+          (_pipHandoff && _pipDuration != null
+              ? _pipDuration!
+              : controller.value.duration),
       episodeId: widget.episodeId,
       episodeNumber: widget.episodeNumber,
       selectedSourceRef: _activeSource?.sourceRef.isNotEmpty == true
@@ -1344,6 +1615,8 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
             onSelected: _setPlaybackSpeed,
           ),
           for (final option in [
+            if (_pipAvailable)
+              ('pip', 'صورة داخل صورة', Icons.picture_in_picture_alt),
             if (!widget.isLive && widget.localFileUri == null)
               ('providers', 'المزودون والحلقات', Icons.travel_explore),
             if (controller.extendedPlayer?.state.tracks.video
@@ -1392,6 +1665,8 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     );
     if (!mounted) return;
     switch (action) {
+      case 'pip':
+        await _enterPip();
       case 'providers':
         await _providerCatalogue();
       case 'quality':
@@ -1435,6 +1710,8 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
+    unawaited(_pip.close());
     _boostSerial++;
     _boosting = false;
     _generation.cancelOutstanding();
@@ -1447,6 +1724,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     }
     _nativeStartupTimer?.cancel();
     _progressTimer?.cancel();
+    _resumeSeekTimer?.cancel();
     ++_subtitleGeneration;
     unawaited(_saveProgress(force: true));
     _controller?.removeListener(_nativeValueChanged);
@@ -2212,7 +2490,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
-                  if (active != null && _controlsVisible) ...[
+                  if (active != null && _controlsVisible && !_pipActive) ...[
                     Positioned.fill(
                       child: Center(
                         child: ValueListenableBuilder<VideoPlayerValue>(

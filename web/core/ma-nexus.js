@@ -204,7 +204,7 @@ export async function probeAndRankServers(rawServers = []) {
 }
 export async function resolvePlaybackForItem(item, season=1, episode=1, apiBase='', options={}) {
   const result=await playbackClient.resolve(item,{...options,season,episode,
-    apiBase:apiBase || ProviderEndpoints.backend || 'https://matv.onrender.com'});
+    apiBase:apiBase || ProviderEndpoints.backend || 'https://najdtv.onrender.com'});
   return {...result,servers:await probeAndRankServers(result.servers)};
 }
 export async function resolveUnifiedServersForItem(item, season=1, episode=1, apiBase='', options={}) {

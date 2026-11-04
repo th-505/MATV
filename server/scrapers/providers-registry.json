@@ -100,6 +100,11 @@
       "id": "brstej",
       "url": "https://brstejj.beer",
       "enabled": true
+    },
+    {
+      "id": "ahwak",
+      "url": "https://yam.ahwaktv.net",
+      "enabled": true
     }
   ]
 }

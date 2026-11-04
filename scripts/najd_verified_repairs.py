@@ -7,7 +7,7 @@ import urllib.request
 from pathlib import Path
 
 FIELDS = {'primary_domain','search_path','search_parameter','search_method','card_selector','title_selector','link_selector','poster_selector','year_selector','default_type'}
-BASE = 'https://matv.onrender.com'
+BASE = 'https://najdtv.onrender.com'
 
 
 def config_only(value):

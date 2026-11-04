@@ -376,6 +376,7 @@ void main() {
     expect(find.text('الحلقة 2'), findsNothing);
     final more = find.text('تحميل المزيد من حلقات المصدر');
     await tester.ensureVisible(more);
+    await tester.pumpAndSettle();
     await tester.tap(more);
     await tester.pumpAndSettle();
     expect(requests.last['season'], '5');
