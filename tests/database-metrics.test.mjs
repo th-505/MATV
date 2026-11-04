@@ -17,3 +17,8 @@ test('metrics refuse unsafe URLs, hide upstream bodies and back off failures',as
  const read=createDatabaseMetrics({url:'https://fixture.supabase.co',key:'secret',fetchImpl:async()=>{calls++;return new Response('secret body',{status:503})}});
  assert.deepEqual(await read(),{state:'unavailable',cpu_percent:null,reason:'METRICS_HTTP_503'});await read();assert.equal(calls,1);
 });
+
+test('an exporter without CPU counters never reports a zero or a successful sample',async()=>{
+ const read=createDatabaseMetrics({url:'https://fixture.supabase.co',key:'secret',fetchImpl:async()=>new Response('other_metric 1')});
+ const result=await read();assert.equal(result.state,'unavailable');assert.equal(result.cpu_percent,null);assert.equal(result.reason,'CPU_METRIC_UNAVAILABLE');
+});

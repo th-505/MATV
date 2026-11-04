@@ -25,7 +25,7 @@ export function createDatabaseMetrics({url=process.env.SUPABASE_URL,key=process.
     const at=now();let cpu=null,interval=null;
     if(count&&previous&&total>previous.total&&idle>=previous.idle){cpu=Math.round(Math.max(0,Math.min(100,100*(1-(idle-previous.idle)/(total-previous.total))))*10)/10;interval=Math.round((at-previous.at)/1000);}
     previous=count?{at,total,idle}:null;
-    return cached={state:cpu===null?'awaiting_sample':cpu>=90?'high':'ok',measured_at:new Date(at).toISOString(),cpu_percent:cpu,sample_interval_seconds:interval,reason:count?null:'CPU_METRIC_UNAVAILABLE'};
+    return cached={state:!count?'unavailable':cpu===null?'awaiting_sample':cpu>=90?'high':'ok',measured_at:new Date(at).toISOString(),cpu_percent:cpu,sample_interval_seconds:interval,reason:count?null:'CPU_METRIC_UNAVAILABLE'};
    }catch(error){return cached={state:'unavailable',cpu_percent:null,reason:/^METRICS_[A-Z0-9_]+$/.test(error.message)?error.message:'METRICS_UNAVAILABLE'};}
   })();try{return await pending}finally{pending=null}
  };
