@@ -39,7 +39,7 @@ export function createSourceSearch({ loadModule = source => getProvider(source.i
     const scraper = await loadModule(source);
     if (typeof scraper.scrapeSearch !== 'function') throw Error('SOURCE_NOT_SUPPORTED');
     // Never consult another provider when this source fails or returns no results.
-    const items = await scraper.scrapeSearch(q, 1, { strict: true });
+    const items = await scraper.scrapeSearch(q, 1, { strict: true,allowHttp:false,timeoutMs:8000,maxRetries:0 });
     const meta = items?._meta;
     searchTraceEvent('parser_result', { raw_count: Array.isArray(items) ? items.length : 0, reason: meta?.errorCode || null, url: meta?.url, titles: Array.isArray(items) ? items.map(x => x.title) : [] });
     if (meta?.errorCode && meta.errorCode !== 'EMPTY_RESULT') {
@@ -67,7 +67,7 @@ export function listSourceCapabilities() {
 
 export function createMultiSourceSearch({
   search = searchSource,
-  queue = createConcurrencyQueue({ concurrency: 6, maxQueued: 200 }),
+  queue = createConcurrencyQueue({ concurrency: 20, maxQueued: 200 }),
 } = {}) {
   return async query => {
     const settled = await Promise.allSettled(SOURCE_REGISTRY.map(source =>

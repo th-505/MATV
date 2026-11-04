@@ -589,7 +589,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/mycima.mjs",
       "metadata_line": 48,
-      "source_sha256": "56965c58b7222767012be8d4428762fd338dd744537f049461ddad36a4e68e29",
+      "source_sha256": "ead01875b532d245c784a3578b201781a435c8897e6bfcc3ede11db75d5dbc60",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

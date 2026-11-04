@@ -7,8 +7,14 @@ import 'app_target.dart';
 import 'stitch_design.dart';
 
 String sourceHarvestMessage(String? reason) => switch (reason) {
-  'ACCESS_BLOCKED' || 'SOURCE_ENTRY_REQUIRED' =>
-    'المصدر يطلب الدخول أو يرفض الاتصال؛ لم يصل رابط فيديو مباشر.',
+  'ACCESS_BLOCKED' => 'الموقع يرفض الوصول من الخادم حاليًا.',
+  'SOURCE_ENTRY_REQUIRED' => 'الموقع يتطلب تسجيل دخول للوصول إلى المحتوى.',
+  'SOURCE_UNAVAILABLE' ||
+  'BROWSER_SOURCE_UNAVAILABLE' => 'تعذر الوصول إلى فهرس المزود حاليًا.',
+  'DIRECT_MEDIA_NOT_FOUND' =>
+    'لم يُستخرج رابط فيديو صالح لهذه الحلقة؛ يمكنك إعادة المحاولة.',
+  'SOURCE_INDEX_STILL_PENDING' || 'SOURCE_INDEX_PENDING' =>
+    'فهرسة هذا العمل مستمرة في الخلفية؛ أعد تحديث الحالة بعد قليل.',
   'NETWORK_TIMEOUT' => 'لم يرد المصدر في الوقت المحدد.',
   'IDENTITY_UNCONFIRMED' ||
   'YEAR_CONFLICT' => 'مطابقة بيانات العمل غير مؤكدة؛ لم تُدمج النسخ.',
@@ -50,6 +56,7 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
   bool _timedOut = false;
   String? _error;
   Map<String, dynamic>? _snapshot;
+  String? _lastProgressStamp;
 
   @override
   void initState() {
@@ -82,6 +89,7 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
     _timer?.cancel();
     final generation = ++_generation;
     _deadline = _now().add(widget.pollBudget);
+    _lastProgressStamp = null;
     setState(() {
       _busy = true;
       _timedOut = false;
@@ -115,13 +123,22 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
           .timeout(remaining);
       if (!mounted || generation != _generation) return;
       final state = '${data['state'] ?? ''}';
-      final counts = data['counts'] is Map ? data['counts'] as Map : const {};
+      final counts = (data['discovery_counts'] ?? data['counts']) is Map
+          ? (data['discovery_counts'] ?? data['counts']) as Map
+          : const {};
+      final stamp = data['discovery_updated_at'] as String?;
+      if (_lastProgressStamp != null &&
+          stamp != null &&
+          stamp != _lastProgressStamp) {
+        _deadline = _now().add(widget.pollBudget);
+      }
+      _lastProgressStamp = stamp;
       final pending =
           ((counts['queued'] as num?)?.toInt() ?? 0) +
           ((counts['running'] as num?)?.toInt() ?? 0);
       final done =
           ['failed', 'unavailable'].contains(state) ||
-          state == 'ready' && pending == 0;
+          pending == 0 && (state == 'ready' || data['discovery_counts'] is Map);
       setState(() {
         _snapshot = data;
         _busy = !done;
@@ -176,7 +193,7 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
             const NajdSectionHeading('مصادر هذا العمل'),
             const SizedBox(height: 8),
             const Text(
-              'اختر نسخة للمشاهدة. تحتفظ كل نسخة بمواسمها وحلقاتها، ويُفحص رابط التشغيل عند فتحها.',
+              'اختر المزود ثم افتح مواسم العمل وحلقاته. يُجهز الفيديو عند اختيار المشاهدة.',
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -219,7 +236,7 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  'استغرق الفحص وقتًا أطول. توقفت المتابعة التلقائية؛ يمكنك تحديث الحالة لاحقًا.',
+                  'لم يصل تقدم جديد خلال المهلة. الفهرسة مستمرة في الخلفية؛ يمكنك تحديث الحالة.',
                 ),
               ),
             if (_error != null)
@@ -345,16 +362,11 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: [
-                Chip(label: Text(kind)),
-                Chip(label: Text(available ? 'فهرس متاح' : 'قيد الفهرسة')),
-              ],
+              children: [Chip(label: Text(kind))],
             ),
-            if (domain.isNotEmpty) Text(domain),
+            if (domain.isNotEmpty && !available) Text(domain),
             if (summary.isNotEmpty) Text(summary),
-            Text(
-              available ? 'فتح فهرس هذه النسخة' : 'قيد الفهرسة أو غير متاح بعد',
-            ),
+            Text(available ? 'فتح المواسم والحلقات' : 'جارٍ تجهيز فهرس المزود'),
             if (edition['reason'] != null)
               Text(sourceHarvestMessage('${edition['reason']}')),
           ],

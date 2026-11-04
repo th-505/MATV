@@ -1,3 +1,9 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'source_editions_panel.dart' show sourceHarvestMessage;
+
 import 'package:flutter/material.dart';
 
 import 'api_client.dart';
@@ -49,11 +55,23 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
     });
     try {
       final sources = await widget.api.browserSources();
+      final prefs = await SharedPreferences.getInstance();
+      Map saved = const {};
+      try {
+        final value = jsonDecode(
+          prefs.getString('provider.browser.selection.v1') ?? '{}',
+        );
+        if (value is Map) saved = value;
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _sources = sources;
         if (_provider == null) {
-          _provider = sources.firstOrNull?['id'] as String?;
+          final savedId = saved['provider'];
+          if (sources.any((s) => s['id'] == savedId)) {
+            _provider = savedId as String;
+            _category = '${saved['category'] ?? ''}';
+          }
         } else if (!sources.any((s) => s['id'] == _provider)) {
           _provider = null;
         }
@@ -62,7 +80,7 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
       if (_provider == null) {
         setState(() {
           _loading = false;
-          _error = 'لا يتوفر فهرس مزود حالياً';
+          _error = sources.isEmpty ? 'لا يتوفر فهرس مزود حالياً' : null;
         });
         return;
       }
@@ -83,6 +101,14 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
               [])
           .whereType<Map>()
           .toList();
+
+  Future<void> _rememberProvider() async {
+    final value = jsonEncode({'provider': _provider, 'category': _category});
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('provider.browser.selection.v1', value);
+    } catch (_) {}
+  }
 
   Future<void> _load({bool more = false}) async {
     final provider = _provider;
@@ -111,11 +137,11 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
         _hasMore = result.hasMore && (!more || _items.length > previousCount);
         _loading = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (mounted && request == _generation) {
         setState(() {
           _loading = false;
-          _error = 'تعذر جلب فهرس هذا المزود. يمكنك إعادة المحاولة أو اختيار مزود آخر.';
+          _error = error is ApiException ? sourceHarvestMessage(error.code) : 'تعذر جلب فهرس هذا المزود. يمكنك إعادة المحاولة أو اختيار مزود آخر.';
         });
       }
     }
@@ -124,7 +150,7 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('تصفح المزود — بيتا 2'),
+      title: const Text('تصفح المزود — تجريبي'),
       actions: [
         IconButton(
           tooltip: 'تحديث قائمة المزودين',
@@ -157,10 +183,15 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
                 ],
                 onSelected: (value) async {
                   setState(() {
+                    ++_generation;
+                    _items = [];
+                    _hasMore = false;
+                    _loading = true;
                     _provider = value;
                     _category = '';
                     _query.clear();
                   });
+                  await _rememberProvider();
                   await _load();
                 },
               ),
@@ -187,9 +218,13 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
                             selected: category['id'] == _category,
                             onSelected: (_) {
                               setState(() {
+                                ++_generation;
+                                _items = [];
+                                _hasMore = false;
                                 _category = '${category['id']}';
                                 _query.clear();
                               });
+                              _rememberProvider();
                               _load();
                             },
                           ),
@@ -213,6 +248,16 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
                       _load();
                     }
                   },
+                )
+              : _provider == null && !_loading
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'اختر المزود لتصفح أقسامه وأعماله',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 )
               : _items.isEmpty && !_loading
               ? NajdEmptyState(

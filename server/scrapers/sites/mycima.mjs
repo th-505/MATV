@@ -231,7 +231,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
     const $ = cheerio.load(html);
     const title = $('h1.Title--Wecima, h1').first().text().trim() || 'تفاصيل العمل';
-    const poster = $('.Poster--Single-begin img').attr('src') || $('.Poster--Single-begin img').attr('data-src') || '';
+    const poster = $('.Poster--Single-begin img').attr('data-src') || $('meta[property="og:image"]').attr('content') || $('.Poster--Single-begin img').attr('src') || '';
     const overview = $('.StoryMovieContent, .story').text().trim() || '';
     const yearMatch = title.match(/\((\d{4})\)/) || $('.year').text().match(/(\d{4})/);
 

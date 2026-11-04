@@ -1,3 +1,4 @@
+import {classifyNetworkError} from './shared/errors.mjs';
 import { getProvider, listIndependentProviders } from './registry.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 
@@ -32,8 +33,12 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       const allowed = categories(id);
       const selected = category || allowed[0]?.id;
       if (selected && !allowed.some(item => item.id === selected)) throw Error('BROWSER_BAD_CATEGORY');
-      const result = await queue.run(() => provider.module.scrapeCatalog(selected, page));
-      if (result?._meta?.errorCode && result._meta.errorCode !== 'EMPTY_RESULT') throw Error('BROWSER_SOURCE_UNAVAILABLE');
+      let result;
+      try{result=await queue.run(()=>provider.module.scrapeCatalog(selected,page,{strict:true,allowHttp:false,timeoutMs:8000,maxRetries:0}));}
+      catch(error){const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=error.code||classifyNetworkError(error).code;throw failure;}
+      if(result?._meta?.errorCode&&result._meta.errorCode!=='EMPTY_RESULT'){
+        const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=result._meta.errorCode;throw failure;
+      }
       const items = Array.isArray(result) ? result : result?.items;
       if (!Array.isArray(items)) throw Error('BROWSER_INVALID_RESPONSE');
       const meta = result?._meta || {};

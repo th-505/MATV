@@ -1,3 +1,8 @@
+double _safeRating(Object? value) {
+  final parsed = value is num ? value.toDouble() : double.tryParse('$value');
+  return parsed != null && parsed.isFinite ? parsed.clamp(0, 10).toDouble() : 0;
+}
+
 typedef CatalogItem = MediaItem;
 
 class MediaItem {
@@ -105,7 +110,7 @@ class MediaItem {
     type: '${json['type'] ?? 'series'}',
     ref: '${json['ref'] ?? ''}',
     year: int.tryParse('${json['year'] ?? ''}'),
-    rating: (json['rating'] as num?)?.toDouble() ?? 0,
+    rating: _safeRating(json['rating']),
     source: '${json['source'] ?? 'mitv'}',
     genres: _descriptiveGenres(json),
     season: _positiveIdentityNumber(json['season_number'] ?? json['season']),
