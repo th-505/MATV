@@ -233,3 +233,9 @@ test("beta watch history regenerates the correct index from its original source 
     "ready",
   );
 });
+
+test('beta follows observed MyCima season switcher links without following unrelated bare season labels',()=>{
+ const html='<ul class="SeasonsList"><li><a href="/series/work/season-2/">الموسم الثاني</a></li></ul><aside><a href="/series/unrelated/season-3/">الموسم الثالث</a></aside>';
+ const graph=scanSourceGraph(html,parent,{provider:'mycima',domains:[new URL(base).hostname],details:{title:'خالتي قماشة',episodes:[]}});
+ assert(graph.parents.includes(base+'/series/work/season-2/'));assert(!graph.parents.includes(base+'/series/unrelated/season-3/'));
+});
