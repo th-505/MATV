@@ -2,9 +2,9 @@ import {randomUUID} from 'node:crypto';
 /** Atomic DB leases, bounded work, heartbeat and restart recovery. No in-memory-only queue. */
 export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,logger=()=>{}}={}){
  const worker=randomUUID();let active=0,polling=false,stopped=true,timer=null;const running=new Set();
- const lanes=typeof store?.claimLane==='function'?{search:20,index:4,media:2}:null;
+ let lanes=typeof store?.claimLane==='function'?{search:20,index:4,media:2}:null;
  const laneActive={search:0,index:0,media:0};
- const reason=e=>/^[A-Z][A-Z0-9_]{2,79}$/.test(e?.code||e?.message)?e.code||e.message:'HARVEST_JOB_FAILED';
+ const reason=e=>['AbortError','TimeoutError'].includes(e?.name)?'HARVEST_DB_TIMEOUT':/^[A-Z][A-Z0-9_]{2,79}$/.test(e?.code||e?.message)?e.code||e.message:'HARVEST_JOB_FAILED';
  async function run(job,lane=null){
   active++;if(lane)laneActive[lane]++;let heartbeat;
   const task=(async()=>{
@@ -27,7 +27,11 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,lo
      const jobs=await store.claimLane(worker,capacity,lane);
      for(const job of jobs||[])void run(job,lane);
     }));
-    for(const result of claimed)if(result.status==='rejected')logger({event:'najd_harvest_poll',reason:reason(result.reason)});
+    for(const result of claimed)if(result.status==='rejected'){
+     logger({event:'najd_harvest_poll',reason:reason(result.reason)});
+     // A temporarily older DB schema keeps the compatible worker, never a dead queue.
+     if(result.reason?.message==='HARVEST_DB_HTTP_404')lanes=null;
+    }
    }else{const jobs=await store.claim(worker,concurrency-active);for(const job of jobs||[])void run(job)}
   }catch(e){logger({event:'najd_harvest_poll',reason:reason(e)})}finally{polling=false}
  }

@@ -32,8 +32,8 @@ export function createSourceApi({store,worker,now=Date.now}){
   if(legacy.length&&store.sourceIndexIdentities){
    const cacheKey=[...new Set(legacy)].sort().join('|');let proof=indexProofCache.get(cacheKey);
    if(!proof||proof.expires<=now()){
-    const values=await store.sourceIndexIdentities(legacy);
-    proof={expires:now()+60000,values:new Map((values||[]).map(row=>[row.work_ref,row.index_identity]))};
+    const values=await store.sourceIndexIdentities(legacy).catch(()=>null);
+    proof={expires:now()+(values?60000:5000),values:new Map((values||[]).map(row=>[row.work_ref,row.index_identity]))};
     indexProofCache.set(cacheKey,proof);if(indexProofCache.size>32)indexProofCache.delete(indexProofCache.keys().next().value);
    }
    for(const row of sources||[])if(proof.values.has(row.progress?.source_work_ref))row.progress={...row.progress,index_identity:proof.values.get(row.progress.source_work_ref)};

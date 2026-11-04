@@ -57,3 +57,10 @@ test('browser emits compact numeric ratings for already installed clients',async
  const browser=createProviderBrowser({lookup:()=>({meta,module:{CONFIG:{categories:{all:'/'}},scrapeCatalog:async()=>[{id:'x',ref:'one:x',title:'Work',rating:'8.5',image:'https://one.example/poster.jpg',unused:'x'.repeat(200000)}]}})});
  const result=await browser.catalog('one','all',1);assert.equal(result.items[0].rating,8.5);assert.equal(result.items[0].poster,'https://one.example/poster.jpg');assert(JSON.stringify(result).length<2000);
 });
+
+test('a not-yet-updated DB retains the compatible worker instead of stalling the queue',async()=>{
+ let legacy=0;
+ const store={claimLane:async()=>{throw Error('HARVEST_DB_HTTP_404')},claim:async()=>{legacy++;return[]},heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{},pollMs:60000});worker.start();await new Promise(r=>setImmediate(r));
+ worker.wake();await new Promise(r=>setImmediate(r));await worker.stop();assert.equal(legacy,1);assert.equal(worker.metrics().concurrency,2);
+});
