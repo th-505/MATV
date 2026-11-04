@@ -562,9 +562,7 @@ class _ShellState extends State<Shell> {
           }),
         );
         final side =
-            !isTvTarget &&
-            (viewport.size.width >= NajdUi.sidebarBreakpoint ||
-                isDesktopTarget);
+            !isTvTarget && viewport.size.width >= NajdUi.sidebarBreakpoint;
         final browsing = NotificationListener<ScrollUpdateNotification>(
           onNotification: (notification) {
             if (notification.metrics.axis == Axis.vertical &&
@@ -657,17 +655,16 @@ class _ShellState extends State<Shell> {
               body: SafeArea(
                 child: Stack(
                   children: [
-                    if (side)
-                      Row(
-                        textDirection: TextDirection.rtl,
-                        children: [
+                    Row(
+                      textDirection: TextDirection.rtl,
+                      children: [
+                        if (side) ...[
                           _navigation(drawer: false),
                           const VerticalDivider(width: 1),
-                          Expanded(child: browsing),
                         ],
-                      )
-                    else
-                      browsing,
+                        Expanded(child: browsing),
+                      ],
+                    ),
                     if (isTvTarget && _drawerOpen)
                       Positioned.fill(
                         child: IgnorePointer(

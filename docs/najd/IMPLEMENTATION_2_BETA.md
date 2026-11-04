@@ -53,3 +53,10 @@ Review draft: https://github.com/th-505/MATV/pull/9. Build-only six-target run: 
 - Chromium revealed inherited HTML RTL direction incorrectly doubled accessibility-node horizontal offsets. The DOM host now uses physical LTR coordinates while Flutter localizations and Arabic UI remain RTL. Real pointer smoke tests now decode generated MP4 and HLS fixtures with no page exceptions, without forcing clicks or disabling visibility checks.
 
 Final follow-up verification before pushing this checkpoint: Flutter 340 passed / 7 conditional skips; analyzer clean; Node 140 passed; shared provider fixtures 72 passed / 0 network attempts; required check and continuation suites passed. MP4 and HLS Chromium fixture decoding passed with real visible-button clicks and zero page exceptions. Deployment and new binaries remain separate release gates.
+
+
+## Release adaptation follow-up
+
+The app root now stores its latest viewport profile in local settings under `najd.viewport.profile.v1`, without a user-facing screen or cloud upload. It records logical/physical pixels, pixel ratio, safe insets, accessibility text scale, orientation, TV text multiplier and control minimum. Values are measured again on resize/rotation and writes are serialized; saved data never overrides new device metrics. Physical screen inches are deliberately not guessed.
+
+Narrow desktop windows now use the same width-based navigation breakpoint as handheld layouts. A stable content tree preserves loaded page state across the breakpoint rather than issuing another catalogue request. Regression tests cover live desktop resizing, local profile replacement and TV text scaling. Release notes identify 2.0.0 as beta and link the public NajdTV Pages application.

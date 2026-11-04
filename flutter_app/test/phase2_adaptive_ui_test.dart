@@ -1,6 +1,7 @@
 import 'support/shell_navigation.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mitv/main.dart';
@@ -66,12 +67,10 @@ void main() {
         expect(find.text('الأخبار'), findsNothing);
         expect(
           find.byType(NavigationBar),
-          !isTvTarget && dimensions.width < 900 && !isDesktopTarget
-              ? findsOneWidget
-              : findsNothing,
+          !isTvTarget && dimensions.width < 900 ? findsOneWidget : findsNothing,
         );
         expect(find.byType(AppBar), findsNothing);
-        if (isTvTarget || (!isDesktopTarget && dimensions.width < 900)) {
+        if (isTvTarget || dimensions.width < 900) {
           expect(find.byKey(const Key('tatv-open-navigation')), findsOneWidget);
           await tester.tap(find.byKey(const Key('tatv-open-navigation')));
           await tester.pumpAndSettle();
@@ -131,6 +130,47 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'desktop window resize changes navigation without reloading content',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      final api = _LayoutApi();
+      final store = await LocalLibraryStore.create();
+      tester.view.devicePixelRatio = 1;
+      try {
+        tester.view.physicalSize = const Size(390, 844);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Shell(api: api, store: store),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(NavigationBar),
+          isTvTarget ? findsNothing : findsOneWidget,
+        );
+        tester.view.physicalSize = const Size(1280, 800);
+        await tester.pumpAndSettle();
+        expect(find.byType(NavigationBar), findsNothing);
+        if (!isTvTarget) {
+          expect(find.byKey(const Key('tatv-right-sidebar')), findsOneWidget);
+        }
+        expect(api.requests, ['catalog:movie:all:1']);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        debugDefaultTargetPlatformOverride = null;
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        api.close();
+        store.dispose();
+      }
+    },
+  );
 
   testWidgets('keyboard selects the right sidebar without reloading visits', (
     tester,

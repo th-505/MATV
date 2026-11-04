@@ -1,8 +1,10 @@
+import 'viewport_profile.dart';
 import 'app_target.dart';
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -344,19 +346,39 @@ class _NajdIntroState extends State<NajdIntro> {
   );
 }
 
-class NajdTvViewport extends StatelessWidget {
+class NajdTvViewport extends StatefulWidget {
   const NajdTvViewport({super.key, required this.child});
   final Widget child;
   @override
+  State<NajdTvViewport> createState() => _NajdTvViewportState();
+}
+
+class _NajdTvViewportState extends State<NajdTvViewport> {
+  Map<String, Object>? _lastProfile;
+  Future<void> _writes = Future<void>.value();
+  @override
   Widget build(BuildContext context) {
-    if (!isTvTarget) return child;
     final media = MediaQuery.of(context);
-    final scale = (media.size.width / 1280).clamp(1.1, 1.6);
+    final profile = NajdViewportProfile.measure(media);
+    if (_lastProfile == null || !mapEquals(_lastProfile, profile)) {
+      _lastProfile = profile;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !identical(_lastProfile, profile)) return;
+        // Serial writes prevent an older resize overwriting the latest metrics.
+        // Failure to save diagnostics must never block layout or playback.
+        _writes = _writes
+            .then((_) => NajdViewportProfile.save(profile))
+            .catchError((Object _) {});
+      });
+    }
+    if (!isTvTarget) return widget.child;
     return MediaQuery(
       data: media.copyWith(
-        textScaler: TextScaler.linear(media.textScaler.scale(1) * scale),
+        textScaler: TextScaler.linear(
+          media.textScaler.scale(1) * NajdViewportProfile.tvScale(media.size),
+        ),
       ),
-      child: child,
+      child: widget.child,
     );
   }
 }
