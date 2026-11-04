@@ -6,9 +6,11 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
  if(!url||!key)return null;
  const base=new URL(url);if(base.protocol!=='https:'||!base.hostname.endsWith('.supabase.co')||base.username||base.password||base.port||base.pathname!=='/')throw Error('SUPABASE_BAD_URL');
  if(key.startsWith('sb_publishable_'))throw Error('SUPABASE_SERVER_KEY_REQUIRED');
+ const queuedListeners=new Set();
+ const notifyQueued=rows=>{for(const row of rows||[])if(row?.job_key)for(const listener of queuedListeners)listener(row)};
  const headers={apikey:key,'Content-Type':'application/json',...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key})};
  async function request(table,params={},method='GET',body,prefer='return=representation'){
-  if(!TABLES.has(table)&&!['rpc/najd_claim_jobs','rpc/najd_claim_jobs_lane','rpc/najd_source_index_identities','rpc/najd_hourly_refresh','rpc/najd_upsert_episodes','rpc/najd_enqueue_jobs','rpc/najd_apply_provider_config','rpc/najd_harvest_counts'].includes(table))throw Error('HARVEST_TABLE_REJECTED');
+  if(!TABLES.has(table)&&!['rpc/najd_claim_jobs','rpc/najd_claim_jobs_lane','rpc/najd_claim_known_jobs','rpc/najd_source_index_identities','rpc/najd_hourly_refresh','rpc/najd_upsert_episodes','rpc/najd_enqueue_jobs','rpc/najd_apply_provider_config','rpc/najd_harvest_counts'].includes(table))throw Error('HARVEST_TABLE_REJECTED');
   const target=new URL('/rest/v1/'+table,base);for(const[k,v]of Object.entries(params))if(v!==undefined&&v!==null)target.searchParams.set(k,String(v));
   const r=await fetchImpl(target,{method,redirect:'error',signal:AbortSignal.timeout(8000),headers:{...headers,Prefer:prefer},...(body===undefined?{}:{body:JSON.stringify(body)})});
   if(!r.ok){await r.body?.cancel();throw Error('HARVEST_DB_HTTP_'+r.status)}
@@ -26,6 +28,8 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
  const upsert=(table,conflict,row)=>request(table,{on_conflict:conflict},'POST',row,'resolution=merge-duplicates,return=representation');
  return {
   request,ensureProviderRegistry,
+  onQueued:listener=>{queuedListeners.add(listener);return()=>queuedListeners.delete(listener)},
+  claimKnown:(worker,limit,lane,keys)=>request('rpc/najd_claim_known_jobs',{},'POST',{p_worker:worker,p_limit:limit,p_lane:lane,p_keys:keys.slice(0,1000)}),
   claim:(worker,limit)=>request('rpc/najd_claim_jobs',{},'POST',{p_worker:worker,p_limit:limit}),
   sourceIndexIdentities:refs=>request('rpc/najd_source_index_identities',{},'POST',{p_refs:refs.slice(0,1000)}),
   claimLane:(worker,limit,lane)=>request('rpc/najd_claim_jobs_lane',{},'POST',{p_worker:worker,p_limit:limit,p_lane:lane}),
@@ -41,12 +45,12 @@ export function createHarvestStore({url=process.env.SUPABASE_URL,key=process.env
    // Ignore a duplicate queued/running/completed child; hourly work refresh opts in.
    if(refresh){
     const previous=(await request('matv_discovery_jobs',{job_key:'eq.'+row.job_key,select:'status,refresh_after,payload',limit:1}))?.[0];
-    if(previous&&(previous.status==='queued'||previous.status==='running'||previous.payload?.cycle===row.payload?.cycle))return previous;
-    return upsert('matv_discovery_jobs','job_key',{...row,status:'queued',attempts:0,last_activity_at:new Date().toISOString(),refresh_after:new Date().toISOString()});
+    if(previous&&(previous.status==='queued'||previous.status==='running'||previous.payload?.cycle===row.payload?.cycle)){if(previous.status==='queued')notifyQueued([row]);return previous;}
+    const saved=await upsert('matv_discovery_jobs','job_key',{...row,status:'queued',attempts:0,last_activity_at:new Date().toISOString(),refresh_after:new Date().toISOString()});notifyQueued([row]);return saved;
    }
-   return request('matv_discovery_jobs',{on_conflict:'job_key'},'POST',row,'resolution=ignore-duplicates,return=representation');
+   const saved=await request('matv_discovery_jobs',{on_conflict:'job_key'},'POST',row,'resolution=ignore-duplicates,return=representation');notifyQueued([row]);return saved;
   },
-  async enqueueMany(rows){for(let i=0;i<rows.length;i+=80)await request('rpc/najd_enqueue_jobs',{},'POST',{p_rows:rows.slice(i,i+80)});},
+  async enqueueMany(rows){for(let i=0;i<rows.length;i+=80){const batch=rows.slice(i,i+80);await request('rpc/najd_enqueue_jobs',{},'POST',{p_rows:batch});notifyQueued(batch);}},
   putSeason:row=>upsert('najd_season_catalog','work_ref,season',row),
   getSeason:async(ref,season)=>(await request('najd_season_catalog',{work_ref:'eq.'+ref,season:'eq.'+season,expires_at:'gt.'+new Date().toISOString(),limit:1}))?.[0]||null,
   getWork:async ref=>(await request('najd_work_catalog',{ref:'eq.'+ref,limit:1}))?.[0]||null,

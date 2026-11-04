@@ -13,14 +13,14 @@ export function createSourceApi({store,worker,now=Date.now}){
   await store.ensureProviderRegistry?.();
   if(reason==='source_refresh'&&!sourceWorkRef(key))throw Error('SOURCE_WORK_REQUIRED');
   const existing=(await store.request('matv_discovery_jobs',{job_key:'eq.'+key+':work',select:'status,refresh_after,payload,updated_at',limit:1}))?.[0];
-  if(existing&&(existing.status==='queued'||existing.status==='running'||(!['retry','source_refresh'].includes(reason)&&Date.parse(existing.refresh_after)>now()))) {worker.wake();return{ref:key,state:existing.status,poll_after_ms:1500,requested_at:existing.payload?.refresh_requested_at||existing.updated_at||stamp()};}
+  if(existing&&(existing.status==='queued'||existing.status==='running'||(!['retry','source_refresh'].includes(reason)&&Date.parse(existing.refresh_after)>now()))) {worker.wake({jobs:[{job_key:key+':work',stage:'work'}]});return{ref:key,state:existing.status,poll_after_ms:1500,requested_at:existing.payload?.refresh_requested_at||existing.updated_at||stamp()};}
   if(now()-(requests.get(key)||0)<10000)return{ref:key,state:existing?.status||'queued',poll_after_ms:3000,requested_at:new Date(requests.get(key)).toISOString()};
   const work=await store.getWork(key),original=sourceWorkRef(key)?(sourceWorkRef(ref)?work?.metadata?.source_ref:ref):null;
   if(sourceWorkRef(key)&&(!original||workReference(original)!==key))throw Error('SOURCE_REFERENCE_MISSING');
   requests.set(key,now());if(requests.size>256)requests.delete(requests.keys().next().value);
   const requestedAt=new Date(requests.get(key)).toISOString();
   await store.enqueue({job_key:key+':work',content_ref:key,title:work?.title||'قيد التعرف على العمل',provider:original?providerForReference(original):'tmdb',stage:'work',priority:10,status:'queued',payload:{refresh_requested_at:requestedAt,cycle:Math.floor(now()/10000),...(original?{source_ref:original}:{}),reason},last_activity_at:stamp(),refresh_after:stamp()},{refresh:true});
-  worker.wake();return{ref:key,state:'queued',poll_after_ms:1500,requested_at:requestedAt};
+  worker.wake({jobs:[{job_key:key+':work',stage:'work'}]});return{ref:key,state:'queued',poll_after_ms:1500,requested_at:requestedAt};
  }
  async function status(ref){
   if(!store)throw Error('HARVEST_NOT_CONFIGURED');const key=workReference(ref);
@@ -77,7 +77,7 @@ export function createSourceApi({store,worker,now=Date.now}){
   if(current?.status==='queued')await store.request('matv_discovery_jobs',{job_key:'eq.'+jobKey,status:'eq.queued'},'PATCH',{priority:10,refresh_after:stamp(),updated_at:stamp(),...(refresh?{payload:{...current.payload,force_refresh:true}}:{})});
   if(!refresh&&row.state==='unavailable'&&Date.parse(row.last_checked_at)>now()-60000)return{state:'unavailable',reason:'DIRECT_MEDIA_NOT_FOUND'};
   if(!current||!['queued','running'].includes(current.status))await store.enqueue({job_key:jobKey,content_ref:key,title:work.title.length>=2?work.title:'عمل '+work.title,provider:row.provider,stage:'episode',priority:10,status:'queued',season_number:season,episode_number:episode,payload:{source_ref:row.source_ref,cycle:Math.floor(now()/10000),force_refresh:refresh,identity_scope:'source',observed_identity:{title:work.title,year:work.year||null},observed_episode:{season,episode,source_season:season,source_episode:episode,numbering_basis:'source-season'}},last_activity_at:stamp(),refresh_after:stamp()},{refresh:true});
-  worker.wake();return{state:current?.status==='running'?'running':'queued',poll_after_ms:1500};
+  worker.wake({jobs:[{job_key:jobKey,stage:'episode'}]});return{state:current?.status==='running'?'running':'queued',poll_after_ms:1500};
  }
  return{requestWork:request,workStatus:status,sourceDetails:details,sourcePlayback:playback};
 }
