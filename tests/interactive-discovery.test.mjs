@@ -124,3 +124,23 @@ test('a missing keyed RPC retains twenty-slot lane claims without enabling the o
  worker.wake({jobs:[{job_key:'known-work',stage:'work'}]});await new Promise(r=>setImmediate(r));
  assert(lanes>=3);assert.equal(worker.metrics().concurrency,26);await worker.stop();
 });
+
+test('database failures back off despite repeated interactive wakes and recover after the deadline',async()=>{
+ let clock=1000,calls=0,fail=true;
+ const store={claimLane:async()=>{calls++;if(fail)throw Error('HARVEST_DB_HTTP_503');return[]}};
+ const worker=createHarvestWorker({store,handlers:{},now:()=>clock,pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ for(let i=0;i<10;i++)worker.wake();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ clock+=5001;fail=false;worker.wake();await new Promise(r=>setImmediate(r));assert.equal(calls,6);
+ await worker.stop();
+});
+
+test('successful task completion does not immediately rescan every durable backlog lane',async()=>{
+ let notify,calls=0,clock=1000;
+ const store={onQueued:fn=>{notify=fn},claimLane:async()=>{calls++;return[]},claimKnown:async(w,n,lane,keys)=>keys.map(job_key=>({job_key,stage:'provider'})),complete:async()=>{},fail:async()=>{},heartbeat:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{provider:async()=>({})},now:()=>clock,pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ notify({job_key:'interactive',stage:'provider',payload:{phase:'search'}});
+ await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));assert.equal(calls,3);
+ await worker.stop();
+});

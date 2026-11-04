@@ -37,3 +37,12 @@ Date: 2026-11-04. This is a verification checkpoint, not a release certificate.
 1. Resolve database transport and apply/verify the private migrations and service-only grants.
 2. Complete targeted season/pagination and provider failure checks; retain accurate per-stage failures.
 3. Run six-target 203 review builds, verify artifacts, deploy the scoped configuration/auth changes, then publish the website and release assets.
+
+## Incident update — 21:20 UTC
+
+- Production background harvesting was paused with `NAJD_HARVEST_ENABLED=0` (Render deployment dep-dblq0t6417fc73b7d4lg is live). No user records or durable jobs were deleted. Re-enable only after bounded polling/keyed claims are deployed and measured.
+- PostgreSQL management reads now succeed intermittently. Both Beta tables have RLS enabled, no anon/authenticated SELECT grants and full service-role access. Beta configuration RPC exists. Keyed claim RPC remains absent; management migration history initialization still times out.
+- Cumulative pg_stat_statements: legacy `najd_claim_jobs` has 138,876 calls and 5,296,470 ms total execution time. This is historical cumulative evidence, not a current CPU measurement. Queue has about 194,400 live rows (163 MB); episode cache about 188,553 (113 MB). No mass deletion or VACUUM FULL was attempted.
+- New worker change limits idle lane sweeps to 30 seconds, prevents immediate sweep after every completion, and applies 5–120 second exponential database-failure backoff. Exact persisted interactive keys still dispatch immediately when the database is healthy. Full Node suite: 181 passed.
+- Six-target review build 41908273318 succeeded, including release verification. It contains fec7fed, before the worker-only follow-up. No release was published from that run.
+- At 21:19 UTC an active management advisor query was observed; expensive advisor checks will not be repeated during the incident. CPU 95% remains reported by the dashboard and must not be declared fixed from empty pg_stat_activity samples.
