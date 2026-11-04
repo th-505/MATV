@@ -230,6 +230,9 @@ void main() {
             )
             .first,
       );
+      await Scrollable.ensureVisible(tester.element(episode), alignment: .25);
+      await tester.pumpAndSettle();
+      expect(episode.hitTestable(), findsOneWidget);
       await tester.tap(episode);
       await tester.pumpAndSettle();
       expect(engines.last.uri.path, '/second.mp4');

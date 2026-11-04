@@ -1,6 +1,11 @@
 name: Najd TV public application on GitHub Pages
 
 on:
+  pull_request:
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/public-web.yml'
+      - 'scripts/verify_public_web.py'
   workflow_dispatch:
     inputs:
       api_base:
@@ -21,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      MITV_API_BASE: ${{ inputs.api_base }}
+      MITV_API_BASE: ${{ inputs.api_base || 'https://matv.onrender.com' }}
       MITV_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -58,6 +63,7 @@ jobs:
           path: flutter_app/build/web
 
   deploy:
+    if: github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     permissions:

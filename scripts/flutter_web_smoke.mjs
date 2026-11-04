@@ -163,7 +163,7 @@ try {
   await placeholder.waitFor();
   await placeholder.evaluate((el) => el.click());
   await page
-    .getByText("مشاهدة داخل التطبيق", { exact: false })
+    .getByText("مشاهدة", { exact: true })
     .click({ timeout: 20000 });
   await page.waitForFunction(
     () =>
