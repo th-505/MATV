@@ -24,3 +24,10 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'fixture-store-secret' not in file.read_text()
     assert 'NAJD_ANDROID_SIGNING_BUNDLE' in file.read_text()
 print('Android signing: missing-key fail closed, persistent configuration, no plaintext passwords and private file permissions passed.')
+
+from check_android_signing_certificate import verify
+verify('Signer #1 certificate SHA-256 digest: '+'a'*64, 'a'*64)
+try:verify('Signer #1 certificate SHA-256 digest: '+'b'*64, 'a'*64)
+except ValueError as e:assert 'IDENTITY_CHANGED' in str(e)
+else:raise AssertionError('Unexpected signing key was accepted')
+print('Android release signing identity mismatch is rejected.')

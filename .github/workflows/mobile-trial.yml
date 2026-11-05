@@ -158,7 +158,8 @@ jobs:
           APK="flutter_app/build/app/outputs/flutter-apk/app-$EXPECTED_ABI-release.apk"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
-          "$APKSIGNER" verify "$APK"
+          "$APKSIGNER" verify --print-certs "$APK" > /tmp/mitv-apk-certificate.txt
+          python3 scripts/check_android_signing_certificate.py /tmp/mitv-apk-certificate.txt
           "$AAPT" dump permissions "$APK" > /tmp/mitv-permissions.txt
           grep -q android.permission.INTERNET /tmp/mitv-permissions.txt
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/mitv-manifest.txt
