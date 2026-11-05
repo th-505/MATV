@@ -1,6 +1,13 @@
 name: Najd TV public application on GitHub Pages
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'flutter_app/**'
+      - 'shared/najd-brand.json'
+      - '.github/workflows/public-web.yml'
+      - 'scripts/verify_public_web.py'
   pull_request:
     paths:
       - 'flutter_app/**'
@@ -63,7 +70,7 @@ jobs:
           path: flutter_app/build/web
 
   deploy:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: build
     runs-on: ubuntu-latest
     permissions:
