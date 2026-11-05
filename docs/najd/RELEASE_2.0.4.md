@@ -10,3 +10,5 @@ Website: https://th-505.github.io/NajdTV/
 API: https://najdtv.onrender.com
 
 The iPhone IPA requires external signing. macOS is ad-hoc signed and not notarized; Windows is not Authenticode signed. Automated architecture, source/checksum, playback fixtures and regression checks are recorded with the release. Physical-device certification and availability of every external provider are not claimed. Native builds include the supplied Thmanyah typography; public Web uses its licensed fallback with local font import. Offline HLS downloading remains unsupported.
+
+Android upgrade limitation found after package verification: the 2.0.4 APK certificate differs from 2.0.3. These APKs cannot update an installed 2.0.3 app in place. Do not remove an existing installation before preserving its library/session recovery options. A persistent original signing keystore is required for a compatible upgrade; architecture/container/signature-validity checks alone do not prove upgrade continuity. Future native builds now require explicit persistent signing secrets rather than silently generating another disposable debug identity.

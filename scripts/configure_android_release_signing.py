@@ -1,0 +1,47 @@
+"""Configure a persistent private Android release key. Never generate a disposable key."""
+import base64
+import os
+from pathlib import Path
+import re
+import tempfile
+
+NAMES = ('NAJD_ANDROID_KEYSTORE_BASE64', 'NAJD_ANDROID_STORE_PASSWORD', 'NAJD_ANDROID_KEY_ALIAS', 'NAJD_ANDROID_KEY_PASSWORD')
+
+def configure(root, env):
+    if any(not env.get(name) for name in NAMES):
+        raise ValueError('PERSISTENT_ANDROID_SIGNING_SECRETS_REQUIRED: configure all four NAJD_ANDROID signing secrets; do not replace installed-user signing identities')
+    payload = base64.b64decode(env[NAMES[0]], validate=True)
+    if not 32 <= len(payload) <= 1024 * 1024:
+        raise ValueError('INVALID_ANDROID_KEYSTORE_SIZE')
+    directory = Path(tempfile.mkdtemp(prefix='najd-signing-', dir=env.get('RUNNER_TEMP')))
+    directory.chmod(0o700)
+    key = directory / 'release.keystore'
+    key.write_bytes(payload)
+    key.chmod(0o600)
+    gradle = Path(root) / 'android/app/build.gradle.kts'
+    source = gradle.read_text()
+    old = 'signingConfig = signingConfigs.getByName("debug")'
+    if source.count(old) != 1:
+        raise ValueError('ANDROID_SIGNING_TEMPLATE_CHANGED')
+    # Only a private temporary path enters generated Gradle; passwords remain in environment.
+    key_literal = str(key).replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$')
+    block = '''
+    signingConfigs {
+        create("najdRelease") {
+            storeFile = file("KEY_PATH")
+            storePassword = System.getenv("NAJD_ANDROID_STORE_PASSWORD")
+            keyAlias = System.getenv("NAJD_ANDROID_KEY_ALIAS")
+            keyPassword = System.getenv("NAJD_ANDROID_KEY_PASSWORD")
+        }
+    }
+'''.replace('KEY_PATH', key_literal)
+    if source.count('android {') != 1:
+        raise ValueError('ANDROID_SIGNING_TEMPLATE_CHANGED')
+    source = source.replace('android {', 'android {' + block, 1).replace(old, 'signingConfig = signingConfigs.getByName("najdRelease")')
+    gradle.write_text(source)
+    return key
+
+if __name__ == '__main__':
+    import sys
+    configure(sys.argv[1] if len(sys.argv)>1 else 'flutter_app', os.environ)
+    print('Persistent private Android release signing configured; no key material logged.')
