@@ -1,5 +1,8 @@
 name: Publish verified review packages
 on:
+  workflow_run:
+    workflows: ['Najd TV unified six-target release']
+    types: [completed]
   workflow_dispatch:
     inputs:
       review_run_id:
@@ -14,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'build/mitv-')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -22,11 +25,12 @@ jobs:
       actions: read
     env:
       GH_TOKEN: ${{ github.token }}
-      REVIEW_RUN_ID: ${{ inputs.review_run_id }}
+      REVIEW_RUN_ID: ${{ inputs.review_run_id || github.event.workflow_run.id }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
       - name: Validate trusted review source
         id: source
         run: |
@@ -38,7 +42,7 @@ jobs:
           from pathlib import Path
           run=json.loads(Path('/tmp/review-run.json').read_text())
           assert run['status']=='completed' and run['conclusion']=='success'
-          assert run['event']=='workflow_dispatch'
+          assert run['event']=='workflow_dispatch' or (run['event']=='push' and run['head_branch'].startswith('build/mitv-'))
           assert run['path']=='.github/workflows/mobile-trial.yml'
           assert run['head_repository']['full_name']==os.environ['GITHUB_REPOSITORY']
           source=run['head_sha']; assert re.fullmatch('[a-f0-9]{40}', source)

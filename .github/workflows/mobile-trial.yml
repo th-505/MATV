@@ -124,6 +124,9 @@ jobs:
         env:
           NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
         run: python scripts/fetch_private_build_fonts.py
+      - name: Restore verified original typography from the approved native package
+        if: inputs.font_bundle_url == ''
+        run: python scripts/restore_approved_native_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding and TV manifest
@@ -208,6 +211,9 @@ jobs:
         env:
           NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
         run: python scripts/fetch_private_build_fonts.py
+      - name: Restore verified original typography from the approved native package
+        if: inputs.font_bundle_url == ''
+        run: python scripts/restore_approved_native_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding
@@ -264,6 +270,9 @@ jobs:
         env:
           NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
         run: python scripts/fetch_private_build_fonts.py
+      - name: Restore verified original typography from the approved native package
+        if: inputs.font_bundle_url == ''
+        run: python scripts/restore_approved_native_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV desktop identity
@@ -346,6 +355,9 @@ jobs:
         env:
           NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
         run: python scripts/fetch_private_build_fonts.py
+      - name: Restore verified original typography from the approved native package
+        if: inputs.font_bundle_url == ''
+        run: python scripts/restore_approved_native_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV identity and sandbox entitlements
@@ -412,7 +424,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Deploy verified Web bundle only behind server authentication
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_release == true
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release == true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -443,7 +455,7 @@ jobs:
             git push origin main
           fi
       - name: Publish all verified packages together
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_release == true
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release == true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

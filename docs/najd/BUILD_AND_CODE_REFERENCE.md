@@ -104,7 +104,7 @@ flutter test
 flutter test --dart-define=MITV_TARGET=tv
 ```
 
-للبناء الأصلي، راجع workflow لإنشاء scaffolding ثم apply_native_branding وتخصيص TV قبل compile. لا تغير application IDs التاريخية عند تغيير الاسم الظاهر؛ ذلك يفصل تثبيت المستخدم وسجله وتوقيعه. حزمة ثمانية الخاصة تأتي كمدخل بناء خارجي مصرح به ولا ترفع إلى المستودع. الويب العام يستعمل Noto Sans Arabic المرخصة وميزة إضافة خط محلي، ولا ينشر الملفات الخاصة.
+للبناء الأصلي، راجع workflow لإنشاء scaffolding ثم apply_native_branding وتخصيص TV قبل compile. لا تغير application IDs التاريخية عند تغيير الاسم الظاهر؛ ذلك يفصل تثبيت المستخدم وسجله وتوقيعه. حزمة ثمانية الخاصة تأتي كمدخل بناء خارجي مصرح به ولا ترفع إلى المستودع. عند غياب المدخل يمكن استعادة ملفات OTF الأصلية والترخيص من حزمة نجد 2.0.3 المعتمدة، مع التحقق من SHA-256 للحزمة ولكل ملف. تظل الملفات المستخرجة داخل مسارات بناء متجاهلة، ولا تنتقل إلى الويب العام. الويب العام يستعمل Noto Sans Arabic المرخصة وميزة إضافة خط محلي، ولا ينشر الملفات الخاصة.
 
 الأهداف الحالية: AndroidMobileARM64، AndroidTVARMv7، iOSIPAغيرموقعة، Windowsx64مثبتومحمول، macOSDMG، FlutterWeb. مراجعة artifact ليست مجرد نجاح compile: sourceSHA/version/API/architecture/checksum ومحتوى الحزمة جزء من الفحص. لا Linuxnative في هذه الحزمة. IPA تحتاج توقيعًا خارجيًا؛ macOSad-hocغيرموثق notarization؛ Windows دون Authenticode.
 
@@ -113,7 +113,7 @@ flutter test --dart-define=MITV_TARGET=tv
 flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=https://najdtv.onrender.com
 ```
 
-ابن الحزم في mobile-trial مع publish_release=false. بعد نجاح كل الأهداف وverify-release يمكن ترقية review_run_id عبر promote-reviewed-release. يتحقق مسار الترقية من مصدر التشغيل وكونه ancestor ومن عدم تغير Flutter/shared/brand/verifier. تعديلات العميل بعد المراجعة تستلزم بناءً جديدًا. الموقع ينشر عبر public-web بصورة مستقلة وبـbase-hrefالصحيح؛ لا تضف .nojekyll للجذر فتعرّض ملفات خاصة.
+ابن الحزم في mobile-trial مع publish_release=false. بعد نجاح كل الأهداف وverify-release يمكن ترقية review_run_id عبر promote-reviewed-release. فرع build/mitv-* يولد حزم مراجعة فقط، ثم يشغّل اكتماله الناجح ترقية موثوقة تلقائية بعد تحقق المصدر والنسخة والحزم؛ لا ينشر مجرد دفع الفرع قبل النجاح. يتحقق مسار الترقية من مصدر التشغيل وكونه ancestor ومن عدم تغير Flutter/shared/brand/verifier. تعديلات العميل بعد المراجعة تستلزم بناءً جديدًا. الموقع ينشر عبر public-web تلقائيًا لتغييرات العميل المدمجة في main أو بالتشغيل اليدوي بصورة مستقلة وبـbase-hrefالصحيح؛ لا تضف .nojekyll للجذر فتعرّض ملفات خاصة.
 
 ## 8. الاختبارات والدليل وحدوده
 
