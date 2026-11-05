@@ -1,3 +1,4 @@
+import 'cloud_library.dart';
 import 'pip_bridge.dart';
 import 'playback_resume.dart';
 import 'search_work_groups.dart';
@@ -217,23 +218,34 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   Size? _lastPipSize;
   Duration? _pipPosition, _pipDuration;
   bool _progressReady = false;
+  bool _cloudPrepared = false;
   Duration? _pendingResumeTarget;
   Timer? _resumeSeekTimer;
   bool _resumeSeekInFlight = false;
   int _resumeSeekAttempts = 0;
   Future<ResumeAction?>? _resumePrompt;
   ResumeAction? _resumeAction;
-  WatchEntry? get _savedEntry =>
-      widget.watchEntry ??
-      widget.store.resumeEntry(widget.item.ref, episodeId: widget.episodeId) ??
-      widget.store.history
-          .where(
-            (entry) =>
-                entry.contentRef == widget.item.ref &&
-                entry.playbackRef.isNotEmpty &&
-                entry.playbackRef == widget.sourceRef,
-          )
-          .firstOrNull;
+  WatchEntry? get _savedEntry {
+    final current = widget.store.resumeEntry(
+      widget.item.ref,
+      episodeId: widget.episodeId,
+      seasonNumber: widget.item.season,
+      episodeNumber: widget.episodeNumber,
+      playbackRef: widget.sourceRef,
+    );
+    if (current != null) return current;
+    final explicit = widget.watchEntry;
+    return explicit != null &&
+            explicit.contentRef == widget.item.ref &&
+            explicit.matchesEpisode(
+              episodeId: widget.episodeId,
+              seasonNumber: widget.item.season,
+              episodeNumber: widget.episodeNumber,
+              playbackRef: widget.sourceRef,
+            )
+        ? explicit
+        : null;
+  }
 
   Timer? _progressTimer;
   Timer? _nativeStartupTimer;
@@ -461,6 +473,18 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     bool software = false,
   }) async {
     final generation = _generation.next();
+    if (!_cloudPrepared) {
+      _cloudPrepared = true;
+      await CloudLibrarySync.refreshForPlayback(
+        widget.store,
+        contentRef: widget.item.ref,
+        episodeId: widget.episodeId,
+        seasonNumber: widget.item.season,
+        episodeNumber: widget.episodeNumber,
+        playbackRef: widget.sourceRef,
+      );
+      if (!mounted || !_generation.isCurrent(generation)) return;
+    }
     _nativeStartupTimer?.cancel();
     _nativeFailureInFlight = false;
     try {
@@ -517,10 +541,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
           final savedClock =
               previousPosition ??
               historyPositionForSource(
-                widget.store.resumeEntry(
-                  widget.item.ref,
-                  episodeId: widget.episodeId,
-                ),
+                _savedEntry,
                 previousSource,
                 requestedRef: widget.sourceRef,
               );
@@ -943,10 +964,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
       if (sourcesShareTimeline(origin, _sources[index]) ||
           (_handoffPosition ??
                   historyPositionForSource(
-                    widget.store.resumeEntry(
-                      widget.item.ref,
-                      episodeId: widget.episodeId,
-                    ),
+                    _savedEntry,
                     origin,
                     requestedRef: widget.sourceRef,
                   )) <
@@ -1397,6 +1415,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
       timelineVerified: _activeSource?.timelineVerified == true,
       timelineOffsetMs: _activeSource?.timelineOffsetMs,
     );
+    if (force) unawaited(CloudLibrarySync.flushCheckpoint(widget.store));
   }
 
   Future<void> _seekBy(Duration delta) async {

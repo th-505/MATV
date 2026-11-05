@@ -1,7 +1,7 @@
 name: mitv
 publish_to: none
 description: Najd TV shared cross-platform media client.
-version: 2.0.3+203
+version: 2.0.4+204
 
 environment:
   sdk: ">=3.13.7 <4.0.0"
@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   url_launcher: 6.3.3
   archive: 4.5.2
+  crypto: 3.0.7
   http: ^1.5.0
   supabase_flutter: 2.18.3
   file_selector: 1.1.0

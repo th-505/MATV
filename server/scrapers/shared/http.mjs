@@ -389,10 +389,11 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     let redirects = 0;
     let hopUrl = currentUrl;
+    let hopMethod=method,hopBody=body,credentialsAllowed=true;
 
     try {
       while (redirects <= maxRedirects) {
-        searchTraceEvent('upstream_prepare', { url: hopUrl, method, attempt });
+        searchTraceEvent('upstream_prepare', { url: hopUrl, method:hopMethod, attempt });
         const parsedHop = assertSafeScraperUrl(hopUrl, { allowHttp, allowedHosts });
         // Enforce DNS resolution SSRF check at initial request and every redirect hop
         // (unless a custom mock fetchImpl is injected without dnsLookupImpl in offline unit tests)
@@ -414,13 +415,17 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             ...buildAntiBanHeaders(hopUrl, referer),
             ...customHeaders
           };
-          if (cookies) reqHeaders['Cookie'] = cookies;
+          if (cookies && credentialsAllowed) reqHeaders['Cookie'] = cookies;
+          for(const key of Object.keys(reqHeaders)){
+            if(!credentialsAllowed&&['authorization','cookie','proxy-authorization','x-csrf-token','x-xsrf-token'].includes(key.toLowerCase()))delete reqHeaders[key];
+            if(hopBody===undefined&&['content-length','content-type'].includes(key.toLowerCase()))delete reqHeaders[key];
+          }
 
-          searchTraceEvent('upstream_sent', { url: hopUrl, method: redirects > 0 && method === 'POST' ? 'GET' : method });
+          searchTraceEvent('upstream_sent', { url: hopUrl, method: hopMethod });
           const res = await fetchImpl(hopUrl, {
-            method: redirects > 0 && method === 'POST' ? 'GET' : method,
+            method: hopMethod,
             headers: reqHeaders,
-            body: redirects > 0 ? undefined : body,
+            body: hopBody,
             redirect: 'manual',
             signal: controller.signal
           });
@@ -438,6 +443,11 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             }
             const nextParsed = new URL(location, hopUrl);
             assertSafeScraperUrl(nextParsed.toString(), { allowHttp, allowedHosts });
+            if([301,302].includes(res.status)&&hopMethod==='POST'||res.status===303&&hopMethod!=='HEAD'){hopMethod='GET';hopBody=undefined;}
+            if(nextParsed.origin!==parsedHop.origin){
+              credentialsAllowed=false;
+              if(hopBody!==undefined&&!['GET','HEAD'].includes(hopMethod))throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL,'CROSS_ORIGIN_BODY_REDIRECT',{providerId,url:nextParsed.href});
+            }
             hopUrl = nextParsed.toString();
             redirects += 1;
             continue;
@@ -445,7 +455,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
 
           // A HEAD probe must never consume a body, even from a broken upstream.
           let text = '', bytes;
-          if (method === 'HEAD') await res.body?.cancel();
+          if (hopMethod === 'HEAD') await res.body?.cancel();
           else if (responseType === 'bytes') {
             bytes = prefixBytes ? await readBytePrefix(res,Math.min(65536,Math.max(1,Number(prefixBytes)||1))) : await readBoundedBytes(res,Math.min(8*1024*1024,Math.max(1,Number(maxBytes)||1)));
             // Inspect only a prefix for HTML challenges. Never log media bytes.

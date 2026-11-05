@@ -10,6 +10,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'cloud_library.dart';
+import 'app_target.dart';
 
 class NajdAccountPage extends StatefulWidget {
   const NajdAccountPage({super.key});
@@ -19,7 +20,7 @@ class NajdAccountPage extends StatefulWidget {
 
 class _NajdAccountPageState extends State<NajdAccountPage> {
   final name = TextEditingController();
-  String avatar = '', message = '';
+  String avatar = '', message = '', installationId = '';
   bool busy = true;
   @override
   void initState() {
@@ -36,6 +37,8 @@ class _NajdAccountPageState extends State<NajdAccountPage> {
   Future<void> load() async {
     try {
       final data = await CloudLibrarySync.profile();
+      if (!mounted) return;
+      installationId = await CloudLibrarySync.installationOwnerId() ?? '';
       if (!mounted) return;
       name.text = '${data['display_name'] ?? 'مشاهد نجد'}';
       avatar = '${data['avatar_data'] ?? ''}';
@@ -152,6 +155,11 @@ class _NajdAccountPageState extends State<NajdAccountPage> {
         ),
         if (message.isNotEmpty)
           Padding(padding: const EdgeInsets.all(12), child: Text(message)),
+        if (installationId.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SelectableText('معرّف هذه النسخة: $installationId'),
+          ),
         const SizedBox(height: 20),
         const NajdSurface(child: NajdLinkPanel()),
       ],
@@ -160,12 +168,14 @@ class _NajdAccountPageState extends State<NajdAccountPage> {
 }
 
 class NajdLinkPanel extends StatefulWidget {
-  const NajdLinkPanel({super.key});
+  const NajdLinkPanel({super.key, this.receiverOnly});
+  final bool? receiverOnly;
   @override
   State<NajdLinkPanel> createState() => _NajdLinkPanelState();
 }
 
 class _NajdLinkPanelState extends State<NajdLinkPanel> {
+  bool get _receiverOnly => widget.receiverOnly ?? isTvTarget;
   final incoming = TextEditingController();
   Timer? poll;
   Map<String, dynamic>? ticket, status;
@@ -255,6 +265,7 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
   }
 
   Future<void> create() => action(() async {
+    if (_receiverOnly) throw StateError('TV_RECEIVER_ONLY');
     final value = await CloudLibrarySync.accountRpc('najd_link_create', {
       'p_kind': kind,
     });
@@ -341,73 +352,79 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const NajdSectionHeading('ربط أجهزتك'),
-      const Text(
-        'شارك قائمتي وتقدم المشاهدة مع جهاز آخر. التحميلات تبقى على كل جهاز.\n1. أنشئ الطلب على الجهاز الذي يحتوي مكتبتك.\n2. انسخ الرابط وافتحه أو الصقه في الجهاز الآخر واضغط استقبال الطلب.\n3. ارجع للجهاز الأصلي ووافق على الربط.\nالطلب صالح 3 دقائق. مدة الربط أسبوع أو مستمرة حتى تلغيه بحسب اختيارك.',
+      Text(
+        _receiverOnly
+            ? 'يعمل التلفاز مستقلًا دون تسجيل دخول يدوي. لعرض مكتبتك وتقدم حلقاتك، أنشئ رابط الربط من الجوال أو الكمبيوتر والصقه هنا، ثم وافق من الجهاز الأصلي. التلفاز يستقبل طلبات الربط فقط.'
+            : 'شارك قائمتي وتقدم المشاهدة مع جهاز آخر. التحميلات تبقى على كل جهاز.\n1. أنشئ الطلب على الجهاز الذي يحتوي مكتبتك.\n2. انسخ الرابط وافتحه أو الصقه في الجهاز الآخر واضغط استقبال الطلب.\n3. ارجع للجهاز الأصلي ووافق على الربط.\nالطلب صالح 3 دقائق. مدة الربط أسبوع أو مستمرة حتى تلغيه بحسب اختيارك.',
       ),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: OutlinedButton.icon(
-          icon: const Icon(Icons.devices_outlined),
-          label: Text(
-            kind == 'browser' ? 'ربط مستمر حتى الإلغاء' : 'ربط مؤقت — 7 أيام',
+      if (!_receiverOnly) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.devices_outlined),
+            label: Text(
+              kind == 'browser' ? 'ربط مستمر حتى الإلغاء' : 'ربط مؤقت — 7 أيام',
+            ),
+            onPressed: busy
+                ? null
+                : () async {
+                    final value = await showNajdOptions<String>(
+                      context,
+                      title: 'نوع الربط',
+                      icon: Icons.devices_outlined,
+                      options: [
+                        NajdOption(
+                          'browser',
+                          'ربط مستمر حتى الإلغاء',
+                          selected: kind == 'browser',
+                          icon: Icons.web,
+                        ),
+                        NajdOption(
+                          'device',
+                          'ربط مؤقت — 7 أيام',
+                          selected: kind == 'device',
+                          icon: Icons.devices_outlined,
+                        ),
+                      ],
+                    );
+                    if (mounted && value != null) setState(() => kind = value);
+                  },
           ),
-          onPressed: busy
-              ? null
-              : () async {
-                  final value = await showNajdOptions<String>(
-                    context,
-                    title: 'نوع الربط',
-                    icon: Icons.devices_outlined,
-                    options: [
-                      NajdOption(
-                        'browser',
-                        'ربط مستمر حتى الإلغاء',
-                        selected: kind == 'browser',
-                        icon: Icons.web,
-                      ),
-                      NajdOption(
-                        'device',
-                        'ربط مؤقت — 7 أيام',
-                        selected: kind == 'device',
-                        icon: Icons.devices_outlined,
-                      ),
-                    ],
-                  );
-                  if (mounted && value != null) setState(() => kind = value);
-                },
         ),
-      ),
-      FilledButton.tonal(
-        onPressed: busy ? null : create,
-        child: const Text('إنشاء طلب ربط'),
-      ),
+        FilledButton.tonal(
+          onPressed: busy ? null : create,
+          child: const Text('إنشاء طلب ربط'),
+        ),
+      ],
       if (ticket != null) ...[
         Text('ينتهي الطلب: ${ticket!['expires_at']}'),
-        Wrap(
-          spacing: 8,
-          children: [
-            TextButton(
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: link));
-                if (mounted) {
-                  setState(
-                    () => message =
-                        'نُسخ الرابط؛ افتحه على الجهاز الآخر ثم استقبل الطلب',
-                  );
-                }
-              },
-              child: const Text('نسخ رابط الربط'),
-            ),
-            TextButton(
-              onPressed: () => launchUrl(
-                Uri.parse(link),
-                mode: LaunchMode.externalApplication,
+        if (ownsTicket && !_receiverOnly)
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: link));
+                  if (mounted) {
+                    setState(
+                      () => message =
+                          'نُسخ الرابط؛ افتحه على الجهاز الآخر ثم استقبل الطلب',
+                    );
+                  }
+                },
+                child: const Text('نسخ رابط الربط'),
               ),
-              child: const Text('فتح نسختي في المتصفح'),
-            ),
-          ],
-        ),
-        if (ownsTicket &&
+              TextButton(
+                onPressed: () => launchUrl(
+                  Uri.parse(link),
+                  mode: LaunchMode.externalApplication,
+                ),
+                child: const Text('فتح نسختي في المتصفح'),
+              ),
+            ],
+          ),
+        if (!_receiverOnly &&
+            ownsTicket &&
             status?['claimed'] == true &&
             status?['approved'] != true &&
             status?['expired'] != true)
@@ -431,7 +448,11 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
             ),
           ),
         if (status?['expired'] == true)
-          const Text('انتهت صلاحية الطلب؛ أنشئ طلبًا جديدًا'),
+          Text(
+            _receiverOnly
+                ? 'انتهت صلاحية الطلب؛ أنشئ رابطًا جديدًا من الجوال أو الكمبيوتر'
+                : 'انتهت صلاحية الطلب؛ أنشئ طلبًا جديدًا',
+          ),
       ],
       const SizedBox(height: 16),
       TextField(

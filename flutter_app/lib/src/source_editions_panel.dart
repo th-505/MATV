@@ -11,6 +11,8 @@ String sourceHarvestMessage(String? reason) => switch (reason) {
   'SOURCE_ENTRY_REQUIRED' => 'الموقع يتطلب تسجيل دخول للوصول إلى المحتوى.',
   'SOURCE_UNAVAILABLE' ||
   'BROWSER_SOURCE_UNAVAILABLE' => 'تعذر الوصول إلى فهرس المزود حاليًا.',
+  'MEDIA_SERVER_SCAN_PARTIAL' =>
+    'لم تكتمل تجربة خوادم المصدر؛ يمكنك إعادة المحاولة.',
   'DIRECT_MEDIA_NOT_FOUND' =>
     'لم يُستخرج رابط فيديو صالح لهذه الحلقة؛ يمكنك إعادة المحاولة.',
   'SOURCE_INDEX_STILL_PENDING' || 'SOURCE_INDEX_PENDING' =>

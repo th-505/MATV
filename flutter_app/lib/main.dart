@@ -162,7 +162,6 @@ void openHistoryEntry(
             episodeId: entry.episodeId,
             episodeNumber: entry.episodeNumber,
             watchEntry: entry,
-            initialPosition: entry.progress >= .95 ? Duration.zero : null,
           ),
         ),
       )
