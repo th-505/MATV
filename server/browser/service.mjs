@@ -498,7 +498,8 @@ export function createBrowserWorkService({
       progress: {
         visited_pages: w.seen.size,
         pending_pages: w.frontier.length,
-        episodes: w.episodes.size,
+        episodes: new Set([...w.episodes.values()].map(e=>e.season+':'+e.episode)).size,
+        observed_references: w.episodes.size,
         partial: w.running || w.frontier.length > 0 || w.failed.size > 0,
         cloud_saved: w.cloudSaved === true,
         cloud_error: w.cloudError === true,
@@ -517,7 +518,9 @@ export function createBrowserWorkService({
       throw Error("BROWSER_BAD_PAGE");
     const w = get(ref);
     if (!w.title) throw Error("SOURCE_INDEX_PENDING");
-    const episodes = [...w.episodes.values()].sort(
+    const unique = new Map();
+    for(const episode of w.episodes.values()){const key=episode.season+':'+episode.episode;if(!unique.has(key))unique.set(key,episode);}
+    const episodes = [...unique.values()].sort(
         (a, b) => a.season - b.season || a.episode - b.episode,
       ),
       seasons = [...new Set(episodes.map((e) => e.season))].sort(
@@ -548,6 +551,7 @@ export function createBrowserWorkService({
           episodes.filter((e) => e.season === n).map((e) => e.episode),
         ).size,
       })),
+      number_of_episodes: episodes.length,
       available_seasons: seasons,
       season_number: selected,
       episodes: page.map((e) => ({
