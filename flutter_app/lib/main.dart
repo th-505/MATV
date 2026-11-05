@@ -1,3 +1,4 @@
+import 'src/playback_handoff.dart';
 import 'src/service_checks_page.dart';
 import 'src/playback_resume.dart';
 import 'src/app_preferences.dart';
@@ -110,7 +111,38 @@ class _MitvAppState extends State<MitvApp> {
                   body: Center(child: CircularProgressIndicator()),
                 );
               }
-              return Shell(store: snapshot.data!, pointer: _pointer);
+              return PlaybackInbox(
+                onOpen: (entry) {
+                  final api = MitvApi();
+                  final scoped = entry.catalogItem.discoveryScope == 'beta'
+                      ? api.browserSession(origin: entry.catalogItem)
+                      : api;
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) => PlayerPage(
+                            api: scoped,
+                            store: snapshot.data!,
+                            item: entry.catalogItem,
+                            title: entry.title,
+                            sourceRef: historyPlaybackReference(entry),
+                            episodeId: entry.episodeId,
+                            episodeNumber: entry.episodeNumber,
+                            initialPosition: Duration(
+                              milliseconds: entry.positionMs,
+                            ),
+                            watchEntry: entry,
+                          ),
+                        ),
+                      )
+                      .whenComplete(() {
+                        if (!identical(scoped, api)) scoped.close();
+                        api.close();
+                      });
+                },
+                child: Shell(store: snapshot.data!, pointer: _pointer),
+              );
             },
           ),
         ),

@@ -1,3 +1,4 @@
+import 'playback_handoff.dart';
 import 'cloud_library.dart';
 import 'pip_bridge.dart';
 import 'playback_resume.dart';
@@ -1664,6 +1665,12 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
                     .length
                 case final int count when count > 1)
               ('quality', 'جودة الفيديو', Icons.high_quality_outlined),
+            if (!isTvTarget && !widget.isLive && widget.localFileUri == null)
+              (
+                'handoff',
+                'إرسال التشغيل إلى التلفزيون أو الكمبيوتر',
+                Icons.cast,
+              ),
             ('fit', 'أبعاد الفيديو', Icons.aspect_ratio),
             ('zoom-in', 'تكبير 25%', Icons.zoom_in),
             ('zoom-out', 'تصغير 25%', Icons.zoom_out),
@@ -1705,6 +1712,16 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     );
     if (!mounted) return;
     switch (action) {
+      case 'handoff':
+        await _saveProgress(force: true);
+        final saved = _savedEntry;
+        if (mounted && saved != null) {
+          final transfer = WatchEntry.fromJson({
+            ...saved.toJson(),
+            'position_ms': controller.value.position.inMilliseconds,
+          });
+          await showPlaybackTargets(context, transfer);
+        }
       case 'pip':
         await _enterPip();
       case 'providers':

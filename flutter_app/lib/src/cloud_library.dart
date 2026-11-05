@@ -307,6 +307,37 @@ class CloudLibrarySync with WidgetsBindingObserver {
         .timeout(const Duration(seconds: 12));
   }
 
+  static Future<dynamic> playbackRpc(
+    String name,
+    Map<String, dynamic> params,
+  ) async {
+    const allowed = {
+      'najd_playback_register',
+      'najd_playback_targets',
+      'najd_playback_send',
+      'najd_playback_inbox',
+      'najd_playback_ack',
+    };
+    if (!allowed.contains(name)) {
+      throw ArgumentError('PLAYBACK_ACTION_NOT_ALLOWED');
+    }
+    if (isTvTarget &&
+        (name == 'najd_playback_send' || name == 'najd_playback_targets')) {
+      throw StateError('TV_RECEIVER_ONLY');
+    }
+    final sync = await _startingDefault;
+    if (sync?.transport is AnonymousLibraryTransport) {
+      await (sync!.transport as AnonymousLibraryTransport).prepare();
+    }
+    final sdk = await _initializing;
+    if (sdk?.client.auth.currentUser == null) {
+      throw StateError('ACCOUNT_UNAVAILABLE');
+    }
+    return sdk!.client
+        .rpc(name, params: params)
+        .timeout(const Duration(seconds: 12));
+  }
+
   static Future<Map<String, dynamic>> profile({
     String? name,
     String? avatar,

@@ -1,0 +1,4 @@
+digraph G {rankdir=TB;graph[bgcolor="#15121f",pad="0.4"];node[shape=box,style="rounded,filled",fillcolor="#30253e",color="#a98bdc",fontcolor="white",fontname="DejaVu Sans",margin="0.2"];edge[color="#bca1e6"];
+"Phone player / More"->"Only linked TV / PC targets"->"Send episode identity + exact clock"->"Private owner-scoped RPC queue"->"Foreground receiver poll"->"User accepts Play here"->"Acknowledge once before expiry"->"Close old player route"->"Resolve a fresh stream on receiver"->"Open exact episode at sender clock";
+"Private owner-scoped RPC queue"->"Unlinked / expired / TV sender rejected";
+}

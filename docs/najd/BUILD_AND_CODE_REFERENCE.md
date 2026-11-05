@@ -1,6 +1,6 @@
 # نجد TV — مرجع البناء والكود 2.0.4
 
-هذا مرجع النسخة 2.0.4+204 / Beta 5. مرجع تغييرات العميل: `b3aae7a`. يُراجع معه ملف [منطق التشغيل](RUNTIME_AND_FLOW_MAP.md) و[ملاحظات الإصدار](RELEASE_2.0.4.md). وصف التنفيذ الحالي منفصل هنا عن التحسينات المقترحة؛ نجاح الاختبارات الآلية لا يعني اعتماد كل جهاز فعلي أو استمرار عمل موقع خارجي.
+هذا مرجع النسخة 2.0.4+204 / Beta 5. مرجع إصلاح الاستئناف الأولي: `b3aae7a`، وتضم هذه الدفعة أيضًا إرسال التشغيل المضاف بعده. بصمة المصدر النهائية مثبتة في source-manifest.json المرفق بالحزمة. يُراجع معه ملف [منطق التشغيل](RUNTIME_AND_FLOW_MAP.md) و[ملاحظات الإصدار](RELEASE_2.0.4.md). وصف التنفيذ الحالي منفصل هنا عن التحسينات المقترحة؛ نجاح الاختبارات الآلية لا يعني اعتماد كل جهاز فعلي أو استمرار عمل موقع خارجي.
 
 ## 1. حدود المراجعة وكيف تقرأ المرجع
 
@@ -60,7 +60,13 @@
 
 TV يخفي إنشاء الربط وإرساله واعتماده، ويسمح بالاستقبال/المطالبة والفصل. توجد حماية إضافية قبل accountRpc تمنع create/approve عند هدف TV. هذا قيد في سياسة العميل، وليس توثيقًا عتاديًا يمنع تطبيقًا معدلًا من استدعاء واجهة عامة؛ التفويض الحقيقي للبيانات قائم على جلسة المالك والمنح في الخادم. الربط الأسبوعي والدائم يخضعان للعقد الموجود، وليس نقلاً عامًا لكل مكتبات المستخدمين.
 
-هذه ميزة ربط مكتبة وسجل. لا يوجد في هذه اللقطة نظام إرسال فيديو حي مستقل أو بروتوكول casting إلى PC/TV؛ يلزم عمل منفصل إذا كان المطلوب فتح العمل تلقائيًا على جهاز آخر فور الضغط، وليس رؤية نفس السجل بعد الربط.
+أضيف إرسال التشغيل نفسه عبر `playback_handoff.dart`، مستقلًا عن رفع السجل. المرسل يختار جهازًا مرتبطًا من «المزيد»، ويرسل WatchEntry وصفيًا بالموسم والحلقة والمرجع والتوقيت بالمللي ثانية. يوافق المستقبل على «تشغيل هنا»، ثم يستخرج وسيطًا جديدًا من API ويمرر initialPosition صراحة. لا تنتقل روابط MP4/HLS الموقعة أو Cookie إلى السحابة. يعيد المستقبل إغلاق مسارات المشغل السابقة قبل فتح المشاهدة الجديدة لتفادي تراكب الصوت.
+
+ترحيل `20261105170604_najd_playback_handoff.sql` يضيف جدولين داخل mitv_private مع RLS ودون منح عميل مباشرة، وفهارس للصندوق والمرسل والصلاحية. دوال RPC محددة: register لتعريف نوع الجهاز، targets لإظهار أجهزة نفس مالك المكتبة فقط، send للتحقق من المنحة والحمولة وإيداع طلب، inbox لقراءة أحدث طلب غير منتهٍ للجهاز نفسه، وack لقبوله أو رفضه مرة واحدة. يمنع الخادم send من جهاز مسجل TV، إضافة إلى منع الواجهة والعميل. يظل نوع الجهاز تصريحًا من التطبيق، وليس توثيقًا عتاديًا.
+
+الطلب صالح لدقيقتين، وله حد إرسال3 ثوان؛ طلب جديد لنفس المستقبل يلغي الطلب المعلق السابق. القبول لا يعني أن الفيديو فك ترميزه بنجاح؛ يعني موافقة المستقبل على فتحه. يسحب TV/desktop/web الصندوق كل8 ثوان في المقدمة فقط، مع backoff30 ثانية عند الخطأ. heartbeat لا يكتب إلا بعد45 ثانية. الجوال الأصلي يسجل نفسه ولا يفحص صندوق استقبال غير مستخدم. يمنع seen محلي إعادة نافذة الطلب نفسه، وتمنع الحالة في DB إعادة تشغيل المقبول. إلغاء المنحة يمنع القراءة والإرسال حتى لو بقي طلب قديم في الجدول. لا تفتح طلبًا قديمًا بعد مدة صلاحيته.
+
+المرسل لا يدعي أن القبول حدث بمجرد الإيداع، ولا يفرض إيقاف الفيديو على هاتفه دون تأكيد؛ واجهته تقول إن طلب التشغيل أرسل وإن الموافقة على الجهاز الآخر مطلوبة. هذه أوامر فتح مشاهدة مرتبطة، وليست بث الشاشة أو ريموتًا للتحكم المستمر بالصوت والسرعة على المستقبل.
 
 ## 5. الاكتشاف والفهرسة والاستخراج
 
@@ -117,7 +123,7 @@ flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=h
 
 ## 8. الاختبارات والدليل وحدوده
 
-على هذه اللقطة: تحليل Flutter دون مشاكل؛368اختبار Flutter ناجح مع7تجاوزات معلنة؛194اختبار Node ناجح. اختبار إضافي مستقل للتوافق بين سجل قديم أحدث وسجل قياسي أقدم ناجح. اختبار حي بجلستين مجهولتين مؤقتتين تحقق من العزل قبل الربط، الربط الصريح،3نقاط مختلفة بين الموسم1حلقة1/2 والموسم2حلقة1، تحديث المستقبل وقراءته لدى المرسل، ثم إلغاء المنحة واستعادة العزل. حذفت حسابات الاختبار المحددة فقط.
+على هذه اللقطة: تحليل Flutter دون مشاكل؛370 اختبار Flutter ناجح مع7تجاوزات معلنة؛194اختبار Node ناجح. اختبار إضافي مستقل للتوافق بين سجل قديم أحدث وسجل قياسي أقدم ناجح. اختبار حي بجلستين مجهولتين مؤقتتين تحقق من العزل قبل الربط، الربط الصريح،3نقاط مختلفة بين الموسم1حلقة1/2 والموسم2حلقة1، تحديث المستقبل وقراءته لدى المرسل، ثم إلغاء المنحة واستعادة العزل. حذفت حسابات الاختبار المحددة فقط.
 
 الاختبار الآلي لسياسة TV وفصل الحلقات ليس تجربة ريموت على تلفزيون فعلي. فحصMP4/HLSليس اعتمادًا لكلcodec. نجاح cookiefixtureفيCimaNowليس إثباتًا أن كلدومين حي يعمل. تراجع نتائج المصادر في الملف الثاني؛ لا تعلن جميع المصادر سليمة بسبب نجاح4منها.
 
@@ -153,101 +159,101 @@ flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=h
 
 ### Dart — إعلانات مسماة
 
-عدد العناصر المستخرجة: 826. يمكن طي الجرد لكل ملف.
+عدد العناصر المستخرجة: 844. يمكن طي الجرد لكل ملف.
 
 <details>
 <summary>flutter_app/lib/main.dart — 88 إعلانًا</summary>
 
 | الدالة/العضو | موضع التنفيذ | مؤشرات بنيوية |
 |---|---|---|
-| `main` | [44–44](../../flutter_app/lib/main.dart#L44) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `MitvApp.new` | [47–47](../../flutter_app/lib/main.dart#L47) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `MitvApp.createState` | [48–49](../../flutter_app/lib/main.dart#L48) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_MitvAppState.initState` | [56–74](../../flutter_app/lib/main.dart#L56) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
-| `_MitvAppState.dispose` | [76–81](../../flutter_app/lib/main.dart#L76) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_MitvAppState.build` | [83–119](../../flutter_app/lib/main.dart#L83) | 1 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `openDetails` | [122–141](../../flutter_app/lib/main.dart#L122) | 4 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `openHistoryEntry` | [143–171](../../flutter_app/lib/main.dart#L143) | 4 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_NajdMark.new` | [174–174](../../flutter_app/lib/main.dart#L174) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_NajdMark.build` | [176–182](../../flutter_app/lib/main.dart#L176) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_BrandTitle.new` | [186–186](../../flutter_app/lib/main.dart#L186) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_BrandTitle.build` | [187–206](../../flutter_app/lib/main.dart#L187) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `ConfiguredTvChannel.new` | [210–214](../../flutter_app/lib/main.dart#L210) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `Shell.new` | [221–229](../../flutter_app/lib/main.dart#L221) | 7 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `Shell.createState` | [236–237](../../flutter_app/lib/main.dart#L236) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_ShellState.initState` | [257–290](../../flutter_app/lib/main.dart#L257) | 0 معاملات؛ 5 فروع؛ 0 await؛ 0 try |
-| `_ShellState.dispose` | [292–300](../../flutter_app/lib/main.dart#L292) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_ShellState._clearBrowsingCache` | [302–317](../../flutter_app/lib/main.dart#L302) | 0 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
-| `_ShellState._clearDownloads` | [319–325](../../flutter_app/lib/main.dart#L319) | 0 معاملات؛ 1 فروع؛ 2 await؛ 0 try |
-| `_ShellState._createPage` | [327–375](../../flutter_app/lib/main.dart#L327) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_ShellState._selectPage` | [376–383](../../flutter_app/lib/main.dart#L376) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_ShellState._closeNavigation` | [385–390](../../flutter_app/lib/main.dart#L385) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_ShellState._navigation` | [392–535](../../flutter_app/lib/main.dart#L392) | 1 معاملات؛ 13 فروع؛ 0 await؛ 0 try |
-| `_ShellState._header` | [537–584](../../flutter_app/lib/main.dart#L537) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_ShellState.build` | [586–724](../../flutter_app/lib/main.dart#L586) | 1 معاملات؛ 15 فروع؛ 0 await؛ 0 try |
-| `HomePage.new` | [728–733](../../flutter_app/lib/main.dart#L728) | 4 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `HomePage.createState` | [737–738](../../flutter_app/lib/main.dart#L737) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_HomePageState._retry` | [751–752](../../flutter_app/lib/main.dart#L751) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_HomePageState._history` | [753–764](../../flutter_app/lib/main.dart#L753) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_HomePageState._shelf` | [765–802](../../flutter_app/lib/main.dart#L765) | 3 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
-| `_HomePageState.build` | [803–936](../../flutter_app/lib/main.dart#L803) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `LivePage.new` | [940–945](../../flutter_app/lib/main.dart#L940) | 4 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `LivePage.build` | [949–1009](../../flutter_app/lib/main.dart#L949) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `SettingsPage.new` | [1013–1020](../../flutter_app/lib/main.dart#L1013) | 6 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `SettingsPage.createState` | [1026–1027](../../flutter_app/lib/main.dart#L1026) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_SettingsPageState._clear` | [1033–1070](../../flutter_app/lib/main.dart#L1033) | 2 معاملات؛ 5 فروع؛ 2 await؛ 1 try |
-| `_SettingsPageState.build` | [1072–1183](../../flutter_app/lib/main.dart#L1072) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_PlaybackPreferencesPanel.new` | [1187–1187](../../flutter_app/lib/main.dart#L1187) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlaybackPreferencesPanel.build` | [1188–1252](../../flutter_app/lib/main.dart#L1188) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_ProviderBetaPreferencesPanel.new` | [1256–1256](../../flutter_app/lib/main.dart#L1256) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_ProviderBetaPreferencesPanel.build` | [1257–1281](../../flutter_app/lib/main.dart#L1257) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_NajdAppearanceOptions.new` | [1285–1285](../../flutter_app/lib/main.dart#L1285) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_NajdAppearanceOptions.build` | [1286–1361](../../flutter_app/lib/main.dart#L1286) | 1 معاملات؛ 7 فروع؛ 0 await؛ 0 try |
-| `_matchStatusLabel` | [1364–1375](../../flutter_app/lib/main.dart#L1364) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_localizedMatchTime` | [1377–1379](../../flutter_app/lib/main.dart#L1377) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_TeamBadge.new` | [1382–1382](../../flutter_app/lib/main.dart#L1382) | 2 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_TeamBadge.build` | [1385–1422](../../flutter_app/lib/main.dart#L1385) | 1 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `MatchesPage.new` | [1427–1427](../../flutter_app/lib/main.dart#L1427) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `MatchesPage.createState` | [1430–1431](../../flutter_app/lib/main.dart#L1430) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState.dispose` | [1437–1441](../../flutter_app/lib/main.dart#L1437) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState._scrollMatches` | [1443–1451](../../flutter_app/lib/main.dart#L1443) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState.initState` | [1453–1457](../../flutter_app/lib/main.dart#L1453) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState.didUpdateWidget` | [1459–1463](../../flutter_app/lib/main.dart#L1459) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState._reload` | [1465–1470](../../flutter_app/lib/main.dart#L1465) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState._open` | [1472–1491](../../flutter_app/lib/main.dart#L1472) | 2 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_MatchesPageState.build` | [1493–1650](../../flutter_app/lib/main.dart#L1493) | 1 معاملات؛ 14 فروع؛ 0 await؛ 0 try |
-| `CatalogPage.new` | [1654–1662](../../flutter_app/lib/main.dart#L1654) | 7 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `CatalogPage.createState` | [1669–1670](../../flutter_app/lib/main.dart#L1669) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState._legacyCategories` | [1688–1721](../../flutter_app/lib/main.dart#L1688) | 0 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState._categories` | [1723–1753](../../flutter_app/lib/main.dart#L1723) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState._matchesKind` | [1755–1759](../../flutter_app/lib/main.dart#L1755) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState.initState` | [1768–1773](../../flutter_app/lib/main.dart#L1768) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState.dispose` | [1775–1780](../../flutter_app/lib/main.dart#L1775) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState._onScroll` | [1782–1787](../../flutter_app/lib/main.dart#L1782) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState._prefetchVisible` | [1790–1816](../../flutter_app/lib/main.dart#L1790) | 0 معاملات؛ 5 فروع؛ 0 await؛ 0 try |
-| `_CatalogPageState._loadMore` | [1818–1861](../../flutter_app/lib/main.dart#L1818) | 0 معاملات؛ 7 فروع؛ 1 await؛ 1 try |
-| `_CatalogPageState._refresh` | [1863–1874](../../flutter_app/lib/main.dart#L1863) | 0 معاملات؛ 0 فروع؛ 1 await؛ 0 try |
-| `_CatalogPageState.build` | [1876–1949](../../flutter_app/lib/main.dart#L1876) | 1 معاملات؛ 11 فروع؛ 0 await؛ 0 try |
-| `_CatalogCard.new` | [1953–1957](../../flutter_app/lib/main.dart#L1953) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_CatalogCard.build` | [1961–1964](../../flutter_app/lib/main.dart#L1961) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `SearchPage.new` | [1968–1968](../../flutter_app/lib/main.dart#L1968) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `SearchPage.createState` | [1971–1972](../../flutter_app/lib/main.dart#L1971) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_SearchPageState.initState` | [1983–1992](../../flutter_app/lib/main.dart#L1983) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_SearchPageState.loadMore` | [1994–2018](../../flutter_app/lib/main.dart#L1994) | 0 معاملات؛ 4 فروع؛ 1 await؛ 1 try |
-| `_SearchPageState._setAdvanced` | [2029–2063](../../flutter_app/lib/main.dart#L2029) | 1 معاملات؛ 4 فروع؛ 1 await؛ 1 try |
-| `_SearchPageState._resultGroups` | [2069–2092](../../flutter_app/lib/main.dart#L2069) | 0 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `_SearchPageState._sourceLabel` | [2094–2094](../../flutter_app/lib/main.dart#L2094) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_SearchPageState.dispose` | [2099–2106](../../flutter_app/lib/main.dart#L2099) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_SearchPageState.onQueryChanged` | [2108–2124](../../flutter_app/lib/main.dart#L2108) | 1 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_SearchPageState.run` | [2126–2187](../../flutter_app/lib/main.dart#L2126) | 1 معاملات؛ 10 فروع؛ 4 await؛ 1 try |
-| `_SearchPageState.build` | [2189–2402](../../flutter_app/lib/main.dart#L2189) | 1 معاملات؛ 24 فروع؛ 2 await؛ 1 try |
-| `LibraryPage.new` | [2408–2413](../../flutter_app/lib/main.dart#L2408) | 4 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `LibraryPage.createState` | [2417–2418](../../flutter_app/lib/main.dart#L2417) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_LibraryPageState._clearHistory` | [2427–2436](../../flutter_app/lib/main.dart#L2427) | 0 معاملات؛ 1 فروع؛ 2 await؛ 0 try |
-| `_LibraryPageState._removeSelected` | [2438–2451](../../flutter_app/lib/main.dart#L2438) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
-| `_LibraryPageState.build` | [2453–2756](../../flutter_app/lib/main.dart#L2453) | 1 معاملات؛ 18 فروع؛ 0 await؛ 0 try |
-| `_ErrorState.new` | [2760–2760](../../flutter_app/lib/main.dart#L2760) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_ErrorState.build` | [2762–2768](../../flutter_app/lib/main.dart#L2762) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `main` | [45–45](../../flutter_app/lib/main.dart#L45) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `MitvApp.new` | [48–48](../../flutter_app/lib/main.dart#L48) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `MitvApp.createState` | [49–50](../../flutter_app/lib/main.dart#L49) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_MitvAppState.initState` | [57–75](../../flutter_app/lib/main.dart#L57) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
+| `_MitvAppState.dispose` | [77–82](../../flutter_app/lib/main.dart#L77) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_MitvAppState.build` | [84–151](../../flutter_app/lib/main.dart#L84) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `openDetails` | [154–173](../../flutter_app/lib/main.dart#L154) | 4 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `openHistoryEntry` | [175–203](../../flutter_app/lib/main.dart#L175) | 4 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_NajdMark.new` | [206–206](../../flutter_app/lib/main.dart#L206) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_NajdMark.build` | [208–214](../../flutter_app/lib/main.dart#L208) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_BrandTitle.new` | [218–218](../../flutter_app/lib/main.dart#L218) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_BrandTitle.build` | [219–238](../../flutter_app/lib/main.dart#L219) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `ConfiguredTvChannel.new` | [242–246](../../flutter_app/lib/main.dart#L242) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `Shell.new` | [253–261](../../flutter_app/lib/main.dart#L253) | 7 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `Shell.createState` | [268–269](../../flutter_app/lib/main.dart#L268) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_ShellState.initState` | [289–322](../../flutter_app/lib/main.dart#L289) | 0 معاملات؛ 5 فروع؛ 0 await؛ 0 try |
+| `_ShellState.dispose` | [324–332](../../flutter_app/lib/main.dart#L324) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_ShellState._clearBrowsingCache` | [334–349](../../flutter_app/lib/main.dart#L334) | 0 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
+| `_ShellState._clearDownloads` | [351–357](../../flutter_app/lib/main.dart#L351) | 0 معاملات؛ 1 فروع؛ 2 await؛ 0 try |
+| `_ShellState._createPage` | [359–407](../../flutter_app/lib/main.dart#L359) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_ShellState._selectPage` | [408–415](../../flutter_app/lib/main.dart#L408) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_ShellState._closeNavigation` | [417–422](../../flutter_app/lib/main.dart#L417) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_ShellState._navigation` | [424–567](../../flutter_app/lib/main.dart#L424) | 1 معاملات؛ 13 فروع؛ 0 await؛ 0 try |
+| `_ShellState._header` | [569–616](../../flutter_app/lib/main.dart#L569) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_ShellState.build` | [618–756](../../flutter_app/lib/main.dart#L618) | 1 معاملات؛ 15 فروع؛ 0 await؛ 0 try |
+| `HomePage.new` | [760–765](../../flutter_app/lib/main.dart#L760) | 4 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `HomePage.createState` | [769–770](../../flutter_app/lib/main.dart#L769) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_HomePageState._retry` | [783–784](../../flutter_app/lib/main.dart#L783) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_HomePageState._history` | [785–796](../../flutter_app/lib/main.dart#L785) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_HomePageState._shelf` | [797–834](../../flutter_app/lib/main.dart#L797) | 3 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
+| `_HomePageState.build` | [835–968](../../flutter_app/lib/main.dart#L835) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `LivePage.new` | [972–977](../../flutter_app/lib/main.dart#L972) | 4 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `LivePage.build` | [981–1041](../../flutter_app/lib/main.dart#L981) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `SettingsPage.new` | [1045–1052](../../flutter_app/lib/main.dart#L1045) | 6 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `SettingsPage.createState` | [1058–1059](../../flutter_app/lib/main.dart#L1058) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_SettingsPageState._clear` | [1065–1102](../../flutter_app/lib/main.dart#L1065) | 2 معاملات؛ 5 فروع؛ 2 await؛ 1 try |
+| `_SettingsPageState.build` | [1104–1215](../../flutter_app/lib/main.dart#L1104) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_PlaybackPreferencesPanel.new` | [1219–1219](../../flutter_app/lib/main.dart#L1219) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlaybackPreferencesPanel.build` | [1220–1284](../../flutter_app/lib/main.dart#L1220) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_ProviderBetaPreferencesPanel.new` | [1288–1288](../../flutter_app/lib/main.dart#L1288) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_ProviderBetaPreferencesPanel.build` | [1289–1313](../../flutter_app/lib/main.dart#L1289) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_NajdAppearanceOptions.new` | [1317–1317](../../flutter_app/lib/main.dart#L1317) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_NajdAppearanceOptions.build` | [1318–1393](../../flutter_app/lib/main.dart#L1318) | 1 معاملات؛ 7 فروع؛ 0 await؛ 0 try |
+| `_matchStatusLabel` | [1396–1407](../../flutter_app/lib/main.dart#L1396) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_localizedMatchTime` | [1409–1411](../../flutter_app/lib/main.dart#L1409) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_TeamBadge.new` | [1414–1414](../../flutter_app/lib/main.dart#L1414) | 2 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_TeamBadge.build` | [1417–1454](../../flutter_app/lib/main.dart#L1417) | 1 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `MatchesPage.new` | [1459–1459](../../flutter_app/lib/main.dart#L1459) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `MatchesPage.createState` | [1462–1463](../../flutter_app/lib/main.dart#L1462) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState.dispose` | [1469–1473](../../flutter_app/lib/main.dart#L1469) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState._scrollMatches` | [1475–1483](../../flutter_app/lib/main.dart#L1475) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState.initState` | [1485–1489](../../flutter_app/lib/main.dart#L1485) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState.didUpdateWidget` | [1491–1495](../../flutter_app/lib/main.dart#L1491) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState._reload` | [1497–1502](../../flutter_app/lib/main.dart#L1497) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState._open` | [1504–1523](../../flutter_app/lib/main.dart#L1504) | 2 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_MatchesPageState.build` | [1525–1682](../../flutter_app/lib/main.dart#L1525) | 1 معاملات؛ 14 فروع؛ 0 await؛ 0 try |
+| `CatalogPage.new` | [1686–1694](../../flutter_app/lib/main.dart#L1686) | 7 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `CatalogPage.createState` | [1701–1702](../../flutter_app/lib/main.dart#L1701) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState._legacyCategories` | [1720–1753](../../flutter_app/lib/main.dart#L1720) | 0 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState._categories` | [1755–1785](../../flutter_app/lib/main.dart#L1755) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState._matchesKind` | [1787–1791](../../flutter_app/lib/main.dart#L1787) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState.initState` | [1800–1805](../../flutter_app/lib/main.dart#L1800) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState.dispose` | [1807–1812](../../flutter_app/lib/main.dart#L1807) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState._onScroll` | [1814–1819](../../flutter_app/lib/main.dart#L1814) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState._prefetchVisible` | [1822–1848](../../flutter_app/lib/main.dart#L1822) | 0 معاملات؛ 5 فروع؛ 0 await؛ 0 try |
+| `_CatalogPageState._loadMore` | [1850–1893](../../flutter_app/lib/main.dart#L1850) | 0 معاملات؛ 7 فروع؛ 1 await؛ 1 try |
+| `_CatalogPageState._refresh` | [1895–1906](../../flutter_app/lib/main.dart#L1895) | 0 معاملات؛ 0 فروع؛ 1 await؛ 0 try |
+| `_CatalogPageState.build` | [1908–1981](../../flutter_app/lib/main.dart#L1908) | 1 معاملات؛ 11 فروع؛ 0 await؛ 0 try |
+| `_CatalogCard.new` | [1985–1989](../../flutter_app/lib/main.dart#L1985) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_CatalogCard.build` | [1993–1996](../../flutter_app/lib/main.dart#L1993) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `SearchPage.new` | [2000–2000](../../flutter_app/lib/main.dart#L2000) | 3 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `SearchPage.createState` | [2003–2004](../../flutter_app/lib/main.dart#L2003) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_SearchPageState.initState` | [2015–2024](../../flutter_app/lib/main.dart#L2015) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_SearchPageState.loadMore` | [2026–2050](../../flutter_app/lib/main.dart#L2026) | 0 معاملات؛ 4 فروع؛ 1 await؛ 1 try |
+| `_SearchPageState._setAdvanced` | [2061–2095](../../flutter_app/lib/main.dart#L2061) | 1 معاملات؛ 4 فروع؛ 1 await؛ 1 try |
+| `_SearchPageState._resultGroups` | [2101–2124](../../flutter_app/lib/main.dart#L2101) | 0 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `_SearchPageState._sourceLabel` | [2126–2126](../../flutter_app/lib/main.dart#L2126) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_SearchPageState.dispose` | [2131–2138](../../flutter_app/lib/main.dart#L2131) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_SearchPageState.onQueryChanged` | [2140–2156](../../flutter_app/lib/main.dart#L2140) | 1 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_SearchPageState.run` | [2158–2219](../../flutter_app/lib/main.dart#L2158) | 1 معاملات؛ 10 فروع؛ 4 await؛ 1 try |
+| `_SearchPageState.build` | [2221–2434](../../flutter_app/lib/main.dart#L2221) | 1 معاملات؛ 24 فروع؛ 2 await؛ 1 try |
+| `LibraryPage.new` | [2440–2445](../../flutter_app/lib/main.dart#L2440) | 4 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `LibraryPage.createState` | [2449–2450](../../flutter_app/lib/main.dart#L2449) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_LibraryPageState._clearHistory` | [2459–2468](../../flutter_app/lib/main.dart#L2459) | 0 معاملات؛ 1 فروع؛ 2 await؛ 0 try |
+| `_LibraryPageState._removeSelected` | [2470–2483](../../flutter_app/lib/main.dart#L2470) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
+| `_LibraryPageState.build` | [2485–2788](../../flutter_app/lib/main.dart#L2485) | 1 معاملات؛ 18 فروع؛ 0 await؛ 0 try |
+| `_ErrorState.new` | [2792–2792](../../flutter_app/lib/main.dart#L2792) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_ErrorState.build` | [2794–2800](../../flutter_app/lib/main.dart#L2794) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
 
 </details>
 
@@ -434,7 +440,7 @@ flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=h
 </details>
 
 <details>
-<summary>flutter_app/lib/src/cloud_library.dart — 38 إعلانًا</summary>
+<summary>flutter_app/lib/src/cloud_library.dart — 39 إعلانًا</summary>
 
 | الدالة/العضو | موضع التنفيذ | مؤشرات بنيوية |
 |---|---|---|
@@ -460,22 +466,23 @@ flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=h
 | `CloudLibrarySync.installationOwnerId` | [263–269](../../flutter_app/lib/src/cloud_library.dart#L263) | 0 معاملات؛ 1 فروع؛ 2 await؛ 0 try |
 | `CloudLibrarySync.refreshAccountContext` | [272–277](../../flutter_app/lib/src/cloud_library.dart#L272) | 0 معاملات؛ 1 فروع؛ 2 await؛ 0 try |
 | `CloudLibrarySync.accountRpc` | [279–308](../../flutter_app/lib/src/cloud_library.dart#L279) | 2 معاملات؛ 3 فروع؛ 3 await؛ 0 try |
-| `CloudLibrarySync.profile` | [310–330](../../flutter_app/lib/src/cloud_library.dart#L310) | 2 معاملات؛ 1 فروع؛ 4 await؛ 0 try |
-| `CloudLibrarySync.refreshFavorite` | [332–352](../../flutter_app/lib/src/cloud_library.dart#L332) | 1 معاملات؛ 3 فروع؛ 4 await؛ 0 try |
-| `CloudLibrarySync._scopeId` | [354–356](../../flutter_app/lib/src/cloud_library.dart#L354) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync._cursorKey` | [357–357](../../flutter_app/lib/src/cloud_library.dart#L357) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync._historyKey` | [358–358](../../flutter_app/lib/src/cloud_library.dart#L358) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync.startDefault` | [370–392](../../flutter_app/lib/src/cloud_library.dart#L370) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync._startDefault` | [394–421](../../flutter_app/lib/src/cloud_library.dart#L394) | 1 معاملات؛ 0 فروع؛ 3 await؛ 1 try |
-| `CloudLibrarySync.deviceIdFor` | [423–445](../../flutter_app/lib/src/cloud_library.dart#L423) | 1 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
-| `CloudLibrarySync.start` | [447–475](../../flutter_app/lib/src/cloud_library.dart#L447) | 8 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
-| `CloudLibrarySync._loadOwnerState` | [477–485](../../flutter_app/lib/src/cloud_library.dart#L477) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync._onChange` | [487–511](../../flutter_app/lib/src/cloud_library.dart#L487) | 0 معاملات؛ 5 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync.refreshCheckpoint` | [513–563](../../flutter_app/lib/src/cloud_library.dart#L513) | 5 معاملات؛ 9 فروع؛ 4 await؛ 0 try |
-| `CloudLibrarySync.syncNow` | [566–587](../../flutter_app/lib/src/cloud_library.dart#L566) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync._sync` | [589–646](../../flutter_app/lib/src/cloud_library.dart#L589) | 0 معاملات؛ 6 فروع؛ 8 await؛ 1 try |
-| `CloudLibrarySync.didChangeAppLifecycleState` | [648–656](../../flutter_app/lib/src/cloud_library.dart#L648) | 1 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
-| `CloudLibrarySync.close` | [658–666](../../flutter_app/lib/src/cloud_library.dart#L658) | 0 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
+| `CloudLibrarySync.playbackRpc` | [310–339](../../flutter_app/lib/src/cloud_library.dart#L310) | 2 معاملات؛ 4 فروع؛ 3 await؛ 0 try |
+| `CloudLibrarySync.profile` | [341–361](../../flutter_app/lib/src/cloud_library.dart#L341) | 2 معاملات؛ 1 فروع؛ 4 await؛ 0 try |
+| `CloudLibrarySync.refreshFavorite` | [363–383](../../flutter_app/lib/src/cloud_library.dart#L363) | 1 معاملات؛ 3 فروع؛ 4 await؛ 0 try |
+| `CloudLibrarySync._scopeId` | [385–387](../../flutter_app/lib/src/cloud_library.dart#L385) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync._cursorKey` | [388–388](../../flutter_app/lib/src/cloud_library.dart#L388) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync._historyKey` | [389–389](../../flutter_app/lib/src/cloud_library.dart#L389) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync.startDefault` | [401–423](../../flutter_app/lib/src/cloud_library.dart#L401) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync._startDefault` | [425–452](../../flutter_app/lib/src/cloud_library.dart#L425) | 1 معاملات؛ 0 فروع؛ 3 await؛ 1 try |
+| `CloudLibrarySync.deviceIdFor` | [454–476](../../flutter_app/lib/src/cloud_library.dart#L454) | 1 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
+| `CloudLibrarySync.start` | [478–506](../../flutter_app/lib/src/cloud_library.dart#L478) | 8 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
+| `CloudLibrarySync._loadOwnerState` | [508–516](../../flutter_app/lib/src/cloud_library.dart#L508) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync._onChange` | [518–542](../../flutter_app/lib/src/cloud_library.dart#L518) | 0 معاملات؛ 5 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync.refreshCheckpoint` | [544–594](../../flutter_app/lib/src/cloud_library.dart#L544) | 5 معاملات؛ 9 فروع؛ 4 await؛ 0 try |
+| `CloudLibrarySync.syncNow` | [597–618](../../flutter_app/lib/src/cloud_library.dart#L597) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync._sync` | [620–677](../../flutter_app/lib/src/cloud_library.dart#L620) | 0 معاملات؛ 6 فروع؛ 8 await؛ 1 try |
+| `CloudLibrarySync.didChangeAppLifecycleState` | [679–687](../../flutter_app/lib/src/cloud_library.dart#L679) | 1 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
+| `CloudLibrarySync.close` | [689–697](../../flutter_app/lib/src/cloud_library.dart#L689) | 0 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
 
 </details>
 
@@ -1029,6 +1036,31 @@ flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=h
 </details>
 
 <details>
+<summary>flutter_app/lib/src/playback_handoff.dart — 17 إعلانًا</summary>
+
+| الدالة/العضو | موضع التنفيذ | مؤشرات بنيوية |
+|---|---|---|
+| `playbackDeviceTarget` | [12–20](../../flutter_app/lib/src/playback_handoff.dart#L12) | 0 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `playbackDeviceLabel` | [21–27](../../flutter_app/lib/src/playback_handoff.dart#L21) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `PlaybackHandoff.new` | [35–37](../../flutter_app/lib/src/playback_handoff.dart#L35) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `PlaybackHandoff.register` | [39–44](../../flutter_app/lib/src/playback_handoff.dart#L39) | 0 معاملات؛ 0 فروع؛ 1 await؛ 0 try |
+| `PlaybackHandoff.targets` | [46–56](../../flutter_app/lib/src/playback_handoff.dart#L46) | 0 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
+| `PlaybackHandoff.send` | [58–74](../../flutter_app/lib/src/playback_handoff.dart#L58) | 2 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
+| `PlaybackHandoff.inbox` | [76–80](../../flutter_app/lib/src/playback_handoff.dart#L76) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
+| `PlaybackHandoff.acknowledge` | [82–84](../../flutter_app/lib/src/playback_handoff.dart#L82) | 2 معاملات؛ 0 فروع؛ 1 await؛ 0 try |
+| `showPlaybackTargets` | [87–159](../../flutter_app/lib/src/playback_handoff.dart#L87) | 3 معاملات؛ 8 فروع؛ 3 await؛ 1 try |
+| `PlaybackInbox.new` | [162–168](../../flutter_app/lib/src/playback_handoff.dart#L162) | 5 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `PlaybackInbox.createState` | [173–174](../../flutter_app/lib/src/playback_handoff.dart#L173) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlaybackInboxState.receiver` | [184–187](../../flutter_app/lib/src/playback_handoff.dart#L184) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlaybackInboxState.initState` | [188–202](../../flutter_app/lib/src/playback_handoff.dart#L188) | 0 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_PlaybackInboxState.didChangeAppLifecycleState` | [204–208](../../flutter_app/lib/src/playback_handoff.dart#L204) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_PlaybackInboxState.tick` | [210–260](../../flutter_app/lib/src/playback_handoff.dart#L210) | 0 معاملات؛ 10 فروع؛ 4 await؛ 1 try |
+| `_PlaybackInboxState.dispose` | [262–267](../../flutter_app/lib/src/playback_handoff.dart#L262) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlaybackInboxState.build` | [269–270](../../flutter_app/lib/src/playback_handoff.dart#L269) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+
+</details>
+
+<details>
 <summary>flutter_app/lib/src/playback_policy.dart — 2 إعلانًا</summary>
 
 | الدالة/العضو | موضع التنفيذ | مؤشرات بنيوية |
@@ -1066,69 +1098,69 @@ flutter build web --release --base-href=/NajdTV/   --dart-define=MITV_API_BASE=h
 
 | الدالة/العضو | موضع التنفيذ | مؤشرات بنيوية |
 |---|---|---|
-| `sourcesShareTimeline` | [42–59](../../flutter_app/lib/src/player_page.dart#L42) | 2 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `sourceHandoffPosition` | [61–77](../../flutter_app/lib/src/player_page.dart#L61) | 3 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `historyPositionForSource` | [79–118](../../flutter_app/lib/src/player_page.dart#L79) | 3 معاملات؛ 8 فروع؛ 0 await؛ 0 try |
-| `nextObservedEpisode` | [120–141](../../flutter_app/lib/src/player_page.dart#L120) | 3 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
-| `PlayerPage.new` | [144–169](../../flutter_app/lib/src/player_page.dart#L144) | 24 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `PlayerPage.createState` | [197–198](../../flutter_app/lib/src/player_page.dart#L197) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._savedEntry` | [228–248](../../flutter_app/lib/src/player_page.dart#L228) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState.initState` | [293–308](../../flutter_app/lib/src/player_page.dart#L293) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState.didChangeAppLifecycleState` | [310–316](../../flutter_app/lib/src/player_page.dart#L310) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._queue` | [319–319](../../flutter_app/lib/src/player_page.dart#L319) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._loadSourceQueue` | [320–354](../../flutter_app/lib/src/player_page.dart#L320) | 0 معاملات؛ 3 فروع؛ 2 await؛ 1 try |
-| `_PlayerPageState._rememberSelection` | [356–374](../../flutter_app/lib/src/player_page.dart#L356) | 0 معاملات؛ 1 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._enterDisplay` | [376–385](../../flutter_app/lib/src/player_page.dart#L376) | 0 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._doubleTapSeek` | [387–394](../../flutter_app/lib/src/player_page.dart#L387) | 0 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._keepScreenOn` | [396–400](../../flutter_app/lib/src/player_page.dart#L396) | 1 معاملات؛ 0 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._readBrightness` | [402–413](../../flutter_app/lib/src/player_page.dart#L402) | 0 معاملات؛ 2 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._setBrightness` | [415–428](../../flutter_app/lib/src/player_page.dart#L415) | 0 معاملات؛ 2 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._revealControls` | [430–438](../../flutter_app/lib/src/player_page.dart#L430) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._toggleFullscreen` | [440–456](../../flutter_app/lib/src/player_page.dart#L440) | 0 معاملات؛ 3 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._restoreDisplay` | [458–468](../../flutter_app/lib/src/player_page.dart#L458) | 0 معاملات؛ 2 فروع؛ 3 await؛ 1 try |
-| `_PlayerPageState._initialize` | [470–747](../../flutter_app/lib/src/player_page.dart#L470) | 3 معاملات؛ 42 فروع؛ 13 await؛ 1 try |
-| `_PlayerPageState._confirmResumePosition` | [749–757](../../flutter_app/lib/src/player_page.dart#L749) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._startResumeRetry` | [759–800](../../flutter_app/lib/src/player_page.dart#L759) | 1 معاملات؛ 6 فروع؛ 2 await؛ 1 try |
-| `_PlayerPageState._nativeValueChanged` | [802–838](../../flutter_app/lib/src/player_page.dart#L802) | 0 معاملات؛ 8 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._fallbackFromNative` | [840–958](../../flutter_app/lib/src/player_page.dart#L840) | 1 معاملات؛ 20 فروع؛ 9 await؛ 2 try |
-| `_PlayerPageState._compatibleAlternative` | [960–976](../../flutter_app/lib/src/player_page.dart#L960) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._prepareHandoff` | [978–988](../../flutter_app/lib/src/player_page.dart#L978) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._selectSource` | [990–1024](../../flutter_app/lib/src/player_page.dart#L990) | 1 معاملات؛ 7 فروع؛ 3 await؛ 0 try |
-| `_PlayerPageState._sourceMenu` | [1026–1032](../../flutter_app/lib/src/player_page.dart#L1026) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._episodeMenu` | [1034–1061](../../flutter_app/lib/src/player_page.dart#L1034) | 0 معاملات؛ 4 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._providerCatalogue` | [1063–1204](../../flutter_app/lib/src/player_page.dart#L1063) | 0 معاملات؛ 9 فروع؛ 6 await؛ 0 try |
-| `_PlayerPageState._nextEpisode` | [1207–1211](../../flutter_app/lib/src/player_page.dart#L1207) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._prepareNext` | [1212–1218](../../flutter_app/lib/src/player_page.dart#L1212) | 2 معاملات؛ 0 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._advanceEpisode` | [1220–1248](../../flutter_app/lib/src/player_page.dart#L1220) | 1 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
-| `_PlayerPageState._configurePip` | [1250–1266](../../flutter_app/lib/src/player_page.dart#L1250) | 1 معاملات؛ 2 فروع؛ 3 await؛ 0 try |
-| `_PlayerPageState._updatePipPlayback` | [1268–1279](../../flutter_app/lib/src/player_page.dart#L1268) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._enterPip` | [1281–1325](../../flutter_app/lib/src/player_page.dart#L1281) | 0 معاملات؛ 6 فروع؛ 5 await؛ 0 try |
-| `_PlayerPageState._onPipEvent` | [1327–1369](../../flutter_app/lib/src/player_page.dart#L1327) | 1 معاملات؛ 11 فروع؛ 5 await؛ 0 try |
-| `_PlayerPageState._saveProgress` | [1371–1419](../../flutter_app/lib/src/player_page.dart#L1371) | 3 معاملات؛ 9 فروع؛ 1 await؛ 0 try |
-| `_PlayerPageState._seekBy` | [1421–1432](../../flutter_app/lib/src/player_page.dart#L1421) | 1 معاملات؛ 5 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._togglePlay` | [1434–1443](../../flutter_app/lib/src/player_page.dart#L1434) | 1 معاملات؛ 1 فروع؛ 3 await؛ 0 try |
-| `_PlayerPageState._applyRate` | [1445–1464](../../flutter_app/lib/src/player_page.dart#L1445) | 1 معاملات؛ 1 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._startBoost` | [1466–1487](../../flutter_app/lib/src/player_page.dart#L1466) | 0 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
-| `_PlayerPageState._endBoost` | [1489–1495](../../flutter_app/lib/src/player_page.dart#L1489) | 0 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
-| `_PlayerPageState._setPlaybackSpeed` | [1497–1507](../../flutter_app/lib/src/player_page.dart#L1497) | 1 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
-| `_PlayerPageState._chooseFit` | [1509–1547](../../flutter_app/lib/src/player_page.dart#L1509) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
-| `_PlayerPageState._trackPlayer` | [1549–1559](../../flutter_app/lib/src/player_page.dart#L1549) | 1 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._audioMenu` | [1561–1603](../../flutter_app/lib/src/player_page.dart#L1561) | 1 معاملات؛ 5 فروع؛ 3 await؛ 0 try |
-| `_PlayerPageState._moreMenu` | [1605–1748](../../flutter_app/lib/src/player_page.dart#L1605) | 1 معاملات؛ 13 فروع؛ 12 await؛ 0 try |
-| `_PlayerPageState.dispose` | [1750–1780](../../flutter_app/lib/src/player_page.dart#L1750) | 0 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._modernControls` | [1782–1822](../../flutter_app/lib/src/player_page.dart#L1782) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._time` | [1824–1825](../../flutter_app/lib/src/player_page.dart#L1824) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._subtitleNotice` | [1826–1830](../../flutter_app/lib/src/player_page.dart#L1826) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState._applyCaption` | [1832–1847](../../flutter_app/lib/src/player_page.dart#L1832) | 2 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
-| `_PlayerPageState._restoreCaption` | [1849–1890](../../flutter_app/lib/src/player_page.dart#L1849) | 1 معاملات؛ 5 فروع؛ 4 await؛ 1 try |
-| `_PlayerPageState._chooseCaption` | [1892–1940](../../flutter_app/lib/src/player_page.dart#L1892) | 2 معاملات؛ 6 فروع؛ 6 await؛ 1 try |
-| `_PlayerPageState._searchCaptions` | [1942–2070](../../flutter_app/lib/src/player_page.dart#L1942) | 1 معاملات؛ 11 فروع؛ 4 await؛ 1 try |
-| `_PlayerPageState._setCaptionDelay` | [2072–2097](../../flutter_app/lib/src/player_page.dart#L2072) | 2 معاملات؛ 4 فروع؛ 2 await؛ 1 try |
-| `_PlayerPageState._captionTiming` | [2099–2143](../../flutter_app/lib/src/player_page.dart#L2099) | 1 معاملات؛ 4 فروع؛ 3 await؛ 0 try |
-| `_PlayerPageState._captionControls` | [2145–2208](../../flutter_app/lib/src/player_page.dart#L2145) | 2 معاملات؛ 8 فروع؛ 4 await؛ 0 try |
-| `_PlayerPageState._downloadCurrent` | [2210–2265](../../flutter_app/lib/src/player_page.dart#L2210) | 0 معاملات؛ 8 فروع؛ 1 await؛ 1 try |
-| `_PlayerPageState._trackControls` | [2267–2305](../../flutter_app/lib/src/player_page.dart#L2267) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
-| `_PlayerPageState.build` | [2307–2595](../../flutter_app/lib/src/player_page.dart#L2307) | 1 معاملات؛ 18 فروع؛ 0 await؛ 0 try |
+| `sourcesShareTimeline` | [43–60](../../flutter_app/lib/src/player_page.dart#L43) | 2 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `sourceHandoffPosition` | [62–78](../../flutter_app/lib/src/player_page.dart#L62) | 3 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `historyPositionForSource` | [80–119](../../flutter_app/lib/src/player_page.dart#L80) | 3 معاملات؛ 8 فروع؛ 0 await؛ 0 try |
+| `nextObservedEpisode` | [121–142](../../flutter_app/lib/src/player_page.dart#L121) | 3 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
+| `PlayerPage.new` | [145–170](../../flutter_app/lib/src/player_page.dart#L145) | 24 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `PlayerPage.createState` | [198–199](../../flutter_app/lib/src/player_page.dart#L198) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._savedEntry` | [229–249](../../flutter_app/lib/src/player_page.dart#L229) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState.initState` | [294–309](../../flutter_app/lib/src/player_page.dart#L294) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState.didChangeAppLifecycleState` | [311–317](../../flutter_app/lib/src/player_page.dart#L311) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._queue` | [320–320](../../flutter_app/lib/src/player_page.dart#L320) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._loadSourceQueue` | [321–355](../../flutter_app/lib/src/player_page.dart#L321) | 0 معاملات؛ 3 فروع؛ 2 await؛ 1 try |
+| `_PlayerPageState._rememberSelection` | [357–375](../../flutter_app/lib/src/player_page.dart#L357) | 0 معاملات؛ 1 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._enterDisplay` | [377–386](../../flutter_app/lib/src/player_page.dart#L377) | 0 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._doubleTapSeek` | [388–395](../../flutter_app/lib/src/player_page.dart#L388) | 0 معاملات؛ 3 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._keepScreenOn` | [397–401](../../flutter_app/lib/src/player_page.dart#L397) | 1 معاملات؛ 0 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._readBrightness` | [403–414](../../flutter_app/lib/src/player_page.dart#L403) | 0 معاملات؛ 2 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._setBrightness` | [416–429](../../flutter_app/lib/src/player_page.dart#L416) | 0 معاملات؛ 2 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._revealControls` | [431–439](../../flutter_app/lib/src/player_page.dart#L431) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._toggleFullscreen` | [441–457](../../flutter_app/lib/src/player_page.dart#L441) | 0 معاملات؛ 3 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._restoreDisplay` | [459–469](../../flutter_app/lib/src/player_page.dart#L459) | 0 معاملات؛ 2 فروع؛ 3 await؛ 1 try |
+| `_PlayerPageState._initialize` | [471–748](../../flutter_app/lib/src/player_page.dart#L471) | 3 معاملات؛ 42 فروع؛ 13 await؛ 1 try |
+| `_PlayerPageState._confirmResumePosition` | [750–758](../../flutter_app/lib/src/player_page.dart#L750) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._startResumeRetry` | [760–801](../../flutter_app/lib/src/player_page.dart#L760) | 1 معاملات؛ 6 فروع؛ 2 await؛ 1 try |
+| `_PlayerPageState._nativeValueChanged` | [803–839](../../flutter_app/lib/src/player_page.dart#L803) | 0 معاملات؛ 8 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._fallbackFromNative` | [841–959](../../flutter_app/lib/src/player_page.dart#L841) | 1 معاملات؛ 20 فروع؛ 9 await؛ 2 try |
+| `_PlayerPageState._compatibleAlternative` | [961–977](../../flutter_app/lib/src/player_page.dart#L961) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._prepareHandoff` | [979–989](../../flutter_app/lib/src/player_page.dart#L979) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._selectSource` | [991–1025](../../flutter_app/lib/src/player_page.dart#L991) | 1 معاملات؛ 7 فروع؛ 3 await؛ 0 try |
+| `_PlayerPageState._sourceMenu` | [1027–1033](../../flutter_app/lib/src/player_page.dart#L1027) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._episodeMenu` | [1035–1062](../../flutter_app/lib/src/player_page.dart#L1035) | 0 معاملات؛ 4 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._providerCatalogue` | [1064–1205](../../flutter_app/lib/src/player_page.dart#L1064) | 0 معاملات؛ 9 فروع؛ 6 await؛ 0 try |
+| `_PlayerPageState._nextEpisode` | [1208–1212](../../flutter_app/lib/src/player_page.dart#L1208) | 0 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._prepareNext` | [1213–1219](../../flutter_app/lib/src/player_page.dart#L1213) | 2 معاملات؛ 0 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._advanceEpisode` | [1221–1249](../../flutter_app/lib/src/player_page.dart#L1221) | 1 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
+| `_PlayerPageState._configurePip` | [1251–1267](../../flutter_app/lib/src/player_page.dart#L1251) | 1 معاملات؛ 2 فروع؛ 3 await؛ 0 try |
+| `_PlayerPageState._updatePipPlayback` | [1269–1280](../../flutter_app/lib/src/player_page.dart#L1269) | 0 معاملات؛ 2 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._enterPip` | [1282–1326](../../flutter_app/lib/src/player_page.dart#L1282) | 0 معاملات؛ 6 فروع؛ 5 await؛ 0 try |
+| `_PlayerPageState._onPipEvent` | [1328–1370](../../flutter_app/lib/src/player_page.dart#L1328) | 1 معاملات؛ 11 فروع؛ 5 await؛ 0 try |
+| `_PlayerPageState._saveProgress` | [1372–1420](../../flutter_app/lib/src/player_page.dart#L1372) | 3 معاملات؛ 9 فروع؛ 1 await؛ 0 try |
+| `_PlayerPageState._seekBy` | [1422–1433](../../flutter_app/lib/src/player_page.dart#L1422) | 1 معاملات؛ 5 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._togglePlay` | [1435–1444](../../flutter_app/lib/src/player_page.dart#L1435) | 1 معاملات؛ 1 فروع؛ 3 await؛ 0 try |
+| `_PlayerPageState._applyRate` | [1446–1465](../../flutter_app/lib/src/player_page.dart#L1446) | 1 معاملات؛ 1 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._startBoost` | [1467–1488](../../flutter_app/lib/src/player_page.dart#L1467) | 0 معاملات؛ 2 فروع؛ 1 await؛ 0 try |
+| `_PlayerPageState._endBoost` | [1490–1496](../../flutter_app/lib/src/player_page.dart#L1490) | 0 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
+| `_PlayerPageState._setPlaybackSpeed` | [1498–1508](../../flutter_app/lib/src/player_page.dart#L1498) | 1 معاملات؛ 3 فروع؛ 1 await؛ 0 try |
+| `_PlayerPageState._chooseFit` | [1510–1548](../../flutter_app/lib/src/player_page.dart#L1510) | 0 معاملات؛ 1 فروع؛ 1 await؛ 0 try |
+| `_PlayerPageState._trackPlayer` | [1550–1560](../../flutter_app/lib/src/player_page.dart#L1550) | 1 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._audioMenu` | [1562–1604](../../flutter_app/lib/src/player_page.dart#L1562) | 1 معاملات؛ 5 فروع؛ 3 await؛ 0 try |
+| `_PlayerPageState._moreMenu` | [1606–1765](../../flutter_app/lib/src/player_page.dart#L1606) | 1 معاملات؛ 14 فروع؛ 14 await؛ 0 try |
+| `_PlayerPageState.dispose` | [1767–1797](../../flutter_app/lib/src/player_page.dart#L1767) | 0 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._modernControls` | [1799–1839](../../flutter_app/lib/src/player_page.dart#L1799) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._time` | [1841–1842](../../flutter_app/lib/src/player_page.dart#L1841) | 1 معاملات؛ 0 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._subtitleNotice` | [1843–1847](../../flutter_app/lib/src/player_page.dart#L1843) | 1 معاملات؛ 1 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState._applyCaption` | [1849–1864](../../flutter_app/lib/src/player_page.dart#L1849) | 2 معاملات؛ 2 فروع؛ 2 await؛ 0 try |
+| `_PlayerPageState._restoreCaption` | [1866–1907](../../flutter_app/lib/src/player_page.dart#L1866) | 1 معاملات؛ 5 فروع؛ 4 await؛ 1 try |
+| `_PlayerPageState._chooseCaption` | [1909–1957](../../flutter_app/lib/src/player_page.dart#L1909) | 2 معاملات؛ 6 فروع؛ 6 await؛ 1 try |
+| `_PlayerPageState._searchCaptions` | [1959–2087](../../flutter_app/lib/src/player_page.dart#L1959) | 1 معاملات؛ 11 فروع؛ 4 await؛ 1 try |
+| `_PlayerPageState._setCaptionDelay` | [2089–2114](../../flutter_app/lib/src/player_page.dart#L2089) | 2 معاملات؛ 4 فروع؛ 2 await؛ 1 try |
+| `_PlayerPageState._captionTiming` | [2116–2160](../../flutter_app/lib/src/player_page.dart#L2116) | 1 معاملات؛ 4 فروع؛ 3 await؛ 0 try |
+| `_PlayerPageState._captionControls` | [2162–2225](../../flutter_app/lib/src/player_page.dart#L2162) | 2 معاملات؛ 8 فروع؛ 4 await؛ 0 try |
+| `_PlayerPageState._downloadCurrent` | [2227–2282](../../flutter_app/lib/src/player_page.dart#L2227) | 0 معاملات؛ 8 فروع؛ 1 await؛ 1 try |
+| `_PlayerPageState._trackControls` | [2284–2322](../../flutter_app/lib/src/player_page.dart#L2284) | 1 معاملات؛ 4 فروع؛ 0 await؛ 0 try |
+| `_PlayerPageState.build` | [2324–2612](../../flutter_app/lib/src/player_page.dart#L2324) | 1 معاملات؛ 18 فروع؛ 0 await؛ 0 try |
 
 </details>
 
