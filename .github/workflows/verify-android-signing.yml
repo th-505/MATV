@@ -1,0 +1,27 @@
+name: Verify persistent Android signing input
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-android-signing.yml'
+      - 'scripts/verify_android_signing_input.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  signing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NAJD_ANDROID_SIGNING_BUNDLE: ${{ secrets.NAJD_ANDROID_SIGNING_BUNDLE }}
+      NAJD_ANDROID_KEYSTORE_BASE64: ${{ secrets.NAJD_ANDROID_KEYSTORE_BASE64 }}
+      NAJD_ANDROID_STORE_PASSWORD: ${{ secrets.NAJD_ANDROID_STORE_PASSWORD }}
+      NAJD_ANDROID_KEY_ALIAS: ${{ secrets.NAJD_ANDROID_KEY_ALIAS }}
+      NAJD_ANDROID_KEY_PASSWORD: ${{ secrets.NAJD_ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: python3 scripts/verify_android_signing_input.py
