@@ -58,7 +58,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.review_run_id }}
+          run-id: ${{ env.REVIEW_RUN_ID }}
           path: device-artifacts
       - name: Reverify and publish the complete package set
         env:
