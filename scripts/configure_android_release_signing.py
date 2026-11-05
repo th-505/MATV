@@ -1,16 +1,22 @@
 """Configure a persistent private Android release key. Never generate a disposable key."""
 import base64
 import os
+import json
 from pathlib import Path
-import re
 import tempfile
 
 NAMES = ('NAJD_ANDROID_KEYSTORE_BASE64', 'NAJD_ANDROID_STORE_PASSWORD', 'NAJD_ANDROID_KEY_ALIAS', 'NAJD_ANDROID_KEY_PASSWORD')
 
 def configure(root, env):
-    if any(not env.get(name) for name in NAMES):
-        raise ValueError('PERSISTENT_ANDROID_SIGNING_SECRETS_REQUIRED: configure all four NAJD_ANDROID signing secrets; do not replace installed-user signing identities')
-    payload = base64.b64decode(env[NAMES[0]], validate=True)
+    values = {name: env.get(name, '') for name in NAMES}
+    if env.get('NAJD_ANDROID_SIGNING_BUNDLE'):
+        bundle = json.loads(env['NAJD_ANDROID_SIGNING_BUNDLE'])
+        if not isinstance(bundle, dict) or set(bundle) != set(NAMES):
+            raise ValueError('INVALID_ANDROID_SIGNING_BUNDLE')
+        values = {name: values[name] or bundle[name] for name in NAMES}
+    if any(not isinstance(values[name], str) or not values[name] or any(c in values[name] for c in ('\0','\r','\n')) for name in NAMES):
+        raise ValueError('PERSISTENT_ANDROID_SIGNING_SECRETS_REQUIRED: configure NAJD_ANDROID_SIGNING_BUNDLE or the four separate signing secrets; do not replace installed-user signing identities')
+    payload = base64.b64decode(values[NAMES[0]], validate=True)
     if not 32 <= len(payload) <= 1024 * 1024:
         raise ValueError('INVALID_ANDROID_KEYSTORE_SIZE')
     directory = Path(tempfile.mkdtemp(prefix='najd-signing-', dir=env.get('RUNNER_TEMP')))
@@ -28,10 +34,11 @@ def configure(root, env):
     block = '''
     signingConfigs {
         create("najdRelease") {
+            val najdSigningBundle = groovy.json.JsonSlurper().parseText(System.getenv("NAJD_ANDROID_SIGNING_BUNDLE") ?: "{}") as Map<*, *>
             storeFile = file("KEY_PATH")
-            storePassword = System.getenv("NAJD_ANDROID_STORE_PASSWORD")
-            keyAlias = System.getenv("NAJD_ANDROID_KEY_ALIAS")
-            keyPassword = System.getenv("NAJD_ANDROID_KEY_PASSWORD")
+            storePassword = System.getenv("NAJD_ANDROID_STORE_PASSWORD")?.takeIf { it.isNotEmpty() } ?: najdSigningBundle["NAJD_ANDROID_STORE_PASSWORD"]?.toString()
+            keyAlias = System.getenv("NAJD_ANDROID_KEY_ALIAS")?.takeIf { it.isNotEmpty() } ?: najdSigningBundle["NAJD_ANDROID_KEY_ALIAS"]?.toString()
+            keyPassword = System.getenv("NAJD_ANDROID_KEY_PASSWORD")?.takeIf { it.isNotEmpty() } ?: najdSigningBundle["NAJD_ANDROID_KEY_PASSWORD"]?.toString()
         }
     }
 '''.replace('KEY_PATH', key_literal)

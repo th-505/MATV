@@ -1,4 +1,5 @@
 import base64
+import json
 from pathlib import Path
 import tempfile
 from configure_android_release_signing import configure, NAMES
@@ -17,4 +18,9 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'fixture-store-secret' not in result and 'fixture-key-secret' not in result
     assert key.read_bytes()==b'fixture-not-a-real-key'*4
     assert key.stat().st_mode&0o777==0o600
+    file.write_text(original)
+    key=configure(root,{'NAJD_ANDROID_SIGNING_BUNDLE':json.dumps({name:env[name] for name in NAMES}), 'RUNNER_TEMP':directory})
+    assert key.read_bytes()==b'fixture-not-a-real-key'*4
+    assert 'fixture-store-secret' not in file.read_text()
+    assert 'NAJD_ANDROID_SIGNING_BUNDLE' in file.read_text()
 print('Android signing: missing-key fail closed, persistent configuration, no plaintext passwords and private file permissions passed.')

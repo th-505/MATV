@@ -102,6 +102,7 @@ jobs:
       ARTIFACT_NAME: ${{ matrix.artifact }}
       MANIFEST_TARGET: ${{ matrix.manifest_target }}
       VERSION_OFFSET: ${{ matrix.version_offset }}
+      NAJD_ANDROID_SIGNING_BUNDLE: ${{ secrets.NAJD_ANDROID_SIGNING_BUNDLE }}
       NAJD_ANDROID_KEYSTORE_BASE64: ${{ secrets.NAJD_ANDROID_KEYSTORE_BASE64 }}
       NAJD_ANDROID_STORE_PASSWORD: ${{ secrets.NAJD_ANDROID_STORE_PASSWORD }}
       NAJD_ANDROID_KEY_ALIAS: ${{ secrets.NAJD_ANDROID_KEY_ALIAS }}
