@@ -1,0 +1,49 @@
+name: Normalize verified unsigned iPhone package
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-package-compat.yml'
+      - 'scripts/ios_package_compat.py'
+      - 'scripts/ios_package_compat_test.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: najd-iphone-package-normalization
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify device binary checks
+        run: python3 scripts/ios_package_compat_test.py
+      - name: Fetch the exact approved release package
+        run: |
+          python3 - <<'PY'
+          import urllib.request,hashlib,pathlib
+          url='https://github.com/th-505/NajdTV/releases/download/v2.0.4/Najd-TV-iPhone-Unsigned.ipa'
+          with urllib.request.urlopen(url,timeout=90) as response: data=response.read(32*1024*1024+1)
+          assert hashlib.sha256(data).hexdigest()=='dfd5968ab86615061e193f22a8a42c24956cb4bddae18b1d8ba16e6c6758ac37'
+          pathlib.Path('/tmp/original.ipa').write_bytes(data)
+          PY
+      - name: Normalize all device frameworks and standard ZIP metadata
+        run: |
+          mkdir -p trial
+          python3 scripts/ios_package_compat.py /tmp/original.ipa /tmp/najd-ipa-normalized trial/Najd-TV-iPhone-Unsigned-Compatible.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Najd-TV-iPhone-Unsigned-Compatible
+          path: trial/
+          retention-days: 14
+      - name: Publish separate compatibility package without replacing the original
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v2.0.4 trial/Najd-TV-iPhone-Unsigned-Compatible.ipa trial/Najd-TV-iPhone-Unsigned-Compatible.ipa.sha256 trial/Najd-TV-iPhone-Unsigned-Compatible.report.json
