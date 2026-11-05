@@ -1,0 +1,452 @@
+{
+  "basis": "live bounded sample audit, not device decoding or a full movie/series matrix",
+  "providers": [
+    {
+      "provider": "ahwak",
+      "najd": "passed",
+      "beta": "passed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "brstej",
+      "najd": "failed",
+      "beta": "failed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "failed",
+          "reason": "UNSAFE_URL"
+        }
+      ]
+    },
+    {
+      "provider": "fosta",
+      "najd": "passed",
+      "beta": "passed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "mycima",
+      "najd": "passed",
+      "beta": "passed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "akwam",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "NETWORK_TIMEOUT"
+        }
+      ]
+    },
+    {
+      "provider": "cimanow",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "DIRECT_MEDIA_NOT_FOUND"
+        }
+      ]
+    },
+    {
+      "provider": "shahid4u",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "failed",
+          "reason": "EMPTY_RESULT"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "moviztime",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "DIRECT_MEDIA_NOT_FOUND"
+        }
+      ]
+    },
+    {
+      "provider": "egydead",
+      "najd": "failed",
+      "beta": "failed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "failed",
+          "reason": "NETWORK_TIMEOUT"
+        }
+      ]
+    },
+    {
+      "provider": "ipauniverse",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "DIRECT_MEDIA_NOT_FOUND"
+        }
+      ]
+    },
+    {
+      "provider": "3cktv",
+      "najd": "passed",
+      "beta": "passed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "anime4up",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "failed",
+          "reason": "EMPTY_RESULT"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "SERVER_EXTRACTION_FAILED"
+        }
+      ]
+    },
+    {
+      "provider": "qfilm",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "SERVER_EXTRACTION_FAILED"
+        }
+      ]
+    },
+    {
+      "provider": "ristoanime",
+      "najd": "passed",
+      "beta": "passed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "arabseed",
+      "najd": "failed",
+      "beta": "failed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "failed",
+          "reason": "EMPTY_RESULT"
+        }
+      ]
+    },
+    {
+      "provider": "mewsry",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "DIRECT_MEDIA_NOT_FOUND"
+        }
+      ]
+    },
+    {
+      "provider": "witanime",
+      "najd": "failed",
+      "beta": "failed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "failed",
+          "reason": "ACCESS_BLOCKED"
+        }
+      ]
+    },
+    {
+      "provider": "egydead_live",
+      "najd": "failed",
+      "beta": "failed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "failed",
+          "reason": "EMPTY_RESULT"
+        }
+      ]
+    },
+    {
+      "provider": "yallashoot",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "DIRECT_MEDIA_NOT_FOUND"
+        }
+      ]
+    },
+    {
+      "provider": "3isk",
+      "najd": "partial",
+      "beta": "partial",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "failed",
+          "reason": "DIRECT_MEDIA_NOT_FOUND"
+        }
+      ]
+    },
+    {
+      "provider": "alooy",
+      "najd": "passed",
+      "beta": "passed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "passed"
+        },
+        {
+          "stage": "search",
+          "state": "passed"
+        },
+        {
+          "stage": "details",
+          "state": "passed"
+        },
+        {
+          "stage": "media",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "provider": "laroza",
+      "najd": "failed",
+      "beta": "failed",
+      "stages": [
+        {
+          "stage": "catalog",
+          "state": "failed",
+          "reason": "NETWORK_TIMEOUT"
+        }
+      ]
+    }
+  ]
+}

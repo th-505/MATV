@@ -170,33 +170,32 @@ PiP جسر نظام على Android/iOS ومسار متصفح حيث يدعم. و
 
 ## 12. فحص المصادر الحي وحدوده
 
-العينة من بيئة الفحص بمهلة5 ثوان للطلب وأربعة فحوص متزامنة. ليست مصفوفة فيلم ومسلسل لكل مصدر ولا اعتمادًا دائمًا. اختلاف نجاح Ahwak على الإنتاج عن مهلة البيئة المحلية يمنع الخلط بين مشكلة الشبكة ومشكلة المحلل. تصحيح جلسة CimaNow نجح في fixture بعد هذا الفحص، ولا يحول النتيجة الحية القديمة إلى نجاح مزعوم.
+العينة من بيئة الفحص بمهلة5 ثوان للطلب وأربعة فحوص متزامنة. ليست مصفوفة فيلم ومسلسل لكل مصدر ولا اعتمادًا دائمًا. اختلاف نجاح Ahwak على الإنتاج عن مهلة البيئة المحلية يمنع الخلط بين مشكلة الشبكة ومشكلة المحلل. أعيد الفحص بعد التصحيح: اجتازت6 مصادر العينة في كلا المسارين، وكانت10 جزئية و6 متعذرة. يعرض الجدول النتيجة الأحدث، و[التقرير الآمن](assets/provider-verification-204.json) يحفظ مراحلها؛ لا يعني نجاح العينة اكتمال كل الأعمال.
 
 | المصدر | نجد | بيتا | الدليل المرحلي المختصر |
 |---|---|---|---|
-| najd:ahwak | failed | — | catalog: NETWORK_TIMEOUT |
-| najd:brstej | failed | — | catalog: NETWORK_TIMEOUT |
-| najd:fosta | failed | — | catalog: NETWORK_TIMEOUT |
-| najd:mycima | passed | — | اجتازت العينة المحددة |
-| najd:akwam | partial | — | media: NETWORK_TIMEOUT |
-| najd:cimanow | partial | — | media: DIRECT_MEDIA_NOT_FOUND |
-| najd:shahid4u | partial | — | search: EMPTY_RESULT |
-| najd:moviztime | partial | — | media: DIRECT_MEDIA_NOT_FOUND |
-| najd:egydead | failed | — | catalog: NETWORK_TIMEOUT |
-| najd:ipauniverse | partial | — | media: DIRECT_MEDIA_NOT_FOUND |
-| najd:3cktv | passed | — | اجتازت العينة المحددة |
-| najd:anime4up | partial | — | search: EMPTY_RESULT؛ media: SERVER_EXTRACTION_FAILED |
-| najd:qfilm | partial | — | media: SERVER_EXTRACTION_FAILED |
-| najd:ristoanime | passed | — | اجتازت العينة المحددة |
-| najd:arabseed | failed | — | catalog: EMPTY_RESULT |
-| najd:mewsry | partial | — | media: DIRECT_MEDIA_NOT_FOUND |
-| najd:witanime | failed | — | catalog: ACCESS_BLOCKED |
-| najd:egydead_live | failed | — | catalog: EMPTY_RESULT |
-| najd:yallashoot | partial | — | media: DIRECT_MEDIA_NOT_FOUND |
-| najd:3isk | partial | — | media: DIRECT_MEDIA_NOT_FOUND |
-| najd:alooy | passed | — | اجتازت العينة المحددة |
-| najd:laroza | failed | — | catalog: NETWORK_TIMEOUT |
-
+| ahwak | passed | passed | اجتازت العينة المحددة |
+| brstej | failed | failed | catalog: UNSAFE_URL |
+| fosta | passed | passed | اجتازت العينة المحددة |
+| mycima | passed | passed | اجتازت العينة المحددة |
+| akwam | partial | partial | media: NETWORK_TIMEOUT |
+| cimanow | partial | partial | media: DIRECT_MEDIA_NOT_FOUND |
+| shahid4u | partial | partial | search: EMPTY_RESULT |
+| moviztime | partial | partial | media: DIRECT_MEDIA_NOT_FOUND |
+| egydead | failed | failed | catalog: NETWORK_TIMEOUT |
+| ipauniverse | partial | partial | media: DIRECT_MEDIA_NOT_FOUND |
+| 3cktv | passed | passed | اجتازت العينة المحددة |
+| anime4up | partial | partial | search: EMPTY_RESULT؛ media: SERVER_EXTRACTION_FAILED |
+| qfilm | partial | partial | media: SERVER_EXTRACTION_FAILED |
+| ristoanime | passed | passed | اجتازت العينة المحددة |
+| arabseed | failed | failed | catalog: EMPTY_RESULT |
+| mewsry | partial | partial | media: DIRECT_MEDIA_NOT_FOUND |
+| witanime | failed | failed | catalog: ACCESS_BLOCKED |
+| egydead_live | failed | failed | catalog: EMPTY_RESULT |
+| yallashoot | partial | partial | media: DIRECT_MEDIA_NOT_FOUND |
+| 3isk | partial | partial | media: DIRECT_MEDIA_NOT_FOUND |
+| alooy | passed | passed | اجتازت العينة المحددة |
+| laroza | failed | failed | catalog: NETWORK_TIMEOUT |
 
 
 لا تعلن أن22 مصدرًا تعمل من نجاح بعض العينات. عند حجب أو تغير موقع اطلب الرابط الرسمي بعد تحديد المصدر والمرحلة. لا تبدله بآخر خلسة. ضبط الدومين مختلف عن تعديل بنية المحلل، وكلاهما على الخادم ما دام عقد العميل محفوظًا.
