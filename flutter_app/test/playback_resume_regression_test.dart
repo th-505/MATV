@@ -177,4 +177,51 @@ void main() {
       'source:ahwak:aaaaaaaaaaaaaaaaaaaaaaaa:s2:e21',
     );
   });
+  testWidgets(
+    'a checkpoint from another episode cannot open a resume prompt or seek the player',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final store = await LocalLibraryStore.create();
+      final series = item.copyWith(type: 'series', season: 1);
+      await store.recordProgress(
+        item: series,
+        position: const Duration(minutes: 4),
+        duration: const Duration(minutes: 20),
+        episodeNumber: 1,
+      );
+      final wrong = store.history.single;
+      final api = _FixtureApi();
+      FakeEngine? engine;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            api: api,
+            store: store,
+            item: series.copyWith(episode: 2),
+            title: 'الحلقة 2',
+            episodeNumber: 2,
+            watchEntry: wrong,
+            mediaPath: 'https://media.example/video.mp4',
+            mediaType: 'mp4',
+            playbackMode: 'edge_direct',
+            playerFactory: (uri, type, headers, software) =>
+                engine = FakeEngine(
+                  uri,
+                  mediaType: type,
+                  headers: headers,
+                  software: software,
+                  fail: false,
+                ),
+          ),
+        ),
+      );
+      await settle(tester);
+      expect(find.text('استئناف التشغيل'), findsNothing);
+      expect(engine!.value.position, const Duration());
+      await tester.pumpWidget(const SizedBox());
+      await settle(tester);
+      api.close();
+      store.dispose();
+    },
+  );
 }

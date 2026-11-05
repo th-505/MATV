@@ -453,14 +453,8 @@ jobs:
           version, build = re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$', pathlib.Path('flutter_app/pubspec.yaml').read_text(), re.M).groups()
           report = json.loads(pathlib.Path('device-verification.json').read_text())
           assert report
-          pathlib.Path('/tmp/release-notes.md').write_text(
-              f"Najd TV {version} — beta 3 (build {build}).\n\n"
-              "Independent Ahwak, Brstej and Fosta adapters, refreshable server-driven provider discovery and source-owned episode indexes. Twenty concurrent discovery searches with separate indexing/playback lanes. Source-browser rating parsing, saved provider selection and current MyCima poster metadata. Exact episode-index deduplication, source-specific media resolution and on-demand episode playback. Durable watch checkpoints, resume/restart choice and selected-provider index refresh. OS Picture-in-Picture bridges for Android/iOS and supported Web browsers; physical-device PiP certification is pending. API: https://najdtv.onrender.com. Compact player controls, configurable temporary hold speed, synchronized manual source switching, cast filmographies and Arabic/English display metadata.\n\n"
-              "Adaptive layouts use the actual viewport, pixel ratio, safe insets and accessibility text scale. The latest layout profile is stored locally and hidden from the interface; physical screen inches are not guessed.\n\n"
-              "Packages: Android Mobile ARM64, Android TV ARMv7, unsigned iOS IPA, Windows x64 installer/portable ZIP and macOS DMG. Native packages include the privately supplied original Thmanyah font; public Web uses its licensed fallback and supports local font import.\n\n"
-              "Public application: https://th-505.github.io/NajdTV/\n\n"
-              "The iOS IPA requires external signing. macOS is ad-hoc signed and not notarized; Windows is not Authenticode signed. Automated architecture, checksum, source identity, adaptive layout and Chromium MP4/HLS fixture checks passed. Physical-device certification and availability of every third-party provider are not claimed. Offline HLS downloading remains unsupported.\n\n"
-              f"Source commit: `{os.environ['MITV_SOURCE_COMMIT']}`\n", encoding='utf-8')
+          notes = pathlib.Path('docs/najd/RELEASE_' + version + '.md').read_text()
+          pathlib.Path('/tmp/release-notes.md').write_text(notes + '\n\nSource commit: `' + os.environ['MITV_SOURCE_COMMIT'] + '`\n', encoding='utf-8')
           pathlib.Path('/tmp/mitv-release-version').write_text(version)
           PY
           VERSION="$(cat /tmp/mitv-release-version)"
@@ -471,4 +465,4 @@ jobs:
             case "$ASSET" in *Najd-TV-Flutter-Web/*) continue ;; esac
             PUBLIC_ASSETS+=("$ASSET")
           done
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --prerelease --title "Najd TV $VERSION — Beta 1" --notes-file /tmp/release-notes.md "${PUBLIC_ASSETS[@]}"
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --prerelease --title "Najd TV $VERSION — Beta 5" --notes-file /tmp/release-notes.md "${PUBLIC_ASSETS[@]}"

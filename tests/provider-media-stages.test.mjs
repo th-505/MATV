@@ -13,3 +13,15 @@ test('private player URLs cannot enter the provider resolver fallback',async()=>
  const targets=[];const entry={module:{scrapeServers:async()=>[{url:'https://127.0.0.1/private',type:'embed'}],resolveStream:async target=>{targets.push(target);return null}}};
  assert.deepEqual(await resolveProviderMedia(entry,'provider:episode'),[]);assert.deepEqual(targets,['provider:episode']);
 });
+
+
+test('an observed ninth fallback server is reached with bounded concurrency',async()=>{
+ let active=0,peak=0;const calls=[];const source='https://source.example/work';
+ const entry={module:{scrapeServers:async()=>Array.from({length:10},(_,i)=>({url:'https://player.example/server'+i,format:'iframe'})),resolveStream:async url=>{calls.push(url);active++;peak=Math.max(peak,active);await new Promise(r=>setImmediate(r));active--;return url.endsWith('server9')?{servers:[{url:'https://cdn.example/good.mp4',format:'mp4'}]}:{};}}};
+ const rows=await resolveProviderMedia(entry,source);assert.equal(rows[0].url,'https://cdn.example/good.mp4');assert.equal(calls[0],source);assert(peak<=2);assert(calls.includes('https://player.example/server9'));
+});
+
+test('an incomplete observed mirror scan is explicit instead of a false no-media result',async()=>{
+ let clock=0;const entry={module:{scrapeServers:async()=>[{url:'https://player.example/server',format:'iframe'}],resolveStream:async()=>{clock+=50000;return{};}}};
+ await assert.rejects(resolveProviderMedia(entry,'https://source.example/work',{now:()=>clock}),error=>error.code==='MEDIA_SERVER_SCAN_PARTIAL'&&error.observed_targets===2&&error.attempted_targets===1);
+});

@@ -171,7 +171,9 @@ class EpisodeItem {
       '${json['episode_number'] ?? json['num'] ?? json['number'] ?? ''}',
     );
     return EpisodeItem(
-      id: '${json['episode_id'] ?? json['id'] ?? ''}',
+      id: '${json['episode_id'] ?? json['id'] ?? ''}'.isNotEmpty
+          ? '${json['episode_id'] ?? json['id']}'
+          : '${json['ref'] ?? json['link'] ?? json['href'] ?? ''}',
       number: parsedNumber == null || parsedNumber < 1 ? 1 : parsedNumber,
       title: '${json['title'] ?? json['name'] ?? ''}',
       ref: '${json['ref'] ?? json['link'] ?? json['href'] ?? ''}',

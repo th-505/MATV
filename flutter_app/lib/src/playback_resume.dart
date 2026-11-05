@@ -22,7 +22,8 @@ Future<ResumeAction?> showResumeChoice(
   title: 'متابعة المشاهدة',
   description:
       'توقفت عند ${resumeClock(entry.positionMs)}'
-      '${entry.episodeNumber != null ? ' • الحلقة ${entry.episodeNumber}' : ''}'
+      '${entry.observedNumbers.season != null ? ' • الموسم ${entry.observedNumbers.season}' : ''}'
+      '${entry.observedNumbers.episode != null ? ' • الحلقة ${entry.observedNumbers.episode}' : ''}'
       '${differentSource ? '\nالمصدر الحالي مختلف؛ قد يختلف توقيت المشهد.' : ''}',
   icon: Icons.history,
   options: const [
@@ -40,7 +41,8 @@ Future<ResumeAction?> showResumeChoice(
 String historyPlaybackReference(WatchEntry entry) {
   if (entry.playbackRef.isNotEmpty) return entry.playbackRef;
   final ref = entry.contentRef;
-  final season = entry.metadata?.season, episode = entry.episodeNumber;
+  final season = entry.observedNumbers.season,
+      episode = entry.observedNumbers.episode;
   if (season != null &&
       season > 0 &&
       episode != null &&

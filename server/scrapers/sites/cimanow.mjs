@@ -807,7 +807,7 @@ export async function scrapeServers(urlOrRef, options = {}) {
               url: placeholderUrl,
               type: 'embed',
               verified: false,
-              headers: { Referer: `${activeOrigin}/` }
+              headers: { Referer: watchUrl, ...(cookieHeader ? {Cookie:cookieHeader}: {}) }
             });
           }
         }
@@ -977,6 +977,8 @@ export async function resolveStream(urlOrRef, options = {}) {
 
       if (key && indexStr !== null && csrf) {
         const postRes = await fetchSafeResponse(`${origin}/watch/resolve`, {
+          fetchImpl:options.fetchImpl,
+          dnsLookupImpl:options.dnsLookupImpl,
           providerId: PROVIDER_META.id,
           allowHttp: false,
           allowedHosts: [new URL(origin).hostname],
@@ -989,6 +991,7 @@ export async function resolveStream(urlOrRef, options = {}) {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrf,
+            ...((options.headers?.Cookie||options.headers?.cookie)&&new URL(watchUrl).origin===origin ? {Cookie:options.headers.Cookie||options.headers.cookie}:{}),
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
             Referer: watchUrl
           },

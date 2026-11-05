@@ -10,6 +10,8 @@ import 'cloud_runtime_stub.dart' if (dart.library.io) 'cloud_runtime_io.dart';
 import 'library_store.dart';
 import 'library_sync_record.dart';
 import 'supabase_config.dart';
+import 'app_target.dart';
+import 'watch_identity.dart';
 
 /// Small, owner-scoped adapter: no video URLs, service keys or Realtime sockets.
 abstract interface class LibraryCloudTransport {
@@ -21,7 +23,12 @@ abstract interface class LibraryCloudTransport {
   });
 }
 
-class SupabaseLibraryTransport implements LibraryCloudTransport {
+abstract interface class HistoryCheckpointTransport {
+  Future<LibrarySyncRecord?> checkpoint(String itemKey);
+}
+
+class SupabaseLibraryTransport
+    implements LibraryCloudTransport, HistoryCheckpointTransport {
   SupabaseLibraryTransport(this.client, this.ownerId);
   final SupabaseClient client;
   @override
@@ -61,6 +68,18 @@ class SupabaseLibraryTransport implements LibraryCloudTransport {
         )
         .timeout(const Duration(seconds: 20));
     return _rows(result);
+  }
+
+  @override
+  Future<LibrarySyncRecord?> checkpoint(String itemKey) async {
+    _checkOwner();
+    if (utf8.encode(itemKey).length > 1536) {
+      throw const FormatException('INVALID_HISTORY_KEY');
+    }
+    final result = await client
+        .rpc('najd_history_checkpoint', params: {'p_item_key': itemKey})
+        .timeout(const Duration(seconds: 8));
+    return _rows(result).firstOrNull;
   }
 
   List<LibrarySyncRecord> _rows(dynamic result) {
@@ -202,6 +221,53 @@ class CloudLibrarySync with WidgetsBindingObserver {
     await (await current)?.close();
   }
 
+  static Future<void> refreshForPlayback(
+    LocalLibraryStore store, {
+    required String contentRef,
+    String episodeId = '',
+    int? seasonNumber,
+    int? episodeNumber,
+    String playbackRef = '',
+  }) async {
+    final pending = _startingDefault;
+    if (pending == null) return;
+    try {
+      final sync = await pending.timeout(const Duration(milliseconds: 1500));
+      if (sync != null && identical(sync.store, store)) {
+        await sync
+            .refreshCheckpoint(
+              contentRef: contentRef,
+              episodeId: episodeId,
+              seasonNumber: seasonNumber,
+              episodeNumber: episodeNumber,
+              playbackRef: playbackRef,
+            )
+            .timeout(const Duration(milliseconds: 1500));
+      }
+    } catch (_) {
+      /* The durable local checkpoint remains usable. */
+    }
+  }
+
+  static Future<void> flushCheckpoint(LocalLibraryStore store) async {
+    final pending = _startingDefault;
+    if (pending == null) return;
+    try {
+      final sync = await pending;
+      if (sync != null && identical(sync.store, store)) {
+        await sync.syncNow(flushHistory: true);
+      }
+    } catch (_) {}
+  }
+
+  static Future<String?> installationOwnerId() async {
+    final sync = await _startingDefault;
+    if (sync?.transport is AnonymousLibraryTransport) {
+      await (sync!.transport as AnonymousLibraryTransport).prepare();
+    }
+    return sync?.transport.ownerId;
+  }
+
   static const deviceIdKey = 'mitv.device.uuid.v1';
   static Future<void> refreshAccountContext() async {
     final sync = await _startingDefault;
@@ -223,6 +289,10 @@ class CloudLibrarySync with WidgetsBindingObserver {
       'najd_link_revoke',
       'najd_link_members',
     };
+    if (isTvTarget &&
+        {'najd_link_create', 'najd_link_approve'}.contains(name)) {
+      throw StateError('TV_RECEIVER_ONLY');
+    }
     if (!allowed.contains(name)) {
       throw ArgumentError('ACCOUNT_ACTION_NOT_ALLOWED');
     }
@@ -381,7 +451,7 @@ class CloudLibrarySync with WidgetsBindingObserver {
     SharedPreferences? preferences,
     DateTime Function()? clock,
     Duration historyInterval = const Duration(seconds: 5),
-    Duration pollInterval = const Duration(minutes: 5),
+    Duration pollInterval = const Duration(seconds: 30),
     bool observeLifecycle = true,
     bool syncImmediately = true,
   }) async {
@@ -440,9 +510,63 @@ class CloudLibrarySync with WidgetsBindingObserver {
     );
   }
 
-  Future<void> syncNow() {
+  Future<void> refreshCheckpoint({
+    required String contentRef,
+    String episodeId = '',
+    int? seasonNumber,
+    int? episodeNumber,
+    String playbackRef = '',
+  }) async {
+    if (transport is! HistoryCheckpointTransport) {
+      await syncNow();
+      return;
+    }
+    if (transport is AnonymousLibraryTransport) {
+      await (transport as AnonymousLibraryTransport).prepare();
+    }
+    final id = stableWatchEpisodeId(
+      contentRef: contentRef,
+      episodeId: episodeId,
+      playbackRef: playbackRef,
+      season: seasonNumber,
+      episode: episodeNumber,
+    );
+    final primary = id.isEmpty ? contentRef : '$contentRef::$id';
+    final legacy = episodeId.isEmpty ? contentRef : '$contentRef::$episodeId';
+    final compatible = <LibrarySyncRecord>[];
+    for (final key in {primary, legacy, contentRef}) {
+      final row = await (transport as HistoryCheckpointTransport).checkpoint(
+        key,
+      );
+      if (row == null) continue;
+      if (row.kind != 'history' ||
+          row.itemKey != key ||
+          row.userId.isNotEmpty && row.userId != transport.ownerId) {
+        throw const FormatException('LIBRARY_OWNER_MISMATCH');
+      }
+      if (row.deleted) {
+        if (key == primary) compatible.add(row);
+        continue;
+      }
+      final entry = WatchEntry.fromJson(row.metadata);
+      if (entry.contentRef == contentRef &&
+          entry.matchesEpisode(
+            episodeId: episodeId,
+            seasonNumber: seasonNumber,
+            episodeNumber: episodeNumber,
+            playbackRef: playbackRef,
+          )) {
+        compatible.add(row);
+      }
+    }
+    await store.mergeCloudRows(compatible);
+  }
+
+  bool _flushRequested = false;
+  Future<void> syncNow({bool flushHistory = false}) {
+    if (flushHistory) _flushRequested = true;
     if (_closed ||
-        !_active ||
+        (!_active && !flushHistory) ||
         _retryAfter != null && _clock().toUtc().isBefore(_retryAfter!)) {
       return Future.value();
     }
@@ -452,7 +576,13 @@ class CloudLibrarySync with WidgetsBindingObserver {
     _running = operation;
     return operation.whenComplete(() {
       _running = null;
-      _onChange();
+      if (_flushRequested &&
+          !_closed &&
+          (_retryAfter == null || !_clock().toUtc().isBefore(_retryAfter!))) {
+        unawaited(syncNow(flushHistory: true));
+      } else {
+        _onChange();
+      }
     });
   }
 
@@ -481,7 +611,10 @@ class CloudLibrarySync with WidgetsBindingObserver {
         if (rows.length < 250) break;
       }
       final now = _clock().toUtc();
+      final flushHistory = _flushRequested;
+      _flushRequested = false;
       final canHistory =
+          flushHistory ||
           _lastHistoryPush == null ||
           now.difference(_lastHistoryPush!) >= historyInterval;
       final pending = store.pendingCloudRows
@@ -505,7 +638,7 @@ class CloudLibrarySync with WidgetsBindingObserver {
       lastErrorCode = null;
       _retryAfter = null;
     } catch (_) {
-      // Retain pending rows durably. Backoff is the existing 5-minute poll,
+      // Retain pending rows durably. Backoff follows the bounded foreground poll,
       // rather than a per-frame/per-error retry loop that drains the free quota.
       lastErrorCode = 'LIBRARY_SYNC_UNAVAILABLE';
       _retryAfter = _clock().toUtc().add(pollInterval);
@@ -514,6 +647,9 @@ class CloudLibrarySync with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      unawaited(syncNow(flushHistory: true));
+    }
     _active = state == AppLifecycleState.resumed;
     if (!_active) _debounce?.cancel();
     if (_active) unawaited(syncNow());

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'library_sync_record.dart';
+import 'watch_identity.dart';
 import 'models.dart';
 
 String _stableReference(String raw) {
@@ -31,6 +32,8 @@ class WatchEntry {
     required this.updatedAtMs,
     this.episodeId = '',
     this.episodeNumber,
+    this.seasonNumber,
+    this.sourceEpisodeId = '',
     this.metadata,
     this.selectedSourceRef = '',
     this.playbackRef = '',
@@ -49,6 +52,8 @@ class WatchEntry {
   final int updatedAtMs;
   final String episodeId;
   final int? episodeNumber;
+  final int? seasonNumber;
+  final String sourceEpisodeId;
   final CatalogItem? metadata;
   final String selectedSourceRef;
   final String playbackRef;
@@ -56,6 +61,53 @@ class WatchEntry {
   final String edition;
   final bool timelineVerified;
   final int? timelineOffsetMs;
+  ({int? season, int? episode}) get observedNumbers => watchNumbers(
+    playbackRef.isEmpty ? episodeId : playbackRef,
+    season: seasonNumber ?? metadata?.season,
+    episode: episodeNumber,
+  );
+  bool matchesEpisode({
+    String episodeId = '',
+    int? seasonNumber,
+    int? episodeNumber,
+    String playbackRef = '',
+  }) {
+    final expected = watchNumbers(
+      playbackRef,
+      season: seasonNumber,
+      episode: episodeNumber,
+    );
+    final saved = observedNumbers;
+    if (expected.season != null &&
+        saved.season != null &&
+        expected.season != saved.season) {
+      return false;
+    }
+    if (expected.episode != null &&
+        saved.episode != null &&
+        expected.episode != saved.episode) {
+      return false;
+    }
+    if (expected.season != null &&
+        expected.episode != null &&
+        saved.season == expected.season &&
+        saved.episode == expected.episode) {
+      return true;
+    }
+    if (playbackRef.isNotEmpty &&
+        playbackRef != contentRef &&
+        this.playbackRef == playbackRef) {
+      return true;
+    }
+    if (expected.season != null && saved.season == null) return false;
+    if (episodeId.isNotEmpty) {
+      return this.episodeId == episodeId || sourceEpisodeId == episodeId;
+    }
+    return this.episodeId.isEmpty &&
+        saved.episode == null &&
+        expected.episode == null;
+  }
+
   String get key => episodeId.isEmpty ? contentRef : '$contentRef::$episodeId';
   double get progress =>
       durationMs <= 0 ? 0 : (positionMs / durationMs).clamp(0, 1);
@@ -79,6 +131,8 @@ class WatchEntry {
     'updated_at_ms': updatedAtMs,
     'episode_id': _stableReference(episodeId),
     'episode_number': episodeNumber,
+    'season_number': seasonNumber,
+    'source_episode_id': _stableReference(sourceEpisodeId),
     'catalog_item': catalogItem.toJson(),
     'selected_source_ref': _stableReference(selectedSourceRef),
     'playback_ref': _stableReference(playbackRef),
@@ -104,6 +158,8 @@ class WatchEntry {
     updatedAtMs: int.tryParse('${json['updated_at_ms'] ?? 0}') ?? 0,
     episodeId: _stableReference('${json['episode_id'] ?? ''}'),
     episodeNumber: int.tryParse('${json['episode_number'] ?? ''}'),
+    seasonNumber: int.tryParse('${json['season_number'] ?? ''}'),
+    sourceEpisodeId: _stableReference('${json['source_episode_id'] ?? ''}'),
     metadata: json['catalog_item'] is Map
         ? CatalogItem.fromJson(
             (json['catalog_item'] as Map).cast<String, dynamic>(),
@@ -127,7 +183,7 @@ class LocalLibraryStore extends ChangeNotifier {
   static const _searchHistoryKey = 'search.history.v1';
   static const _searchSourceKey = 'search.source.v1';
   static const _librarySortKey = 'library.sort.v1';
-  static const _historyLimit = 80;
+  static const recentHistoryLimit = 80;
   static const _searchHistoryLimit = 12;
   final SharedPreferences _prefs;
   final DateTime Function() _clock;
@@ -159,7 +215,24 @@ class LocalLibraryStore extends ChangeNotifier {
   List<WatchEntry> get history {
     final values = _history.values.toList()
       ..sort((a, b) => b.updatedAtMs.compareTo(a.updatedAtMs));
-    return List.unmodifiable(values);
+    final seen = <String>{};
+    return List.unmodifiable(
+      values.where((entry) {
+        final n = entry.observedNumbers;
+        if (n.season != null && n.episode != null) {
+          final deletion =
+              _changes['history::${entry.contentRef}::s${n.season}:e${n.episode}'];
+          if (deletion?.deleted == true &&
+              entry.updatedAtMs <= deletion!.updatedAt.millisecondsSinceEpoch) {
+            return false;
+          }
+        }
+        final identity = n.season != null && n.episode != null
+            ? '${entry.contentRef}::s${n.season}:e${n.episode}'
+            : entry.key;
+        return seen.add(identity);
+      }),
+    );
   }
 
   List<WatchEntry> get continueWatching => history
@@ -168,15 +241,44 @@ class LocalLibraryStore extends ChangeNotifier {
             entry.positionMs >= 5000 &&
             (entry.durationMs <= 0 || entry.progress < .95),
       )
+      .take(recentHistoryLimit)
       .toList(growable: false);
   bool isFavorite(String contentRef) => _favorites.containsKey(contentRef);
-  WatchEntry? resumeEntry(String contentRef, {String episodeId = ''}) =>
-      _history[episodeId.isEmpty ? contentRef : '$contentRef::$episodeId'];
-  Duration resumePosition(String contentRef, {String episodeId = ''}) =>
-      Duration(
-        milliseconds:
-            resumeEntry(contentRef, episodeId: episodeId)?.positionMs ?? 0,
-      );
+  WatchEntry? resumeEntry(
+    String contentRef, {
+    String episodeId = '',
+    int? seasonNumber,
+    int? episodeNumber,
+    String playbackRef = '',
+  }) => history
+      .where(
+        (entry) =>
+            entry.contentRef == contentRef &&
+            entry.matchesEpisode(
+              episodeId: episodeId,
+              seasonNumber: seasonNumber,
+              episodeNumber: episodeNumber,
+              playbackRef: playbackRef,
+            ),
+      )
+      .firstOrNull;
+  Duration resumePosition(
+    String contentRef, {
+    String episodeId = '',
+    int? seasonNumber,
+    int? episodeNumber,
+    String playbackRef = '',
+  }) => Duration(
+    milliseconds:
+        resumeEntry(
+          contentRef,
+          episodeId: episodeId,
+          seasonNumber: seasonNumber,
+          episodeNumber: episodeNumber,
+          playbackRef: playbackRef,
+        )?.positionMs ??
+        0,
+  );
   List<LibrarySyncRecord> get pendingCloudRows {
     final rows =
         _pending
@@ -330,8 +432,16 @@ class LocalLibraryStore extends ChangeNotifier {
       positionMs: position.inMilliseconds.clamp(0, 604800000),
       durationMs: duration.inMilliseconds.clamp(0, 604800000),
       updatedAtMs: timestamp.millisecondsSinceEpoch,
-      episodeId: episodeId,
+      episodeId: stableWatchEpisodeId(
+        contentRef: item.ref,
+        episodeId: episodeId,
+        playbackRef: playbackRef,
+        season: item.season,
+        episode: episodeNumber,
+      ),
       episodeNumber: episodeNumber,
+      seasonNumber: item.season,
+      sourceEpisodeId: episodeId,
       metadata: CatalogItem.fromJson(item.toJson()),
       selectedSourceRef: _stableReference(selectedSourceRef),
       playbackRef: _stableReference(playbackRef),
@@ -342,10 +452,6 @@ class LocalLibraryStore extends ChangeNotifier {
     );
     _history[entry.key] = entry;
     _change('history', entry.key, entry.toJson());
-    for (final old in history.skip(_historyLimit)) {
-      _history.remove(old.key);
-      _change('history', old.key, const {}, deleted: true);
-    }
     await _persistLibrary();
     _notify();
   }
@@ -446,7 +552,10 @@ class LocalLibraryStore extends ChangeNotifier {
         _history.remove(row.itemKey);
         return true;
       }
-      final entry = WatchEntry.fromJson(row.metadata);
+      final entry = WatchEntry.fromJson({
+        ...row.metadata,
+        'updated_at_ms': row.updatedAt.millisecondsSinceEpoch,
+      });
       if (entry.key != row.itemKey || entry.contentRef.isEmpty) return false;
       _history[row.itemKey] = entry;
       return true;

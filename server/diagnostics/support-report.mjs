@@ -36,7 +36,7 @@ const PLATFORMS=['tv','mobile','ios','desktop','web','native-unknown','unknown']
 const CLIENT_FAILURES=new Set(['NATIVE_DECODER_ERROR','BUFFER_STALLED','PLAYER_START_FAILED','NATIVE_PLAYBACK_FAILED']);
 const clientVersion=value=>typeof value==='string'&&value.length<=80&&/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]{1,30})?(?:\+[0-9A-Za-z.-]{1,30})?$/.test(value)&&text(value,80)===value?value:null;
 const clientBuild=value=>Number.isSafeInteger(value)&&value>0&&value<=2147483647?value:null;
-function failureScope(reason){if(CLIENT_FAILURES.has(reason))return 'client_playback';if(['NETWORK_TIMEOUT','ACCESS_BLOCKED','UNSAFE_URL','DOMAIN_SUSPENDED','LOGIN_REQUIRED'].includes(reason))return 'source_network';if(['ENTRY_GATE','DIRECT_MEDIA_NOT_FOUND','MEDIA_READ_FAILED','MEDIA_CONTAINER_UNAVAILABLE','IDENTITY_UNCONFIRMED','YEAR_CONFLICT','TYPE_CONFLICT','RELEASE_YEAR_MISSING'].includes(reason))return 'source_catalog';return reason?.startsWith('HARVEST_')?'server':'unknown';}
+function failureScope(reason){if(CLIENT_FAILURES.has(reason))return 'client_playback';if(['NETWORK_TIMEOUT','ACCESS_BLOCKED','UNSAFE_URL','DOMAIN_SUSPENDED','LOGIN_REQUIRED'].includes(reason))return 'source_network';if(['ENTRY_GATE','MEDIA_SERVER_SCAN_PARTIAL','DIRECT_MEDIA_NOT_FOUND','MEDIA_READ_FAILED','MEDIA_CONTAINER_UNAVAILABLE','IDENTITY_UNCONFIRMED','YEAR_CONFLICT','TYPE_CONFLICT','RELEASE_YEAR_MISSING'].includes(reason))return 'source_catalog';return reason?.startsWith('HARVEST_')?'server':'unknown';}
 
 /** Last defensive pass: unknown nested keys are discarded, never stringified. */
 export function redactSupportValue(value,{depth=0}={}){
@@ -105,6 +105,7 @@ const guidance={
  YEAR_CONFLICT:['سنة العمل لدى المصدر مختلفة','أُبقي المصدر منفصلًا حتى لا تُعرض نسخة لعمل آخر.'],
  TYPE_CONFLICT:['نوع العمل لدى المصدر مختلف','قد تكون النتيجة فيلمًا أو جزءًا مختلفًا؛ أرسل التقرير للمراجعة.'],
  RELEASE_YEAR_MISSING:['المصدر لا يعرض سنة إصدار واضحة','يحتاج القاشط أدلة إضافية؛ تاريخ رفع الصفحة ليس سنة العمل.'],
+ MEDIA_SERVER_SCAN_PARTIAL:['لم تكتمل تجربة كل خوادم المصدر ضمن ميزانية الفحص','هذه نتيجة جزئية وليست تأكيدًا لغياب الفيديو؛ أعد المحاولة أو افحص خادمًا آخر.'],
  DIRECT_MEDIA_NOT_FOUND:['لم نجد رابطًا اجتاز فحص الوسائط بعد الفهرسة','ظهور الحلقات لا يعني جاهزية تشغيلها؛ التقرير يبين آخر مرحلة.'],
  MEDIA_READ_FAILED:['تعذر قراءة عينة من ملف الفيديو','الرابط لم يجتز التحقق؛ لم نعتبر فحص العنوان وحده نجاح تشغيل.'],
  MEDIA_CONTAINER_UNAVAILABLE:['استجابة الرابط ليست فيديو موثقًا','يحتاج المطور مراجعة صفحة المشاهدة أو صيغة الوسائط.'],

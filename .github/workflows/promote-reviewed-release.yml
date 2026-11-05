@@ -66,12 +66,12 @@ jobs:
           version,build=re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$',pathlib.Path('flutter_app/pubspec.yaml').read_text(),re.M).groups()
           with open('device-verification.json','w') as output:
               subprocess.run(['python3','scripts/verify_device_artifacts.py','device-artifacts','https://najdtv.onrender.com',version,build,os.environ['SOURCE_SHA']],stdout=output,check=True)
-          notes=pathlib.Path('docs/najd/RELEASE_2.0.3.md').read_text()
+          notes=pathlib.Path('docs/najd/RELEASE_'+version+'.md').read_text()
           pathlib.Path('/tmp/review-release-notes.md').write_text(notes+'\n\nClient source: `'+os.environ['SOURCE_SHA']+'`\nReview run: '+os.environ['REVIEW_RUN_ID']+'\n')
           assets=[]
           for path in pathlib.Path('device-artifacts').glob('*/*'):
               if path.parent.name=='Najd-TV-Flutter-Web': continue
               if path.suffix in {'.apk','.ipa','.exe','.zip','.dmg','.sha256'} or path.name=='macOS-report.json': assets.append(str(path))
           assert assets
-          subprocess.run(['gh','release','create','v'+version,'--target',os.environ['SOURCE_SHA'],'--prerelease','--title','Najd TV '+version+' — Beta 4','--notes-file','/tmp/review-release-notes.md',*assets,'device-verification.json'],check=True)
+          subprocess.run(['gh','release','create','v'+version,'--target',os.environ['SOURCE_SHA'],'--prerelease','--title','Najd TV '+version+' — Beta 5','--notes-file','/tmp/review-release-notes.md',*assets,'device-verification.json'],check=True)
           PY
