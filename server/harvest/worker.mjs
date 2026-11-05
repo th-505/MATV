@@ -5,8 +5,9 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,ba
  let lanes=typeof store?.claimLane==='function'?{search:20,index:4,media:2}:null;
  const nextSweep={search:0,index:0,media:0};const retryAt={search:0,index:0,media:0};const failures={search:0,index:0,media:0};
  const laneActive={search:0,index:0,media:0};const lanePolling=new Set();const known={search:new Set(),index:new Set(),media:new Set()};let knownSupported=typeof store?.claimKnown==='function';
- function remember(job){
+ function remember(job,interactive=false){
   if(!knownSupported||!job?.job_key)return;
+  if(!scanBacklog&&job.stage==='episode'&&!interactive&&Number(job.priority||0)<10)return;
   const lane=job.stage==='episode'?'media':job.stage==='provider'&&job.payload?.phase==='search'?'search':'index';
   const keys=known[lane];keys.add(job.job_key);if(keys.size>1000)keys.delete(keys.values().next().value);
  }
@@ -55,5 +56,5 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,ba
  }
  function start(){if(!stopped||!store)return;stopped=false;timer=setInterval(pulse,pollMs);timer.unref?.();void pulse()}
  async function stop(){stopped=true;clearInterval(timer);await Promise.allSettled([...running])}
- return {start,stop,wake:({jobs=[]}={})=>{for(const job of jobs)remember(job);start();void pulse(true);return {configured:Boolean(store),active,concurrency:lanes?26:concurrency,lanes:lanes?{...laneActive}:null}},metrics:()=>({configured:Boolean(store),active,concurrency:lanes?26:concurrency,lanes:lanes?{...laneActive}:null,polling,worker})};
+ return {start,stop,wake:({jobs=[]}={})=>{for(const job of jobs)remember(job,true);start();void pulse(true);return {configured:Boolean(store),active,concurrency:lanes?26:concurrency,lanes:lanes?{...laneActive}:null}},metrics:()=>({configured:Boolean(store),active,concurrency:lanes?26:concurrency,lanes:lanes?{...laneActive}:null,polling,worker})};
 }

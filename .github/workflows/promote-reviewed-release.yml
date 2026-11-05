@@ -1,0 +1,77 @@
+name: Publish verified review packages
+on:
+  workflow_dispatch:
+    inputs:
+      review_run_id:
+        description: Successful unified six-target review run to verify and publish
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: najd-reviewed-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REVIEW_RUN_ID: ${{ inputs.review_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate trusted review source
+        id: source
+        run: |
+          set -euo pipefail
+          [[ "$REVIEW_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REVIEW_RUN_ID" > /tmp/review-run.json
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          run=json.loads(Path('/tmp/review-run.json').read_text())
+          assert run['status']=='completed' and run['conclusion']=='success'
+          assert run['event']=='workflow_dispatch'
+          assert run['path']=='.github/workflows/mobile-trial.yml'
+          assert run['head_repository']['full_name']==os.environ['GITHUB_REPOSITORY']
+          source=run['head_sha']; assert re.fullmatch('[a-f0-9]{40}', source)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output: output.write('sha='+source+'\n')
+          PY
+      - name: Require unchanged application and artifact verifier
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$SOURCE_SHA" HEAD
+          git diff --exit-code "$SOURCE_SHA" HEAD -- flutter_app shared assets/brand scripts/verify_device_artifacts.py
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.review_run_id }}
+          path: device-artifacts
+      - name: Reverify and publish the complete package set
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib, re, subprocess
+          version,build=re.search(r'^version: (\d+\.\d+\.\d+)\+(\d+)$',pathlib.Path('flutter_app/pubspec.yaml').read_text(),re.M).groups()
+          with open('device-verification.json','w') as output:
+              subprocess.run(['python3','scripts/verify_device_artifacts.py','device-artifacts','https://najdtv.onrender.com',version,build,os.environ['SOURCE_SHA']],stdout=output,check=True)
+          notes=pathlib.Path('docs/najd/RELEASE_2.0.3.md').read_text()
+          pathlib.Path('/tmp/review-release-notes.md').write_text(notes+'\n\nClient source: `'+os.environ['SOURCE_SHA']+'`\nReview run: '+os.environ['REVIEW_RUN_ID']+'\n')
+          assets=[]
+          for path in pathlib.Path('device-artifacts').glob('*/*'):
+              if path.parent.name=='Najd-TV-Flutter-Web': continue
+              if path.suffix in {'.apk','.ipa','.exe','.zip','.dmg','.sha256'} or path.name=='macOS-report.json': assets.append(str(path))
+          assert assets
+          subprocess.run(['gh','release','create','v'+version,'--target',os.environ['SOURCE_SHA'],'--prerelease','--title','Najd TV '+version+' — Beta 4','--notes-file','/tmp/review-release-notes.md',*assets,'device-verification.json'],check=True)
+          PY

@@ -154,3 +154,13 @@ test('on-demand mode never sweeps the global backlog and still starts twenty per
  await new Promise(r=>setImmediate(r));assert.equal(started,20);assert.equal(sweeps,0);
  for(const release of releases)release({});await worker.stop();
 });
+
+test('on-demand indexing does not resolve all background episode media; an explicit episode still starts',async()=>{
+ let notify;const claimed=[];let started=0;
+ const store={onQueued:fn=>{notify=fn},claimLane:async()=>{throw Error('NO_GLOBAL_SCAN')},claimKnown:async(w,n,lane,keys)=>{claimed.push(...keys);return keys.map(job_key=>({job_key,stage:'episode'}))},complete:async()=>{},heartbeat:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,scanBacklog:false,handlers:{episode:async()=>{started++;return{}}},pollMs:60000});
+ worker.start();for(let i=0;i<100;i++)notify({job_key:'background-'+i,stage:'episode',priority:4});
+ await new Promise(r=>setImmediate(r));assert.deepEqual(claimed,[]);assert.equal(started,0);
+ worker.wake({jobs:[{job_key:'background-19',stage:'episode'}]});await new Promise(r=>setImmediate(r));
+ assert.deepEqual(claimed,['background-19']);assert.equal(started,1);await worker.stop();
+});
