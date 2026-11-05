@@ -239,3 +239,16 @@ test('beta follows observed MyCima season switcher links without following unrel
  const graph=scanSourceGraph(html,parent,{provider:'mycima',domains:[new URL(base).hostname],details:{title:'خالتي قماشة',episodes:[]}});
  assert(graph.parents.includes(base+'/series/work/season-2/'));assert(!graph.parents.includes(base+'/series/unrelated/season-3/'));
 });
+
+test('Beta shows one card per observed episode while retaining alternative source references',async()=>{
+ const original=pages.get(parent),alternative=base+'/watch/work/episode-19-alt/';
+ pages.set(parent,original+'<a href="'+alternative+'">خالتي قماشة الحلقة 19</a>');
+ try{
+  const {service}=fixture();const admitted=await service.request(ref(seed));await service.settle();
+  const details=await service.details(admitted.ref),status=await service.status(admitted.ref);
+  assert.equal(details.episodes.length,4);assert.equal(details.number_of_episodes,4);
+  assert.equal(new Set(details.episodes.map(e=>e.ref)).size,4);
+  assert.equal(status.progress.episodes,4);assert.equal(status.progress.observed_references,5);
+  assert.equal((await service.request(ref(alternative))).ref,admitted.ref);await service.settle();
+ }finally{pages.set(parent,original);}
+});
