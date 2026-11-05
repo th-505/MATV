@@ -1,0 +1,11 @@
+digraph G { rankdir=TB; graph [bgcolor="#15121f",pad="0.35",nodesep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#30253e",color="#a98bdc",fontcolor="white",fontname="DejaVu Sans",margin="0.2"]; edge [color="#bca1e6",arrowsize=0.7];
+"Observed series or episode result" -> "Provider details";
+"Provider details" -> "Series root / observed pagination";
+"Series root / observed pagination" -> "Preserve source episode numbers";
+"Preserve source episode numbers" -> "User selects episode";
+"User selects episode" -> "Observed hosting servers";
+"Observed hosting servers" -> "Bounded resolver fallback";
+"Bounded resolver fallback" -> "Verified direct MP4 / HLS";
+"Bounded resolver fallback" -> "Explicit partial / blocked / timeout";
+"Verified direct MP4 / HLS" -> "Player";
+}

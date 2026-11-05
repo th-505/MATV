@@ -1,0 +1,14 @@
+digraph G { rankdir=TB; graph [bgcolor="#15121f",pad="0.35",nodesep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#30253e",color="#a98bdc",fontcolor="white",fontname="DejaVu Sans",margin="0.2"]; edge [color="#bca1e6",arrowsize=0.7];
+"Flutter clients" -> "API / Render";
+"Flutter clients" -> "Local durable library";
+"Flutter clients" -> "Supabase Auth + owner RPC";
+"API / Render" -> "Najd / TMDB metadata";
+"API / Render" -> "Beta provider catalogue";
+"Najd / TMDB metadata" -> "Isolated discovery lanes";
+"Beta provider catalogue" -> "Isolated Beta lanes";
+"Isolated discovery lanes" -> "Guarded provider HTTP";
+"Isolated Beta lanes" -> "Guarded provider HTTP";
+"Guarded provider HTTP" -> "Observed episodes / hosting mirrors";
+"Observed episodes / hosting mirrors" -> "Container probe";
+"Container probe" -> "Player / downloads";
+}

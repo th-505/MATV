@@ -1,0 +1,12 @@
+digraph G { rankdir=TB; graph [bgcolor="#15121f",pad="0.35",nodesep="0.35"]; node [shape=box,style="rounded,filled",fillcolor="#30253e",color="#a98bdc",fontcolor="white",fontname="DejaVu Sans",margin="0.2"]; edge [color="#bca1e6",arrowsize=0.7];
+"Open selected episode" -> "Season + episode identity";
+"Season + episode identity" -> "Bounded exact cloud lookup";
+"Bounded exact cloud lookup" -> "Newest compatible local/cloud checkpoint";
+"Newest compatible local/cloud checkpoint" -> "Resume or restart";
+"Resume or restart" -> "Wait for usable media duration";
+"Wait for usable media duration" -> "Seek only matching episode";
+"Seek only matching episode" -> "Local progress checkpoint";
+"Local progress checkpoint" -> "Cadenced / urgent cloud push";
+"Cadenced / urgent cloud push" -> "Linked receiver reads same owner";
+"Bounded exact cloud lookup" -> "Offline: retain local progress";
+}
