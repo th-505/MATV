@@ -17,13 +17,19 @@ def signing_values(env):
                 if name in result: raise ValueError('DUPLICATE_ANDROID_SIGNING_FIELD')
                 result[name] = value
             return result
-        try:
-            bundle = json.loads(raw, object_pairs_hook=unique)
-        except json.JSONDecodeError:
-            # Support copying exactly the four JSON members without outer braces.
-            # No field/value repair or key generation; certificate pin still governs.
-            try: bundle = json.loads('{' + raw + '}', object_pairs_hook=unique)
-            except json.JSONDecodeError: raise ValueError('INVALID_ANDROID_SIGNING_BUNDLE_JSON') from None
+        bundle = None
+        # Clipboard selection can omit either outer brace; values are never repaired.
+        # Every supported form must still decode as the exact four-field object.
+        for candidate in (raw, '{'+raw, raw+'}', '{'+raw+'}'):
+            try:
+                decoded = json.loads(candidate, object_pairs_hook=unique)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(decoded, dict):
+                bundle = decoded
+                break
+        if bundle is None:
+            raise ValueError('INVALID_ANDROID_SIGNING_BUNDLE_JSON')
         if not isinstance(bundle, dict) or set(bundle) != set(NAMES):
             raise ValueError('INVALID_ANDROID_SIGNING_BUNDLE')
         values = {name: values[name] or bundle[name] for name in NAMES}

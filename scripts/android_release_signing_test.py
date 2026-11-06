@@ -34,3 +34,11 @@ try:verify('Signer #1 certificate SHA-256 digest: '+'b'*64, 'a'*64)
 except ValueError as e:assert 'IDENTITY_CHANGED' in str(e)
 else:raise AssertionError('Unexpected signing key was accepted')
 print('Android release signing identity mismatch is rejected.')
+
+from configure_android_release_signing import signing_values
+for fragment in [json.dumps({name:env[name] for name in NAMES})[1:],json.dumps({name:env[name] for name in NAMES})[:-1]]:
+    assert signing_values({'NAJD_ANDROID_SIGNING_BUNDLE':fragment})=={name:env[name] for name in NAMES}
+try:signing_values({'NAJD_ANDROID_SIGNING_BUNDLE':'"NAJD_ANDROID_KEYSTORE_BASE64":"unknown"'})
+except ValueError:pass
+else:raise AssertionError('Incomplete signing material accepted')
+print('Clipboard brace normalization preserves exact required fields; incomplete inputs rejected.')
