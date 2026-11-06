@@ -22,7 +22,10 @@ with tempfile.TemporaryDirectory() as directory:
     key=configure(root,{'NAJD_ANDROID_SIGNING_BUNDLE':json.dumps({name:env[name] for name in NAMES}), 'RUNNER_TEMP':directory})
     assert key.read_bytes()==b'fixture-not-a-real-key'*4
     assert 'fixture-store-secret' not in file.read_text()
-    assert 'NAJD_ANDROID_SIGNING_BUNDLE' in file.read_text()
+    assert 'signing-input.json' in file.read_text()
+    file.write_text(original)
+    configure(root,{'NAJD_ANDROID_SIGNING_BUNDLE':json.dumps({name:env[name] for name in NAMES})[1:-1], 'RUNNER_TEMP':directory})
+    assert 'signing-input.json' in file.read_text()
 print('Android signing: missing-key fail closed, persistent configuration, no plaintext passwords and private file permissions passed.')
 
 from check_android_signing_certificate import verify
