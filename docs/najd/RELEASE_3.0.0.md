@@ -1,6 +1,6 @@
 # NajdTV v3.0.0
 
-- Three original Thmanyah families/fifteen weights: OTF in native packages and WOFF2 on Web. Original files, manifest weights and Arabic/Latin coverage verified.
+- Font import was removed from Settings; bundled Thmanyah is automatic. Three original Thmanyah families/fifteen weights: OTF in native packages and WOFF2 on Web. Original files, manifest weights and Arabic/Latin coverage verified.
 -54 TMDB-based shelves, with Continue Watching/My List before top-ten ranking, More/pagination and lazy loading. These are not IMDb charts. Language filters and paginated browsing remain available.
 - Source resolution retains observed backup servers and quality variants, avoids the former first-success/first-probe and eight-link cutoffs, preserves the HLS master/audio groups, and exposes actual quality/decoded dimensions. Missing variants are never invented.
 - Web fullscreen/Safari PiP fallbacks, previous/next episode controls, elapsed/remaining display, stable season-only updates, metadata backup/import and clearer source states.

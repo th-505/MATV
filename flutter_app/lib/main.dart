@@ -9,7 +9,6 @@ import 'src/account_settings.dart';
 import 'src/stitch_design.dart';
 import 'src/najd_panels.dart';
 import 'src/product_version.dart';
-import 'src/font_addons.dart';
 import 'src/najd_theme.dart';
 
 import 'dart:async';
@@ -68,7 +67,7 @@ class _MitvAppState extends State<MitvApp> {
       });
     }
     unawaited(NajdAppearance.instance.load());
-    unawaited(loadPrivateNajdFonts().then((_) => NajdFontAddon.restore()));
+    unawaited(loadPrivateNajdFonts());
     _cloudFuture = storeFuture
         .then(CloudLibrarySync.startDefault)
         .catchError((Object _, StackTrace _) => null);
@@ -1290,7 +1289,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
 
-              const NajdSurface(child: NajdFontAddonControl()),
               if (isTvTarget && widget.pointer != null)
                 AnimatedBuilder(
                   animation: widget.pointer!,

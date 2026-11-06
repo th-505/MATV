@@ -84,6 +84,8 @@ void main() {
       final requestsBeforeCleanup = List<String>.of(api.categories);
       await selectShellDestination(tester, 'settings');
       await tester.pumpAndSettle();
+      expect(find.text('إضافة خط من ZIP'), findsNothing);
+      expect(find.text('استعادة الخط الافتراضي'), findsNothing);
       await revealSetting(tester, 'مسح الكاش المحلي');
       await tester.tap(find.text('مسح الكاش المحلي'));
       await tester.pumpAndSettle();

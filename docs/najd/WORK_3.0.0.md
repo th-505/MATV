@@ -20,7 +20,7 @@ The exact uploaded bundle contains three families, each with Light300, Regular40
 - Serif Text: readable longer text and supporting headings.
 - Serif Display: display headings, hero and poetry styles.
 
-All fifteen family/weight pairs are mapped to the fifteen semantic text roles. Custom font selection still overrides the default deliberately. Original Arabic and Latin glyph coverage was checked on all15 OTF faces. Native unit-test output verified all15 OTF hashes, manifest weights and unchanged license. Release Web output verified all15 WOFF2 hashes/weights/license. Actual Chromium loaded all15 WOFF2 faces without font errors; mobile/desktop screenshots inspected. This is not physical iOS/Android/macOS device certification.
+All fifteen family/weight pairs are mapped to the fifteen semantic text roles. The user subsequently removed font import from Settings; the production import control and automatic restoration of previous custom font overrides were removed. Bundled typography is the default without user setup. Original Arabic and Latin glyph coverage was checked on all15 OTF faces. Native unit-test output verified all15 OTF hashes, manifest weights and unchanged license. Release Web output verified all15 WOFF2 hashes/weights/license. Actual Chromium loaded all15 WOFF2 faces without font errors; mobile/desktop screenshots inspected. This is not physical iOS/Android/macOS device certification.
 
 Future native builds reject the old three-face fallback. Public publishing requires the original private bundle URL and verifies all15 WOFF2 faces. Six-target artifact verification checks native font manifests/original bytes in APK, IPA and portable Windows ZIP, Web WOFF2, and the macOS packaging typography report. APK size budget is40MiB to accommodate the expanded original font set; actual final package size remains to be measured.
 
@@ -58,3 +58,5 @@ Remaining: live provider repairs/reports, final six-target builds/device checks,
 -Corrected contradictory Chromium/Windows client hints previously sent alongside a Safari compatibility UA. Public request context stays consistent; no browser-identity farm, login or challenge bypass is implemented.
 
 Signing and font-input blockers are resolved. Run42146474491 proves the permanent signing input; checkout archive checksum5b16d16a091cda3b11f8c86de800793ecb75c78943b7e0091003cdff514ede99 proves the full original font input. Native/six-target CI is now able to start.
+
+Latest steering: removed font import/reset controls from Settings and removed startup restoration of custom uploaded fonts. Cancelled six-target run42169253408 because client source changed; replacement build must include this change. Legacy bounded font-parser tests/utilities remain historical support, not a user flow.
