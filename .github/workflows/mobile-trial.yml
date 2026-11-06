@@ -133,8 +133,7 @@ jobs:
       - name: Restore verified original typography from the approved native package
         if: env.NAJD_FONT_BUNDLE_URL == ''
         run: |
-          python scripts/restore_approved_native_fonts.py
-          python scripts/register_private_font_manifest.py flutter_app
+          python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding and TV manifest
@@ -225,8 +224,7 @@ jobs:
       - name: Restore verified original typography from the approved native package
         if: env.NAJD_FONT_BUNDLE_URL == ''
         run: |
-          python scripts/restore_approved_native_fonts.py
-          python scripts/register_private_font_manifest.py flutter_app
+          python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding
@@ -284,8 +282,7 @@ jobs:
       - name: Restore verified original typography from the approved native package
         if: env.NAJD_FONT_BUNDLE_URL == ''
         run: |
-          python scripts/restore_approved_native_fonts.py
-          python scripts/register_private_font_manifest.py flutter_app
+          python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV desktop identity
@@ -371,8 +368,7 @@ jobs:
       - name: Restore verified original typography from the approved native package
         if: env.NAJD_FONT_BUNDLE_URL == ''
         run: |
-          python scripts/restore_approved_native_fonts.py
-          python scripts/register_private_font_manifest.py flutter_app
+          python scripts/fetch_private_build_fonts.py
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV identity and sandbox entitlements

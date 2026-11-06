@@ -43,9 +43,9 @@ Official URLs requested for the last three. No existing provider removed or conf
 
 The new persistent Android key and private backup exist; original installed APK signatures need not be preserved because the user authorized fresh installation. GitHub input verification run42146474491 passed after bounded normalization of a missing outer JSON brace. The exact four fields, keystore password, private-key password and pinned permanent certificate were verified. No private-key values were repaired and no disposable key generated.
 
-Full uploaded font inputs are available locally and verified. GitHub Actions cannot access this conversation's local files. Native/reusable-Web builds accept the private bundle URL input or repository secret NAJD_FONT_BUNDLE_URL; public Pages uses that secret. Missing input fails rather than publishing fallback typography. No font URL/secret values are in this document.
+The owner uploaded assets/fonts/Thmanyah-Font-Family.zip to main in commit5debef4. Its SHA256 exactly matches the original chat bundle. Merged that owner commit and made all build targets prefer this verified checkout archive; no additional URL or secret is required. Private URL input remains an optional fallback only. Missing or mismatched input fails rather than publishing fallback typography.
 
-Remaining: configured CI font download input, live provider repairs/reports, final six-target builds/device checks, safe Web update handling, remaining PWA/native PiP validation and publication. This checkpoint is not a released3.0.0 build.
+Remaining: live provider repairs/reports, final six-target builds/device checks, safe Web update handling, remaining PWA/native PiP validation and publication. This checkpoint is not a released3.0.0 build.
 
 ## Final automated validation before the source checkpoint
 
@@ -56,3 +56,5 @@ Remaining: configured CI font download input, live provider repairs/reports, fin
 -Live22-provider sample: Najd6 passed,10 partial,6 failed; Beta5 passed,10 partial,7 failed. See provider-live-3.0.0.json. No all-provider success claim.
 -User delegated alternative-source selection. Additional public checks rejected fasselhd.com as a landing page without usable catalogue cards, and c4u.top samples exposed empty player/server lists despite visible metadata. These are evidence, not newly activated working sources.
 -Corrected contradictory Chromium/Windows client hints previously sent alongside a Safari compatibility UA. Public request context stays consistent; no browser-identity farm, login or challenge bypass is implemented.
+
+Signing and font-input blockers are resolved. Run42146474491 proves the permanent signing input; checkout archive checksum5b16d16a091cda3b11f8c86de800793ecb75c78943b7e0091003cdff514ede99 proves the full original font input. Native/six-target CI is now able to start.
