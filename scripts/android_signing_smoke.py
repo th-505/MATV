@@ -17,5 +17,7 @@ with tempfile.TemporaryDirectory(prefix='najd-signing-smoke-') as folder:
     signed=folder/'fixture-signed.apk'
     subprocess.run([sdk,'sign','--ks',str(key),'--ks-key-alias',values[NAMES[2]],'--ks-pass','env:NAJD_SMOKE_STORE_PASS','--key-pass','env:NAJD_SMOKE_KEY_PASS','--out',str(signed),str(source)],env=env,capture_output=True,check=True,timeout=120)
     output=subprocess.run([sdk,'verify','--print-certs',str(signed)],capture_output=True,text=True,check=True,timeout=60).stdout
-    pin=Path('scripts/android-release-certificate.sha256').read_text().strip();verify(output,pin)
+    pin=Path('scripts/android-release-certificate.sha256').read_text().strip()
+    print(json.dumps({'public_signer_records':[line[:300] for line in output.splitlines() if 'certificate SHA-256 digest:' in line]}))
+    verify(output,pin)
     print(json.dumps({'sdk_build_tools':Path(sdk).parent.name,'verified':True,'permanent_certificate_sha256':pin,'public_record_labels':[line.split(':',1)[0] for line in output.splitlines() if line.startswith('Signer') and 'certificate SHA-256 digest:' in line],'fixture_published':False}))

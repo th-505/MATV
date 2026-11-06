@@ -4,7 +4,7 @@ import re
 import sys
 
 def verify(text, expected):
-    fingerprints=re.findall(r'^Signer(?: #\d+| \([^\r\n)]{1,160}\)) certificate SHA-256 digest:\s*([a-fA-F0-9]{64})\s*$',text,re.M)
+    fingerprints=re.findall(r'^(?:V[1-4](?:\.\d+)? )?Signer(?: #\d+| \([^\r\n)]{1,160}\)|:)? certificate SHA-256 digest:\s*([a-fA-F0-9]{64})\s*$',text,re.M)
     expected=expected.strip().lower()
     if not fingerprints:
         labels=[line.split(':',1)[0][:200] for line in text.splitlines() if 'certificate SHA-256 digest:' in line][:8]

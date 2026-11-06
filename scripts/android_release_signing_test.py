@@ -51,3 +51,6 @@ try:verify('Signer (minSdkVersion=24, maxSdkVersion=2147483647) certificate SHA-
 except ValueError as e:assert 'IDENTITY_CHANGED' in str(e)
 else:raise AssertionError('SDK-qualified wrong certificate accepted')
 print('SDK-qualified signer records supported; wrong certificates/source-stamp-only reports rejected.')
+
+verify('V3.0 Signer: certificate SHA-256 digest: '+'a'*64,'a'*64)
+print('Modern V3.0 Signer certificate record accepted only against the pinned certificate.')
