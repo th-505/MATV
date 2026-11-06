@@ -122,7 +122,7 @@ test('a missing keyed RPC retains twenty-slot lane claims without enabling the o
  let lanes=0;const store={claimKnown:async()=>{throw Error('HARVEST_DB_HTTP_404')},claimLane:async()=>{lanes++;return[]},heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
  const worker=createHarvestWorker({store,handlers:{},pollMs:60000});
  worker.wake({jobs:[{job_key:'known-work',stage:'work'}]});await new Promise(r=>setImmediate(r));
- assert(lanes>=3);assert.equal(worker.metrics().concurrency,26);await worker.stop();
+ assert(lanes>=3);assert.equal(worker.metrics().concurrency,22);await worker.stop();
 });
 
 test('database failures back off despite repeated interactive wakes and recover after the deadline',async()=>{
@@ -163,4 +163,14 @@ test('on-demand indexing does not resolve all background episode media; an expli
  await new Promise(r=>setImmediate(r));assert.deepEqual(claimed,[]);assert.equal(started,0);
  worker.wake({jobs:[{job_key:'background-19',stage:'episode'}]});await new Promise(r=>setImmediate(r));
  assert.deepEqual(claimed,['background-19']);assert.equal(started,1);await worker.stop();
+});
+
+
+test('background catalogue and media each get one slot without reducing twenty interactive searches',async()=>{
+ const limits={};
+ const store={claimLane:async(w,limit,lane)=>{limits[lane]=limit;return[]}, heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,handlers:{},pollMs:60000});
+ worker.start();await new Promise(r=>setImmediate(r));await worker.stop();
+ assert.deepEqual(limits,{search:20,index:1,media:1});
+ assert.equal(worker.metrics().concurrency,22);
 });

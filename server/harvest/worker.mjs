@@ -1,8 +1,10 @@
 import {randomUUID} from 'node:crypto';
 /** Atomic DB leases, bounded work, heartbeat and restart recovery. No in-memory-only queue. */
-export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,backgroundPollMs=30000,scanBacklog=true,now=Date.now,logger=()=>{}}={}){
+export function createHarvestWorker({store,handlers,concurrency=2,indexConcurrency=1,mediaConcurrency=1,pollMs=3000,backgroundPollMs=30000,scanBacklog=true,now=Date.now,logger=()=>{}}={}){
  const worker=randomUUID();let active=0,polling=false,stopped=true,timer=null;const running=new Set();
- let lanes=typeof store?.claimLane==='function'?{search:20,index:4,media:2}:null;
+ const cap=(value,max)=>Number.isInteger(Number(value))&&Number(value)>0?Math.min(max,Number(value)):1;
+ let lanes=typeof store?.claimLane==='function'?{search:20,index:cap(indexConcurrency,4),media:cap(mediaConcurrency,2)}:null;
+ const capacity=()=>lanes?Object.values(lanes).reduce((sum,n)=>sum+n,0):concurrency;
  const nextSweep={search:0,index:0,media:0};const retryAt={search:0,index:0,media:0};const failures={search:0,index:0,media:0};
  const laneActive={search:0,index:0,media:0};const lanePolling=new Set();const known={search:new Set(),index:new Set(),media:new Set()};let knownSupported=typeof store?.claimKnown==='function';
  function remember(job,interactive=false){
@@ -56,5 +58,5 @@ export function createHarvestWorker({store,handlers,concurrency=2,pollMs=3000,ba
  }
  function start(){if(!stopped||!store)return;stopped=false;timer=setInterval(pulse,pollMs);timer.unref?.();void pulse()}
  async function stop(){stopped=true;clearInterval(timer);await Promise.allSettled([...running])}
- return {start,stop,wake:({jobs=[]}={})=>{for(const job of jobs)remember(job,true);start();void pulse(true);return {configured:Boolean(store),active,concurrency:lanes?26:concurrency,lanes:lanes?{...laneActive}:null}},metrics:()=>({configured:Boolean(store),active,concurrency:lanes?26:concurrency,lanes:lanes?{...laneActive}:null,polling,worker})};
+ return {start,stop,wake:({jobs=[]}={})=>{for(const job of jobs)remember(job,true);start();void pulse(true);return {configured:Boolean(store),active,concurrency:capacity(),lanes:lanes?{...laneActive}:null}},metrics:()=>({configured:Boolean(store),active,concurrency:capacity(),lanes:lanes?{...laneActive}:null,polling,worker})};
 }
