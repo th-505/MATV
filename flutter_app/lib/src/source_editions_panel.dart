@@ -304,6 +304,16 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
 
   Widget _edition(BuildContext context, Map<String, dynamic> edition) {
     final available = edition['available'] == true;
+    final state = '${edition['state'] ?? ''}';
+    final pending = const {'queued', 'running', 'pending'}.contains(state);
+    final failed = const {'failed', 'blocked', 'unavailable'}.contains(state);
+    final statusLabel = available
+        ? 'فتح المواسم والحلقات'
+        : pending
+        ? 'جارٍ تجهيز فهرس المزود'
+        : failed
+        ? 'تعذر تجهيز فهرس المزود'
+        : 'الفهرس غير جاهز؛ حدّث حالة المصدر';
     final kind = switch (edition['edition']) {
       'dubbed' => 'مدبلج — نسخة مستقلة',
       'subtitled' => 'مترجم',
@@ -357,7 +367,15 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Icon(available ? Icons.chevron_left : Icons.hourglass_empty),
+                Icon(
+                  available
+                      ? Icons.chevron_left
+                      : pending
+                      ? Icons.hourglass_empty
+                      : failed
+                      ? Icons.error_outline
+                      : Icons.info_outline,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -368,7 +386,7 @@ class _SourceEditionsPanelState extends State<SourceEditionsPanel> {
             ),
             if (domain.isNotEmpty && !available) Text(domain),
             if (summary.isNotEmpty) Text(summary),
-            Text(available ? 'فتح المواسم والحلقات' : 'جارٍ تجهيز فهرس المزود'),
+            Text(statusLabel),
             if (edition['reason'] != null)
               Text(sourceHarvestMessage('${edition['reason']}')),
           ],

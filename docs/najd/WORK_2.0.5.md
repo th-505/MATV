@@ -40,3 +40,30 @@ Seed-only (not working registered scrapers): Fushaar, FaselHD, Cima4u. No module
 10. Reproducible load-test reports with p50/p95, error rates, concurrency and clearly stated limitations.
 
 An item is complete only after its relevant tests/evidence are recorded. Platform support cannot be certified solely from builds. No100-feature completion claim from a count of UI variants.
+
+## Development checkpoint — 2026-11-06
+
+Implemented on the review branch, not a published 2.0.5 release:
+
+- Web HLS level selection uses the player's observed levels and preserves the master playlist/audio groups. Replacing the HLS controller disposes the previous controller attached to the same video. Actual decoded/display dimensions and dropped-frame counters are available in diagnostics. Native/source alternatives remain bounded at64 rather than8.
+- Equal-health source ranking prefers the observed higher resolution; known failures still lose priority. A generic source label no longer overrides an explicit quality field.
+- Web fullscreen uses document fullscreen with Safari video fallback. PiP retries the Safari presentation API when the standard API rejects the request. Physical Safari/PWA/native PiP still needs device verification.
+- Current time is physically left and remaining time right. Previous/next episode controls use observed episode identities.
+- Season loading retains title/poster metadata and replaces the episode portion only; busy/error states prevent launching the previous season by mistake.
+- Full-ratio compact poster and adjacent metadata header; home carousel has up to8 actual works, reduced-motion support, manual navigation and pauses after interaction. Failed anime/series shelves have independent retry instead of disappearing permanently.
+- Source cards no longer display an indefinite clock for every unavailable index; the API exposes the observed index state. Unknown state is labelled unknown/not ready rather than running.
+- Private font build manifests register the original400/500/700 faces and theme readiness notifies listeners. No font bytes committed. Public Web font permission remains unresolved.
+- Account ID display reads the persisted owner before an optional profile RPC. This does not recover a deleted session, identify hardware, or unify Safari/PWA storage contexts automatically.
+- Metadata-only library backup/export/import rejects secret/media payloads before mutation. Atomic library snapshots retire three redundant legacy copies while retaining owner/session keys.
+- Najd180px Apple touch icon and manifest identity prepared. Safe version-aware update handling is not yet implemented.
+
+Validation:
+
+- Flutter analyze: no issues before the final documentation checkpoint.
+- Release Web build: succeeded; later carousel/header state changes covered by focused widget tests and analysis, requiring final release rebuild.
+- Node full suite:197 passed; subsequently added source-state regression:3 passed in that file.
+- Flutter full suite:372 passed,7 skipped,1 failure caused by the quality-order change bypassing the fixture's deliberately broken lower-quality source. Updated the fixture so the higher-quality source is deliberately broken, preserving the decoder/failover assertion. Focused re-run:9 passed including failover at the saved40-second checkpoint, quality ordering, carousel and light/dark production routes. Final full release suite remains required.
+- Browser bridge:3 passed in real headless Chromium with controlled public API/HLS fixtures, not live streaming/provider or physical Safari tests.
+- Library backup:3 passed; private font manifest:2 passed.
+
+Release blockers/open work: corrected Android signing bundle JSON, Web font permission, official URLs for six missing providers, remaining live source-stage diagnostics/repairs, four bounded load profiles, deeper browser-session persistence verification, final platform builds/device checks and publication. No claim that all providers, all PiP platforms, or100 new features have passed.

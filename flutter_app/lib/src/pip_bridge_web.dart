@@ -4,6 +4,9 @@ import 'dart:js_interop_unsafe';
 
 import 'pip_event.dart';
 
+@JS('window')
+external JSObject get _window;
+
 @JS('document')
 external JSObject get _document;
 
@@ -13,17 +16,28 @@ class NajdPipBridge {
   Stream<NajdPipEvent> get events => _events.stream;
   JSObject? _video;
   JSFunction? _leave, _presentation;
-  JSObject? _find() =>
-      _document.callMethod<JSAny?>('querySelector'.toJS, 'video'.toJS)
-          as JSObject?;
+  JSObject? _find() {
+    final bridge = _window.getProperty<JSObject?>('NajdWebVideo'.toJS);
+    return bridge?.callMethod<JSObject?>('findVideo'.toJS) ??
+        _document.callMethod<JSObject?>('querySelector'.toJS, 'video'.toJS);
+  }
+
   Future<bool> supported(String format) async {
-    final video = _find();
-    return video != null &&
-        (_document
-                    .getProperty<JSAny?>('pictureInPictureEnabled'.toJS)
-                    ?.dartify() ==
-                true ||
-            video.has('webkitSetPresentationMode'));
+    try {
+      final bridge = _window.getProperty<JSObject?>('NajdWebVideo'.toJS);
+      if (bridge != null) {
+        return bridge.callMethod<JSBoolean>('availablePip'.toJS).toDart;
+      }
+      final video = _find();
+      return video != null &&
+          ((_document
+                      .getProperty<JSAny?>('pictureInPictureEnabled'.toJS)
+                      ?.dartify() ==
+                  true) ||
+              video.has('webkitSetPresentationMode'));
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> update({
@@ -52,35 +66,45 @@ class NajdPipBridge {
         'leavepictureinpicture'.toJS,
         _leave,
       );
-      if (video.has('requestPictureInPicture')) {
-        await video
-            .callMethod<JSPromise<JSAny?>>('requestPictureInPicture'.toJS)
-            .toDart;
+      _presentation ??= ((JSAny? _) {
+        final active =
+            video
+                .getProperty<JSAny?>('webkitPresentationMode'.toJS)
+                ?.dartify() ==
+            'picture-in-picture';
+        _events.add(NajdPipEvent(active: active));
+      }).toJS;
+      video.callMethod<JSAny?>(
+        'addEventListener'.toJS,
+        'webkitpresentationmodechanged'.toJS,
+        _presentation,
+      );
+      final bridge = _window.getProperty<JSObject?>('NajdWebVideo'.toJS);
+      bool active = false;
+      if (bridge != null) {
+        active =
+            (await bridge
+                    .callMethod<JSPromise<JSBoolean>>('enterPip'.toJS)
+                    .toDart)
+                .toDart;
       } else if (video.has('webkitSetPresentationMode')) {
-        _presentation ??= ((JSAny? _) {
-          final active =
-              video
-                  .getProperty<JSAny?>('webkitPresentationMode'.toJS)
-                  ?.dartify() ==
-              'picture-in-picture';
-          _events.add(NajdPipEvent(active: active));
-        }).toJS;
-        video.callMethod<JSAny?>(
-          'addEventListener'.toJS,
-          'webkitpresentationmodechanged'.toJS,
-          _presentation,
-        );
         video.callMethod<JSAny?>(
           'webkitSetPresentationMode'.toJS,
           'picture-in-picture'.toJS,
         );
-      } else {
-        return false;
+        active =
+            video
+                .getProperty<JSAny?>('webkitPresentationMode'.toJS)
+                ?.dartify() ==
+            'picture-in-picture';
+      } else if (video.has('requestPictureInPicture')) {
+        await video
+            .callMethod<JSPromise<JSAny?>>('requestPictureInPicture'.toJS)
+            .toDart;
+        active =
+            _document.getProperty<JSAny?>('pictureInPictureElement'.toJS) ==
+            video;
       }
-      final active =
-          video.has('requestPictureInPicture') ||
-          video.getProperty<JSAny?>('webkitPresentationMode'.toJS)?.dartify() ==
-              'picture-in-picture';
       if (active) _events.add(const NajdPipEvent(active: true));
       return active;
     } catch (_) {

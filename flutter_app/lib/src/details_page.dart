@@ -57,6 +57,37 @@ class _DetailsPageState extends State<DetailsPage> {
   String? _metadataLanguage;
   String _primaryDownloadKey = 'direct';
   int selectedSeason = 1;
+  TitleDetails? _seasonDetails;
+  bool _seasonBusy = false;
+  String? _seasonError;
+  int _seasonGeneration = 0;
+  Future<void> _changeSeason(TitleDetails original, int value) async {
+    final generation = ++_seasonGeneration;
+    setState(() {
+      selectedSeason = value;
+      _seasonBusy = true;
+      _seasonError = null;
+    });
+    try {
+      final base = original.sourceWorkRef.isNotEmpty
+          ? original.sourceWorkRef
+          : widget.item.ref;
+      final details = await widget.api.details('$base:s$value:e1');
+      if (!mounted || generation != _seasonGeneration) return;
+      setState(() {
+        _seasonDetails = details;
+        _seasonBusy = false;
+      });
+    } catch (_) {
+      if (mounted && generation == _seasonGeneration) {
+        setState(() {
+          _seasonBusy = false;
+          _seasonError = 'تعذر تحميل حلقات الموسم. أعد المحاولة.';
+        });
+      }
+    }
+  }
+
   late final DownloadService _downloads;
   late final bool _ownsDownloads;
   final Set<String> _activeDownloads = <String>{};
@@ -138,7 +169,9 @@ class _DetailsPageState extends State<DetailsPage> {
     }
     if (mounted &&
         details.sourceWorkRef.isNotEmpty &&
-        details.availableSeasons.isNotEmpty) {
+        details.availableSeasons.isNotEmpty &&
+        _seasonDetails == null &&
+        !_seasonBusy) {
       selectedSeason =
           details.season ??
           (details.availableSeasons.contains(selectedSeason)
@@ -838,42 +871,61 @@ class _DetailsPageState extends State<DetailsPage> {
                 ),
               );
             }
-            final details = snapshot.data!;
+            final baseDetails = snapshot.data!;
+            final details = _seasonDetails == null
+                ? baseDetails
+                : baseDetails.copyWith(
+                    episodes: _seasonDetails!.episodes,
+                    season: selectedSeason,
+                    sourceIndexPartial: _seasonDetails!.sourceIndexPartial,
+                    episodeNextOffset: _seasonDetails!.episodeNextOffset,
+                  );
             final sourceCard =
                 details.sourceIndexAuthoritative &&
                 widget.item.ref.startsWith('tmdb:');
             return ListView(
               padding: EdgeInsets.all(isTvTarget ? 28 : 16),
               children: [
-                if (details.poster.isNotEmpty)
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: SizedBox(
-                        height: 240,
-                        width: 160,
-                        child: NajdPoster(url: details.poster),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (details.poster.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: isTvTarget ? 160 : 110,
+                          height: isTvTarget ? 240 : 165,
+                          child: NajdPoster(url: details.poster),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            details.title,
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (details.year != null)
+                                Chip(label: Text('${details.year}')),
+                              for (final genre in details.genres)
+                                Chip(label: Text(genre)),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                const SizedBox(height: 18),
-                Text(
-                  details.title,
-                  style: Theme.of(context).textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    if (details.year != null)
-                      Chip(label: Text('${details.year}')),
-                    for (final genre in details.genres)
-                      Chip(label: Text(genre)),
                   ],
                 ),
+                const SizedBox(height: 18),
                 if (details.sourceIndexPartial)
                   const NajdSurface(
                     child: Text(
@@ -901,14 +953,18 @@ class _DetailsPageState extends State<DetailsPage> {
                         focusNode: details.hasEpisodes
                             ? null
                             : _directPlayFocus,
-                        onPressed: () => _watch(details),
+                        onPressed: _seasonBusy || _seasonError != null
+                            ? null
+                            : () => _watch(details),
                         icon: const Icon(Icons.play_arrow),
                         label: const Text('مشاهدة'),
                       ),
                       if (!kIsWeb)
                         OutlinedButton.icon(
                           key: const Key('title-download'),
-                          onPressed: () => _downloadPrimary(details),
+                          onPressed: _seasonBusy || _seasonError != null
+                              ? null
+                              : () => _downloadPrimary(details),
                           icon: Icon(
                             _activeDownloads.contains(_primaryDownloadKey)
                                 ? Icons.cancel_outlined
@@ -1111,16 +1167,26 @@ class _DetailsPageState extends State<DetailsPage> {
                             value == selectedSeason) {
                           return;
                         }
-                        setState(() {
-                          selectedSeason = value;
-                          future = _loadDetails(
-                            '${details.sourceWorkRef.isNotEmpty ? details.sourceWorkRef : widget.item.ref}:s$value:e1',
-                          );
-                        });
+                        await _changeSeason(baseDetails, value);
                       },
                     ),
                   ),
-                if (!sourceCard && details.hasEpisodes) ...[
+                if (_seasonBusy)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: LinearProgressIndicator(
+                      key: Key('season-episodes-loading'),
+                    ),
+                  ),
+                if (_seasonError != null)
+                  TextButton(
+                    onPressed: () => _changeSeason(baseDetails, selectedSeason),
+                    child: Text(_seasonError!),
+                  ),
+                if (!sourceCard &&
+                    details.hasEpisodes &&
+                    !_seasonBusy &&
+                    _seasonError == null) ...[
                   NajdSectionHeading('الحلقات (${details.episodes.length})'),
                   TextButton.icon(
                     onPressed: () => _downloadSeason(details),

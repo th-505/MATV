@@ -27,9 +27,13 @@ class SourceRouter {
 
     rows.sort((a, b) {
       final order = score(a.$2).compareTo(score(b.$2));
-      return order == 0 ? a.$1.compareTo(b.$1) : order;
+      if (order != 0) return order;
+      final height = (b.$2.resolution?.height ?? 0).compareTo(
+        a.$2.resolution?.height ?? 0,
+      );
+      return height == 0 ? a.$1.compareTo(b.$1) : height;
     });
-    return rows.take(8).map((r) => r.$2).toList(growable: false);
+    return rows.take(64).map((r) => r.$2).toList(growable: false);
   }
 
   void record(String path, {required bool success, int? latencyMs}) {
@@ -38,7 +42,7 @@ class SourceRouter {
     }
     _health[path] = (
       failures: success ? 0 : (_health[path]?.failures ?? 0) + 1,
-      latency: latencyMs ?? _health[path]?.latency
+      latency: latencyMs ?? _health[path]?.latency,
     );
   }
 }

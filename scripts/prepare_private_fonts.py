@@ -17,4 +17,6 @@ for weight in ('Regular', 'Medium', 'Bold'):
         shutil.copyfile(source, destination / source.name)
 for destination in (root / 'flutter_app/assets/najd/fonts', root / 'assets/private-fonts'):
     shutil.copyfile(a.source / 'LICENSE.pdf', destination / 'LICENSE.pdf')
+from register_private_font_manifest import register
+register(root / 'flutter_app')
 print('Prepared original local-only Thmanyah files. Publication remains disabled.')

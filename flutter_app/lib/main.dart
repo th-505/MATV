@@ -295,8 +295,11 @@ class _ShellState extends State<Shell> {
     if (kIsWeb && Uri.base.fragment.contains('najd_link=')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const NajdAccountPage()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => NajdAccountPage(store: widget.store),
+            ),
+          );
         }
       });
     }
@@ -774,14 +777,26 @@ class _HomePageState extends State<HomePage> {
   late Future<List<CatalogItem>> _latest = widget.api.category(
     'catalog:movie:all',
   );
-  late final Future<List<CatalogItem>> _series = widget.api.category(
+  late Future<List<CatalogItem>> _series = widget.api.category(
     'catalog:tv:all',
   );
-  late final Future<List<CatalogItem>> _anime = widget.api.category(
+  late Future<List<CatalogItem>> _anime = widget.api.category(
     'catalog:anime:tv',
   );
-  void _retry() =>
-      setState(() => _latest = widget.api.category('catalog:movie:all'));
+  void _retry() => setState(() {
+    _latest = widget.api.category('catalog:movie:all');
+    _series = widget.api.category('catalog:tv:all');
+    _anime = widget.api.category('catalog:anime:tv');
+  });
+  void _retryShelf(int target) => setState(() {
+    if (target == 3) {
+      _anime = widget.api.category('catalog:anime:tv');
+    } else if (target == 2) {
+      _series = widget.api.category('catalog:tv:all');
+    } else {
+      _latest = widget.api.category('catalog:movie:all');
+    }
+  });
   void _history() => Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => Scaffold(
@@ -794,44 +809,69 @@ class _HomePageState extends State<HomePage> {
       ),
     ),
   );
-  Widget _shelf(String title, Future<List<CatalogItem>> source, int target) =>
-      FutureBuilder<List<CatalogItem>>(
-        future: source,
-        builder: (context, snapshot) {
-          final items = snapshot.data ?? const <CatalogItem>[];
-          if (items.isEmpty) return const SizedBox.shrink();
-          return Column(
+  Widget _shelf(
+    String title,
+    Future<List<CatalogItem>> source,
+    int target,
+  ) => FutureBuilder<List<CatalogItem>>(
+    future: source,
+    builder: (context, snapshot) {
+      final items = snapshot.data ?? const <CatalogItem>[];
+      if (snapshot.hasError ||
+          (snapshot.connectionState == ConnectionState.done && items.isEmpty)) {
+        return NajdSurface(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              NajdSectionHeading(
-                title,
-                action: 'عرض الكل',
-                onAction: () => widget.onNavigate?.call(target),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                snapshot.hasError
+                    ? 'تعذر تحميل هذا القسم.'
+                    : 'لا تتوفر أعمال في هذا القسم الآن.',
               ),
-              SizedBox(
-                height: isTvTarget ? 360 : 285,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 14),
-                  itemBuilder: (context, i) => SizedBox(
-                    width: isTvTarget ? 220 : 162,
-                    child: NajdWorkCard(
-                      item: items[i],
-                      onTap: () => openDetails(
-                        context,
-                        widget.api,
-                        widget.store,
-                        items[i],
-                      ),
-                    ),
-                  ),
-                ),
+              TextButton.icon(
+                onPressed: () => _retryShelf(target),
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة تحميل القسم'),
               ),
             ],
-          );
-        },
+          ),
+        );
+      }
+      if (items.isEmpty) {
+        return const SizedBox(
+          height: 64,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          NajdSectionHeading(
+            title,
+            action: 'عرض الكل',
+            onAction: () => widget.onNavigate?.call(target),
+          ),
+          SizedBox(
+            height: isTvTarget ? 360 : 285,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 14),
+              itemBuilder: (context, i) => SizedBox(
+                width: isTvTarget ? 220 : 162,
+                child: NajdWorkCard(
+                  item: items[i],
+                  onTap: () =>
+                      openDetails(context, widget.api, widget.store, items[i]),
+                ),
+              ),
+            ),
+          ),
+        ],
       );
+    },
+  );
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: widget.store,
@@ -865,13 +905,12 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.all(isTvTarget ? 32 : 18),
           children: [
             if (items.isNotEmpty)
-              NajdFeatureHero(
-                item: items.first,
-                saved: widget.store.isFavorite(items.first.ref),
-                onWatch: () =>
-                    openDetails(context, widget.api, widget.store, items.first),
-                onSave: () =>
-                    unawaited(widget.store.toggleFavorite(items.first)),
+              NajdFeatureCarousel(
+                items: items,
+                isSaved: (item) => widget.store.isFavorite(item.ref),
+                onWatch: (item) =>
+                    openDetails(context, widget.api, widget.store, item),
+                onSave: (item) => unawaited(widget.store.toggleFavorite(item)),
               ),
             if (widget.store.continueWatching.isNotEmpty) ...[
               NajdSectionHeading(
@@ -1142,7 +1181,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 leading: const Icon(Icons.person_outline),
                 title: const Text('الحساب والربط'),
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const NajdAccountPage()),
+                  MaterialPageRoute(
+                    builder: (_) => NajdAccountPage(store: widget.store),
+                  ),
                 ),
               ),
               if (const bool.fromEnvironment('NAJD_DEVELOPER_DIAGNOSTICS'))

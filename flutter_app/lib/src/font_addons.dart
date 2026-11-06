@@ -144,12 +144,23 @@ class _NajdFontAddonControlState extends State<NajdFontAddonControl> {
           ),
         );
       }
-    } catch (_) {
+    } catch (error) {
+      final reason = error is FormatException
+          ? error.message
+          : error is StateError
+          ? error.message
+          : '';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'تعذر استيراد الخط؛ اختر ZIP سليمًا يحتوي خطوط OTF أو TTF ضمن الحجم المسموح',
+              reason == 'FONT_NOT_SAVED'
+                  ? 'طُبق الخط لهذه الجلسة، لكن المتصفح لم يسمح بحفظه. تحقق من مساحة التخزين والوضع الخاص.'
+                  : reason == 'FONT_ZIP_TOO_LARGE'
+                  ? 'حجم ZIP يتجاوز 24 ميجابايت.'
+                  : reason == 'ZIP_HAS_NO_OTF_OR_TTF'
+                  ? 'لا يحتوي الأرشيف على ملفات OTF أو TTF.'
+                  : 'تعذر استيراد الخط. اختر ملف ZIP الأصلي أو تحقق من أذونات اختيار الملفات.',
             ),
           ),
         );
@@ -160,25 +171,43 @@ class _NajdFontAddonControlState extends State<NajdFontAddonControl> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      ListTile(
-        leading: const Icon(Icons.font_download_outlined),
-        title: const Text('إضافة خط من ZIP'),
-        subtitle: const Text('على هذا الجهاز فقط · دون نشر ملفات الخط'),
-        enabled: !busy,
-        onTap: import,
-      ),
-      ListTile(
-        leading: const Icon(Icons.restore),
-        title: const Text('استعادة الخط الافتراضي'),
-        onTap: () async {
-          await (await SharedPreferences.getInstance()).remove(
-            NajdFontAddon.key,
-          );
-          NajdAppearance.instance.setFontFamily(null);
-        },
-      ),
-    ],
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: NajdAppearance.instance,
+    builder: (context, _) => Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.text_fields),
+          title: Text(
+            NajdAppearance.instance.fontFamily != null
+                ? 'خط محلي مخصص'
+                : NajdAppearance.instance.bundledFontReady
+                ? 'خط ثمانية مضمن'
+                : 'الخط البديل المرخص',
+          ),
+          subtitle: Text(
+            NajdAppearance.instance.bundledFontReady
+                ? 'عربي وإنجليزي · عادي ومتوسط وعريض'
+                : 'يمكنك إضافة خط ثمانية من ملفك على هذا الجهاز',
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.font_download_outlined),
+          title: const Text('إضافة خط من ZIP'),
+          subtitle: const Text('على هذا الجهاز فقط · دون نشر ملفات الخط'),
+          enabled: !busy,
+          onTap: import,
+        ),
+        ListTile(
+          leading: const Icon(Icons.restore),
+          title: const Text('استعادة الخط الافتراضي'),
+          onTap: () async {
+            await (await SharedPreferences.getInstance()).remove(
+              NajdFontAddon.key,
+            );
+            NajdAppearance.instance.setFontFamily(null);
+          },
+        ),
+      ],
+    ),
   );
 }

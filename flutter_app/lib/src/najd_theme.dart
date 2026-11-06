@@ -2,6 +2,7 @@ import 'viewport_profile.dart';
 import 'app_target.dart';
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
@@ -12,6 +13,14 @@ class NajdAppearance extends ChangeNotifier {
   static final instance = NajdAppearance();
   ThemeMode mode = ThemeMode.dark;
   String? fontFamily;
+  bool bundledFontReady = false;
+  String get activeFontFamily =>
+      fontFamily ?? (bundledFontReady ? 'ThmanyahSans' : 'NajdArabicFallback');
+  void markBundledFontReady() {
+    bundledFontReady = true;
+    notifyListeners();
+  }
+
   void setFontFamily(String? value) {
     fontFamily = value;
     notifyListeners();
@@ -47,6 +56,20 @@ Future<bool> loadPrivateNajdFonts() async {
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     final bundled = manifest.listAssets().toSet();
     if (!paths.every(bundled.contains)) return false;
+    try {
+      final declarations = jsonDecode(
+        await rootBundle.loadString('FontManifest.json'),
+      );
+      if (declarations is List &&
+          declarations.any(
+            (entry) => entry is Map && entry['family'] == 'ThmanyahSans',
+          )) {
+        NajdAppearance.instance.markBundledFontReady();
+        return true;
+      }
+    } catch (_) {
+      /* Development/private imports may use runtime registration. */
+    }
     final loader = FontLoader('ThmanyahSans');
     for (final weight in ['Regular', 'Medium', 'Bold']) {
       loader.addFont(
@@ -54,6 +77,7 @@ Future<bool> loadPrivateNajdFonts() async {
       );
     }
     await loader.load();
+    NajdAppearance.instance.markBundledFontReady();
     return true;
   } catch (_) {
     return false;
@@ -88,7 +112,7 @@ class NajdThemes {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
-      fontFamily: NajdAppearance.instance.fontFamily ?? 'ThmanyahSans',
+      fontFamily: NajdAppearance.instance.activeFontFamily,
       fontFamilyFallback: const ['NajdArabicFallback'],
       appBarTheme: AppBarTheme(
         backgroundColor: background,
@@ -104,14 +128,14 @@ class NajdThemes {
           side: BorderSide(color: scheme.outline.withAlpha(90)),
         ),
         titleTextStyle: TextStyle(
-          fontFamily: NajdAppearance.instance.fontFamily ?? 'ThmanyahSans',
+          fontFamily: NajdAppearance.instance.activeFontFamily,
           fontFamilyFallback: const ['NajdArabicFallback'],
           color: text,
           fontSize: 22,
           fontWeight: FontWeight.w800,
         ),
         contentTextStyle: TextStyle(
-          fontFamily: NajdAppearance.instance.fontFamily ?? 'ThmanyahSans',
+          fontFamily: NajdAppearance.instance.activeFontFamily,
           fontFamilyFallback: const ['NajdArabicFallback'],
           color: text,
           height: 1.7,
@@ -163,7 +187,7 @@ class NajdThemes {
         ),
       ),
       textTheme: ThemeData(brightness: brightness).textTheme.apply(
-        fontFamily: NajdAppearance.instance.fontFamily ?? 'ThmanyahSans',
+        fontFamily: NajdAppearance.instance.activeFontFamily,
         fontFamilyFallback: const ['NajdArabicFallback'],
         bodyColor: text,
         displayColor: text,

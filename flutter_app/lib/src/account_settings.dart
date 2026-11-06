@@ -1,3 +1,5 @@
+import 'library_store.dart';
+import 'library_backup_control.dart';
 import 'najd_panels.dart';
 import 'stitch_design.dart';
 
@@ -13,7 +15,8 @@ import 'cloud_library.dart';
 import 'app_target.dart';
 
 class NajdAccountPage extends StatefulWidget {
-  const NajdAccountPage({super.key});
+  const NajdAccountPage({super.key, this.store});
+  final LocalLibraryStore? store;
   @override
   State<NajdAccountPage> createState() => _NajdAccountPageState();
 }
@@ -35,10 +38,11 @@ class _NajdAccountPageState extends State<NajdAccountPage> {
   }
 
   Future<void> load() async {
+    installationId = await CloudLibrarySync.installationOwnerId() ?? '';
+    if (!mounted) return;
+    setState(() {});
     try {
       final data = await CloudLibrarySync.profile();
-      if (!mounted) return;
-      installationId = await CloudLibrarySync.installationOwnerId() ?? '';
       if (!mounted) return;
       name.text = '${data['display_name'] ?? 'مشاهد نجد'}';
       avatar = '${data['avatar_data'] ?? ''}';
@@ -162,6 +166,8 @@ class _NajdAccountPageState extends State<NajdAccountPage> {
           ),
         const SizedBox(height: 20),
         const NajdSurface(child: NajdLinkPanel()),
+        if (widget.store != null)
+          NajdSurface(child: LibraryBackupControl(store: widget.store!)),
       ],
     ),
   );
