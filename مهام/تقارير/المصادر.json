@@ -2,13 +2,13 @@
   "schema_version": 1,
   "scope": "static repository declarations; no network requests",
   "counts": {
-    "site_modules_with_metadata": 24,
-    "registered_modules": 24,
+    "site_modules_with_metadata": 25,
+    "registered_modules": 25,
     "explicit_mirrors": 2,
-    "not_marked_as_mirror": 22,
+    "not_marked_as_mirror": 23,
     "ui_spellings": 0,
     "static_ui_array_entries": 0,
-    "pinned_search_modules": 22,
+    "pinned_search_modules": 23,
     "seed_only_entries": 6
   },
   "ui_delivery": {
@@ -415,6 +415,39 @@
       },
       "ui_spellings": [],
       "pinned_search_spellings": [],
+      "live_validation": "not_run"
+    },
+    {
+      "id": "fivetv",
+      "name": "فايف تي في (5TV)",
+      "code": "FTV",
+      "mirror_of": null,
+      "path": "server/scrapers/sites/fivetv.mjs",
+      "metadata_line": 18,
+      "source_sha256": "7b65c0f6ad6d0e44c5077319937560a2efd6aada702b2a50208504593e305583",
+      "registered": true,
+      "declared_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": false
+      },
+      "exported_capabilities": {
+        "catalog": true,
+        "search": true,
+        "details": true,
+        "episodes": true,
+        "servers": true,
+        "resolve": true,
+        "live": true
+      },
+      "ui_spellings": [],
+      "pinned_search_spellings": [
+        "fivetv"
+      ],
       "live_validation": "not_run"
     },
     {

@@ -36,6 +36,11 @@ export function scanEpisodeIndex(html,url,{provider,domains,title='',episodes=[]
   if(samePath&&((number&&number>page)||a.attr('rel')==='next'||/التالي|Next/i.test(a.text())))pages.add(next);
  });
  const parents=new Set();
+ // 5TV labels its observed parent link "return to drama", not the work title.
+ if(provider==='fivetv')$('a.ftv-episode-poster-back[href]').each((_,el)=>{
+  const parent=safePage($(el).attr('href'),url,domains);
+  if(parent&&/^\/series\/[^/]+\/?$/.test(new URL(parent).pathname))parents.add(parent);
+ });
  $('.br-series-detail-breadcrumb a[href],.breadcrumbs a[href],.breadcrumb a[href],.sh-single-breadcrumb a[href],.sh-single-info a[href],.episode-parent a[href],a[rel="up"][href]').each((_,el)=>{
   const a=$(el),href=safePage(a.attr('href'),url,domains);if(!href||href===url)return;
   if(/series|serie|season|مسلسل|انمي|anime/i.test(new URL(href).pathname)&&title&&cleanTitle(a.text())===cleanTitle(title))parents.add(href);

@@ -104,7 +104,7 @@ export function scanSourceGraph(
       parents.add(href);
     const navigation =
       a.closest(
-        ".episode-navigation,.episodes-navigation,.next-episode,.prev-episode,.episode-nav",
+        ".episode-navigation,.episodes-navigation,.next-episode,.prev-episode,.episode-nav,.ftv-episode-navigation",
       ).length > 0;
     if (
       number &&
