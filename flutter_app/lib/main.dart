@@ -1338,6 +1338,15 @@ class _SettingsPageState extends State<SettingsPage> {
                     '$productVersion $productChannel ($productBuild)',
                 child: Text('عن نجد والتراخيص'),
               ),
+              Padding(
+                key: const Key('settings-product-version'),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'الإصدار v$productVersion · $productChannel · البناء $productBuild',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
               if (_busy) const LinearProgressIndicator(),
             ]
             .map(
