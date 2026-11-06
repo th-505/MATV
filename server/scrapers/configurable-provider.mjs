@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import {getProviderConfig,registerProviderOrigins} from './shared/provider-config.mjs';
+import {getProviderConfig,registerProviderOrigins,runInNajdConfiguration} from './shared/provider-config.mjs';
 import {fetchProviderHtml,resolveSafeUrl} from './shared/http.mjs';
 import {contentIdentity} from '../../shared/content-identity.js';
 const wrapped=new WeakMap();
@@ -30,13 +30,13 @@ async function configuredSearch(entry,query,page,config,options){
  let next=null;const href=$('a[rel=next]').attr('href');if(href){try{next=Number(new URL(href,u).searchParams.get('page'))||null}catch{}}
  Object.defineProperty(items,'_meta',{value:{providerId:entry.meta.id,url:response.url,next_page:next},enumerable:false});return items;
 }
-export function wrapConfiguredProvider(entry){
+export function wrapConfiguredProvider(entry,{scope='najd',run=runInNajdConfiguration}={}){
  if(!entry)return entry;if(wrapped.has(entry))return wrapped.get(entry);
- registerProviderOrigins(entry.meta.id,entry.meta.domains);
- const meta={...entry.meta};Object.defineProperty(meta,'domains',{enumerable:true,get:()=>{const c=getProviderConfig(entry.meta.id);return c?.primary_domain?[c.primary_domain,...entry.meta.domains.filter(x=>x!==c.primary_domain)]:entry.meta.domains}});
- Object.defineProperty(meta,'enabled',{enumerable:true,get:()=>getProviderConfig(entry.meta.id)?.enabled!==false});
+ registerProviderOrigins(entry.meta.id,entry.meta.domains,scope);
+ const meta={...entry.meta};Object.defineProperty(meta,'domains',{enumerable:true,get:()=>run(()=>{const c=getProviderConfig(entry.meta.id);return c?.primary_domain?[c.primary_domain,...entry.meta.domains.filter(x=>x!==c.primary_domain)]:entry.meta.domains})});
+ Object.defineProperty(meta,'enabled',{enumerable:true,get:()=>run(()=>getProviderConfig(entry.meta.id)?.enabled!==false)});
  const module={...entry.module,PROVIDER_META:meta};
- for(const[name,fn]of Object.entries(entry.module))if(typeof fn==='function'&&/^(scrape|resolveStream)/.test(name))module[name]=async(...args)=>{
+ for(const[name,fn]of Object.entries(entry.module))if(typeof fn==='function'&&/^(scrape|resolveStream)/.test(name))module[name]=(...args)=>run(async()=>{
   const config=getProviderConfig(entry.meta.id);if(config?.enabled===false)throw Error('SOURCE_DISABLED');
   if(name==='scrapeSearch'&&config?.card_selector)return configuredSearch(entry,args[0],args[1]||1,config,args[2]||{});
   const values=[...args];let pagination=null;
@@ -49,6 +49,6 @@ export function wrapConfiguredProvider(entry){
   const result=mapResult(await fn(...values),entry.meta);
   if(Array.isArray(result)&&pagination){if(result._meta)Object.assign(result._meta,pagination);else Object.defineProperty(result,'_meta',{value:pagination,enumerable:false});}
   return result;
- };
+ });
  const output={meta:Object.freeze(meta),module:Object.freeze(module)};wrapped.set(entry,output);return output;
 }

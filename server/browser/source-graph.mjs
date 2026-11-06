@@ -3,7 +3,7 @@ import {
   scanEpisodeIndex,
   referenceUrl,
   shortHash,
-} from "../harvest/episode-index.mjs";
+} from "./episode-index.mjs";
 import { identityTitle } from "../scrapers/content-discovery.mjs";
 import {
   explicitEpisode,

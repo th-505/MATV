@@ -1,9 +1,11 @@
 // Private captures stay outside Git. Only counts/diagnostics are printed.
 import {readFileSync} from 'node:fs';
-import {parseFiveTvCatalog, parseFiveTvDetails} from '../server/scrapers/sites/fivetv.mjs';
+import * as najd from '../server/scrapers/sites/fivetv.mjs';
+import * as beta from '../server/browser/providers/sites/fivetv.mjs';
 const path = process.argv[2];
 if (!path) throw Error('Usage: node scripts/fivetv_capture_audit.mjs /private/capture.json');
 const capture = JSON.parse(readFileSync(path, 'utf8'));
+function audit({parseFiveTvCatalog, parseFiveTvDetails}) {
 const stats = {records: capture.records.length, html: 0, details: 0, catalogs: 0,
   catalog_items: 0, episode_references: 0, watch_servers: 0, unsupported_pages: 0, failures: 0};
 for (const record of capture.records) {
@@ -27,5 +29,8 @@ for (const record of capture.records) {
     }
   } catch { stats.failures++; }
 }
-console.log(JSON.stringify(stats, null, 2));
-if (stats.failures) process.exitCode = 1;
+return stats;
+}
+const results = {najd: audit(najd), beta: audit(beta)};
+console.log(JSON.stringify(results, null, 2));
+if (results.najd.failures || results.beta.failures) process.exitCode = 1;

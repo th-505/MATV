@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as fixture from '../scripts/fixtures/providers/fivetv.fixture.mjs';
 import * as five from '../server/scrapers/sites/fivetv.mjs';
 import {getProvider} from '../server/scrapers/registry.mjs';
+import {getProvider as getBetaProvider} from '../server/browser/registry.mjs';
 import {createSourceSearch, listSourceCapabilities} from '../server/scrapers/source-registry.mjs';
 import {createProviderBrowser} from '../server/scrapers/provider-browser.mjs';
 import {installProviderConfigs} from '../server/scrapers/shared/provider-config.mjs';
@@ -82,15 +83,17 @@ test('5TV episode parent and navigation work in canonical harvesting and beta gr
   assert(graph.neighbors.some(u => u.endsWith('-8/')));
 });
 
-test('5TV is routed by both Najd search and beta catalog using the same selected provider', async () => {
+test('5TV is routed by Najd search and the separate beta implementation with the same source identity', async () => {
   assert(listSourceCapabilities().some(s => s.id === 'fivetv'));
   const entry = getProvider('fivetv');
   const search = createSourceSearch({loadModule: () => ({scrapeSearch: (q, n) => entry.module.scrapeSearch(q, n, {fixtureHtml: fixture.SEARCH_HTML})})});
   const hits = await search('فرانشيسكا', 'fivetv');
   assert(hits.length);
   assert(hits.every(r => r.selected_source === 'fivetv'));
-  const browser = createProviderBrowser({providers: () => [entry.meta], lookup: () => ({...entry,
-    module: {...entry.module, scrapeCatalog: (cat, n) => entry.module.scrapeCatalog(cat, n, {fixtureHtml: fixture.CATALOG_HTML})}})});
+  const betaEntry = getBetaProvider('fivetv');
+  assert.notEqual(betaEntry.module.scrapeCatalog, entry.module.scrapeCatalog);
+  const browser = createProviderBrowser({providers: () => [betaEntry.meta], lookup: () => ({...betaEntry,
+    module: {...betaEntry.module, scrapeCatalog: (cat, n) => betaEntry.module.scrapeCatalog(cat, n, {fixtureHtml: fixture.CATALOG_HTML})}})});
   assert.equal(browser.sources()[0].id, 'fivetv');
   assert(browser.sources()[0].categories.some(c => c.id === 'episodes'));
   const catalog = await browser.catalog('fivetv', 'series', 1);
@@ -102,14 +105,14 @@ test('5TV Najd and beta keep independent domain/search configuration under concu
   installProviderConfigs([{provider:'fivetv',config:{primary_domain:'https://najd.example',search_path:'/find/',search_parameter:'q'}}]);
   installBrowserConfigs([{provider:'fivetv',config:{primary_domain:'https://beta.example',search_path:'/lookup/',search_parameter:'q'}}]);
   try {
-    const reader = async () => {
+    const reader = async lookup => {
       await Promise.resolve();
-      const entry = getProvider('fivetv');
+      const entry = lookup('fivetv');
       const origin = entry.meta.domains[0];
       const html = fixture.SEARCH_HTML.replaceAll(base, origin);
       return entry.module.scrapeSearch('فرانشيسكا', 1, {fixtureHtml: html});
     };
-    const [najd, beta] = await Promise.all([reader(), runInBrowserLane(reader)]);
+    const [najd, beta] = await Promise.all([runInBrowserLane(() => reader(getProvider)), reader(getBetaProvider)]);
     assert.equal(new URL(najd._meta.url).origin, 'https://najd.example');
     assert.equal(new URL(najd._meta.url).pathname, '/find/');
     assert.equal(new URL(beta._meta.url).origin, 'https://beta.example');

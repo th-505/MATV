@@ -4,6 +4,9 @@
   "counts": {
     "site_modules_with_metadata": 25,
     "registered_modules": 25,
+    "najd_scrapers": 25,
+    "beta_scrapers": 25,
+    "total_scraper_implementations": 50,
     "explicit_mirrors": 2,
     "not_marked_as_mirror": 23,
     "ui_spellings": 0,
@@ -424,7 +427,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/fivetv.mjs",
       "metadata_line": 18,
-      "source_sha256": "7b65c0f6ad6d0e44c5077319937560a2efd6aada702b2a50208504593e305583",
+      "source_sha256": "a2f0a184092d19e142e75df1a2c5b5c9c5760f3ad1d659fe214a8c8b50746423",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -843,6 +846,233 @@
       },
       "ui_spellings": [],
       "pinned_search_spellings": [],
+      "live_validation": "not_run"
+    }
+  ],
+  "beta_units": [
+    {
+      "id": "3cktv",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/3cktv.mjs",
+      "source_sha256": "8dee5d9ff45f0b5d622e35db62922145c355410cebf31c668cf660ad2dbcea4c",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "3isk",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/3isk.mjs",
+      "source_sha256": "05a67605780c450017a83ed591760b5a491c500130a1fc64409f7021101ef484",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "ahwak",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/ahwak.mjs",
+      "source_sha256": "d5dd86966d56b0077cda785a18a5d1d28ef82a7c41412a5f5f3b2e694ebf966e",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "akwam",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/akwam.mjs",
+      "source_sha256": "5a08ca8c4a822f5ed41ff07b9fc7e7dc8b830bf2e314eafbcb6f307aaabbae80",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "alooy",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/alooy.mjs",
+      "source_sha256": "a884dc2316e899ef548f050636d522784ae4036bdfc48686fe6dcab13fe1dc28",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "anime4up",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/anime4up.mjs",
+      "source_sha256": "44a2677404e793498efa4be8c1ecac14645c13619db076483f0795f3658cab44",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "anime4up_rest",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/anime4up_rest.mjs",
+      "source_sha256": "16db4fc5b3e89135fa767b25eb1ce83c800546b1a77b1f9a8ad5c894b53844ec",
+      "registered": true,
+      "mirror_of": "anime4up",
+      "live_validation": "not_run"
+    },
+    {
+      "id": "arabseed",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/arabseed.mjs",
+      "source_sha256": "c67756580a1d23ff033acf89558cc5ff59835c63381f827d8fc7bd960eee4742",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "brstej",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/brstej.mjs",
+      "source_sha256": "47edf0f4219b2be2594c6b940947c0d73d9ce9293f403c891fcf875ebe21a268",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "cimanow",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/cimanow.mjs",
+      "source_sha256": "6a3333037d662980aef1e2fd75b9b3552e526a018b0a88aff9d00074959e13af",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "egydead",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/egydead.mjs",
+      "source_sha256": "a2321c76f55c4a8686dc3332d99b8d1060a145d928ca163acde04245cf81605a",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "egydead_live",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/egydead_live.mjs",
+      "source_sha256": "e023faa8e5ea7c7a1c0c27324473936528009decebf34b35fdcb4eb34ac9f933",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "fivetv",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/fivetv.mjs",
+      "source_sha256": "726679b91d4754c6c6c4df0c455eaadae8c91e27da69ef4b6c665fd13d65b1aa",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "fosta",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/fosta.mjs",
+      "source_sha256": "a44b29c6b5012f6f8cf2522d10a1ba6f8828ad1e9e5cb8a12b5fed5838556d97",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "ipauniverse",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/ipauniverse.mjs",
+      "source_sha256": "6e24d8e828bcbfd8915d9c01929c119ee6f421545b1ace7c48433322796f5d6b",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "laroza",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/laroza.mjs",
+      "source_sha256": "9c7e1e29236f58ec1d6388279826825bc37f2d5451759256bb6a422c91c92a77",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "mewsry",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/mewsry.mjs",
+      "source_sha256": "d0e6cdcaa9325db89952a74135aa07cb79936b55ab3ab72ec00aa52328c948c3",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "moviztime",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/moviztime.mjs",
+      "source_sha256": "66b7caf91fc5f2587ec8dec751f6d6e918bc6555a7a940e87ccb0a28b51056df",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "mycima",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/mycima.mjs",
+      "source_sha256": "8157c993bfc1b5f5a7f2da43875718bd79647b91a94b18a57a40564900dbc049",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "qfilm",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/qfilm.mjs",
+      "source_sha256": "6e6ed5532b7890d59adb5ab8074e0fd191be7758c302a5bf7754c996a31ba58c",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "ristoanime",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/ristoanime.mjs",
+      "source_sha256": "3e2fbe94a4184f4277289bde48d164ec0bd9e9b719b237e1642887f867d5a0bf",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "shahid4u",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/shahid4u.mjs",
+      "source_sha256": "52712ddab79ccf22547585e821e965291f3bd0f9daddfb74ca73fe0f7c2186fc",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "shii4u",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/shii4u.mjs",
+      "source_sha256": "5d448fc36c9aeae2a5514c86867a74cdfca88227724eff98345f60f871f02fb1",
+      "registered": true,
+      "mirror_of": "shahid4u",
+      "live_validation": "not_run"
+    },
+    {
+      "id": "witanime",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/witanime.mjs",
+      "source_sha256": "c0092cf34656cadcccb74025b35c52e76a9a3e47801c8c9815a66c83bcbf5169",
+      "registered": true,
+      "mirror_of": null,
+      "live_validation": "not_run"
+    },
+    {
+      "id": "yallashoot",
+      "scope": "beta",
+      "path": "server/browser/providers/sites/yallashoot.mjs",
+      "source_sha256": "3600982804dc1b9fd6e02913280238659c351e0422da5f8392602984e24d14b0",
+      "registered": true,
+      "mirror_of": null,
       "live_validation": "not_run"
     }
   ],

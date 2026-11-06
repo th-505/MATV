@@ -114,6 +114,23 @@ def inventory():
         for unit in units:
             unit['ui_spellings'] = [unit['id']] if unit['id'] in ui else []
     known = {unit['id'] for unit in units}
+    beta_registry = (ROOT / 'server/browser/registry.mjs').read_text()
+    beta_units = []
+    for path in sorted((ROOT / 'server/browser/providers/sites').glob('*.mjs')):
+        source = path.read_text()
+        meta = block(source, 'export const PROVIDER_META =')
+        if meta is None:
+            continue
+        constants = dict(re.findall(r'''(?:export\s+)?const\s+(\w+)\s*=\s*['"]([^'"\n]*)['"]''', source))
+        constants.update({'SHAHID_ID': 'shahid4u', 'CORE_META.id': 'anime4up'})
+        beta_units.append({
+            'id': field(meta, 'id', constants), 'scope': 'beta',
+            'path': path.relative_to(ROOT).as_posix(),
+            'source_sha256': hashlib.sha256(source.encode()).hexdigest(),
+            'registered': f"'./providers/sites/{path.name}'" in beta_registry,
+            'mirror_of': field(meta, 'mirrorOf', constants),
+            'live_validation': 'not_run',
+        })
     seed_only = [row for row in seeds if ALIASES.get(row['id'], row['id']) not in known]
     duplicates = {}
     for unit in units:
@@ -128,6 +145,9 @@ def inventory():
     return {'schema_version': 1, 'scope': 'static repository declarations; no network requests',
             'counts': {'site_modules_with_metadata': len(units),
                        'registered_modules': sum(unit['registered'] for unit in units),
+                       'najd_scrapers': sum(unit['registered'] for unit in units),
+                       'beta_scrapers': sum(unit['registered'] for unit in beta_units),
+                       'total_scraper_implementations': sum(unit['registered'] for unit in units + beta_units),
                        'explicit_mirrors': sum(bool(unit['mirror_of']) for unit in units),
                        'not_marked_as_mirror': sum(not unit['mirror_of'] for unit in units),
                        'ui_spellings': len(ui), 'static_ui_array_entries': len(static_ui), 'pinned_search_modules': len(pinned),
@@ -136,7 +156,7 @@ def inventory():
                             'endpoint': '/api/v1/explore/sources' if dynamic_ui else None,
                             'live_endpoint_validation': 'not_run'},
             'pinned_search_mode': 'capability_registry' if registry_routed else 'legacy_searchers',
-            'aliases': ALIASES, 'units': units, 'seed_only': seed_only,
+            'aliases': ALIASES, 'units': units, 'beta_units': beta_units, 'seed_only': seed_only,
             'duplicate_codes': {code: ids for code, ids in duplicates.items() if len(ids) > 1},
             'server_adapters': adapters, 'edge_config_files': configs,
             'supervisor_facades': [path.relative_to(ROOT).as_posix() for path in sorted((ROOT / 'server/scrapers').glob('supervisor*.mjs'))],
@@ -151,8 +171,9 @@ def inventory():
 
 def render(data):
     c = data['counts']
-    lines = ['# جرد مصادر T-A-TV من الشفرة', '',
+    lines = ['# جرد قواشط نجد TV والبيتا من الشفرة', '',
              'هذا تقرير آلي ساكن؛ لا يرسل أي طلب للمزودين ولا يثبت نجاح التشغيل.', '',
+             f"- قواشط نجد: **{c['najd_scrapers']}**؛ قواشط البيتا: **{c['beta_scrapers']}**؛ مجموع وحدات التنفيذ المنفصلة: **{c['total_scraper_implementations']}**.",
              f"- وحدات مواقع ذات تعريف PROVIDER_META: **{c['site_modules_with_metadata']}**؛ المسجل منها: **{c['registered_modules']}**.",
              f"- مرآتان مصرح بهما في التعريف: **{c['explicit_mirrors']}**؛ الوحدات غير الموسومة كمرآة: **{c['not_marked_as_mirror']}**. هذا لا يثبت استقلال مالكي المواقع.",
              f"- مصادر الواجهة المستنتجة من الشفرة: **{c['ui_spellings']}**؛ وحدات البحث المثبت المربوطة برمجيًا: **{c['pinned_search_modules']}**.",
@@ -164,7 +185,14 @@ def render(data):
     for unit in data['units']:
         caps = ', '.join(name for name in FEATURES if unit['declared_capabilities'][name] is True and unit['exported_capabilities'][name])
         lines.append(f"| `{unit['id']}` | {unit['mirror_of'] or '—'} | {caps} | {', '.join(unit['ui_spellings']) or '—'} | {', '.join(unit['pinned_search_spellings']) or '—'} | `{unit['path']}:{unit['metadata_line']}` |")
-    lines += ['', '## الأسماء البديلة والطبقات', '',
+    lines += ['', '## سجل البيتا المستقل', '',
+              'هذه ملفات تنفيذ مستقلة وليست إعادة تصدير لقواشط نجد. تشترك في أدوات الأمان والنقل العامة فقط، وتظل المراجع المثبتة متوافقة.', '',
+              '| المعرف | مرآة ضمن البيتا لـ | ملف التنفيذ |',
+              '|---|---|---|']
+    for unit in data['beta_units']:
+        lines.append(f"| `{unit['id']}` | {unit['mirror_of'] or '—'} | `{unit['path']}` |")
+    lines += ['', 'المجموع يحصي وحدات القشط في المسارين؛ لا يعني خمسين موقعًا مختلفًا. تعديل قارئ مصدر في مسار لا يعدل الملف المقابل في المسار الآخر.', '',
+              '## الأسماء البديلة والطبقات', '',
               '- `akoam` في الواجهة وطبقة server/providers يقابل `akwam` في وحدات القشط.',
               '- `wecima` اسم واجهة للمصدر `mycima`؛ ليس ملف موقع مستقلًا.',
               '- `shii4u` مرآة معلنة لـ `shahid4u` و`anime4up_rest` مرآة معلنة لـ `anime4up`.',

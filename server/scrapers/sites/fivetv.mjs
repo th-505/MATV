@@ -1,4 +1,4 @@
-// 5TV: one HTML reader, used by Najd and the isolated beta configuration lane.
+// 5TV: Najd-owned HTML reader; beta has its own implementation.
 import * as cheerio from 'cheerio';
 import {fetchProviderHtml, resolveSafeUrl} from '../shared/http.mjs';
 import {effectiveProviderDomains} from '../shared/provider-config.mjs';

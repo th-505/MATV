@@ -1,8 +1,9 @@
 # 5TV provider: Najd and beta
 
-`server/scrapers/sites/fivetv.mjs` is registered once. Najd discovery/search uses
-the capability registry; beta uses the same parser through its independent
-AsyncLocalStorage configuration lane, catalog service and source-work index.
+`server/scrapers/sites/fivetv.mjs` belongs to Najd; the independently editable
+`server/browser/providers/sites/fivetv.mjs` belongs to beta. Each is registered
+in its own registry. Beta never imports or dispatches to Najd's source parser.
+They retain separate configuration lanes, catalogs and source-work indexes.
 There are no copied client pages, third-party fonts, images or page scripts in
 the application bundle. The 118 MB user capture remains outside Git.
 
@@ -43,10 +44,11 @@ the existing bounded media-container probe (`container_verified: true`, HTTP200)
 The other four failed extraction or timed out. This is direct-container evidence,
 not physical-device playback certification or a guarantee for every source work.
 
-The registry now has 25 modules, including two explicit mirrors, versus 24
-previously. There are 23 search-capable entries and 23 independent catalog
-entries available to beta. These are overlapping execution views, not 50
-independent upstream sites or 50 copied scraper implementations.
+Each registry has 25 independently editable scraper modules: **25 Najd + 25 beta
+= 50 implementations**. Provider-specific helper parsers also have beta-owned
+copies. This count includes two mirror entries per family and represents 25
+source identities, not 50 different upstream websites. Search/catalog capability
+filters still exclude unsupported operations. See [SCRAPER_FAMILIES.md](SCRAPER_FAMILIES.md).
 
 ## Reproduction
 
