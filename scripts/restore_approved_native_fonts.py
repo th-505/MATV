@@ -41,4 +41,6 @@ if __name__ == '__main__':
     destination.mkdir(parents=True, exist_ok=True)
     for name, data in result.items():
         (destination / name).write_bytes(data)
+    from register_private_font_manifest import register
+    register(Path(__file__).resolve().parents[1] / 'flutter_app', require_all=False)
     print('Verified original native typography and license restored into ignored build inputs.')

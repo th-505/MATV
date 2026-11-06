@@ -1,13 +1,8 @@
 """Read CI signing secrets without logging them; prove store, private-key password and pinned certificate."""
 import base64,hashlib,json,os,subprocess,tempfile
 from pathlib import Path
-from configure_android_release_signing import NAMES
-values={name:os.environ.get(name,'') for name in NAMES}
-if os.environ.get('NAJD_ANDROID_SIGNING_BUNDLE'):
- bundle=json.loads(os.environ['NAJD_ANDROID_SIGNING_BUNDLE'])
- if not isinstance(bundle,dict) or set(bundle)!=set(NAMES):raise SystemExit('INVALID_SIGNING_BUNDLE')
- values={name:values[name] or bundle[name] for name in NAMES}
-if any(not isinstance(v,str) or not v for v in values.values()):raise SystemExit('SIGNING_SECRET_MISSING')
+from configure_android_release_signing import NAMES, signing_values
+values=signing_values(os.environ)
 with tempfile.TemporaryDirectory(prefix='najd-ci-signing-') as folder:
  key=Path(folder)/'release.jks';key.write_bytes(base64.b64decode(values[NAMES[0]],validate=True));key.chmod(0o600)
  env=os.environ.copy();env['NAJD_VERIFY_STORE_PASS']=values[NAMES[1]];env['NAJD_VERIFY_KEY_PASS']=values[NAMES[3]]

@@ -261,11 +261,17 @@ class CloudLibrarySync with WidgetsBindingObserver {
   }
 
   static Future<String?> installationOwnerId() async {
-    final sync = await _startingDefault;
-    if (sync?.transport is AnonymousLibraryTransport) {
-      await (sync!.transport as AnonymousLibraryTransport).prepare();
+    // Identity is local session state. A failed profile RPC must not hide it.
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(AnonymousLibraryTransport._ownerKey);
+    if (saved != null && saved.isNotEmpty) return saved;
+    try {
+      final sync = await _startingDefault?.timeout(const Duration(seconds: 3));
+      final owner = sync?.transport.ownerId;
+      return owner?.isNotEmpty == true ? owner : null;
+    } catch (_) {
+      return null;
     }
-    return sync?.transport.ownerId;
   }
 
   static const deviceIdKey = 'mitv.device.uuid.v1';

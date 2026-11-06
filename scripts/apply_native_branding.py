@@ -186,14 +186,15 @@ def apply_web(root: Path):
         for name in (f"Icon-{size}.png",f"Icon-maskable-{size}.png"):
             write_icon(web/"icons"/name,size)
     write_icon(web/"favicon.png",64)
+    write_icon(web/"icons"/"Najd-Apple-180.png",180)
     manifest = web / "manifest.json"
     if manifest.exists():
         data = json.loads(manifest.read_text(encoding="utf-8"))
         data.update({
             "name": "Najd TV",
             "short_name": "Najd TV",
-            "background_color": "#07090b",
-            "theme_color": "#07090b",
+            "background_color": "#08080e",
+            "theme_color": "#08080e",
             "description": "Najd TV للأفلام والمسلسلات والأنمي والمباريات المباشرة",
         })
         manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

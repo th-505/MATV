@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'app_target.dart';
@@ -225,6 +227,120 @@ class NajdWorkCard extends StatelessWidget {
   );
 }
 
+/// Home carousel pauses after user interaction and respects reduced motion.
+class NajdFeatureCarousel extends StatefulWidget {
+  const NajdFeatureCarousel({
+    super.key,
+    required this.items,
+    required this.isSaved,
+    required this.onWatch,
+    required this.onSave,
+  });
+  final List<CatalogItem> items;
+  final bool Function(CatalogItem) isSaved;
+  final ValueChanged<CatalogItem> onWatch, onSave;
+  @override
+  State<NajdFeatureCarousel> createState() => _NajdFeatureCarouselState();
+}
+
+class _NajdFeatureCarouselState extends State<NajdFeatureCarousel> {
+  final _pages = PageController();
+  Timer? _timer;
+  int _index = 0;
+  bool _interacted = false;
+  int get _count => widget.items.length.clamp(0, 8);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _timer?.cancel();
+    if (!_interacted &&
+        !MediaQuery.disableAnimationsOf(context) &&
+        TickerMode.valuesOf(context).enabled) {
+      _timer = Timer.periodic(const Duration(seconds: 8), (_) {
+        if (mounted && _pages.hasClients && _count > 1) {
+          _pages.animateToPage(
+            (_index + 1) % _count,
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+  }
+
+  void _pause() {
+    _interacted = true;
+    _timer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pages.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_count == 0) return const SizedBox.shrink();
+    return Focus(
+      onFocusChange: (focused) {
+        if (focused) _pause();
+      },
+      child: Listener(
+        onPointerDown: (_) => _pause(),
+        child: Column(
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).width < 600 ? 300 : 400,
+              child: PageView.builder(
+                controller: _pages,
+                itemCount: _count,
+                onPageChanged: (value) => setState(() => _index = value),
+                itemBuilder: (_, index) {
+                  final item = widget.items[index];
+                  return NajdFeatureHero(
+                    item: item,
+                    saved: widget.isSaved(item),
+                    onWatch: () => widget.onWatch(item),
+                    onSave: () => widget.onSave(item),
+                  );
+                },
+              ),
+            ),
+            if (_count > 1)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: 'العمل السابق',
+                    onPressed: () {
+                      _pause();
+                      _pages.jumpToPage((_index - 1 + _count) % _count);
+                    },
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                  Text(
+                    '${_index + 1} / $_count',
+                    semanticsLabel: 'العمل ${_index + 1} من $_count',
+                  ),
+                  IconButton(
+                    tooltip: 'العمل التالي',
+                    onPressed: () {
+                      _pause();
+                      _pages.jumpToPage((_index + 1) % _count);
+                    },
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class NajdFeatureHero extends StatelessWidget {
   const NajdFeatureHero({
     super.key,
@@ -240,7 +356,7 @@ class NajdFeatureHero extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, bounds) => SizedBox(
       key: const Key('stitch-feature-hero'),
-      height: bounds.maxWidth < 600 ? 430 : 480,
+      height: bounds.maxWidth < 600 ? 300 : 400,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Stack(

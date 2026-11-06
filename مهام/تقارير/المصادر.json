@@ -294,7 +294,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/brstej.mjs",
       "metadata_line": 11,
-      "source_sha256": "d59e561fc18af5e18f5fe3aa2efa8397c83076d787381e9c0c2c0c3921c2c826",
+      "source_sha256": "d0b705e0ae73e76a13786a4d6df8f62906424430c6a05dfb72f1a6a9e5b2c2f4",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,

@@ -314,7 +314,9 @@ class StreamSource {
     expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
     priority: int.tryParse('${json['priority'] ?? 0}') ?? 0,
     latencyMs: int.tryParse('${json['latency_ms'] ?? ''}'),
-    resolution: ResolutionOption.fromLabel('${json['label'] ?? ''}'),
+    resolution: ResolutionOption.fromLabel(
+      '${json['quality'] ?? json['label'] ?? ''}',
+    ),
     mediaPath: '${json['url'] ?? json['media_path'] ?? ''}',
     mediaType:
         '${json['format'] == 'hls'
@@ -546,7 +548,7 @@ class TitleDetails {
                 .whereType<Map>()
                 .map((e) => PlaybackSource.fromJson(e.cast<String, dynamic>()))
                 .where((e) => e.mediaPath.isNotEmpty)
-                .take(8)
+                .take(256)
                 .toList(growable: false)
           : const []),
       playbackMode: '${json['playback_mode'] ?? 'proxy'}',

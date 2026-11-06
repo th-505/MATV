@@ -1122,7 +1122,7 @@ class MitvApi implements MediaRepository {
     }
     _edgeStreams.addAll(validated);
     _edgeStreams.removeWhere((_, expiry) => !expiry.isAfter(DateTime.now()));
-    while (_edgeStreams.length > 64) {
+    while (_edgeStreams.length > 1024) {
       _edgeStreams.remove(_edgeStreams.keys.first);
     }
   }
@@ -1455,7 +1455,7 @@ class MitvApi implements MediaRepository {
       throw const ApiException('EDGE_NO_HEALTHY_SOURCES');
     }
     final sources = <PlaybackSource>[];
-    for (final raw in (data['sources'] as List).take(8)) {
+    for (final raw in (data['sources'] as List).take(256)) {
       if (raw is! Map ||
           (const bool.fromEnvironment('dart.library.js_interop') &&
               raw['web_playable'] != true) ||
@@ -1485,7 +1485,7 @@ class MitvApi implements MediaRepository {
       sources.add(source);
     }
     _edgeStreams.removeWhere((_, expiry) => expiry.isBefore(DateTime.now()));
-    while (_edgeStreams.length > 64) {
+    while (_edgeStreams.length > 1024) {
       _edgeStreams.remove(_edgeStreams.keys.first);
     }
     if (sources.isEmpty) throw const ApiException('EDGE_NO_HEALTHY_SOURCES');

@@ -1,3 +1,4 @@
+import {cascadeResolveStream} from '../scrapers/stream-unwrapper.mjs';
 import {sourceEpisodeEvidence} from '../scrapers/shared/source-episode-evidence.mjs';
 import {resolveProviderMedia} from '../scrapers/shared/provider-media.mjs';
 import {supportsContent} from '../scrapers/content-scope.mjs';
@@ -118,16 +119,16 @@ export function createHarvestPipeline({store,metadata,entries,now=Date.now,probe
    let technical;try{technical=await probe(candidate,{platform:'native'})}catch(error){probeFailures.push({reason:/^[A-Z_]{2,80}$/.test(error.code||'')?error.code:'MEDIA_READ_FAILED'});continue}
    if(!technical.playable){probeFailures.push({reason:'MEDIA_CONTAINER_UNAVAILABLE',status:technical.statusCode||null});continue;}
    const publicHeaders={};for(const[k,v]of Object.entries(candidate.headers||{}))if(['referer','origin','user-agent','cookie'].includes(k.toLowerCase())&&typeof v==='string'&&!/[\r\n]/.test(v))publicHeaders[k]=v;
-   accepted.push({...candidate,provider:entry.meta.id,kind:'direct',headers:publicHeaders,expires_at:new Date(expires).toISOString(),identity_verified:true,observed_identity:{...(input.payload.observed_identity||{}),season:input.payload.observed_episode?.season||0,episode:input.payload.observed_episode?.episode||0},source_identity:input.payload.observed_episode||null,canonical_identity_verified:work.metadata.identity_scope!=='source',source_edition:work.metadata.source_edition||'unknown',edition:work.metadata.edition||entry.meta.id+':'+shortHash(source),source_ref:source,verification_basis:(work.metadata.identity_scope==='source'?'source-own-index-and-':'canonical-work-source-metadata-and-')+(technical.container_verified?'container-bytes':'probe'),web_playable:technical.webPlayable===true,season:input.season_number,episode:input.episode_number});
+   accepted.push({...candidate,...(technical.adaptive?{adaptive:true,quality:'AUTO-HLS',quality_levels:technical.quality_levels}:{}),provider:entry.meta.id,kind:'direct',headers:publicHeaders,expires_at:new Date(expires).toISOString(),identity_verified:true,observed_identity:{...(input.payload.observed_identity||{}),season:input.payload.observed_episode?.season||0,episode:input.payload.observed_episode?.episode||0},source_identity:input.payload.observed_episode||null,canonical_identity_verified:work.metadata.identity_scope!=='source',source_edition:work.metadata.source_edition||'unknown',edition:work.metadata.edition||entry.meta.id+':'+shortHash(source),source_ref:source,verification_basis:(work.metadata.identity_scope==='source'?'source-own-index-and-':'canonical-work-source-metadata-and-')+(technical.container_verified?'container-bytes':'probe'),web_playable:technical.webPlayable===true,season:input.season_number,episode:input.episode_number});
   }
    return accepted;};
-  let media=await resolveProviderMedia(entry,source,{details:d,network,accept:inspect});
+  let media=await resolveProviderMedia(entry,source,{details:d,network,resolveEmbed:(target,parent,deadline)=>cascadeResolveStream(target,parent,0,new Set(),deadline),accept:inspect});
   if(!media.length){const target=referenceUrl(source,domains(entry));media=await inspect(await unwrapEmbedToDirectStreams(target,target));}
   const expiry=media.length?Math.min(...media.map(x=>Date.parse(x.expires_at))):null;
   await store.setEpisode(ref,entry.meta.id,source,{state:media.length?'playable':'unavailable',media,media_expires_at:expiry?new Date(expiry).toISOString():null,last_checked_at:new Date(now()).toISOString()});
   if(media.length)await store.request('najd_work_catalog',{ref:'eq.'+ref},'PATCH',{state:'playable',updated_at:new Date(now()).toISOString()});
-  await event(ref,entry.meta.id,'episode',media.length?'playable':'unavailable',media.length?null:'DIRECT_MEDIA_NOT_FOUND',{season:input.season_number,episode:input.episode_number,media_count:media.length,probe_failures:probeFailures.slice(0,10)});
-  return {refreshAt:expiry?Math.max(now()+60000,expiry-5*60000):now()+3600000,progress:{outcome:media.length?'playable':'unavailable',media_count:media.length}};
+  await event(ref,entry.meta.id,'episode',media.length?'playable':'unavailable',media.length?null:'DIRECT_MEDIA_NOT_FOUND',{season:input.season_number,episode:input.episode_number,media_count:media.length,server_scan:media._meta||null,probe_failures:probeFailures.slice(0,10)});
+  return {refreshAt:expiry?Math.max(now()+60000,expiry-5*60000):now()+3600000,progress:{outcome:media.length?'playable':'unavailable',media_count:media.length,server_scan:media._meta||null}};
   }catch(error){await store.setEpisode(ref,entry.meta.id,source,{state:'unavailable',media:[],media_expires_at:null,last_checked_at:new Date(now()).toISOString()}).catch(()=>{});throw error;}
  }
  async function season(input){

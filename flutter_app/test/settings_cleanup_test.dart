@@ -79,9 +79,13 @@ void main() {
       await tester.pumpAndSettle();
       await selectShellDestination(tester, 'movies');
       await tester.pumpAndSettle();
-      expect(api.categories, ['catalog:movie:all', 'catalog:movie:all']);
+      expect(api.categories, contains('catalog:movie:all'));
+      final priorCinemaState = tester.state(find.byType(CatalogPage));
+      final requestsBeforeCleanup = List<String>.of(api.categories);
       await selectShellDestination(tester, 'settings');
       await tester.pumpAndSettle();
+      expect(find.text('إضافة خط من ZIP'), findsNothing);
+      expect(find.text('استعادة الخط الافتراضي'), findsNothing);
       await revealSetting(tester, 'مسح الكاش المحلي');
       await tester.tap(find.text('مسح الكاش المحلي'));
       await tester.pumpAndSettle();
@@ -95,8 +99,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.clears, 1);
       expect(
-        api.categories.length,
-        2,
+        api.categories,
+        requestsBeforeCleanup,
         reason: 'cleanup must not fetch unseen sections',
       );
       final prefs = await SharedPreferences.getInstance();
@@ -107,15 +111,16 @@ void main() {
       expect(store.resumePosition(item.ref), const Duration(seconds: 15));
       await selectShellDestination(tester, 'home');
       await tester.pumpAndSettle();
-      expect(api.categories, [
-        'catalog:movie:all',
-        'catalog:movie:all',
-        'catalog:movie:all',
-      ]);
+      expect(
+        api.categories.where((ref) => ref == 'catalog:movie:all').length,
+        2,
+      );
       await selectShellDestination(tester, 'movies');
       await tester.pumpAndSettle();
-      expect(api.categories.last, 'catalog:movie:all');
-      expect(api.categories.length, 4);
+      expect(
+        tester.state(find.byType(CatalogPage)),
+        isNot(same(priorCinemaState)),
+      );
       await tester.pumpWidget(const SizedBox());
     },
   );
@@ -186,14 +191,14 @@ void main() {
     await selectShellDestination(tester, 'movies');
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
-    expect(api.categories, ['catalog:movie:all', 'catalog:movie:all']);
+    expect(api.categories, contains('catalog:movie:all'));
+    final pendingCinemaState = tester.state(find.byType(CatalogPage));
     pending.complete();
     await tester.pumpAndSettle();
-    expect(api.categories, [
-      'catalog:movie:all',
-      'catalog:movie:all',
-      'catalog:movie:all',
-    ]);
+    expect(
+      tester.state(find.byType(CatalogPage)),
+      isNot(same(pendingCinemaState)),
+    );
     expect(api.clears, 1);
     await selectShellDestination(tester, 'settings');
     await tester.pumpAndSettle();

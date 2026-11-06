@@ -1,0 +1,902 @@
+{
+  "basis": "Real catalogue/search/details/container probe on one observed work per provider/scope, not every film or series or device decoding. Network-dependent. Brstej now uses the verified redirect target; some five-second live catalogue checks still timed out. Header-consistency fix followed the Najd audit; Beta began after that fix.",
+  "scopes": {
+    "najd": {
+      "observed_at": "2026-11-06T01:43:21.067Z",
+      "state": "ready",
+      "total": 22,
+      "finished": 22,
+      "checks": [
+        {
+          "id": "najd:ahwak",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 29611
+        },
+        {
+          "id": "najd:brstej",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "failed",
+              "reason": "SEARCH_UNCONFIRMED"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 22258
+        },
+        {
+          "id": "najd:fosta",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 27232
+        },
+        {
+          "id": "najd:mycima",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 16908
+        },
+        {
+          "id": "najd:akwam",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 9530
+        },
+        {
+          "id": "najd:cimanow",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 8771
+        },
+        {
+          "id": "najd:shahid4u",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 10185
+        },
+        {
+          "id": "najd:moviztime",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 8578
+        },
+        {
+          "id": "najd:egydead",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 487
+        },
+        {
+          "id": "najd:ipauniverse",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 4133
+        },
+        {
+          "id": "najd:3cktv",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 6613
+        },
+        {
+          "id": "najd:anime4up",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 5446
+        },
+        {
+          "id": "najd:qfilm",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 2397
+        },
+        {
+          "id": "najd:ristoanime",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 8023
+        },
+        {
+          "id": "najd:arabseed",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 2189
+        },
+        {
+          "id": "najd:mewsry",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 1959
+        },
+        {
+          "id": "najd:witanime",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "ACCESS_BLOCKED"
+            }
+          ],
+          "duration_ms": 180
+        },
+        {
+          "id": "najd:egydead_live",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 1735
+        },
+        {
+          "id": "najd:yallashoot",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 2370
+        },
+        {
+          "id": "najd:3isk",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 6628
+        },
+        {
+          "id": "najd:alooy",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 3276
+        },
+        {
+          "id": "najd:laroza",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 9011
+        }
+      ]
+    },
+    "beta": {
+      "observed_at": "2026-11-06T01:46:52.123Z",
+      "state": "ready",
+      "total": 22,
+      "finished": 22,
+      "checks": [
+        {
+          "id": "beta:ahwak",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 23537
+        },
+        {
+          "id": "beta:brstej",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 5046
+        },
+        {
+          "id": "beta:fosta",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 26707
+        },
+        {
+          "id": "beta:mycima",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 19811
+        },
+        {
+          "id": "beta:akwam",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 13015
+        },
+        {
+          "id": "beta:cimanow",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 9712
+        },
+        {
+          "id": "beta:shahid4u",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 10142
+        },
+        {
+          "id": "beta:moviztime",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 8158
+        },
+        {
+          "id": "beta:egydead",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 426
+        },
+        {
+          "id": "beta:ipauniverse",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 3530
+        },
+        {
+          "id": "beta:3cktv",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 11175
+        },
+        {
+          "id": "beta:anime4up",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 5655
+        },
+        {
+          "id": "beta:qfilm",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 2395
+        },
+        {
+          "id": "beta:ristoanime",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 9132
+        },
+        {
+          "id": "beta:arabseed",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 1557
+        },
+        {
+          "id": "beta:mewsry",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 681
+        },
+        {
+          "id": "beta:witanime",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "ACCESS_BLOCKED"
+            }
+          ],
+          "duration_ms": 181
+        },
+        {
+          "id": "beta:egydead_live",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 2580
+        },
+        {
+          "id": "beta:yallashoot",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 15145
+        },
+        {
+          "id": "beta:3isk",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 6989
+        },
+        {
+          "id": "beta:alooy",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed"
+            }
+          ],
+          "duration_ms": 2949
+        },
+        {
+          "id": "beta:laroza",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "NETWORK_TIMEOUT"
+            }
+          ],
+          "duration_ms": 9496
+        }
+      ]
+    }
+  }
+}

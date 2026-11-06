@@ -1,3 +1,4 @@
+import {collectionRequest} from './catalog-collections.mjs';
 export const BROWSE_SECTIONS = Object.freeze({
  movies:[['catalog:movie:all','الكل'],['catalog:movie:en','أجنبي'],['catalog:movie:ar','عربي'],['catalog:movie:hi','هندي'],['catalog:movie:ko','آسيوي'],['catalog:movie:tr','تركي']],
  series:[['catalog:tv:all','الكل'],['catalog:tv:en','أجنبي'],['catalog:tv:ar','عربي'],['catalog:tv:tr','تركي'],['catalog:tv:ko','آسيوي']],
@@ -5,8 +6,10 @@ export const BROWSE_SECTIONS = Object.freeze({
  turkish:[['catalog:turkish:tv','مسلسلات تركية'],['catalog:turkish:movie','أفلام تركية']],
 });
 export function browseRequest(ref,page=1){
+ const number=Number(page);if(!Number.isInteger(number)||number<1||number>500)throw Error('INVALID_CATALOG_SECTION');
+ const collection=collectionRequest(ref,number);if(collection)return collection;
  const known=Object.values(BROWSE_SECTIONS).flat().some(row=>row[0]===ref);
- const number=Number(page);if(!known || !Number.isInteger(number)||number<1||number>500)throw Error('INVALID_CATALOG_SECTION');
+ if(!known)throw Error('INVALID_CATALOG_SECTION');
  const [,group,value]=ref.split(':');
  const type=group==='movie'||group==='tv'?group:value;
  const language=group==='anime'?'ja':group==='turkish'?'tr':value==='all'?null:value;

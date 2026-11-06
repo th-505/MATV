@@ -675,6 +675,93 @@ class LocalLibraryStore extends ChangeNotifier {
         : 'recent';
   }
 
+  Map<String, dynamic> backupSnapshot() => {
+    'schema_version': 1,
+    'product': 'Najd TV',
+    'favorites': favorites.map((v) => v.toJson()).toList(),
+    'history': history.map((v) => v.toJson()).toList(),
+  };
+
+  Future<({int favorites, int history, int skipped})> importBackup(
+    Map<String, dynamic> data,
+  ) async {
+    if (data['schema_version'] != 1 ||
+        data['favorites'] is! List ||
+        data['history'] is! List ||
+        (data['favorites'] as List).length + (data['history'] as List).length >
+            10000 ||
+        utf8.encode(jsonEncode(data)).length > 8 * 1024 * 1024) {
+      throw const FormatException('INVALID_LIBRARY_BACKUP');
+    }
+    final favoritesToImport = <CatalogItem>[];
+    final historyToImport = <WatchEntry>[];
+    for (final raw in data['favorites'] as List) {
+      if (raw is! Map) throw const FormatException('INVALID_LIBRARY_BACKUP');
+      final json = Map<String, dynamic>.from(raw);
+      final item = CatalogItem.fromJson(json);
+      if (item.ref.isEmpty ||
+          _stableReference(item.ref).isEmpty ||
+          !LibrarySyncRecord(
+            kind: 'favorite',
+            itemKey: item.ref,
+            metadata: json,
+            updatedAt: DateTime.now(),
+          ).fitsCloudBudget) {
+        throw const FormatException('UNSAFE_LIBRARY_BACKUP');
+      }
+      favoritesToImport.add(item);
+    }
+    for (final raw in data['history'] as List) {
+      if (raw is! Map) throw const FormatException('INVALID_LIBRARY_BACKUP');
+      final json = Map<String, dynamic>.from(raw);
+      final entry = WatchEntry.fromJson(json);
+      if (entry.contentRef.isEmpty ||
+          !LibrarySyncRecord(
+            kind: 'history',
+            itemKey: entry.key,
+            metadata: json,
+            updatedAt: DateTime.now(),
+          ).fitsCloudBudget) {
+        throw const FormatException('UNSAFE_LIBRARY_BACKUP');
+      }
+      historyToImport.add(entry);
+    }
+    var addedFavorites = 0, addedHistory = 0, skipped = 0;
+    for (final item in favoritesToImport) {
+      final deletion = _changes['favorite::${item.ref}'];
+      if (_favorites.containsKey(item.ref) || deletion?.deleted == true) {
+        skipped++;
+        continue;
+      }
+      _favorites[item.ref] = item;
+      _change('favorite', item.ref, item.toJson());
+      addedFavorites++;
+    }
+    historyToImport.sort((a, b) => a.updatedAtMs.compareTo(b.updatedAtMs));
+    for (final entry in historyToImport) {
+      final n = entry.observedNumbers;
+      final current = resumeEntry(
+        entry.contentRef,
+        episodeId: entry.episodeId,
+        seasonNumber: n.season,
+        episodeNumber: n.episode,
+        playbackRef: entry.playbackRef,
+      );
+      final deletion = _changes['history::${entry.key}'];
+      if (current != null && current.updatedAtMs >= entry.updatedAtMs ||
+          deletion?.deleted == true) {
+        skipped++;
+        continue;
+      }
+      _history[entry.key] = entry;
+      _change('history', entry.key, entry.toJson());
+      addedHistory++;
+    }
+    await _persistLibrary();
+    _notify();
+    return (favorites: addedFavorites, history: addedHistory, skipped: skipped);
+  }
+
   Future<void> _persistLibrary() {
     final job = _writeTail.catchError((Object _) {}).then((_) async {
       final oldTombstones =
@@ -705,26 +792,13 @@ class LocalLibraryStore extends ChangeNotifier {
       if (!await _prefs.setString(_snapshotKey, snapshot)) {
         throw StateError('LIBRARY_CHECKPOINT_NOT_SAVED');
       }
-      await _prefs.setStringList(
-        _favoritesKey,
-        _favorites.values.map((item) => jsonEncode(item.toJson())).toList(),
-      );
-      await _prefs.setStringList(
-        _historyKey,
-        history.map((entry) => jsonEncode(entry.toJson())).toList(),
-      );
-      await _prefs.setStringList(
-        _syncKey,
-        _changes.values
-            .map(
-              (row) => jsonEncode({
-                ...row.toJson(),
-                'pending': _pending.contains(row.key),
-                'attempted': _attempted.contains(row.key),
-              }),
-            )
-            .toList(),
-      );
+      // v2 is already the atomic format understood by the supported clients.
+      // Retain legacy readers, but retire duplicate full writes only after a
+      // successful durable checkpoint. This releases browser quota without
+      // touching account/session keys or any library entries.
+      for (final key in [_favoritesKey, _historyKey, _syncKey]) {
+        if (_prefs.containsKey(key)) await _prefs.remove(key);
+      }
     });
     _writeTail = job;
     return job;

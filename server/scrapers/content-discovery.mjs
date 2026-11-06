@@ -1,3 +1,4 @@
+import {cascadeResolveStream} from './stream-unwrapper.mjs';
 import {directCandidate} from './shared/direct-candidate.mjs';
 import {resolveProviderMedia} from './shared/provider-media.mjs';
 import {supportsContent} from './content-scope.mjs';
@@ -78,7 +79,7 @@ export function createContentDiscovery({ entries, concurrency = 20, maxQueued = 
         observedEpisode = ep;
         details = await provider.scrapeDetails(epTarget, network);
       }
-      return resolveProviderMedia(entry,observedEpisode?.url||observedEpisode?.ref||observedEpisode?.id||target,{details,network,accept:async servers=>{
+      return resolveProviderMedia(entry,observedEpisode?.url||observedEpisode?.ref||observedEpisode?.id||target,{details,network,resolveEmbed:(target,parent,deadline)=>cascadeResolveStream(target,parent,0,new Set(),deadline),accept:async servers=>{
         const mapped=servers.map((server, i) => ({
         ...server, provider: meta.id, code: `${meta.code || meta.id}-${i + 1}`,
         kind: 'direct', content_ref: options.ref || hit.ref || hit.id || target,

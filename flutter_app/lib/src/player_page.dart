@@ -1,3 +1,5 @@
+import 'browser_video_stub.dart'
+    if (dart.library.js_interop) 'browser_video_web.dart';
 import 'playback_handoff.dart';
 import 'cloud_library.dart';
 import 'pip_bridge.dart';
@@ -439,6 +441,15 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   Future<void> _toggleFullscreen() async {
+    if (kIsWeb) {
+      final success = await toggleBrowserFullscreen();
+      if (!success && mounted) {
+        _subtitleNotice(
+          'هذا المتصفح لم يسمح بملء الشاشة؛ يمكنك فتح الفيديو من Safari أو التطبيق.',
+        );
+      }
+      return;
+    }
     setState(() => _fullscreen = !_fullscreen);
     _revealControls();
     await SystemChrome.setEnabledSystemUIMode(
@@ -1205,6 +1216,24 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   bool _nextPrepared = false, _nextRenewed = false, _advancing = false;
+  EpisodeItem? get _previousEpisode {
+    final current = widget.episodeNumber;
+    if (current == null) return null;
+    final candidates =
+        _queue
+            .where(
+              (e) =>
+                  e.hasEpisodeNumber &&
+                  e.number < current &&
+                  (e.season == null ||
+                      widget.item.season == null ||
+                      e.season == widget.item.season),
+            )
+            .toList()
+          ..sort((a, b) => b.number.compareTo(a.number));
+    return candidates.firstOrNull;
+  }
+
   EpisodeItem? get _nextEpisode => nextObservedEpisode(
     _queue,
     number: widget.episodeNumber,
@@ -1603,6 +1632,83 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     if (mounted) _revealControls();
   }
 
+  Future<void> _qualityMenu(UniversalPlayer controller) async {
+    final native = controller.extendedPlayer;
+    final browser = kIsWeb ? browserQualityOptions() : <Map<String, dynamic>>[];
+    final selected = await showNajdOptions<String>(
+      context,
+      title: 'جودة الفيديو',
+      icon: Icons.high_quality_outlined,
+      options: [
+        for (final row in browser)
+          NajdOption(
+            'web:${row['id']}',
+            '${row['label']}',
+            icon: Icons.high_quality_outlined,
+          ),
+        if (!kIsWeb && native != null)
+          for (final track in native.state.tracks.video.where(
+            (t) => t.id != 'no',
+          ))
+            NajdOption(
+              'track:${track.id}',
+              track.id == 'auto'
+                  ? 'تلقائي'
+                  : track.h != null
+                  ? '${track.h}p${track.codec == null ? '' : ' · ${track.codec}'}'
+                  : track.title ?? track.id,
+              selected: track.id == native.state.track.video.id,
+              icon: Icons.high_quality_outlined,
+            ),
+        for (var i = 0; i < _sources.length; i++)
+          NajdOption(
+            'source:$i',
+            _sources[i].displayLabel,
+            selected: i == _sourceIndex,
+            icon: Icons.dns_outlined,
+          ),
+        NajdOption(
+          'diagnostics',
+          'الدقة الفعلية ومعلومات التشغيل',
+          icon: Icons.info_outline,
+        ),
+      ],
+    );
+    if (!mounted || selected == null) return;
+    if (selected.startsWith('web:')) {
+      if (!selectBrowserQuality(int.parse(selected.substring(4)))) {
+        _subtitleNotice('تعذر تغيير الجودة في هذا المتصفح.');
+      }
+    } else if (selected.startsWith('track:') && native != null) {
+      final id = selected.substring(6);
+      await native.setVideoTrack(
+        native.state.tracks.video.firstWhere((t) => t.id == id),
+      );
+    } else if (selected.startsWith('source:')) {
+      await _selectSource(int.parse(selected.substring(7)));
+    } else if (selected == 'diagnostics') {
+      final value = controller.value;
+      final web = kIsWeb ? browserVideoDiagnostics() : <String, dynamic>{};
+      final width = web['width'] ?? value.size.width.round(),
+          height = web['height'] ?? value.size.height.round();
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('معلومات التشغيل'),
+          content: Text(
+            'دقة الفيديو الفعلية: $width × $height\nالمصدر: ${_activeSource?.displayLabel ?? _currentMediaType}\n${web['displayWidth'] == null ? '' : 'مساحة العرض بالبكسل: ${web['displayWidth']} × ${web['displayHeight']}\n'}${web['droppedFrames'] == null ? '' : 'إطارات ساقطة: ${web['droppedFrames']}\n'}نقل الفيديو لا يعيد ترميزه. تكبير صورة منخفضة الدقة لا يحولها إلى HD، والترجمة المحروقة جزء من الفيديو.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إغلاق'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   Future<void> _moreMenu(UniversalPlayer controller) async {
     await _endBoost();
     if (kIsWeb && !_pipAvailable) await _configurePip(controller);
@@ -1660,11 +1766,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
                     : 'المزودون والحلقات',
                 Icons.travel_explore,
               ),
-            if (controller.extendedPlayer?.state.tracks.video
-                    .where((t) => t.id != 'no')
-                    .length
-                case final int count when count > 1)
-              ('quality', 'جودة الفيديو', Icons.high_quality_outlined),
+            ('quality', 'جودة الفيديو', Icons.high_quality_outlined),
             if (!isTvTarget && !widget.isLive && widget.localFileUri == null)
               (
                 'handoff',
@@ -1727,25 +1829,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
       case 'providers':
         await _providerCatalogue();
       case 'quality':
-        final player = _controller?.extendedPlayer;
-        if (player != null) {
-          final track = await showNajdOptions<mk.VideoTrack>(
-            context,
-            title: 'جودة الفيديو',
-            options: [
-              for (final t in player.state.tracks.video.where(
-                (t) => t.id != 'no',
-              ))
-                NajdOption(
-                  t,
-                  t.id == 'auto' ? 'تلقائي' : t.title ?? t.id,
-                  selected: t.id == player.state.track.video.id,
-                  icon: Icons.high_quality_outlined,
-                ),
-            ],
-          );
-          if (track != null) await player.setVideoTrack(track);
-        }
+        await _qualityMenu(controller);
       case 'fit':
         await _chooseFit();
       case 'zoom-in':
@@ -1823,11 +1907,31 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
                           : null,
                     ),
                   ),
-                Text(
-                  widget.isLive
-                      ? 'بث مباشر • ${_time(value.position)}'
-                      : '${_time(value.position)} • المتبقي ${_time(value.duration - value.position)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _time(value.position),
+                        key: const Key('player-elapsed-time'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        widget.isLive
+                            ? 'بث مباشر'
+                            : '-${_time(value.duration > value.position ? value.duration - value.position : Duration.zero)}',
+                        key: const Key('player-remaining-time'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 _trackControls(activeController),
               ],
@@ -2286,6 +2390,20 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     crossAxisAlignment: WrapCrossAlignment.center,
     spacing: 8,
     children: [
+      if (_previousEpisode != null)
+        IconButton(
+          key: const Key('player-previous-episode'),
+          tooltip: 'الحلقة السابقة',
+          onPressed: () => _advanceEpisode(_previousEpisode!),
+          icon: const Icon(Icons.skip_previous, color: Colors.white),
+        ),
+      if (_nextEpisode != null)
+        IconButton(
+          key: const Key('player-next-episode'),
+          tooltip: 'الحلقة التالية',
+          onPressed: () => _advanceEpisode(_nextEpisode!),
+          icon: const Icon(Icons.skip_next, color: Colors.white),
+        ),
       if (_queue.isNotEmpty ||
           widget.episodeNumber != null ||
           widget.item.type == 'series')
@@ -2309,6 +2427,13 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
         icon: const Icon(Icons.subtitles_outlined, size: 20),
         label: const Text('الصوت والترجمة', style: TextStyle(fontSize: 12)),
       ),
+      if (kIsWeb)
+        IconButton(
+          key: const Key('player-web-fullscreen'),
+          tooltip: 'ملء الشاشة',
+          onPressed: _toggleFullscreen,
+          icon: const Icon(Icons.fullscreen, color: Colors.white),
+        ),
       IconButton(
         key: const Key('player-more'),
         tooltip: 'المزيد',
@@ -2416,6 +2541,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
                             child: active.video(),
                             builder: (_, value, video) => ClipRect(
                               child: Transform.scale(
+                                filterQuality: FilterQuality.high,
                                 scale: _videoScale,
                                 child: FullscreenVideoSurface(
                                   videoSize: value.size,

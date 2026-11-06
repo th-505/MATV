@@ -1,3 +1,4 @@
+import {cascadeResolveStream} from '../scrapers/stream-unwrapper.mjs';
 import {resolveProviderMedia} from "../scrapers/shared/provider-media.mjs";
 import { randomUUID } from "node:crypto";
 import { createConcurrencyQueue } from "../scrapers/shared/concurrency.mjs";
@@ -44,7 +45,7 @@ export function createServiceChecks({
         const step = async (name, fn) => {
           try {
             const value = await fn();
-            stages.push({ stage: name, state: "passed" });
+            stages.push({ stage: name, state: "passed", ...(name==='media'&&value?.verified_sources?{verified_sources:value.verified_sources,server_scan:value.server_scan}: {}) });
             return value;
           } catch (e) {
             stages.push({ stage: name, state: "failed", reason: reason(e) });
@@ -84,10 +85,11 @@ export function createServiceChecks({
         await step("media", async () => {
           const episode = details.episodes?.find((e) => e.ref || e.url),
             target = episode?.ref || episode?.url || source;
-          const accepted=await resolveProviderMedia(entry,target,{details:episode?{}:details,network:options,accept:async candidates=>{
+          const accepted=await resolveProviderMedia(entry,target,{details:episode?{}:details,network:options,resolveEmbed:(target,parent,deadline)=>cascadeResolveStream(target,parent,0,new Set(),deadline),accept:async candidates=>{
            for(const candidate of candidates){const result=await probe(candidate,{platform:'native'});if(result.playable&&result.container_verified)return[candidate]}return[];
           }});
           if(!accepted.length)throw Error('DIRECT_MEDIA_NOT_FOUND');
+          return {verified_sources:accepted.length,server_scan:accepted._meta||null};
 
         });
         return {

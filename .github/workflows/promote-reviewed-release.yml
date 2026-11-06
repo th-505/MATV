@@ -77,5 +77,5 @@ jobs:
               if path.parent.name=='Najd-TV-Flutter-Web': continue
               if path.suffix in {'.apk','.ipa','.exe','.zip','.dmg','.sha256'} or path.name=='macOS-report.json': assets.append(str(path))
           assert assets
-          subprocess.run(['gh','release','create','v'+version,'--target',os.environ['SOURCE_SHA'],'--prerelease','--title','Najd TV '+version+' — Beta 5','--notes-file','/tmp/review-release-notes.md',*assets,'device-verification.json'],check=True)
+          subprocess.run(['gh','release','create','v'+version,'--target',os.environ['SOURCE_SHA'],'--prerelease','--title','NajdTV v'+version,'--notes-file','/tmp/review-release-notes.md',*assets,'device-verification.json'],check=True)
           PY

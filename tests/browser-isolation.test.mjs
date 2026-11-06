@@ -49,7 +49,7 @@ function fixture(options = {}) {
           sourceUrl: url,
         };
       },
-      scrapeServers: async () => [{ url: "https://cdn.example/episode19.mp4" }],
+      scrapeServers: async () => options.fixtureServers || [{ url: "https://cdn.example/episode19.mp4" }],
     },
   };
   const service = createBrowserWorkService({
@@ -251,4 +251,13 @@ test('Beta shows one card per observed episode while retaining alternative sourc
   assert.equal(status.progress.episodes,4);assert.equal(status.progress.observed_references,5);
   assert.equal((await service.request(ref(alternative))).ref,admitted.ref);await service.settle();
  }finally{pages.set(parent,original);}
+});
+
+test('beta retains every verified quality/server from an observed episode instead of returning inside the first probe',async()=>{
+ const {service}=fixture({fixtureServers:[720,1080,1440].map(height=>({url:`https://cdn.example/episode19-${height}.mp4`,quality:`${height}p`}))});
+ const admitted=await service.request(ref(seed));await service.settle();
+ await service.playback(admitted.ref,{season:1,episode:19});await service.settle();
+ const result=await service.playback(admitted.ref,{season:1,episode:19});
+ assert.equal(result.state,'ready');assert.equal(result.servers.length,3);
+ assert.deepEqual(result.servers.map(row=>row.quality),['720p','1080p','1440p']);
 });

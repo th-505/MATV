@@ -33,3 +33,16 @@ test('index refresh remains pending through selected-source pagination, without 
   status='running';assert.equal((await api.workStatus(ref)).index_state,'running');
   status='ready';assert.equal((await api.workStatus(ref)).index_state,'ready');
 });
+
+test('source cards expose their observed state without implying every unavailable index is running',async()=>{
+ const ref='source:ahwak:aaaaaaaaaaaaaaaaaaaaaaaa';
+ const api=createSourceApi({worker:{wake(){}},store:{
+  async getWork(){return{title:'عمل',metadata:{}}},
+  async request(table){return table==='najd_source_catalog'?[{provider:'ahwak',state:'identity_unconfirmed',progress:{source_work_ref:ref,title:'عمل'}}]:[]},
+ }});
+ const status=await api.workStatus('tmdb:tv:42');
+ assert.equal(status.source_editions.length,1);
+ assert.equal(status.source_editions[0].state,'identity_unconfirmed');
+ assert.equal(status.source_editions[0].available,false);
+ assert.equal(status.source_editions[0].reason,'CANONICAL_IDENTITY_UNCONFIRMED');
+});

@@ -14,7 +14,7 @@ assert 'internal_web' in (repo / '_config.yml').read_text(), 'Keep authenticated
 assert not (repo / '.nojekyll').exists(), 'Do not disable repository exclusions'
 allowed = {'assets', 'canvaskit', 'icons', 'index.html', 'favicon.png', 'manifest.json',
            'flutter.js', 'flutter_bootstrap.js', 'flutter_service_worker.js', 'main.dart.js',
-           'version.json', 'source-manifest.json'}
+           'version.json', 'source-manifest.json', 'najd-video.js', 'najd-update.js'}
 files = []
 for path in source.rglob('*'):
     assert not path.is_symlink(), 'Symlinks cannot enter public output'

@@ -22,7 +22,10 @@ with tempfile.TemporaryDirectory() as directory:
     key=configure(root,{'NAJD_ANDROID_SIGNING_BUNDLE':json.dumps({name:env[name] for name in NAMES}), 'RUNNER_TEMP':directory})
     assert key.read_bytes()==b'fixture-not-a-real-key'*4
     assert 'fixture-store-secret' not in file.read_text()
-    assert 'NAJD_ANDROID_SIGNING_BUNDLE' in file.read_text()
+    assert 'signing-input.json' in file.read_text()
+    file.write_text(original)
+    configure(root,{'NAJD_ANDROID_SIGNING_BUNDLE':json.dumps({name:env[name] for name in NAMES})[1:-1], 'RUNNER_TEMP':directory})
+    assert 'signing-input.json' in file.read_text()
 print('Android signing: missing-key fail closed, persistent configuration, no plaintext passwords and private file permissions passed.')
 
 from check_android_signing_certificate import verify
@@ -31,3 +34,23 @@ try:verify('Signer #1 certificate SHA-256 digest: '+'b'*64, 'a'*64)
 except ValueError as e:assert 'IDENTITY_CHANGED' in str(e)
 else:raise AssertionError('Unexpected signing key was accepted')
 print('Android release signing identity mismatch is rejected.')
+
+from configure_android_release_signing import signing_values
+for fragment in [json.dumps({name:env[name] for name in NAMES})[1:],json.dumps({name:env[name] for name in NAMES})[:-1]]:
+    assert signing_values({'NAJD_ANDROID_SIGNING_BUNDLE':fragment})=={name:env[name] for name in NAMES}
+try:signing_values({'NAJD_ANDROID_SIGNING_BUNDLE':'"NAJD_ANDROID_KEYSTORE_BASE64":"unknown"'})
+except ValueError:pass
+else:raise AssertionError('Incomplete signing material accepted')
+print('Clipboard brace normalization preserves exact required fields; incomplete inputs rejected.')
+
+verify('Signer (minSdkVersion=24, maxSdkVersion=2147483647) certificate SHA-256 digest: '+'a'*64,'a'*64)
+try:verify('Source Stamp Signer certificate SHA-256 digest: '+'a'*64,'a'*64)
+except ValueError as e:assert 'RECORD_MISSING' in str(e)
+else:raise AssertionError('Source stamp was treated as APK signing identity')
+try:verify('Signer (minSdkVersion=24, maxSdkVersion=2147483647) certificate SHA-256 digest: '+'b'*64,'a'*64)
+except ValueError as e:assert 'IDENTITY_CHANGED' in str(e)
+else:raise AssertionError('SDK-qualified wrong certificate accepted')
+print('SDK-qualified signer records supported; wrong certificates/source-stamp-only reports rejected.')
+
+verify('V3.0 Signer: certificate SHA-256 digest: '+'a'*64,'a'*64)
+print('Modern V3.0 Signer certificate record accepted only against the pinned certificate.')
