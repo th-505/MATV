@@ -37,9 +37,11 @@ and 273 watch-server occurrences; these are not unique work/episode counts.
 Live guarded HTTP checks: series catalog returned 24 cards; one live series
 detail returned 54 episodes; search for the known captured title returned four
 results; a nonexistent query returned the explicit empty-search state.
-One live movie exposed six public watch controls. Resolution attempts for the
-first two returned `SERVER_EXTRACTION_FAILED` and `NETWORK_TIMEOUT` respectively.
-No live direct-media/container or physical-device playback success is claimed.
+One live movie exposed six public watch controls. All six were attempted with
+bounded concurrency. Morencius and Vidmoly produced direct streams that passed
+the existing bounded media-container probe (`container_verified: true`, HTTP200).
+The other four failed extraction or timed out. This is direct-container evidence,
+not physical-device playback certification or a guarantee for every source work.
 
 The registry now has 25 modules, including two explicit mirrors, versus 24
 previously. There are 23 search-capable entries and 23 independent catalog
