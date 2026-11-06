@@ -10,6 +10,7 @@ import {
   runInBrowserLane,
 } from "../server/browser/traffic.mjs";
 import { getProvider } from "../server/scrapers/registry.mjs";
+import { getProvider as getBetaProvider } from "../server/browser/registry.mjs";
 import { diagnosticsAuthorized } from "../server/diagnostics/search-trace.mjs";
 import { createServiceChecks } from "../server/diagnostics/service-checks.mjs";
 test("beta domains/configuration remain independent through asynchronous work", async () => {
@@ -28,9 +29,10 @@ test("beta domains/configuration remain independent through asynchronous work", 
     await runInBrowserLane(async () => {
       await Promise.resolve();
       assert.equal(
-        getProvider("mycima").meta.domains[0],
+        getBetaProvider("mycima").meta.domains[0],
         "https://beta.example",
       );
+      assert.equal(getProvider('mycima').meta.domains[0], 'https://najd.example');
     });
     assert.equal(
       getProviderConfig("mycima").primary_domain,

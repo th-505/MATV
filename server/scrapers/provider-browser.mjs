@@ -1,6 +1,6 @@
 import {runInBrowserLane} from '../browser/traffic.mjs';
 import {classifyNetworkError} from './shared/errors.mjs';
-import { getProvider, listIndependentProviders } from './registry.mjs';
+import { getProvider, listIndependentProviders } from '../browser/registry.mjs';
 import { createConcurrencyQueue } from './shared/concurrency.mjs';
 
 // This route never mutates the canonical discovery or preferred-source state.

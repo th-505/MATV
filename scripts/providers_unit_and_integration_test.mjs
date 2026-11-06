@@ -65,10 +65,14 @@ function queryFor(fixture) {
 }
 
 try {
-  const { PROVIDERS_MAP } = await import('../server/scrapers/registry.mjs');
+  const registries = [
+    ['najd', await import('../server/scrapers/registry.mjs')],
+    ['beta', await import('../server/browser/registry.mjs')],
+  ];
   const { SCRAPER_ERROR_CODES } = await import('../server/scrapers/shared/errors.mjs');
   const { assertSafeScraperUrl } = await import('../server/scrapers/shared/http.mjs');
-  await check('registry contains unique provider IDs', () => {
+  for (const [scope, {PROVIDERS_MAP, getProvider}] of registries) {
+  await check(`${scope}: registry contains unique provider IDs`, () => {
     assert.ok(PROVIDERS_MAP.size > 0);
     for (const [id, { meta, module }] of PROVIDERS_MAP) {
       assert.equal(meta.id, id);
@@ -79,16 +83,17 @@ try {
     }
   });
 
-  for (const [id, { meta, module }] of PROVIDERS_MAP) {
+  for (const [id, { meta }] of PROVIDERS_MAP) {
+    const module = getProvider(id).module;
     let fixture;
-    await check(`${id}: fixture metadata`, async () => {
+    await check(`${scope}:${id}: fixture metadata`, async () => {
       fixture = await import(`./fixtures/providers/${id}.fixture.mjs`);
       assert.equal(fixture.FIXTURE_META?.providerId, id);
       // Fixture provenance is a repository declaration, not independently verified here.
     });
     if (!fixture) continue;
 
-    if (meta.capabilities.catalog) await check(`${id}: nonempty catalog fixture`, async () => {
+    if (meta.capabilities.catalog) await check(`${scope}:${id}: nonempty catalog fixture`, async () => {
       const fixtureHtml = fixture.CATALOG_HTML ?? fixture.CATALOG_TODAY_HTML ?? fixture.REAL_MATCHES_TODAY_HTML;
       assert.equal(typeof fixtureHtml, 'string', 'Catalog fixture missing');
       const options = { fixtureHtml, strict: true };
@@ -100,7 +105,7 @@ try {
       requireItems(await module.scrapeCatalog(category, 1, options));
     });
 
-    if (meta.capabilities.search) await check(`${id}: nonempty search fixture`, async () => {
+    if (meta.capabilities.search) await check(`${scope}:${id}: nonempty search fixture`, async () => {
       const fixtureHtml = fixture.SEARCH_HTML ?? fixture.SEARCH_JSON ?? fixture.REAL_SEARCH_HTML ?? (id === 'ipauniverse' ? fixture.HOME_HTML : undefined);
       assert.equal(typeof fixtureHtml, 'string', 'Search fixture missing');
       const options = { fixtureHtml, strict: true };
@@ -110,7 +115,7 @@ try {
       }
       requireItems(await module.scrapeSearch(queryFor(fixture), 1, options));
     });
-    else await check(`${id}: explicit unsupported search`, async () => {
+    else await check(`${scope}:${id}: explicit unsupported search`, async () => {
       try {
         const result = await module.scrapeSearch('test', 1, { fixtureHtml: '', strict: true });
         assert.ok(Array.isArray(result));
@@ -120,6 +125,7 @@ try {
         if (error.code !== SCRAPER_ERROR_CODES.UNSUPPORTED_CAPABILITY) throw error;
       }
     });
+  }
   }
 
   await check('SSRF metadata endpoint blocked', () => {

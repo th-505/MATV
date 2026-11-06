@@ -6,6 +6,7 @@ import {createServiceChecks} from './diagnostics/service-checks.mjs';
 import {createHarvestStore} from './harvest/store.mjs';
 import {createBrowserWorkService} from './browser/service.mjs';
 import {runInBrowserLane} from './browser/traffic.mjs';
+import {getProvider as getBetaProvider} from './browser/registry.mjs';
 import {sourceManifest} from './scrapers/source-manifest.mjs';
 import { createProviderBrowser } from './scrapers/provider-browser.mjs';
 const providerBrowser = createProviderBrowser();
@@ -23,7 +24,7 @@ import { createSearchTraces, diagnosticsAuthorized } from './diagnostics/search-
 import { diagnosticsHtml, diagnosticsJs } from './diagnostics/dashboard.mjs';
 import { BROWSE_SECTIONS, browseCatalog } from './catalog-browser.mjs';
 import { createPinnedPlayback } from './pinned-playback.mjs';
-import { PROVIDERS_MAP,listIndependentProviders,getProvider } from './scrapers/registry.mjs';
+import { listIndependentProviders,getProvider } from './scrapers/registry.mjs';
 import { createTmdbRuntime } from './tmdb-runtime.mjs';
 import { createMediaAuditor } from './media-audit.mjs';
 import { listSourceCapabilities } from './scrapers/source-registry.mjs';
@@ -633,11 +634,11 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
         if(!diagnosticsAuthorized(req))return sendJson(req,res,401,{message:'DIAGNOSTICS_AUTH_REQUIRED'});
         if(req.method==='GET')return sendJson(req,res,200,{providers:listIndependentProviders().map(p=>{
           const config=getProviderConfig(p.id),beta=browserConfigs().find(r=>r.provider===p.id);
-          return{id:p.id,name:p.name,najd:{domain:config?.primary_domain||p.domains[0],revision:config?.revision||0},beta:{domain:beta?.config?.primary_domain||PROVIDERS_MAP.get(p.id)?.meta.domains[0]||p.domains[0],revision:beta?.revision||0}};
+          return{id:p.id,name:p.name,najd:{domain:config?.primary_domain||p.domains[0],revision:config?.revision||0},beta:{domain:beta?.config?.primary_domain||getBetaProvider(p.id)?.meta.domains[0],revision:beta?.revision||0}};
         }),beta_cloud:browserConfiguration.status().cloud_available});
         if(req.method!=='POST')return sendJson(req,res,405,{message:'METHOD_NOT_ALLOWED'});
         let raw='';for await(const chunk of req){raw+=chunk.toString();if(Buffer.byteLength(raw)>8192)return sendJson(req,res,413,{message:'BODY_TOO_LARGE'});}
-        try{const body=JSON.parse(raw);if(!['beta','najd'].includes(body.scope)||!getProvider(body.provider))throw Error('INVALID_CONFIG_SCOPE');
+        try{const body=JSON.parse(raw);if(!['beta','najd'].includes(body.scope)||!(body.scope==='beta'?getBetaProvider:getProvider)(body.provider))throw Error('INVALID_CONFIG_SCOPE');
           let result;
           if(body.scope==='beta')result=await browserConfiguration.set(body.provider,body.config,body.revision);
           else{const{revision,enabled,...current}=getProviderConfig(body.provider)||{};result=await harvest.setConfig(body.provider,{...current,...body.config});}
@@ -751,7 +752,7 @@ export function createServer({ iskRuntime = create3iskRuntime(), alooyRuntime = 
           let data;
           if(action==='search'){
             const provider=url.searchParams.get('provider'),query=url.searchParams.get('q')||'',page=Number(url.searchParams.get('page')||1);
-            const entry=runInBrowserLane(()=>getProvider(provider));if(!entry||runInBrowserLane(()=>entry.meta.enabled===false)||entry.meta.mirrorOf||!entry.module.scrapeSearch)throw Error('BROWSER_PROVIDER_UNAVAILABLE');
+            const entry=getBetaProvider(provider);if(!entry||entry.meta.enabled===false||entry.meta.mirrorOf||!entry.module.scrapeSearch)throw Error('BROWSER_PROVIDER_UNAVAILABLE');
             if(query.length<2||query.length>120||!Number.isSafeInteger(page)||page<1||page>500)throw Error('BROWSER_BAD_QUERY');
             const items=await runInBrowserLane(()=>entry.module.scrapeSearch(query,page,{strict:true,allowHttp:false,timeoutMs:6500,maxRetries:0}));
             if(items?._meta?.errorCode&&items._meta.errorCode!=='EMPTY_RESULT')throw Object.assign(Error('BROWSER_SOURCE_UNAVAILABLE'),{code:items._meta.errorCode});

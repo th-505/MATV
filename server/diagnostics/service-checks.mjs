@@ -13,11 +13,14 @@ import {
 } from "../scrapers/content-discovery.mjs";
 import { probeHarvestMedia } from "../harvest/media-probe.mjs";
 import { runInBrowserLane, runInDiagnosticLane } from "../browser/traffic.mjs";
+import {getProvider as getBetaProvider, listIndependentProviders as listBetaProviders} from '../browser/registry.mjs';
 export function createServiceChecks({
   tmdb,
   database,
   providers = listIndependentProviders,
   lookup = getProvider,
+  betaLookup = lookup === getProvider ? getBetaProvider : lookup,
+  betaProviders = providers === listIndependentProviders ? listBetaProviders : providers,
   fetchResponse = fetchSafeResponse,
   probe = probeHarvestMedia,
   now = Date.now,
@@ -32,7 +35,7 @@ export function createServiceChecks({
   async function providerCheck(id, scope) {
     return (scope === "beta" ? runInBrowserLane : runInDiagnosticLane)(
       async () => {
-        const entry = lookup(id),
+        const entry = (scope === 'beta' ? betaLookup : lookup)(id),
           stages = [];
         if (!entry || entry.meta.enabled === false)
           return { state: "disabled", stages };
@@ -171,7 +174,7 @@ export function createServiceChecks({
       });
     for (const mode of ["najd", "beta"])
       if (scope === "all" || scope === mode)
-        for (const provider of providers().filter(
+        for (const provider of (mode === 'beta' ? betaProviders : providers)().filter(
           (p) => p.capabilities?.catalog,
         ))
           add(

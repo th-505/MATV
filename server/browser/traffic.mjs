@@ -13,7 +13,7 @@ export function installBrowserConfigs(rows) {
 }
 export const browserConfigs = () => structuredClone(configs);
 export const runInBrowserLane = (task) =>
-  lane.run("beta", () => withProviderConfigs(configs, task));
-export const isBrowserTraffic = () => lane.getStore() === "beta";
+  lane.getStore() === "beta" ? task() : lane.run("beta", () => withProviderConfigs(configs, task, "beta"));
+export const isBrowserTraffic = () => ["beta", "diagnostic"].includes(lane.getStore());
 
-export const runInDiagnosticLane = (task) => lane.run("beta", task);
+export const runInDiagnosticLane = (task) => lane.run("diagnostic", task);

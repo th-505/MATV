@@ -26,6 +26,7 @@ import * as yallashootMod from './sites/yallashoot.mjs';
 import * as threeIskMod from './sites/3isk.mjs';
 import * as alooyMod from './sites/alooy.mjs';
 import * as larozaMod from './sites/laroza.mjs';
+import * as fivetvMod from './sites/fivetv.mjs';
 
 const PROVIDER_ENTRIES = [
   { meta: ahwakMod.PROVIDER_META, module: ahwakMod },
@@ -51,7 +52,8 @@ const PROVIDER_ENTRIES = [
   { meta: yallashootMod.PROVIDER_META, module: yallashootMod },
   { meta: threeIskMod.PROVIDER_META, module: threeIskMod },
   { meta: alooyMod.PROVIDER_META, module: alooyMod },
-  { meta: larozaMod.PROVIDER_META, module: larozaMod }
+  { meta: larozaMod.PROVIDER_META, module: larozaMod },
+  { meta: fivetvMod.PROVIDER_META, module: fivetvMod }
 ];
 
 export const PROVIDERS_MAP = new Map();
