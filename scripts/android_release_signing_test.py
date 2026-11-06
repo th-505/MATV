@@ -42,3 +42,12 @@ try:signing_values({'NAJD_ANDROID_SIGNING_BUNDLE':'"NAJD_ANDROID_KEYSTORE_BASE64
 except ValueError:pass
 else:raise AssertionError('Incomplete signing material accepted')
 print('Clipboard brace normalization preserves exact required fields; incomplete inputs rejected.')
+
+verify('Signer (minSdkVersion=24, maxSdkVersion=2147483647) certificate SHA-256 digest: '+'a'*64,'a'*64)
+try:verify('Source Stamp Signer certificate SHA-256 digest: '+'a'*64,'a'*64)
+except ValueError as e:assert 'RECORD_MISSING' in str(e)
+else:raise AssertionError('Source stamp was treated as APK signing identity')
+try:verify('Signer (minSdkVersion=24, maxSdkVersion=2147483647) certificate SHA-256 digest: '+'b'*64,'a'*64)
+except ValueError as e:assert 'IDENTITY_CHANGED' in str(e)
+else:raise AssertionError('SDK-qualified wrong certificate accepted')
+print('SDK-qualified signer records supported; wrong certificates/source-stamp-only reports rejected.')
