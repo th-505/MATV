@@ -1,6 +1,8 @@
 import os
 import sys
 import subprocess
+import hashlib
+import json
 
 # الحد الأقصى المسموح به لحجم أي ملف واحد بالميجابايت
 MAX_FILE_SIZE_MB = 2.0
@@ -29,15 +31,26 @@ def check_repository(root_path="."):
     errors = []
     print("🔍 جاري فحص نظافة وسلامة ملفات المشروع...")
 
+    archive_path='assets/fonts/Thmanyah-Font-Family.zip'
+    archive_sha='5b16d16a091cda3b11f8c86de800793ecb75c78943b7e0091003cdff514ede99'
+    try:
+        contract=json.load(open(os.path.join(root_path,'shared/thmanyah-font-faces.json')))
+        approved_web={row['name']:row['sha256'] for row in contract['files'] if row['format']=='woff2'}
+    except (FileNotFoundError,KeyError,ValueError):
+        approved_web={}
     files = subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=root_path).decode().split('\0')
     for relative in files:
         if not relative: continue
         filepath=os.path.join(root_path,relative)
         filename=os.path.basename(filepath)
         if not os.path.isfile(filepath): continue
+        # Only the exact original archive uploaded by the owner is a source-input exception.
+        if relative==archive_path and os.path.getsize(filepath)<=32*1024*1024 and hashlib.sha256(open(filepath,'rb').read()).hexdigest()==archive_sha:
+            continue
+        approved_web_face=(relative.startswith('assets/assets/najd/fonts/') and filename in approved_web and hashlib.sha256(open(filepath,'rb').read()).hexdigest()==approved_web[filename])
         for ext in FORBIDDEN_EXTENSIONS:
             if filename.endswith(ext) and not (ext == '.symbols' and relative in PUBLIC_SDK_SYMBOLS): errors.append(f"❌ ملف ممنوع ({ext}): {filepath}")
-        if 'thmanyah' in relative.lower() and filename.lower().endswith(('.otf','.ttf','.woff','.woff2')):
+        if 'thmanyah' in relative.lower() and filename.lower().endswith(('.otf','.ttf','.woff','.woff2')) and not approved_web_face:
             errors.append(f"❌ ملف خط خاص ممنوع النشر: {filepath}")
         size_mb=os.path.getsize(filepath)/(1024*1024)
         if size_mb>MAX_FILE_SIZE_MB and not(filename.endswith('.wasm') or filename=='main.dart.js'):
