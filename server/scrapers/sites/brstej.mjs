@@ -6,9 +6,9 @@ import {normalizeCatalogItem, normalizeDetailsResult, normalizeEpisodeList, norm
 import {attachResultMeta} from '../shared/errors.mjs';
 import {extractRawStreamsFromText, isValidDirectMediaUrl, unwrapEmbedToDirectStreams} from '../stream-unwrapper.mjs';
 import {BRSTEJ_CATEGORIES, BRSTEJ_CATEGORY_LABELS} from './brstej-categories.mjs';
-// The supplied .beer origin redirects to this observed public primary (2026-11-04).
-const ORIGIN='https://brstejj.pics', HOSTS=['brstejj.pics','brstejj.beer'];
-export const PROVIDER_META = Object.freeze({id:'brstej',name:'برستيج',code:'BR',domains:[ORIGIN,'https://brstejj.beer'],mirrorOf:null,resolveOnDetails:true,
+// The supplied .beer origin redirects to this observed public primary (2026-11-06).
+const ORIGIN='https://su.brstej.com', HOSTS=['su.brstej.com','brstejj.pics','brstejj.beer'];
+export const PROVIDER_META = Object.freeze({id:'brstej',name:'برستيج',code:'BR',domains:[ORIGIN,'https://brstejj.pics','https://brstejj.beer'],mirrorOf:null,resolveOnDetails:true,
   capabilities:{catalog:true,search:true,details:true,episodes:true,servers:true,resolve:true,live:false},
   searchSpec:{method:'GET',pathTemplate:'/search.php?keywords={query}',queryParam:'keywords',pagination:true},notImplemented:{}});
 export const BRSTEJ_CONFIG=Object.freeze({id:'brstej',baseUrl:ORIGIN,

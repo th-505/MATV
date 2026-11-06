@@ -238,15 +238,13 @@ jobs:
           test -s flutter_app/build/ios/iphoneos/Runner.app/Runner
           mkdir -p trial/Payload
           cp -R flutter_app/build/ios/iphoneos/Runner.app trial/Payload/Runner.app
-          rm -rf trial/Payload/Runner.app/_CodeSignature
-          rm -f trial/Payload/Runner.app/embedded.mobileprovision
-          codesign --remove-signature trial/Payload/Runner.app 2>/dev/null || true
-          if codesign --verify trial/Payload/Runner.app 2>/dev/null; then echo 'Unexpected signed app'; exit 1; fi
           lipo trial/Payload/Runner.app/Runner -verify_arch arm64
-          cd trial
-          ditto -c -k --keepParent Payload Najd-TV-iPhone-Unsigned.ipa
-          shasum -a 256 Najd-TV-iPhone-Unsigned.ipa > Najd-TV-iPhone-Unsigned.ipa.sha256
-          rm -rf Payload
+          (cd trial && ditto -c -k --keepParent Payload "$RUNNER_TEMP/Najd-iPhone-input.ipa")
+          python3 scripts/ios_package_compat.py \
+            "$RUNNER_TEMP/Najd-iPhone-input.ipa" \
+            "$RUNNER_TEMP/najd-iphone-normalized" \
+            trial/Najd-TV-iPhone-Unsigned.ipa
+          rm -rf trial/Payload
       - name: Record immutable source identity
         run: python3 scripts/write_source_manifest.py --target ios-unsigned-arm64 --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
       - uses: actions/upload-artifact@v4

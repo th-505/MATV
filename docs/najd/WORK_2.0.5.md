@@ -67,3 +67,11 @@ Validation:
 - Library backup:3 passed; private font manifest:2 passed.
 
 Release blockers/open work: corrected Android signing bundle JSON, Web font permission, official URLs for six missing providers, remaining live source-stage diagnostics/repairs, four bounded load profiles, deeper browser-session persistence verification, final platform builds/device checks and publication. No claim that all providers, all PiP platforms, or100 new features have passed.
+
+### Follow-up verification
+
+- Final full Flutter suite after quality fixture repair and carousel integration:377 passed,7 skipped,0 failures. `flutter analyze` reports no issues.
+- `npm run check` passed, including native branding/packaging contracts and provider/runtime/security checks.
+- Brstej supplied `.beer` URL now publicly redirects to `https://su.brstej.com/home03` (observed2026-11-06). Updated only its explicit primary/host allowlist, retaining old references and private-IP rejection. Live targeted result:40 home cards,41 episode entries on the selected series.5 parser/reference security tests passed. This is indexing evidence, not successful decoding of all episodes.
+- New iPhone CI packages now run the same nested Mach-O/execute-mode/thinning/unsigned audit used by the previously published compatible IPA. The Linux audit fixtures passed; the changed CI job still requires a macOS build.
+- Android input verification re-run42136430396 still failed. No Android release published with a replacement/debug certificate.
