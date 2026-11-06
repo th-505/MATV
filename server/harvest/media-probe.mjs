@@ -1,3 +1,4 @@
+import {observedHlsQualities} from './hls-quality.mjs';
 import {fetchSafeResponse} from '../scrapers/shared/http.mjs';
 import {probePinnedMedia} from '../pinned-playback.mjs';
 /** Header checks alone accept dead CDN placeholders. Require actual container bytes. */
@@ -11,6 +12,7 @@ export async function probeHarvestMedia(candidate,{platform='native',fetchImpl=f
  // Some real CDNs omit Content-Type even on successful HEAD and GET. Their
  // actual container signature is stronger evidence than the absent MIME label.
  const container=mp4?'mp4':hls?'hls':null;
+ const quality_levels=hls?observedHlsQualities(bytes.toString('utf8'),candidate.url):[];
  const playable=[200,206].includes(response.status)&&Boolean(container);
- return {...head,container,playable,statusCode:response.status,webPlayable:playable&&head.webPlayable===true,container_verified:playable,verification_basis:'bounded-container-bytes'};
+ return {...head,container,quality_levels,adaptive:quality_levels.length>0,playable,statusCode:response.status,webPlayable:playable&&head.webPlayable===true,container_verified:playable,verification_basis:'bounded-container-bytes'};
 }

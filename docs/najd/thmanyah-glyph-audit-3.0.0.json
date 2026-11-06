@@ -1,0 +1,107 @@
+[
+  {
+    "name": "thmanyahsans-Black.otf",
+    "sha256": "e846f6087a4fcf7d2eeff4bd4d1d74cf9c37c2eb92c9a14ebbbbfcb851c26b43",
+    "weight": 900,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahsans-Bold.otf",
+    "sha256": "72cc27021cc1a503e5c03b072df8b16d55c78983e5fd73a4cdf92b5a600af2f7",
+    "weight": 700,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahsans-Light.otf",
+    "sha256": "c4286938c04ea60eb1953919cddce7b268270a825a04823a0642a044ebc7fd34",
+    "weight": 300,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahsans-Medium.otf",
+    "sha256": "f2762ffbe17351193e3d630dd10f0c3a965e6c873998dfdeda2bd0dcad7985c6",
+    "weight": 500,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahsans-Regular.otf",
+    "sha256": "f45a420632384b42a37ec9b24298ddc6502faa52d55d973144779262ebc023dc",
+    "weight": 400,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahserifdisplay-Black.otf",
+    "sha256": "696b78342a499a82421ae25c1db86b73730108ea38d8be216669c243dfea1557",
+    "weight": 900,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahserifdisplay-Bold.otf",
+    "sha256": "ac2f056441891276792ab6d828d8ad9169ef44ecea60d6ccf126b25361f0ee9d",
+    "weight": 700,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahserifdisplay-Light.otf",
+    "sha256": "14a2781ab9101f32587e90126115dcbac70e13f980b4a3a508df2b076b6bdcc4",
+    "weight": 300,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahserifdisplay-Medium.otf",
+    "sha256": "5086a7e446fb8a14986aef9c81c01696455c2660eaeda1aa2b8f37696efc0af6",
+    "weight": 500,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahserifdisplay-Regular.otf",
+    "sha256": "1f5c735a6c05cce9fe9b2459d5aedb1d039541d50b726304bd617a69587bf112",
+    "weight": 400,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahseriftext-Black.otf",
+    "sha256": "dca14597277eade6ca471ca897070054aa64a55646299c466b22f6f0fb110e4a",
+    "weight": 900,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahseriftext-Bold.otf",
+    "sha256": "001cc1586b6920139780b8ea05f3df399a4c11dc5a86d96102ff356c727a0a35",
+    "weight": 700,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahseriftext-Light.otf",
+    "sha256": "3de4b21b07d5e3e2ac420919fe4b96f38aebb2931fe8799fd61c434bd29c56ce",
+    "weight": 300,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahseriftext-Medium.otf",
+    "sha256": "f1b25193017b2edf9a4b4e4b4c531336435f31a86028132a8a25f288f4465d77",
+    "weight": 500,
+    "arabic": true,
+    "latin": true
+  },
+  {
+    "name": "thmanyahseriftext-Regular.otf",
+    "sha256": "db7294cfea2b2a537c028305dc142fb3b743da1c4738f0fac3a7dd31c0c47b5f",
+    "weight": 400,
+    "arabic": true,
+    "latin": true
+  }
+]

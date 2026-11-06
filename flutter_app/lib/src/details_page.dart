@@ -938,7 +938,11 @@ class _DetailsPageState extends State<DetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const NajdSectionHeading('قصة العمل'),
-                        Text(details.plot, style: const TextStyle(height: 1.8)),
+                        Text(
+                          details.plot,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(height: 1.8),
+                        ),
                       ],
                     ),
                   ),

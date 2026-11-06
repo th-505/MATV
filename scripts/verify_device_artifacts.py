@@ -6,6 +6,7 @@ import struct
 import sys
 import zipfile
 from pathlib import Path
+from verify_thmanyah_build import verify_zip
 
 
 root = Path(sys.argv[1])
@@ -16,6 +17,8 @@ source_sha = sys.argv[5] if len(sys.argv) > 5 else None
 assert source_sha and len(source_sha) == 40, 'Expected the full source commit SHA'
 results = []
 targets = {}
+font_reports = {}
+require_typography = int(version.split('.')[0]) >= 3
 
 
 def unique_file(name):
@@ -65,8 +68,9 @@ for filename, abi, machine, target in [
     ('Najd-TV-Android-TV-ARM32.apk', 'armeabi-v7a', 40, 'android-tv-armv7'),
 ]:
     apk = unique_file(filename)
-    assert apk.stat().st_size <= 35 * 1024 * 1024, f'{filename} exceeds 35 MiB'
+    assert apk.stat().st_size <= 40 * 1024 * 1024, f'{filename} exceeds 40 MiB'
     with zipfile.ZipFile(apk) as archive:
+        if require_typography: font_reports[target]=verify_zip(archive,'assets/flutter_assets/','otf')
         names = archive.namelist()
         abis = {entry.split('/')[1] for entry in names if entry.startswith('lib/') and entry.endswith('.so')}
         assert abis == {abi}, f'{filename}: unexpected ABIs {abis}'
@@ -82,6 +86,7 @@ for filename, abi, machine, target in [
 
 ipa = unique_file('Najd-TV-iPhone-Unsigned.ipa')
 with zipfile.ZipFile(ipa) as archive:
+    if require_typography: font_reports['ios-unsigned-arm64']=verify_zip(archive,'Payload/Runner.app/Frameworks/App.framework/flutter_assets/','otf')
     names = archive.namelist()
     app = 'Payload/Runner.app/'
     assert app + 'embedded.mobileprovision' not in names
@@ -114,6 +119,9 @@ def pe_machine(data):
 
 with zipfile.ZipFile(windows_zip) as archive:
     names = archive.namelist()
+    if require_typography:
+        font_manifest=next(name for name in names if name.endswith('data/flutter_assets/FontManifest.json'))
+        font_reports['windows-x64']=verify_zip(archive,font_manifest.removesuffix('FontManifest.json'),'otf')
     exe = next(name for name in names if name.lower().endswith('mitv.exe'))
     assert pe_machine(archive.read(exe)) == 0x8664
     dlls = [name for name in names if name.lower().endswith('.dll')]
@@ -137,12 +145,16 @@ assert mac_report.get('notarized') is False
 assert mac_report.get('signature', '').startswith('ad-hoc;')
 architectures = set(mac_report.get('architectures') or [])
 assert architectures and architectures <= {'arm64', 'x86_64'}
+if require_typography:
+    font_reports['macos-native']=json.loads((mac_dmg.parent/'typography-report.json').read_text())
+    assert font_reports['macos-native'].get('faces')==15 and font_reports['macos-native'].get('original_bytes_verified') is True
 record(mac_dmg, 'macos-native', '/'.join(sorted(architectures)))
 verify_manifest(mac_dmg.parent / 'source-manifest.json', 'macos-native')
 
 
 web_zip = unique_file('Najd-TV-Web.zip')
 with zipfile.ZipFile(web_zip) as archive:
+    if require_typography: font_reports['web']=verify_zip(archive,'assets/','woff2')
     names = archive.namelist()
     assert 'index.html' in names and 'main.dart.js' in names
     manifest = json.loads(archive.read('source-manifest.json'))
@@ -167,4 +179,5 @@ print(json.dumps({
     'api_base': api,
     'targets': sorted(targets),
     'artifacts': results,
+    'typography': font_reports,
 }, indent=2))

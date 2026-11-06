@@ -1,0 +1,516 @@
+[
+  {
+    "id": "catalog:collection:movie-top",
+    "group": "movie",
+    "title": "أفضل عشرة أفلام",
+    "type": "movie",
+    "params": {
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "300"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-popular",
+    "group": "movie",
+    "title": "الأكثر رواجًا",
+    "type": "movie",
+    "params": {
+      "sort_by": "popularity.desc"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-year",
+    "group": "movie",
+    "title": "الأعلى تقييمًا هذا العام",
+    "type": "movie",
+    "params": {
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "50"
+    },
+    "window": "year"
+  },
+  {
+    "id": "catalog:collection:movie-recent",
+    "group": "movie",
+    "title": "أحدث أفلام",
+    "type": "movie",
+    "params": {
+      "sort_by": "primary_release_date.desc"
+    },
+    "window": "past"
+  },
+  {
+    "id": "catalog:collection:movie-classic",
+    "group": "movie",
+    "title": "كلاسيكيات تستحق المشاهدة",
+    "type": "movie",
+    "params": {
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "300",
+      "primary_release_date.lte": "1999-12-31"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-arabic",
+    "group": "movie",
+    "title": "مكتبة عربية",
+    "type": "movie",
+    "params": {
+      "with_original_language": "ar"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-28",
+    "group": "movie",
+    "title": "أكشن",
+    "type": "movie",
+    "params": {
+      "with_genres": "28"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-12",
+    "group": "movie",
+    "title": "مغامرات",
+    "type": "movie",
+    "params": {
+      "with_genres": "12"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-16",
+    "group": "movie",
+    "title": "رسوم متحركة",
+    "type": "movie",
+    "params": {
+      "with_genres": "16"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-35",
+    "group": "movie",
+    "title": "كوميديا",
+    "type": "movie",
+    "params": {
+      "with_genres": "35"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-80",
+    "group": "movie",
+    "title": "جريمة",
+    "type": "movie",
+    "params": {
+      "with_genres": "80"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-99",
+    "group": "movie",
+    "title": "وثائقي",
+    "type": "movie",
+    "params": {
+      "with_genres": "99"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-18",
+    "group": "movie",
+    "title": "دراما",
+    "type": "movie",
+    "params": {
+      "with_genres": "18"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-10751",
+    "group": "movie",
+    "title": "عائلي",
+    "type": "movie",
+    "params": {
+      "with_genres": "10751"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-14",
+    "group": "movie",
+    "title": "فانتازيا",
+    "type": "movie",
+    "params": {
+      "with_genres": "14"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-36",
+    "group": "movie",
+    "title": "تاريخ",
+    "type": "movie",
+    "params": {
+      "with_genres": "36"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-27",
+    "group": "movie",
+    "title": "رعب",
+    "type": "movie",
+    "params": {
+      "with_genres": "27"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-10402",
+    "group": "movie",
+    "title": "موسيقى",
+    "type": "movie",
+    "params": {
+      "with_genres": "10402"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-9648",
+    "group": "movie",
+    "title": "غموض",
+    "type": "movie",
+    "params": {
+      "with_genres": "9648"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-10749",
+    "group": "movie",
+    "title": "رومانسي",
+    "type": "movie",
+    "params": {
+      "with_genres": "10749"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-878",
+    "group": "movie",
+    "title": "خيال علمي",
+    "type": "movie",
+    "params": {
+      "with_genres": "878"
+    }
+  },
+  {
+    "id": "catalog:collection:movie-53",
+    "group": "movie",
+    "title": "تشويق",
+    "type": "movie",
+    "params": {
+      "with_genres": "53"
+    }
+  },
+  {
+    "id": "catalog:collection:series-top",
+    "group": "series",
+    "title": "أفضل عشرة مسلسلات",
+    "type": "tv",
+    "params": {
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "100"
+    }
+  },
+  {
+    "id": "catalog:collection:series-popular",
+    "group": "series",
+    "title": "الأكثر رواجًا",
+    "type": "tv",
+    "params": {
+      "sort_by": "popularity.desc"
+    }
+  },
+  {
+    "id": "catalog:collection:series-year",
+    "group": "series",
+    "title": "الأعلى تقييمًا هذا العام",
+    "type": "tv",
+    "params": {
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "50"
+    },
+    "window": "year"
+  },
+  {
+    "id": "catalog:collection:series-recent",
+    "group": "series",
+    "title": "أحدث مسلسلات",
+    "type": "tv",
+    "params": {
+      "sort_by": "first_air_date.desc"
+    },
+    "window": "past"
+  },
+  {
+    "id": "catalog:collection:series-classic",
+    "group": "series",
+    "title": "كلاسيكيات تستحق المشاهدة",
+    "type": "tv",
+    "params": {
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "300",
+      "first_air_date.lte": "1999-12-31"
+    }
+  },
+  {
+    "id": "catalog:collection:series-arabic",
+    "group": "series",
+    "title": "مكتبة عربية",
+    "type": "tv",
+    "params": {
+      "with_original_language": "ar"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10759",
+    "group": "series",
+    "title": "أكشن ومغامرات",
+    "type": "tv",
+    "params": {
+      "with_genres": "10759"
+    }
+  },
+  {
+    "id": "catalog:collection:series-16",
+    "group": "series",
+    "title": "رسوم متحركة",
+    "type": "tv",
+    "params": {
+      "with_genres": "16"
+    }
+  },
+  {
+    "id": "catalog:collection:series-35",
+    "group": "series",
+    "title": "كوميديا",
+    "type": "tv",
+    "params": {
+      "with_genres": "35"
+    }
+  },
+  {
+    "id": "catalog:collection:series-80",
+    "group": "series",
+    "title": "جريمة",
+    "type": "tv",
+    "params": {
+      "with_genres": "80"
+    }
+  },
+  {
+    "id": "catalog:collection:series-99",
+    "group": "series",
+    "title": "وثائقي",
+    "type": "tv",
+    "params": {
+      "with_genres": "99"
+    }
+  },
+  {
+    "id": "catalog:collection:series-18",
+    "group": "series",
+    "title": "دراما",
+    "type": "tv",
+    "params": {
+      "with_genres": "18"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10751",
+    "group": "series",
+    "title": "عائلي",
+    "type": "tv",
+    "params": {
+      "with_genres": "10751"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10762",
+    "group": "series",
+    "title": "للأطفال",
+    "type": "tv",
+    "params": {
+      "with_genres": "10762"
+    }
+  },
+  {
+    "id": "catalog:collection:series-9648",
+    "group": "series",
+    "title": "غموض",
+    "type": "tv",
+    "params": {
+      "with_genres": "9648"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10765",
+    "group": "series",
+    "title": "خيال علمي وفانتازيا",
+    "type": "tv",
+    "params": {
+      "with_genres": "10765"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10768",
+    "group": "series",
+    "title": "حروب وسياسة",
+    "type": "tv",
+    "params": {
+      "with_genres": "10768"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10766",
+    "group": "series",
+    "title": "دراما يومية",
+    "type": "tv",
+    "params": {
+      "with_genres": "10766"
+    }
+  },
+  {
+    "id": "catalog:collection:series-37",
+    "group": "series",
+    "title": "ويسترن",
+    "type": "tv",
+    "params": {
+      "with_genres": "37"
+    }
+  },
+  {
+    "id": "catalog:collection:series-10764",
+    "group": "series",
+    "title": "واقع",
+    "type": "tv",
+    "params": {
+      "with_genres": "10764"
+    }
+  },
+  {
+    "id": "catalog:collection:anime-top",
+    "group": "anime",
+    "title": "أفضل عشرة أنمي",
+    "type": "tv",
+    "params": {
+      "with_original_language": "ja",
+      "with_genres": "16",
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "100"
+    }
+  },
+  {
+    "id": "catalog:collection:anime-popular",
+    "group": "anime",
+    "title": "أنمي رائج",
+    "type": "tv",
+    "params": {
+      "with_original_language": "ja",
+      "with_genres": "16"
+    }
+  },
+  {
+    "id": "catalog:collection:anime-movies",
+    "group": "anime",
+    "title": "أفلام أنمي",
+    "type": "movie",
+    "params": {
+      "with_original_language": "ja",
+      "with_genres": "16"
+    }
+  },
+  {
+    "id": "catalog:collection:anime-week",
+    "group": "anime",
+    "title": "حلقات أنمي هذا الأسبوع",
+    "type": "tv",
+    "params": {
+      "with_original_language": "ja",
+      "with_genres": "16"
+    },
+    "window": "week"
+  },
+  {
+    "id": "catalog:collection:anime-upcoming",
+    "group": "anime",
+    "title": "الأنمي الأسبوع القادم",
+    "type": "tv",
+    "params": {
+      "with_original_language": "ja",
+      "with_genres": "16"
+    },
+    "window": "upcoming"
+  },
+  {
+    "id": "catalog:collection:anime-adventure",
+    "group": "anime",
+    "title": "أنمي أكشن ومغامرات",
+    "type": "tv",
+    "params": {
+      "with_original_language": "ja",
+      "with_genres": "16,10759"
+    }
+  },
+  {
+    "id": "catalog:collection:turkish-top",
+    "group": "turkish",
+    "title": "أفضل عشرة مسلسلات تركية",
+    "type": "tv",
+    "params": {
+      "with_original_language": "tr",
+      "sort_by": "vote_average.desc",
+      "vote_count.gte": "50"
+    }
+  },
+  {
+    "id": "catalog:collection:turkish-popular",
+    "group": "turkish",
+    "title": "التركي الرائج",
+    "type": "tv",
+    "params": {
+      "with_original_language": "tr"
+    }
+  },
+  {
+    "id": "catalog:collection:turkish-week",
+    "group": "turkish",
+    "title": "حلقات تركية هذا الأسبوع",
+    "type": "tv",
+    "params": {
+      "with_original_language": "tr"
+    },
+    "window": "week"
+  },
+  {
+    "id": "catalog:collection:turkish-upcoming",
+    "group": "turkish",
+    "title": "التركي الأسبوع القادم",
+    "type": "tv",
+    "params": {
+      "with_original_language": "tr"
+    },
+    "window": "upcoming"
+  },
+  {
+    "id": "catalog:collection:turkish-drama",
+    "group": "turkish",
+    "title": "دراما تركية",
+    "type": "tv",
+    "params": {
+      "with_original_language": "tr",
+      "with_genres": "18"
+    }
+  },
+  {
+    "id": "catalog:collection:turkish-comedy",
+    "group": "turkish",
+    "title": "كوميديا تركية",
+    "type": "tv",
+    "params": {
+      "with_original_language": "tr",
+      "with_genres": "35"
+    }
+  }
+]

@@ -62,7 +62,14 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(api.requests, ['catalog:movie:all:1']);
+        expect(
+          api.requests,
+          containsAll([
+            'catalog:movie:all:1',
+            'catalog:collection:movie-top:1',
+            'catalog:collection:series-top:1',
+          ]),
+        );
         expect(find.byType(HomePage), findsOneWidget);
         expect(find.text('الأخبار'), findsNothing);
         expect(
@@ -122,6 +129,12 @@ void main() {
           ]),
         );
         expect(
+          find.byKey(const ValueKey('collection-feed-movie')),
+          findsOneWidget,
+        );
+        dropdown.onChanged!('catalog:movie:ar');
+        await tester.pumpAndSettle();
+        expect(
           tester.widget<GridView>(find.byType(GridView)).gridDelegate,
           isA<SliverGridDelegateWithMaxCrossAxisExtent>(),
         );
@@ -159,7 +172,14 @@ void main() {
         if (!isTvTarget) {
           expect(find.byKey(const Key('tatv-right-sidebar')), findsOneWidget);
         }
-        expect(api.requests, ['catalog:movie:all:1']);
+        expect(
+          api.requests,
+          containsAll([
+            'catalog:movie:all:1',
+            'catalog:collection:movie-top:1',
+            'catalog:collection:series-top:1',
+          ]),
+        );
         expect(tester.takeException(), isNull);
       } finally {
         await tester.pumpWidget(const SizedBox());
@@ -204,12 +224,12 @@ void main() {
         kind,
       );
     }
-    expect(api.requests, [
-      'catalog:movie:all:1',
-      'catalog:movie:all:1',
-      'catalog:tv:all:1',
-      'catalog:anime:movie:1',
-    ]);
+    for (final group in ['movie', 'series', 'anime']) {
+      expect(
+        api.requests.any((ref) => ref.startsWith('catalog:collection:$group-')),
+        isTrue,
+      );
+    }
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
@@ -221,6 +241,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(find.byType(SearchPage), findsOneWidget);
+    final visitedRequests = List<String>.of(api.requests);
     await selectShellDestination(tester, 'settings');
     expect(find.byType(SettingsPage), findsOneWidget);
     await selectShellDestination(tester, 'anime');
@@ -228,7 +249,7 @@ void main() {
       tester.widget<CatalogPage>(find.byType(CatalogPage)).mediaKind,
       'anime',
     );
-    expect(api.requests.length, 5);
+    expect(api.requests, visitedRequests);
     await tester.pumpWidget(const SizedBox());
   }, skip: isTvTarget);
 

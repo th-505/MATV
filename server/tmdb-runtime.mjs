@@ -17,6 +17,8 @@ export function validateTmdbCatalogRequest(path, params = {}) {
     query: value => value.length >= 2 && value.length <= 120 && !/[\u0000-\u001f\u007f]/.test(value),
     with_genres: value => /^\d{1,5}(?:[,|]\d{1,5}){0,9}$/.test(value),
     with_original_language: value => /^[a-z]{2}$/.test(value),
+    'vote_count.gte': value => /^(?:[1-9]\d{0,5})$/.test(value),
+    ...Object.fromEntries(['primary_release_date.lte','first_air_date.lte','air_date.gte','air_date.lte'].map(key=>[key,value=>/^(?:19|20|21)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(value)])),
     sort_by: value => /^(?:popularity|vote_average|vote_count|primary_release_date|first_air_date)\.(?:asc|desc)$/.test(value),
     append_to_response: value => /^(?:credits|similar|recommendations|external_ids)(?:,(?:credits|similar|recommendations|external_ids)){0,3}$/.test(value),
     include_adult: value => value === 'false',

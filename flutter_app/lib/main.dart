@@ -1,3 +1,4 @@
+import 'src/catalog_collections_page.dart';
 import 'src/playback_handoff.dart';
 import 'src/service_checks_page.dart';
 import 'src/playback_resume.dart';
@@ -366,6 +367,7 @@ class _ShellState extends State<Shell> {
       store: widget.store,
       title: 'الأفلام',
       categoryId: 'catalog:movie:all',
+      collections: true,
       mediaKind: 'movie',
       unified: true,
     ),
@@ -374,6 +376,7 @@ class _ShellState extends State<Shell> {
       store: widget.store,
       title: 'المسلسلات',
       categoryId: 'catalog:tv:all',
+      collections: true,
       mediaKind: 'series',
       unified: true,
     ),
@@ -382,6 +385,7 @@ class _ShellState extends State<Shell> {
       store: widget.store,
       title: 'الأنمي',
       categoryId: 'catalog:anime:movie',
+      collections: true,
       mediaKind: 'anime',
       unified: true,
     ),
@@ -390,6 +394,7 @@ class _ShellState extends State<Shell> {
       store: widget.store,
       title: 'التركي',
       categoryId: 'catalog:turkish:tv',
+      collections: true,
       mediaKind: 'turkish',
       unified: true,
     ),
@@ -774,6 +779,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<List<CatalogItem>> _topMovies = widget.api.category(
+    'catalog:collection:movie-top',
+  );
+  late Future<List<CatalogItem>> _topSeries = widget.api.category(
+    'catalog:collection:series-top',
+  );
   late Future<List<CatalogItem>> _latest = widget.api.category(
     'catalog:movie:all',
   );
@@ -787,6 +798,8 @@ class _HomePageState extends State<HomePage> {
     _latest = widget.api.category('catalog:movie:all');
     _series = widget.api.category('catalog:tv:all');
     _anime = widget.api.category('catalog:anime:tv');
+    _topMovies = widget.api.category('catalog:collection:movie-top');
+    _topSeries = widget.api.category('catalog:collection:series-top');
   });
   void _retryShelf(int target) => setState(() {
     if (target == 3) {
@@ -812,11 +825,14 @@ class _HomePageState extends State<HomePage> {
   Widget _shelf(
     String title,
     Future<List<CatalogItem>> source,
-    int target,
-  ) => FutureBuilder<List<CatalogItem>>(
+    int target, {
+    String? collectionRef,
+    int? limit,
+  }) => FutureBuilder<List<CatalogItem>>(
     future: source,
     builder: (context, snapshot) {
-      final items = snapshot.data ?? const <CatalogItem>[];
+      final fetched = snapshot.data ?? const <CatalogItem>[];
+      final items = limit == null ? fetched : fetched.take(limit).toList();
       if (snapshot.hasError ||
           (snapshot.connectionState == ConnectionState.done && items.isEmpty)) {
         return NajdSurface(
@@ -830,7 +846,19 @@ class _HomePageState extends State<HomePage> {
                     : 'لا تتوفر أعمال في هذا القسم الآن.',
               ),
               TextButton.icon(
-                onPressed: () => _retryShelf(target),
+                onPressed: () {
+                  if (collectionRef == null) {
+                    _retryShelf(target);
+                  } else {
+                    setState(() {
+                      if (collectionRef.endsWith('movie-top')) {
+                        _topMovies = widget.api.category(collectionRef);
+                      } else {
+                        _topSeries = widget.api.category(collectionRef);
+                      }
+                    });
+                  }
+                },
                 icon: const Icon(Icons.refresh),
                 label: const Text('إعادة تحميل القسم'),
               ),
@@ -850,7 +878,25 @@ class _HomePageState extends State<HomePage> {
           NajdSectionHeading(
             title,
             action: 'عرض الكل',
-            onAction: () => widget.onNavigate?.call(target),
+            onAction: () {
+              if (collectionRef == null) {
+                widget.onNavigate?.call(target);
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: Text(title)),
+                      body: CatalogPage(
+                        api: widget.api,
+                        store: widget.store,
+                        title: title,
+                        categoryId: collectionRef,
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
           ),
           SizedBox(
             height: isTvTarget ? 360 : 285,
@@ -989,6 +1035,55 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ],
+            if (widget.store.continueWatching.isEmpty) ...[
+              const NajdSectionHeading('متابعة المشاهدة'),
+              const Text('الأعمال التي تبدأها ستظهر هنا.'),
+            ],
+            NajdSectionHeading(
+              'قائمتي',
+              action: 'المزيد',
+              onAction: () => widget.onNavigate?.call(7),
+            ),
+            if (widget.store.favorites.isEmpty)
+              const Text('أضف أعمالك المفضلة لتجدها هنا.'),
+            if (widget.store.favorites.isNotEmpty)
+              SizedBox(
+                height: isTvTarget ? 350 : 285,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: widget.store.favorites.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (_, index) {
+                    final item = widget.store.favorites[index];
+                    return SizedBox(
+                      width: isTvTarget ? 210 : 155,
+                      child: NajdWorkCard(
+                        item: item,
+                        onTap: () => openDetails(
+                          context,
+                          widget.api,
+                          widget.store,
+                          item,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            _shelf(
+              'أفضل عشرة أفلام · تقييم TMDB',
+              _topMovies,
+              1,
+              collectionRef: 'catalog:collection:movie-top',
+              limit: 10,
+            ),
+            _shelf(
+              'أفضل عشرة مسلسلات · تقييم TMDB',
+              _topSeries,
+              2,
+              collectionRef: 'catalog:collection:series-top',
+              limit: 10,
+            ),
             _shelf('أحدث الإضافات', _latest, 1),
             if (items.isNotEmpty) ...[
               _shelf('مسلسلات تستحق المشاهدة', _series, 2),
@@ -1731,6 +1826,7 @@ class CatalogPage extends StatefulWidget {
     required this.title,
     required this.categoryId,
     this.unified = false,
+    this.collections = false,
     this.mediaKind,
   });
   final MitvApi api;
@@ -1738,6 +1834,7 @@ class CatalogPage extends StatefulWidget {
   final String title;
   final String categoryId;
   final bool unified;
+  final bool collections;
   final String? mediaKind;
   @override
   State<CatalogPage> createState() => _CatalogPageState();
@@ -1842,7 +1939,7 @@ class _CatalogPageState extends State<CatalogPage> {
   void initState() {
     super.initState();
     controller.addListener(_onScroll);
-    _loadMore();
+    if (!widget.collections) _loadMore();
   }
 
   @override
@@ -1943,83 +2040,120 @@ class _CatalogPageState extends State<CatalogPage> {
       loading = false;
       error = null;
     });
-    await _loadMore();
+    if (!(widget.collections && selectedCategory == widget.categoryId)) {
+      await _loadMore();
+    }
   }
 
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      if (widget.unified ||
-          widget.categoryId.startsWith('series-') ||
-          widget.categoryId.startsWith('3isk-'))
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: DropdownButton<String>(
-            isExpanded: true,
-            value: selectedCategory,
-            items: _categories.entries
-                .map(
-                  (entry) => DropdownMenuItem(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null || value == selectedCategory) return;
-              setState(() {
-                selectedCategory = value;
-              });
-              if (controller.hasClients) controller.jumpTo(0);
-              unawaited(_refresh());
-            },
-          ),
-        ),
-      Expanded(
-        child: RefreshIndicator(
-          onRefresh: _refresh,
-          child: GridView.builder(
-            controller: controller,
-            padding: EdgeInsets.all(isTvTarget ? 24 : 12),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: isTvTarget ? 260 : 220,
-              childAspectRatio: isTvTarget ? .68 : .62,
-              crossAxisSpacing: isTvTarget ? 18 : 10,
-              mainAxisSpacing: isTvTarget ? 18 : 10,
-            ),
-            itemCount: items.length + 1,
-            itemBuilder: (context, i) {
-              if (i == items.length) {
-                return Center(
-                  child: loading
-                      ? const CircularProgressIndicator()
-                      : error != null
-                      ? TextButton.icon(
-                          onPressed: _loadMore,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('إعادة المحاولة'),
-                        )
-                      : done
-                      ? const Text('تم عرض كل الأعمال المتاحة')
-                      : TextButton.icon(
-                          onPressed: _loadMore,
-                          icon: const Icon(Icons.expand_more),
-                          label: const Text('عرض الصفحة التالية'),
-                        ),
-                );
-              }
-              final item = items[i];
-              return _CatalogCard(
-                item: item,
-                onTap: () =>
-                    openDetails(context, widget.api, widget.store, item),
-              );
-            },
-          ),
-        ),
-      ),
-    ],
+  Widget _selector() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: DropdownButton<String>(
+      isExpanded: true,
+      value: selectedCategory,
+      items: _categories.entries
+          .map(
+            (entry) =>
+                DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+          )
+          .toList(),
+      onChanged: (value) {
+        if (value == null || value == selectedCategory) return;
+        setState(() {
+          selectedCategory = value;
+        });
+        if (controller.hasClients) controller.jumpTo(0);
+        unawaited(_refresh());
+      },
+    ),
   );
+
+  @override
+  Widget build(BuildContext context) =>
+      widget.collections && selectedCategory == widget.categoryId
+      ? Column(
+          children: [
+            _selector(),
+            Expanded(
+              child: CatalogCollectionsPage(
+                api: widget.api,
+                store: widget.store,
+                group: widget.mediaKind == 'movie'
+                    ? 'movie'
+                    : widget.mediaKind == 'anime'
+                    ? 'anime'
+                    : widget.mediaKind == 'turkish'
+                    ? 'turkish'
+                    : 'series',
+                onItem: (item) =>
+                    openDetails(context, widget.api, widget.store, item),
+                onMore: (ref, title) => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: Text(title)),
+                      body: CatalogPage(
+                        api: widget.api,
+                        store: widget.store,
+                        title: title,
+                        categoryId: ref,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        )
+      : Column(
+          children: [
+            if (widget.unified ||
+                widget.categoryId.startsWith('series-') ||
+                widget.categoryId.startsWith('3isk-'))
+              _selector(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: GridView.builder(
+                  controller: controller,
+                  padding: EdgeInsets.all(isTvTarget ? 24 : 12),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: isTvTarget ? 260 : 220,
+                    childAspectRatio: isTvTarget ? .68 : .62,
+                    crossAxisSpacing: isTvTarget ? 18 : 10,
+                    mainAxisSpacing: isTvTarget ? 18 : 10,
+                  ),
+                  itemCount: items.length + 1,
+                  itemBuilder: (context, i) {
+                    if (i == items.length) {
+                      return Center(
+                        child: loading
+                            ? const CircularProgressIndicator()
+                            : error != null
+                            ? TextButton.icon(
+                                onPressed: _loadMore,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('إعادة المحاولة'),
+                              )
+                            : done
+                            ? const Text('تم عرض كل الأعمال المتاحة')
+                            : TextButton.icon(
+                                onPressed: _loadMore,
+                                icon: const Icon(Icons.expand_more),
+                                label: const Text('عرض الصفحة التالية'),
+                              ),
+                      );
+                    }
+                    final item = items[i];
+                    return _CatalogCard(
+                      item: item,
+                      onTap: () =>
+                          openDetails(context, widget.api, widget.store, item),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
 }
 
 class _CatalogCard extends StatelessWidget {

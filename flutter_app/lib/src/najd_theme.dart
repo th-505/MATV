@@ -14,10 +14,12 @@ class NajdAppearance extends ChangeNotifier {
   ThemeMode mode = ThemeMode.dark;
   String? fontFamily;
   bool bundledFontReady = false;
+  bool bundledSerifReady = false;
   String get activeFontFamily =>
       fontFamily ?? (bundledFontReady ? 'ThmanyahSans' : 'NajdArabicFallback');
-  void markBundledFontReady() {
+  void markBundledFontReady({bool serif = false}) {
     bundledFontReady = true;
+    bundledSerifReady = serif;
     notifyListeners();
   }
 
@@ -55,21 +57,35 @@ Future<bool> loadPrivateNajdFonts() async {
   try {
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     final bundled = manifest.listAssets().toSet();
-    if (!paths.every(bundled.contains)) return false;
     try {
       final declarations = jsonDecode(
         await rootBundle.loadString('FontManifest.json'),
       );
       if (declarations is List &&
           declarations.any(
-            (entry) => entry is Map && entry['family'] == 'ThmanyahSans',
+            (entry) =>
+                entry is Map &&
+                entry['family'] == 'ThmanyahSans' &&
+                entry['fonts'] is List &&
+                (entry['fonts'] as List).every(
+                  (face) => face is Map && bundled.contains(face['asset']),
+                ),
           )) {
-        NajdAppearance.instance.markBundledFontReady();
+        final families = declarations
+            .whereType<Map>()
+            .map((entry) => entry['family'])
+            .toSet();
+        NajdAppearance.instance.markBundledFontReady(
+          serif:
+              families.contains('ThmanyahSerifText') &&
+              families.contains('ThmanyahSerifDisplay'),
+        );
         return true;
       }
     } catch (_) {
       /* Development/private imports may use runtime registration. */
     }
+    if (!paths.every(bundled.contains)) return false;
     final loader = FontLoader('ThmanyahSans');
     for (final weight in ['Regular', 'Medium', 'Bold']) {
       loader.addFont(
@@ -85,6 +101,56 @@ Future<bool> loadPrivateNajdFonts() async {
 }
 
 class NajdThemes {
+  static TextTheme typography(TextTheme base) {
+    final appearance = NajdAppearance.instance;
+    if (!appearance.bundledSerifReady || appearance.fontFamily != null) {
+      return base;
+    }
+    TextStyle? role(TextStyle? style, String family, FontWeight weight) =>
+        style?.copyWith(fontFamily: family, fontWeight: weight);
+    return base.copyWith(
+      displayLarge: role(
+        base.displayLarge,
+        'ThmanyahSerifDisplay',
+        FontWeight.w900,
+      ),
+      displayMedium: role(
+        base.displayMedium,
+        'ThmanyahSerifDisplay',
+        FontWeight.w700,
+      ),
+      displaySmall: role(
+        base.displaySmall,
+        'ThmanyahSerifDisplay',
+        FontWeight.w500,
+      ),
+      headlineLarge: role(
+        base.headlineLarge,
+        'ThmanyahSerifDisplay',
+        FontWeight.w400,
+      ),
+      headlineMedium: role(
+        base.headlineMedium,
+        'ThmanyahSerifDisplay',
+        FontWeight.w300,
+      ),
+      headlineSmall: role(
+        base.headlineSmall,
+        'ThmanyahSerifText',
+        FontWeight.w900,
+      ),
+      titleLarge: role(base.titleLarge, 'ThmanyahSerifText', FontWeight.w700),
+      titleMedium: role(base.titleMedium, 'ThmanyahSerifText', FontWeight.w500),
+      titleSmall: role(base.titleSmall, 'ThmanyahSerifText', FontWeight.w300),
+      bodyLarge: role(base.bodyLarge, 'ThmanyahSerifText', FontWeight.w400),
+      bodyMedium: role(base.bodyMedium, 'ThmanyahSans', FontWeight.w400),
+      bodySmall: role(base.bodySmall, 'ThmanyahSans', FontWeight.w300),
+      labelLarge: role(base.labelLarge, 'ThmanyahSans', FontWeight.w700),
+      labelMedium: role(base.labelMedium, 'ThmanyahSans', FontWeight.w500),
+      labelSmall: role(base.labelSmall, 'ThmanyahSans', FontWeight.w900),
+    );
+  }
+
   static const lavender = Color(0xFF6B46C1);
   static ThemeData forBrightness(Brightness brightness) {
     final dark = brightness == Brightness.dark;
@@ -186,11 +252,13 @@ class NajdThemes {
           side: BorderSide(color: scheme.outline),
         ),
       ),
-      textTheme: ThemeData(brightness: brightness).textTheme.apply(
-        fontFamily: NajdAppearance.instance.activeFontFamily,
-        fontFamilyFallback: const ['NajdArabicFallback'],
-        bodyColor: text,
-        displayColor: text,
+      textTheme: typography(
+        ThemeData(brightness: brightness).textTheme.apply(
+          fontFamily: NajdAppearance.instance.activeFontFamily,
+          fontFamilyFallback: const ['NajdArabicFallback'],
+          bodyColor: text,
+          displayColor: text,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

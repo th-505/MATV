@@ -11,7 +11,7 @@ on:
         default: true
         type: boolean
       font_bundle_url:
-        description: Private user font bundle URL for native builds only
+        description: Private original font bundle URL for native OTF and Web WOFF2 builds
         required: false
         type: string
       apple_runner:
@@ -38,6 +38,7 @@ concurrency:
 env:
   MITV_API_BASE: ${{ inputs.api_base || 'https://najdtv.onrender.com' }}
   MITV_SOURCE_COMMIT: ${{ github.sha }}
+  NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url || secrets.NAJD_FONT_BUNDLE_URL }}
 
 jobs:
   providers:
@@ -125,13 +126,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare private native typography without committing originals
-        if: inputs.font_bundle_url != ''
+        if: env.NAJD_FONT_BUNDLE_URL != ''
         env:
-          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url || secrets.NAJD_FONT_BUNDLE_URL }}
         run: python scripts/fetch_private_build_fonts.py
       - name: Restore verified original typography from the approved native package
-        if: inputs.font_bundle_url == ''
-        run: python scripts/restore_approved_native_fonts.py
+        if: env.NAJD_FONT_BUNDLE_URL == ''
+        run: |
+          python scripts/restore_approved_native_fonts.py
+          python scripts/register_private_font_manifest.py flutter_app
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding and TV manifest
@@ -178,7 +181,7 @@ jobs:
           assert f"versionName='{version}'" in badging
           assert f"versionCode='{int(os.environ['VERSION_OFFSET']) + int(build)}'" in badging
           apk = pathlib.Path('flutter_app/build/app/outputs/flutter-apk') / f"app-{os.environ['EXPECTED_ABI']}-release.apk"
-          assert apk.stat().st_size <= 35 * 1024 * 1024, 'APK exceeds approved 35 MiB limit'
+          assert apk.stat().st_size <= 40 * 1024 * 1024, 'APK exceeds 40 MiB typography budget limit'
           PY
           mkdir -p trial
           cp "$APK" "trial/$ARTIFACT_NAME.apk"
@@ -215,13 +218,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare private native typography without committing originals
-        if: inputs.font_bundle_url != ''
+        if: env.NAJD_FONT_BUNDLE_URL != ''
         env:
-          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url || secrets.NAJD_FONT_BUNDLE_URL }}
         run: python scripts/fetch_private_build_fonts.py
       - name: Restore verified original typography from the approved native package
-        if: inputs.font_bundle_url == ''
-        run: python scripts/restore_approved_native_fonts.py
+        if: env.NAJD_FONT_BUNDLE_URL == ''
+        run: |
+          python scripts/restore_approved_native_fonts.py
+          python scripts/register_private_font_manifest.py flutter_app
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply native branding
@@ -272,13 +277,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare private native typography without committing originals
-        if: inputs.font_bundle_url != ''
+        if: env.NAJD_FONT_BUNDLE_URL != ''
         env:
-          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url || secrets.NAJD_FONT_BUNDLE_URL }}
         run: python scripts/fetch_private_build_fonts.py
       - name: Restore verified original typography from the approved native package
-        if: inputs.font_bundle_url == ''
-        run: python scripts/restore_approved_native_fonts.py
+        if: env.NAJD_FONT_BUNDLE_URL == ''
+        run: |
+          python scripts/restore_approved_native_fonts.py
+          python scripts/register_private_font_manifest.py flutter_app
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV desktop identity
@@ -357,13 +364,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare private native typography without committing originals
-        if: inputs.font_bundle_url != ''
+        if: env.NAJD_FONT_BUNDLE_URL != ''
         env:
-          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url }}
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url || secrets.NAJD_FONT_BUNDLE_URL }}
         run: python scripts/fetch_private_build_fonts.py
       - name: Restore verified original typography from the approved native package
-        if: inputs.font_bundle_url == ''
-        run: python scripts/restore_approved_native_fonts.py
+        if: env.NAJD_FONT_BUNDLE_URL == ''
+        run: |
+          python scripts/restore_approved_native_fonts.py
+          python scripts/register_private_font_manifest.py flutter_app
       - name: Install pinned icon packager
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply Najd TV identity and sandbox entitlements
@@ -381,6 +390,8 @@ jobs:
           set -euo pipefail
           APP_PATH="$(find flutter_app/build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
           test -n "$APP_PATH"
+          mkdir -p trial
+          python3 scripts/verify_thmanyah_build.py "$APP_PATH/Contents/Frameworks/App.framework/Resources/flutter_assets" otf > trial/typography-report.json
           bash scripts/package_macos_dmg.sh "$APP_PATH" trial flutter_app/macos/Runner/Release.entitlements
       - name: Record immutable source identity
         run: python3 scripts/write_source_manifest.py --target macos-native --output trial/source-manifest.json --api "$MITV_API_BASE" --sha "$MITV_SOURCE_COMMIT"
@@ -396,6 +407,8 @@ jobs:
     uses: ./.github/workflows/flutter-web.yml
     with:
       api_base: ${{ inputs.api_base || 'https://najdtv.onrender.com' }}
+      font_bundle_url: ${{ inputs.font_bundle_url || '' }}
+    secrets: inherit
 
   verify-release:
     needs: [android, ios-unsigned, windows, macos, web]
@@ -446,9 +459,10 @@ jobs:
               for name in package.namelist():
                   path=pathlib.PurePosixPath(name)
                   assert not path.is_absolute() and '..' not in path.parts
-                  assert not ('thmanyah' in name.lower() and path.suffix.lower() in ('.otf','.ttf','.woff','.woff2')), 'Private font publication forbidden'
+                  assert not ('thmanyah' in name.lower() and path.suffix.lower() in ('.otf','.ttf','.woff')), 'Native font source cannot enter Web output'
               package.extractall(destination)
           PYWEB
+          python3 scripts/verify_thmanyah_build.py /tmp/najd-internal-web/assets woff2
           git checkout -B main origin/main
           rm -rf internal_web
           mkdir internal_web
@@ -483,4 +497,4 @@ jobs:
             case "$ASSET" in *Najd-TV-Flutter-Web/*) continue ;; esac
             PUBLIC_ASSETS+=("$ASSET")
           done
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --prerelease --title "Najd TV $VERSION — Beta 5" --notes-file /tmp/release-notes.md "${PUBLIC_ASSETS[@]}"
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$MITV_SOURCE_COMMIT" --prerelease --title "NajdTV v$VERSION" --notes-file /tmp/release-notes.md "${PUBLIC_ASSETS[@]}"

@@ -1,5 +1,5 @@
 // =====================================================================
-// MA TV ANTI-BAN NETWORK CLIENT & REAL BROWSER PROFILES
+// Najd public HTTP compatibility headers; not a browser or access-control bypass
 // =====================================================================
 
 import http from 'node:http';
@@ -33,13 +33,8 @@ export function buildAntiBanHeaders(targetUrl, referer = '') {
     'Pragma': 'no-cache',
     'Referer': refUrl,
     ...(origin ? { 'Origin': origin } : {}),
-    'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-    'Sec-Ch-Ua-Mobile': '?0',
-    'Sec-Ch-Ua-Platform': '"Windows"',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'same-origin',
-    'Sec-Fetch-User': '?1',
+    // Do not send Chromium/Windows client hints alongside the Safari compatibility UA.
+    // Fetch metadata is browser-generated; the server client does not manufacture it.
     'Upgrade-Insecure-Requests': '1'
   };
 }

@@ -1,3 +1,4 @@
+import {cascadeResolveStream} from '../scrapers/stream-unwrapper.mjs';
 import {sourceEpisodeEvidence} from "../scrapers/shared/source-episode-evidence.mjs";
 import {resolveProviderMedia} from "../scrapers/shared/provider-media.mjs";
 import {createOptionalCacheReader} from "../optional-cache.mjs";
@@ -646,7 +647,7 @@ export function createBrowserWorkService({
                       row.season) !== season))
               )
                 throw Error("BROWSER_EPISODE_IDENTITY_CONFLICT");
-              const chosen=await resolveProviderMedia(w.adapter,row.source_ref,{details:d,network,accept:async candidates=>{
+              const chosen=await resolveProviderMedia(w.adapter,row.source_ref,{details:d,network,resolveEmbed:(target,parent,deadline)=>cascadeResolveStream(target,parent,0,new Set(),deadline),accept:async candidates=>{
                const accepted=[];
               for (const candidate of candidates) {
                 const expiry = mediaExpiry(candidate, now());
@@ -666,6 +667,7 @@ export function createBrowserWorkService({
                     headers[k] = v;
                 accepted.push({
                   ...candidate,
+                  ...(checked.adaptive ? {adaptive:true,quality:'AUTO-HLS',quality_levels:checked.quality_levels} : {}),
                   kind: "direct",
                   headers,
                   provider: w.provider,
@@ -682,7 +684,6 @@ export function createBrowserWorkService({
                     episode: movie ? 0 : episode,
                   },
                 });
-                return accepted;
               }
                return accepted;
               }});

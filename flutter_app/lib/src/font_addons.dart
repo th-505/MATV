@@ -186,7 +186,9 @@ class _NajdFontAddonControlState extends State<NajdFontAddonControl> {
           ),
           subtitle: Text(
             NajdAppearance.instance.bundledFontReady
-                ? 'عربي وإنجليزي · عادي ومتوسط وعريض'
+                ? NajdAppearance.instance.bundledSerifReady
+                      ? 'ثلاث عائلات · خمسة أوزان · عربي وإنجليزي'
+                      : 'عربي وإنجليزي · عادي ومتوسط وعريض'
                 : 'يمكنك إضافة خط ثمانية من ملفك على هذا الجهاز',
           ),
         ),

@@ -33,7 +33,7 @@ class SourceRouter {
       );
       return height == 0 ? a.$1.compareTo(b.$1) : height;
     });
-    return rows.take(64).map((r) => r.$2).toList(growable: false);
+    return rows.take(256).map((r) => r.$2).toList(growable: false);
   }
 
   void record(String path, {required bool success, int? latencyMs}) {

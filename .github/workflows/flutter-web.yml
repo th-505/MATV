@@ -3,10 +3,19 @@ name: Najd TV internal Web build
 on:
   workflow_call:
     inputs:
+      font_bundle_url:
+        description: Private original font bundle download URL
+        required: false
+        default: ''
+        type: string
       api_base:
         description: Public metadata API URL, identical to the native builds
         required: true
         type: string
+
+    secrets:
+      NAJD_FONT_BUNDLE_URL:
+        required: false
 
 permissions:
   contents: read
@@ -33,6 +42,11 @@ jobs:
         run: python -m pip install -r scripts/requirements-branding.txt
       - name: Apply approved Web branding
         run: python3 scripts/apply_native_branding.py flutter_app
+      - name: Prepare all fifteen original Web font faces
+        env:
+          NAJD_FONT_BUNDLE_URL: ${{ inputs.font_bundle_url || secrets.NAJD_FONT_BUNDLE_URL }}
+          NAJD_FONT_BUILD_PLATFORM: web
+        run: python3 scripts/fetch_private_build_fonts.py
       - name: Build and verify Flutter Web
         working-directory: flutter_app
         run: |
@@ -41,6 +55,8 @@ jobs:
           flutter test --dart-define=MITV_TARGET=web
           dart run tool/alooy_bridge_smoke.dart
           flutter build web --release --no-web-resources-cdn --base-href=/internal/ --dart-define=MITV_TARGET=web --dart-define="MITV_API_BASE=$MITV_API_BASE"
+      - name: Verify original Web font files and weights in compiled output
+        run: python3 scripts/verify_thmanyah_build.py flutter_app/build/web/assets woff2
       - uses: actions/setup-node@v4
         with:
           node-version: '24.22.1'

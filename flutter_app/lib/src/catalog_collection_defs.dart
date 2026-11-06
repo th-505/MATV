@@ -1,0 +1,193 @@
+// Generated from shared/catalog-collections.json.
+const najdCatalogCollections = <Map<String, String>>[
+  {
+    'id': "catalog:collection:movie-top",
+    'group': "movie",
+    'title': "أفضل عشرة أفلام",
+  },
+  {
+    'id': "catalog:collection:movie-popular",
+    'group': "movie",
+    'title': "الأكثر رواجًا",
+  },
+  {
+    'id': "catalog:collection:movie-year",
+    'group': "movie",
+    'title': "الأعلى تقييمًا هذا العام",
+  },
+  {
+    'id': "catalog:collection:movie-recent",
+    'group': "movie",
+    'title': "أحدث أفلام",
+  },
+  {
+    'id': "catalog:collection:movie-classic",
+    'group': "movie",
+    'title': "كلاسيكيات تستحق المشاهدة",
+  },
+  {
+    'id': "catalog:collection:movie-arabic",
+    'group': "movie",
+    'title': "مكتبة عربية",
+  },
+  {'id': "catalog:collection:movie-28", 'group': "movie", 'title': "أكشن"},
+  {'id': "catalog:collection:movie-12", 'group': "movie", 'title': "مغامرات"},
+  {
+    'id': "catalog:collection:movie-16",
+    'group': "movie",
+    'title': "رسوم متحركة",
+  },
+  {'id': "catalog:collection:movie-35", 'group': "movie", 'title': "كوميديا"},
+  {'id': "catalog:collection:movie-80", 'group': "movie", 'title': "جريمة"},
+  {'id': "catalog:collection:movie-99", 'group': "movie", 'title': "وثائقي"},
+  {'id': "catalog:collection:movie-18", 'group': "movie", 'title': "دراما"},
+  {'id': "catalog:collection:movie-10751", 'group': "movie", 'title': "عائلي"},
+  {'id': "catalog:collection:movie-14", 'group': "movie", 'title': "فانتازيا"},
+  {'id': "catalog:collection:movie-36", 'group': "movie", 'title': "تاريخ"},
+  {'id': "catalog:collection:movie-27", 'group': "movie", 'title': "رعب"},
+  {'id': "catalog:collection:movie-10402", 'group': "movie", 'title': "موسيقى"},
+  {'id': "catalog:collection:movie-9648", 'group': "movie", 'title': "غموض"},
+  {
+    'id': "catalog:collection:movie-10749",
+    'group': "movie",
+    'title': "رومانسي",
+  },
+  {
+    'id': "catalog:collection:movie-878",
+    'group': "movie",
+    'title': "خيال علمي",
+  },
+  {'id': "catalog:collection:movie-53", 'group': "movie", 'title': "تشويق"},
+  {
+    'id': "catalog:collection:series-top",
+    'group': "series",
+    'title': "أفضل عشرة مسلسلات",
+  },
+  {
+    'id': "catalog:collection:series-popular",
+    'group': "series",
+    'title': "الأكثر رواجًا",
+  },
+  {
+    'id': "catalog:collection:series-year",
+    'group': "series",
+    'title': "الأعلى تقييمًا هذا العام",
+  },
+  {
+    'id': "catalog:collection:series-recent",
+    'group': "series",
+    'title': "أحدث مسلسلات",
+  },
+  {
+    'id': "catalog:collection:series-classic",
+    'group': "series",
+    'title': "كلاسيكيات تستحق المشاهدة",
+  },
+  {
+    'id': "catalog:collection:series-arabic",
+    'group': "series",
+    'title': "مكتبة عربية",
+  },
+  {
+    'id': "catalog:collection:series-10759",
+    'group': "series",
+    'title': "أكشن ومغامرات",
+  },
+  {
+    'id': "catalog:collection:series-16",
+    'group': "series",
+    'title': "رسوم متحركة",
+  },
+  {'id': "catalog:collection:series-35", 'group': "series", 'title': "كوميديا"},
+  {'id': "catalog:collection:series-80", 'group': "series", 'title': "جريمة"},
+  {'id': "catalog:collection:series-99", 'group': "series", 'title': "وثائقي"},
+  {'id': "catalog:collection:series-18", 'group': "series", 'title': "دراما"},
+  {
+    'id': "catalog:collection:series-10751",
+    'group': "series",
+    'title': "عائلي",
+  },
+  {
+    'id': "catalog:collection:series-10762",
+    'group': "series",
+    'title': "للأطفال",
+  },
+  {'id': "catalog:collection:series-9648", 'group': "series", 'title': "غموض"},
+  {
+    'id': "catalog:collection:series-10765",
+    'group': "series",
+    'title': "خيال علمي وفانتازيا",
+  },
+  {
+    'id': "catalog:collection:series-10768",
+    'group': "series",
+    'title': "حروب وسياسة",
+  },
+  {
+    'id': "catalog:collection:series-10766",
+    'group': "series",
+    'title': "دراما يومية",
+  },
+  {'id': "catalog:collection:series-37", 'group': "series", 'title': "ويسترن"},
+  {'id': "catalog:collection:series-10764", 'group': "series", 'title': "واقع"},
+  {
+    'id': "catalog:collection:anime-top",
+    'group': "anime",
+    'title': "أفضل عشرة أنمي",
+  },
+  {
+    'id': "catalog:collection:anime-popular",
+    'group': "anime",
+    'title': "أنمي رائج",
+  },
+  {
+    'id': "catalog:collection:anime-movies",
+    'group': "anime",
+    'title': "أفلام أنمي",
+  },
+  {
+    'id': "catalog:collection:anime-week",
+    'group': "anime",
+    'title': "حلقات أنمي هذا الأسبوع",
+  },
+  {
+    'id': "catalog:collection:anime-upcoming",
+    'group': "anime",
+    'title': "الأنمي الأسبوع القادم",
+  },
+  {
+    'id': "catalog:collection:anime-adventure",
+    'group': "anime",
+    'title': "أنمي أكشن ومغامرات",
+  },
+  {
+    'id': "catalog:collection:turkish-top",
+    'group': "turkish",
+    'title': "أفضل عشرة مسلسلات تركية",
+  },
+  {
+    'id': "catalog:collection:turkish-popular",
+    'group': "turkish",
+    'title': "التركي الرائج",
+  },
+  {
+    'id': "catalog:collection:turkish-week",
+    'group': "turkish",
+    'title': "حلقات تركية هذا الأسبوع",
+  },
+  {
+    'id': "catalog:collection:turkish-upcoming",
+    'group': "turkish",
+    'title': "التركي الأسبوع القادم",
+  },
+  {
+    'id': "catalog:collection:turkish-drama",
+    'group': "turkish",
+    'title': "دراما تركية",
+  },
+  {
+    'id': "catalog:collection:turkish-comedy",
+    'group': "turkish",
+    'title': "كوميديا تركية",
+  },
+];

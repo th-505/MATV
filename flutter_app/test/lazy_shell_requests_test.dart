@@ -1,4 +1,5 @@
 import 'support/shell_navigation.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -60,15 +61,28 @@ void main() {
 
       expect(api.matchesRequests, 0);
       expect(api.newsRequests, 0);
-      expect(api.categoryRequests, ['catalog:movie:all:1']);
+      expect(
+        api.categoryRequests,
+        containsAll([
+          'catalog:movie:all:1',
+          'catalog:collection:movie-top:1',
+          'catalog:collection:series-top:1',
+        ]),
+      );
       expect(find.byType(CatalogPage, skipOffstage: false), findsNothing);
 
       await selectShellDestination(tester, 'movies');
       await tester.pumpAndSettle();
-      expect(api.categoryRequests, [
-        'catalog:movie:all:1',
-        'catalog:movie:all:1',
-      ]);
+      expect(
+        api.categoryRequests.every(
+          (ref) =>
+              ref == 'catalog:movie:all:1' ||
+              ref.startsWith('catalog:collection:movie-') ||
+              ref == 'catalog:collection:series-top:1',
+        ),
+        isTrue,
+      );
+      final visitedRequests = List<String>.of(api.categoryRequests);
       final cinemaState = tester.state(find.byType(CatalogPage));
 
       await selectShellDestination(tester, 'settings');
@@ -79,10 +93,7 @@ void main() {
       await selectShellDestination(tester, 'movies');
       await tester.pumpAndSettle();
       expect(tester.state(find.byType(CatalogPage)), same(cinemaState));
-      expect(api.categoryRequests, [
-        'catalog:movie:all:1',
-        'catalog:movie:all:1',
-      ]);
+      expect(api.categoryRequests, visitedRequests);
 
       await selectShellDestination(tester, 'live');
       await tester.pumpAndSettle();
@@ -90,23 +101,30 @@ void main() {
       await selectShellDestination(tester, 'home');
       await tester.pumpAndSettle();
       expect(api.matchesRequests, 1);
-      expect(api.categoryRequests, [
-        'catalog:movie:all:1',
-        'catalog:movie:all:1',
-      ]);
+      expect(api.categoryRequests, visitedRequests);
       expect(api.newsRequests, 0);
       expect(find.text('الأخبار'), findsNothing);
 
       await selectShellDestination(tester, 'series');
       await tester.pumpAndSettle();
-      expect(api.categoryRequests.last, 'catalog:tv:all:1');
+      expect(
+        api.categoryRequests.any(
+          (ref) => ref.startsWith('catalog:collection:series-'),
+        ),
+        isTrue,
+      );
       await selectShellDestination(tester, 'anime');
       await tester.pumpAndSettle();
-      expect(api.categoryRequests.last, 'catalog:anime:movie:1');
-      expect(api.categoryRequests.length, 4);
+      expect(
+        api.categoryRequests.any(
+          (ref) => ref.startsWith('catalog:collection:anime-'),
+        ),
+        isTrue,
+      );
+      final requestsBeforeRevisit = List<String>.of(api.categoryRequests);
       await selectShellDestination(tester, 'series');
       await tester.pumpAndSettle();
-      expect(api.categoryRequests.length, 4);
+      expect(api.categoryRequests, requestsBeforeRevisit);
 
       await tester.pumpWidget(const SizedBox());
       expect(

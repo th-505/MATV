@@ -3,6 +3,24 @@ import 'package:mitv/src/media_repository.dart';
 import 'package:mitv/src/models.dart';
 
 void main() {
+  test(
+    'details decoding retains more than eight source and quality alternatives',
+    () {
+      final details = TitleDetails.fromJson({
+        'title': 'عمل',
+        'media_sources': List.generate(
+          60,
+          (i) => {
+            'url': 'https://media.example/$i.mp4',
+            'format': 'mp4',
+            'quality': '1080p',
+          },
+        ),
+      });
+      expect(details.mediaSources.length, 60);
+    },
+  );
+
   StreamSource source(int height, {int priority = 0}) => StreamSource.fromJson({
     'url': 'https://media.example/$height.mp4',
     'format': 'mp4',
