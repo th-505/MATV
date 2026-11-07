@@ -1,3 +1,4 @@
+import 'episode_browser.dart';
 import 'desktop_window_stub.dart' if (dart.library.io) 'desktop_window_io.dart';
 import 'browser_content_route.dart';
 import 'browser_navigation_stub.dart'
@@ -1114,27 +1115,62 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
 
   Future<void> _episodeMenu({int? season}) async {
     _controlsTimer?.cancel();
-    final selected = await showNajdOptions<EpisodeItem>(
+    final selected = await showNajdPanel<EpisodeItem>(
       context,
       title: 'الحلقات',
       description: widget.item.ref.startsWith('source:')
           ? 'الحلقات حسب ترقيم هذا المزود'
           : null,
       icon: Icons.video_library_outlined,
-      options: [
-        for (final ep in _queue.where(
-          (ep) => season == null || ep.season == season,
-        ))
-          NajdOption(
-            ep,
-            ep.title.isEmpty ? 'الحلقة ${ep.number}' : ep.title,
-            subtitle:
+      body: (context) => EpisodeBrowser(
+        episodes: _queue
+            .where((ep) => season == null || ep.season == season)
+            .toList(),
+        groupKey: '${widget.item.ref}:$season',
+        initialEpisodeRef: widget.sourceRef,
+        showSeasons: season == null,
+        itemBuilder: (context, ep, compact) {
+          final enabled = ep.watchAvailable && ep.ref.isNotEmpty;
+          final selected = ep.ref == widget.sourceRef;
+          final label = ep.title.isEmpty ? 'الحلقة ${ep.number}' : ep.title;
+          if (compact) {
+            return Semantics(
+              selected: selected,
+              child: FilledButton.tonal(
+                onPressed: enabled ? () => Navigator.pop(context, ep) : null,
+                style: FilledButton.styleFrom(
+                  minimumSize: Size(double.infinity, isTvTarget ? 80 : 64),
+                ),
+                child: Text(
+                  ep.hasEpisodeNumber ? '${ep.number}' : label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            );
+          }
+          return Card(
+            child: ListTile(
+              selected: selected,
+              enabled: enabled,
+              minTileHeight: isTvTarget ? 80 : 72,
+              leading: widget.item.poster.isEmpty
+                  ? const Icon(Icons.play_circle_outline)
+                  : SizedBox(
+                      width: 88,
+                      height: 56,
+                      child: NajdPoster(url: widget.item.poster),
+                    ),
+              title: Text(label),
+              subtitle: Text(
                 'الموسم ${ep.season ?? widget.item.season ?? 1} • الحلقة ${ep.number}',
-            selected: ep.ref == widget.sourceRef,
-            enabled: ep.watchAvailable && ep.ref.isNotEmpty,
-            icon: Icons.play_circle_outline,
-          ),
-      ],
+              ),
+              trailing: selected ? const Icon(Icons.play_arrow) : null,
+              onTap: enabled ? () => Navigator.pop(context, ep) : null,
+            ),
+          );
+        },
+      ),
     );
     if (!mounted) return;
     if (selected != null && selected.ref != widget.sourceRef) {

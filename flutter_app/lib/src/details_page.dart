@@ -1,3 +1,4 @@
+import 'episode_browser.dart';
 import 'browser_content_route.dart';
 import 'browser_navigation_stub.dart'
     if (dart.library.js_interop) 'browser_navigation_web.dart';
@@ -1223,35 +1224,41 @@ class _DetailsPageState extends State<DetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  ...details.episodes.map((episode) {
-                    final key = 'episode:${episode.id}:${episode.number}';
-                    final focusNode = _episodeFocus(episode);
-                    return _EpisodeTile(
-                      downloadAvailable:
-                          !kIsWeb &&
-                          (widget.api.cachedPlayback(episode.ref) == null ||
-                              widget.api.downloadableSource(episode.ref) !=
-                                  null),
-                      episode: episode,
-                      focusNode: focusNode,
-                      downloadFocusNode: isTvTarget
-                          ? _episodeDownloadFocus(episode)
-                          : null,
-                      downloading: _activeDownloads.contains(key),
-                      downloadLabel: _downloadLabel(key),
-                      onTap: () => _openEpisode(
-                        episode,
-                        focusNode,
-                        queue: details.episodes,
-                      ),
-                      onDownload: () => _download(
-                        key: key,
-                        title: '${details.title} - الحلقة ${episode.number}',
-                        sourceRef: episode.ref,
-                      ),
-                      onCancelDownload: () => _cancelDownload(key),
-                    );
-                  }),
+                  EpisodeBrowser(
+                    episodes: details.episodes,
+                    groupKey: '${widget.item.ref}:$selectedSeason',
+                    itemBuilder: (context, episode, compact) {
+                      final key = 'episode:${episode.id}:${episode.number}';
+                      final focusNode = _episodeFocus(episode);
+                      return _EpisodeTile(
+                        downloadAvailable:
+                            !kIsWeb &&
+                            (widget.api.cachedPlayback(episode.ref) == null ||
+                                widget.api.downloadableSource(episode.ref) !=
+                                    null),
+                        episode: episode,
+                        compact: compact,
+                        poster: details.poster,
+                        focusNode: focusNode,
+                        downloadFocusNode: isTvTarget
+                            ? _episodeDownloadFocus(episode)
+                            : null,
+                        downloading: _activeDownloads.contains(key),
+                        downloadLabel: _downloadLabel(key),
+                        onTap: () => _openEpisode(
+                          episode,
+                          focusNode,
+                          queue: details.episodes,
+                        ),
+                        onDownload: () => _download(
+                          key: key,
+                          title: '${details.title} - الحلقة ${episode.number}',
+                          sourceRef: episode.ref,
+                        ),
+                        onCancelDownload: () => _cancelDownload(key),
+                      );
+                    },
+                  ),
                   if (details.episodeNextOffset != null)
                     TextButton.icon(
                       onPressed: _loadingEpisodePage ? null : _moreEpisodes,
@@ -1275,6 +1282,8 @@ class _DetailsPageState extends State<DetailsPage> {
 class _EpisodeTile extends StatelessWidget {
   const _EpisodeTile({
     this.downloadAvailable = true,
+    this.compact = false,
+    this.poster = '',
     required this.episode,
     required this.focusNode,
     required this.onTap,
@@ -1285,6 +1294,8 @@ class _EpisodeTile extends StatelessWidget {
     this.downloadFocusNode,
   });
 
+  final bool compact;
+  final String poster;
   final EpisodeItem episode;
   final FocusNode focusNode;
   final FocusNode? downloadFocusNode;
@@ -1302,6 +1313,42 @@ class _EpisodeTile extends StatelessWidget {
         : episode.title;
     final enabled = episode.watchAvailable && episode.ref.isNotEmpty;
 
+    if (compact) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Column(
+            children: [
+              TextButton(
+                key: ValueKey('episode-play-${episode.id}'),
+                focusNode: focusNode,
+                onPressed: enabled ? onTap : null,
+                style: TextButton.styleFrom(
+                  minimumSize: Size(double.infinity, isTvTarget ? 72 : 56),
+                ),
+                child: Text(
+                  episode.hasEpisodeNumber ? '${episode.number}' : label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (downloadAvailable && enabled)
+                IconButton(
+                  key: ValueKey('episode-download-${episode.id}'),
+                  focusNode: downloadFocusNode,
+                  tooltip: downloading ? 'إلغاء التنزيل' : 'تنزيل الحلقة',
+                  onPressed: downloading ? onCancelDownload : onDownload,
+                  icon: Icon(
+                    downloading
+                        ? Icons.cancel_outlined
+                        : Icons.download_outlined,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
     if (isTvTarget) {
       return Card(
         child: FocusTraversalGroup(
@@ -1315,11 +1362,19 @@ class _EpisodeTile extends StatelessWidget {
                     key: ValueKey('episode-play-${episode.id}'),
                     focusNode: focusNode,
                     enabled: enabled,
-                    leading: CircleAvatar(
-                      child: Text(
-                        episode.hasEpisodeNumber ? '${episode.number}' : '▶',
-                      ),
-                    ),
+                    leading: poster.isNotEmpty
+                        ? SizedBox(
+                            width: 88,
+                            height: 56,
+                            child: NajdPoster(url: poster),
+                          )
+                        : CircleAvatar(
+                            child: Text(
+                              episode.hasEpisodeNumber
+                                  ? '${episode.number}'
+                                  : '▶',
+                            ),
+                          ),
                     title: Text(label),
                     subtitle: Text(
                       downloading
@@ -1361,9 +1416,13 @@ class _EpisodeTile extends StatelessWidget {
         key: ValueKey('episode-play-${episode.id}'),
         focusNode: focusNode,
         enabled: enabled,
-        leading: CircleAvatar(
-          child: Text(episode.hasEpisodeNumber ? '${episode.number}' : '▶'),
-        ),
+        leading: poster.isNotEmpty
+            ? SizedBox(width: 88, height: 56, child: NajdPoster(url: poster))
+            : CircleAvatar(
+                child: Text(
+                  episode.hasEpisodeNumber ? '${episode.number}' : '▶',
+                ),
+              ),
         title: Text(label),
         subtitle: Text(
           downloading
