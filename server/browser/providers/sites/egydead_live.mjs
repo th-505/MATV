@@ -119,7 +119,8 @@ export async function scrapeCatalog(category = 'live', page = 1, options = {}) {
 
     const channels = parseChannelsFromHtml(html, targetUrl);
     if (channels.length === 0) {
-      return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'No live channels found', { url: targetUrl });
+      const vod=cheerio.load(html)('li.movieItem, .movieItem').length>0;
+      return createEmptyArrayResult(PROVIDER_ID, vod?SCRAPER_ERROR_CODES.STRUCTURE_CHANGED:SCRAPER_ERROR_CODES.EMPTY_RESULT, vod?'LIVE_SOURCE_NOW_RETURNS_VOD_NOT_CHANNELS':'No live channels found', { url: targetUrl });
     }
     return attachResultMeta(channels, { providerId: PROVIDER_ID, url: targetUrl });
   } catch (err) {

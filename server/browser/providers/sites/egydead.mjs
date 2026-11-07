@@ -44,7 +44,7 @@ export const LIVE_PROVIDER_ID = 'egydead_live';
 export const LIVE_PROVIDER_NAME = 'EgyDead Live TV';
 export const LIVE_PROVIDER_CODE = 'EL';
 
-export const PRIMARY_DOMAIN = 'https://w1.egydead.top';
+export const PRIMARY_DOMAIN = 'https://a1.egydead.media';
 export const SECONDARY_DOMAIN = 'https://egydead.live';
 export const LIVE_DOMAIN = 'https://tv10.egydead.live';
 
@@ -54,6 +54,7 @@ export const PROVIDER_META = Object.freeze({
   code: PROVIDER_CODE,
   domains: Object.freeze([
     PRIMARY_DOMAIN,
+    'https://w1.egydead.top',
     SECONDARY_DOMAIN,
     LIVE_DOMAIN
   ]),
@@ -89,16 +90,16 @@ export const EGYDEAD_CONFIG = Object.freeze({
   liveDomain: LIVE_DOMAIN,
   domains: PROVIDER_META.domains,
   categories: Object.freeze({
-    movies: '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a/',
+    movies: '/category/english-movies/',
     movies_all: '/movies/',
-    movies_foreign: '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a/',
-    movies_arabic: '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%b9%d8%b1%d8%a8%d9%8a/',
+    movies_foreign: '/category/english-movies/',
+    movies_arabic: '/category/arabic-movies/',
     movies_turkish: '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%aa%d8%b1%d9%83%d9%8a%d8%a9/',
     movies_asian: '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%a7%d8%b3%d9%8a%d9%88%d9%8a%d8%a9/',
     movies_indian: '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d9%87%d9%86%d8%af%d9%8a%d8%a9/',
-    series: '/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a/',
+    series: '/category/foreign-series/',
     series_all: '/series/',
-    series_foreign: '/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a/',
+    series_foreign: '/category/foreign-series/',
     series_turkish: '/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%aa%d8%b1%d9%83%d9%8a%d8%a9/',
     series_turkish_dubbed: '/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%aa%d8%b1%d9%83%d9%8a%d8%a9-%d9%85%d8%af%d8%a8%d9%84%d8%ac%d8%a9/',
     series_asian: '/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%a7%d8%b3%d9%8a%d9%88%d9%8a%d8%a9/',
@@ -280,7 +281,7 @@ export function parseServersFromHtml(html = '', targetUrl = PRIMARY_DOMAIN, isLi
   });
 
   // 2. Embedded third-party servers from ul.serversList li[data-link]
-  $('ul.serversList li, .serversList li, .server-item').each((_, el) => {
+  $('.mob-servers li[data-link], ul.serversList li, .serversList li, .server-item').each((_, el) => {
     const rawLink = $(el).attr('data-link') || $(el).attr('data-url') || $(el).attr('data-src') || $(el).find('a').attr('href') || '';
     const url = resolveSafeUrl(rawLink, targetUrl);
     if (!url || seenUrls.has(url)) return;
@@ -529,7 +530,8 @@ export async function scrapeDetails(urlOrRef = '', options = {}) {
 
     const $ = cheerio.load(res.html);
     const rawTitle =
-      $('h1.ItemTitle, h1.BottomTitle, h1').first().text().trim() ||
+      $('meta[property="og:title"]').attr('content')?.trim() ||
+      $('h1.ItemTitle, h1.BottomTitle, h1').not('.slideMenu h1, .related-posts h1').first().text().trim() ||
       $('title').text().replace(/-?\s*إيجي ديد.*$/i, '').trim();
 
     if (!rawTitle) {
@@ -556,7 +558,7 @@ export async function scrapeDetails(urlOrRef = '', options = {}) {
     const detectedSeason = extractSeasonNumber(`${rawTitle} ${targetUrl}`, 1);
     const episodes = parseEpisodesFromHtml(res.html, targetUrl, detectedSeason);
     const servers = parseServersFromHtml(res.html, targetUrl, false);
-    const isSeries = targetUrl.includes('/series/') || targetUrl.includes('/episode/') || episodes.length > 0;
+    const isSeries = /\/(?:series|episodes?)\//.test(targetUrl) || /مسلسل|الحلقة/.test(rawTitle) || episodes.length > 0;
 
     const details = normalizeDetailsResult(
       {
@@ -686,14 +688,22 @@ export async function scrapeServers(urlOrRef = '', options = {}) {
       });
     }
 
-    // Movies/series: EgyDead watch page
-    const res = await fetchProviderHtml(targetUrl, {
+    // Movies/series: follow only the source's same-work public watch control.
+    let res = await fetchProviderHtml(targetUrl, {
       ...options,
       providerId: PROVIDER_ID,
       referer: EGYDEAD_CONFIG.baseUrl
     });
 
-    const servers = parseServersFromHtml(res.html, targetUrl, false);
+    let pageUrl=res.url||targetUrl;
+    const $=cheerio.load(res.html);
+    const observed=resolveSafeUrl($('.watchNow a[href]').first().attr('href')||'',pageUrl,{allowHttp:false,allowedHosts:[new URL(pageUrl).hostname]});
+    if(observed&&!options.fixtureHtml){const u=new URL(observed),parent=new URL(pageUrl);
+      if(u.origin===parent.origin&&u.pathname===parent.pathname.replace(/\/$/,'')+'/watch/'){
+        res=await fetchProviderHtml(observed,{...options,providerId:PROVIDER_ID,referer:pageUrl,allowHttp:false,allowedHosts:[parent.hostname]});pageUrl=res.url||observed;
+      }
+    }
+    const servers = parseServersFromHtml(res.html, pageUrl, false);
     if (servers.length === 0) {
       return createEmptyArrayResult(PROVIDER_ID, SCRAPER_ERROR_CODES.EMPTY_RESULT, 'NO_SERVERS_FOUND', {
         url: targetUrl
@@ -725,7 +735,7 @@ export async function resolveStream(urlOrRef = '', options = {}) {
   const provider = isLive ? LIVE_PROVIDER_ID : PROVIDER_ID;
   const referer = isLive ? EGYDEAD_CONFIG.liveDomain : EGYDEAD_CONFIG.baseUrl;
 
-  const targetUrl = resolveSafeUrl(rawUrl, referer);
+  const targetUrl = /^(?:egydead|egydead_tv|egydead_live):/.test(rawUrl)?resolveTargetUrl(rawUrl,referer):resolveSafeUrl(rawUrl, referer);
   if (!targetUrl) {
     throw new ScraperError(SCRAPER_ERROR_CODES.UNSAFE_URL, 'INVALID_STREAM_URL', {
       providerId: provider,

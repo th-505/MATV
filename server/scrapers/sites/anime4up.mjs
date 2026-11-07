@@ -932,6 +932,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
 
     const infoText = $('.anime-info').text();
     const year = extractYear(`${rawTitle} ${infoText}`);
+    const observedType = /(?:نوع الأنمي|Type)\s*:\s*TV\b/i.test(infoText) ? 'series' : /(?:نوع الأنمي|Type)\s*:\s*Movie\b/i.test(infoText) ? 'movie' : undefined;
+    const declaredEpisodeCount = Number(infoText.match(/عدد الحلقات\s*:\s*(\d{1,5})/)?.[1]) || null;
 
     const episodes = parseEpisodesFromHtml($, effectiveUrl);
     const servers = extractRawServersFromHtml(res.html, effectiveUrl);
@@ -939,6 +941,7 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     const normalized = normalizeDetailsResult(
       {
         title: rawTitle,
+        type: observedType,
         poster: rawPoster,
         overview,
         year,
@@ -959,6 +962,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
       ...normalized,
       status: rawTitle || episodes.length > 0 ? 'success' : 'empty',
       movie_title: normalized.title || 'تفاصيل الأنمي',
+      declared_episode_count: declaredEpisodeCount,
+      source_index_partial: observedType==='series' && declaredEpisodeCount!==null && episodes.length<declaredEpisodeCount,
       episodes
     };
 

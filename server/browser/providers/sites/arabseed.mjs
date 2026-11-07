@@ -36,7 +36,7 @@ export const PROVIDER_META = Object.freeze({
   id: 'arabseed',
   name: 'عرب سيد (ArabSeed)',
   code: 'AD',
-  domains: ['https://www.arabseed.wine', 'https://arabseed.show', 'https://asd.homes'],
+  domains: ['https://m.myseed.tv', 'https://www.arabseed.wine', 'https://arabseed.show', 'https://asd.homes'],
   mirrorOf: null,
   capabilities: {
     catalog: true,
@@ -49,10 +49,10 @@ export const PROVIDER_META = Object.freeze({
   },
   searchSpec: {
     method: 'GET',
-    pathTemplate: '/find/?find={query}',
-    queryParam: 'find',
+    pathTemplate: '/find/?word={query}',
+    queryParam: 'word',
     encoding: 'utf-8',
-    pagination: '/find/page/{page}/?find={query}'
+    pagination: '/find/page/{page}/?word={query}'
   },
   notImplemented: {}
 });
@@ -62,19 +62,19 @@ export const ARABSEED_CONFIG = Object.freeze({
   id: 'arabseed',
   name: 'عرب سيد (ArabSeed)',
   code: 'AD',
-  baseUrl: 'https://www.arabseed.wine',
+  baseUrl: 'https://m.myseed.tv',
   fallbackBaseUrl: 'https://asd.homes',
-  domains: ['https://www.arabseed.wine', 'https://arabseed.show', 'https://asd.homes'],
+  domains: ['https://m.myseed.tv', 'https://www.arabseed.wine', 'https://arabseed.show', 'https://asd.homes'],
   categories: {
-    all: '/category/foreign-movies/',
-    movies: '/category/foreign-movies/',
+    all: '/main/',
+    movies: '/movies/',
     movies_foreign: '/category/foreign-movies/',
     movies_arabic: '/category/arabic-movies-5/',
     movies_turkish: '/category/turkish-movies/',
     movies_indian: '/category/indian-movies/',
     movies_asian: '/category/asian-movies/',
     movies_animation: '/category/cartoon-movies/',
-    series: '/category/foreign-series/',
+    series: '/series/',
     series_foreign: '/category/foreign-series/',
     series_arabic: '/category/arabic-series/',
     series_turkish: '/category/turkish-series-1/',
@@ -85,6 +85,7 @@ export const ARABSEED_CONFIG = Object.freeze({
 });
 
 const KNOWN_ARABSEED_HOSTS = new Set([
+  'm.myseed.tv',
   'arabseed.wine',
   'www.arabseed.wine',
   'arabseed.show',
@@ -226,8 +227,8 @@ function extractCardsFromDom($, baseUrl) {
   const items = [];
   const seenUrls = new Set();
 
-  $('.MovieBlock, .PostBlock, ul.Blocks-UL li, .item, .entry-box').each((_, el) => {
-    const a = $(el).find('a').first();
+  $('.movie__block, .MovieBlock, .PostBlock, ul.Blocks-UL li, .item, .entry-box').each((_, el) => {
+    const a = $(el).is('a') ? $(el) : $(el).find('a').first();
     const href = a.attr('href') || '';
     if (!href) return;
 
@@ -346,7 +347,7 @@ export async function scrapeCatalog(category = 'movies', page = 1, options = {})
 }
 
 /**
- * Searches ArabSeed using /find/?find={query}
+ * Searches ArabSeed using /find/?word={query}
  */
 export async function scrapeSearch(query = '', page = 1, options = {}) {
   const q = String(query || '').trim();
@@ -357,8 +358,8 @@ export async function scrapeSearch(query = '', page = 1, options = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const targetUrl =
     pageNum > 1
-      ? `${ARABSEED_CONFIG.baseUrl}/find/page/${pageNum}/?find=${encodeURIComponent(q)}`
-      : `${ARABSEED_CONFIG.baseUrl}/find/?find=${encodeURIComponent(q)}`;
+      ? `${ARABSEED_CONFIG.baseUrl}/find/page/${pageNum}/?word=${encodeURIComponent(q)}`
+      : `${ARABSEED_CONFIG.baseUrl}/find/?word=${encodeURIComponent(q)}`;
 
   try {
     const res = await fetchArabSeedHtmlWithFallback(targetUrl, {
@@ -463,7 +464,8 @@ export async function scrapeDetails(urlOrRef, options = {}) {
     seenEpUrls.add(fullEpHref);
 
     const epText = $(el).text().trim();
-    const epNum = extractEpisodeNumber(epText, fullEpHref, idx + 1) || (idx + 1);
+    const epNum = extractEpisodeNumber(epText, fullEpHref);
+    if(!epNum)return;
     const seasonNum = extractSeasonNumber(`${epText} ${fullEpHref}`, 1);
     const epRef = encodeArabSeedRef(fullEpHref);
 

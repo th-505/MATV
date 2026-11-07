@@ -62,7 +62,7 @@ export const PROVIDER_META = Object.freeze({
   id: 'laroza',
   name: 'لاروزا (Laroza)',
   code: 'LZ',
-  domains: ['https://larooza.beer', 'https://q.laroza.cfd', 'https://laroza.net'],
+  domains: ['https://laroza.buzz', 'https://larooza.beer', 'https://q.laroza.cfd', 'https://laroza.net'],
   mirrorOf: null,
   capabilities: {
     catalog: true,
@@ -88,10 +88,10 @@ export const LAROZA_SITE_CONFIG = Object.freeze({
   id: 'laroza',
   name: 'لاروزا (Laroza)',
   code: 'LZ',
-  origin: 'https://larooza.beer',
-  baseUrl: 'https://larooza.beer',
+  origin: 'https://laroza.buzz',
+  baseUrl: 'https://laroza.buzz',
   edgeBase: 'https://matv-edge-resolver.dada1000100.workers.dev',
-  domains: ['https://larooza.beer', 'https://q.laroza.cfd', 'https://laroza.net'],
+  domains: ['https://laroza.buzz', 'https://larooza.beer', 'https://q.laroza.cfd', 'https://laroza.net'],
   playerHosts: [
     'mp5.okhd.site',
     'mp4plus.org',

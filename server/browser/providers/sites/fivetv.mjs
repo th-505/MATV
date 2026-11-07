@@ -12,7 +12,7 @@ import {directCandidate} from '../../../scrapers/shared/direct-candidate.mjs';
 const ID = 'fivetv';
 const BASE = 'https://ho26374qa.5ivtv.in';
 // Exact aliases observed in the capture and the 2026-11-06 live redirect chain.
-const DOMAINS = [BASE, 'https://ho35284qa.5ivtv.in', 'https://new61.5tv.lol'];
+const DOMAINS = [BASE, 'https://ho35284qa.5ivtv.in', 'https://ho42195qa.5ivtv.in', 'https://new61.5tv.lol'];
 // Observed public availability-check hop that returns to new61.5tv.lol.
 // This is a network redirect allowance, not a content or player domain.
 const REDIRECT_HOSTS = ['ur5ive.vip'];

@@ -295,6 +295,14 @@ export async function extractServersFromHtml(html = '', pageUrl = THREE_CKTV_CON
     if (raw) addCandidate(raw, name);
   });
 
+  // Public server tabs contain escaped iframe markup; parse it without executing HTML.
+  $('.servList li[data-server]').each((idx,el)=>{
+    const fragment=String($(el).attr('data-server')||'');
+    if(fragment.length>16384)return;
+    const embed=cheerio.load(fragment);
+    embed('iframe[src]').each((_,frame)=>addCandidate(embed(frame).attr('src'),$(el).text().trim()||`مشغل ${idx+1}`));
+  });
+
   // 2. Check iframe players
   $('iframe[src]').each((idx, el) => {
     const src = $(el).attr('src') || '';
@@ -642,7 +650,12 @@ export async function scrapeServers(urlOrRef, options = {}) {
         const target=resolveSafeUrl($(el).attr('href'),watchUrl,{allowHttp:false,allowedHosts:pageOptions.allowedHosts});
         if(target&&target!==watchUrl&&new URL(target).pathname.replace(/\/+$/,'')===path)observedWatch=target;
       });
-      if(observedWatch){response=await fetchProviderHtml(observedWatch,pageOptions);watchUrl=response.url||observedWatch;if(response.ok&&response.html)servers=await extractServersFromHtml(response.html,watchUrl,options);}
+      // The source rotates its external bridge in this exact watch control.
+      // It is not accepted as an episode reference or a general redirect allowance.
+      const bridge=resolveSafeUrl($('#btnWatch.single-watch-btn').attr('href')||'',watchUrl,{allowHttp:false});
+      const bridgeUrl=bridge?new URL(bridge):null;
+      if(!observedWatch&&bridgeUrl&&/^\/trend\/\d{1,8}\.php$/.test(bridgeUrl.pathname)&&bridgeUrl.searchParams.get('post')&&bridgeUrl.searchParams.get('post').length<=8192)observedWatch=bridge;
+      if(observedWatch){const networkOptions=bridge===observedWatch?{...pageOptions,allowedHosts:[bridgeUrl.hostname],referer:watchUrl}:pageOptions;response=await fetchProviderHtml(observedWatch,networkOptions);watchUrl=response.url||observedWatch;if(response.ok&&response.html)servers=await extractServersFromHtml(response.html,watchUrl,options);}
     }
     return attachResultMeta(servers,{ok:servers.length>0,errorCode:servers.length?null:SCRAPER_ERROR_CODES.SERVER_EXTRACTION_FAILED,errorMessage:servers.length?null:'No observed direct media or player available',providerId:PROVIDER_META.id,url:watchUrl});
   }catch(err){const classified=classifyNetworkError(err,{providerId:PROVIDER_META.id,url:cleanUrl});return createEmptyArrayResult(PROVIDER_META.id,classified.code,classified.message,{url:cleanUrl});}
