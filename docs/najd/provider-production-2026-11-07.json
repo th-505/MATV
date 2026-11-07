@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-11-07T13:36:32.387086+00:00",
+  "basis": "Actual production Beta catalogue requests; not playback certification",
+  "results": [
+    {
+      "provider": "laroza",
+      "http_status": 200,
+      "status": "success",
+      "reason": null,
+      "cards": 48
+    },
+    {
+      "provider": "arabseed",
+      "http_status": 503,
+      "status": "error",
+      "reason": "ACCESS_BLOCKED",
+      "cards": null
+    },
+    {
+      "provider": "qfilm",
+      "http_status": 503,
+      "status": "error",
+      "reason": "ACCESS_BLOCKED",
+      "cards": null
+    },
+    {
+      "provider": "fivetv",
+      "http_status": 503,
+      "status": "error",
+      "reason": "ACCESS_BLOCKED",
+      "cards": null
+    }
+  ],
+  "wit_production": {
+    "http_status": 503,
+    "reason": "ACCESS_BLOCKED",
+    "confirmed": true
+  }
+}
