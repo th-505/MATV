@@ -1,9 +1,9 @@
 {
   "api_base": "https://najdtv.onrender.com",
-  "build": 300,
+  "build": 301,
   "product": "Najd TV",
   "schema_version": 1,
-  "source_commit": "0b399141f61ba6d01ea792ab33f0d69df69951c0",
+  "source_commit": "aab71a09f6ba6ce676521ac0572ac904d22108fd",
   "target": "web",
-  "version": "3.0.0"
+  "version": "3.0.1"
 }
