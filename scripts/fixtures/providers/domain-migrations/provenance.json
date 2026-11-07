@@ -1,0 +1,20 @@
+[
+  {
+    "provider": "fosta",
+    "captured_at": "2026-11-07T01:18:31.950Z",
+    "method": "GET",
+    "observed_url": "https://ffosta-tv.lat/search.php?keywords=%D8%AA%D8%AD%D8%AA%20%D8%A7%D9%84%D8%A3%D8%B1%D8%B6",
+    "origin_evidence": "Previously registered source search redirected here; independent guarded HTTPS/DNS fetch and source branding verified.",
+    "full_response_sha256": "fb3fda27349bd6bf8d222dd4a07cf950b848dd1b4de38ce92f890dfddd9eebd2",
+    "fixture": "One observed card and pagination; only metadata attributes retained. Scripts, forms and event attributes removed."
+  },
+  {
+    "provider": "brstej",
+    "captured_at": "2026-11-07T01:29:01.756Z",
+    "method": "GET",
+    "observed_url": "https://prstej.study/search.php?keywords=%D8%AD%D8%A8%20%D8%A7%D8%B3%D9%88%D8%AF",
+    "origin_evidence": "Previously registered source search redirected here; independent guarded HTTPS/DNS fetch and source branding verified.",
+    "full_response_sha256": "4e9ef89c7a507f85d3053106f35c62033ddc2f9e1e6cdc46d0b03793b6fbdafb",
+    "fixture": "One observed card and pagination; only metadata attributes retained. Scripts, forms and event attributes removed."
+  }
+]

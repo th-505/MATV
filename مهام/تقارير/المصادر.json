@@ -296,8 +296,8 @@
       "code": "BR",
       "mirror_of": null,
       "path": "server/scrapers/sites/brstej.mjs",
-      "metadata_line": 11,
-      "source_sha256": "d0b705e0ae73e76a13786a4d6df8f62906424430c6a05dfb72f1a6a9e5b2c2f4",
+      "metadata_line": 13,
+      "source_sha256": "0c95bea38e465d295c6e44bbc29c8fb6e57fdf9a14ac83e3fb3230394d4ffa4c",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -459,8 +459,8 @@
       "code": "FO",
       "mirror_of": null,
       "path": "server/scrapers/sites/fosta.mjs",
-      "metadata_line": 11,
-      "source_sha256": "d610b7e93a64ff37674a1c825b490774e48c845dc3e3c884e327ec77b412e377",
+      "metadata_line": 15,
+      "source_sha256": "936f77dd3befb5b49d7cb08f120a9a5e77963cad2fa4a84b254464e5886478a4",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -926,7 +926,7 @@
       "id": "brstej",
       "scope": "beta",
       "path": "server/browser/providers/sites/brstej.mjs",
-      "source_sha256": "47edf0f4219b2be2594c6b940947c0d73d9ce9293f403c891fcf875ebe21a268",
+      "source_sha256": "3857a1506830075de228d8e9282e5e3259f2519ef75bd0ed3bd05a75c3e203c5",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -971,7 +971,7 @@
       "id": "fosta",
       "scope": "beta",
       "path": "server/browser/providers/sites/fosta.mjs",
-      "source_sha256": "a44b29c6b5012f6f8cf2522d10a1ba6f8828ad1e9e5cb8a12b5fed5838556d97",
+      "source_sha256": "33ca9be6342ad6c841fc333065fa50e6cb96a7899f130b544a790444158545bf",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"

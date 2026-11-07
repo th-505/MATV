@@ -1,3 +1,4 @@
+import {effectiveProviderDomains} from '../shared/provider-config.mjs';
 // Independent Fosta adapter. Routes/selectors observed on 2026-11-03.
 import * as cheerio from 'cheerio';
 import { fetchProviderHtml, assertSafeScraperUrl, resolveSafeUrl } from '../shared/http.mjs';
@@ -7,9 +8,12 @@ import { attachResultMeta } from '../shared/errors.mjs';
 import { extractRawStreamsFromText, isValidDirectMediaUrl, unwrapEmbedToDirectStreams } from '../stream-unwrapper.mjs';
 import { FOSTA_CATEGORIES, FOSTA_CATEGORY_LABELS } from './fosta-categories.mjs';
 
-const ORIGIN = 'https://ffosta-tv.autos';
+// Search redirects observed and validated over guarded HTTPS on 2026-11-07.
+const ORIGIN = 'https://ffosta-tv.lat';
+const HOSTS = ['ffosta-tv.lat', 'ffosta-tv.autos'];
+const allowedHosts = () => effectiveProviderDomains('fosta', HOSTS);
 export const PROVIDER_META = Object.freeze({ id: 'fosta', name: 'فوستا', code: 'FO',
-  domains: [ORIGIN], mirrorOf: null, resolveOnDetails: true,
+  domains: [ORIGIN, 'https://ffosta-tv.autos'], mirrorOf: null, resolveOnDetails: true,
   capabilities: { catalog: true, search: true, details: true, episodes: true, servers: true, resolve: true, live: false },
   searchSpec: { method: 'GET', pathTemplate: '/search.php?keywords={query}', queryParam: 'keywords', encoding: 'utf-8', pagination: true },
   notImplemented: {},
@@ -24,13 +28,13 @@ export function decodeProviderRef(value) {
     raw = raw.slice(6);
     if (!raw.startsWith('https://')) raw = Buffer.from(raw, 'base64url').toString('utf8');
   }
-  const url = assertSafeScraperUrl(raw, { allowHttp: false, allowedHosts: ['ffosta-tv.autos'] });
+  const url = assertSafeScraperUrl(raw, { allowHttp: false, allowedHosts: allowedHosts() });
   if (!['/watch.php', '/view-serie.php', '/play.php'].includes(url.pathname)) throw Error('FOSTA_INVALID_REFERENCE');
   return url.href;
 }
 async function page(url, options) {
   const result = await fetchProviderHtml(url, { ...options, providerId: 'fosta', allowHttp: false,
-    allowedHosts: ['ffosta-tv.autos'], maxRetries: 0, timeoutMs: Math.min(15000, options?.timeoutMs || 15000) });
+    allowedHosts: allowedHosts(), maxRetries: 0, timeoutMs: Math.min(15000, options?.timeoutMs || 15000) });
   if (!result.ok) throw Error('FOSTA_HTTP_' + result.status);
   return result;
 }
@@ -38,7 +42,7 @@ export function parseFostaCatalog(html, baseUrl = ORIGIN) {
   const $ = cheerio.load(html), seen = new Set(), items = [];
   $('.thumbnail').each((_, card) => {
     const node = $(card), anchor = node.find('a[href*="watch.php?vid="],a[href*="view-serie.php?name="]').first();
-    const url = resolveSafeUrl(anchor.attr('href') || '', baseUrl, { allowHttp: false, allowedHosts: ['ffosta-tv.autos'] });
+    const url = resolveSafeUrl(anchor.attr('href') || '', baseUrl, { allowHttp: false, allowedHosts: allowedHosts() });
     const title = anchor.attr('title') || node.find('h3 a').text().trim() || anchor.find('img').attr('alt') || '';
     if (!url || !title || seen.has(url)) return;
     seen.add(url);
@@ -52,7 +56,7 @@ export function parseFostaCatalog(html, baseUrl = ORIGIN) {
   const nextLink = $('a[rel="next"], .pagination li.active + li a').first().attr('href');
   let next = null;
   if (nextLink) {
-    const safe = resolveSafeUrl(nextLink, baseUrl, { allowHttp: false, allowedHosts: ['ffosta-tv.autos'] });
+    const safe = resolveSafeUrl(nextLink, baseUrl, { allowHttp: false, allowedHosts: allowedHosts() });
     const number = safe ? Number(new URL(safe).searchParams.get('page')) : NaN;
     if (Number.isInteger(number) && number > 1) next = number;
   }
@@ -85,7 +89,7 @@ export function parseFostaDetails(html, baseUrl) {
     if (!Number.isInteger(season) || season < 1) return;
     $(section).find('.thumbnail a[href*="watch.php?vid="]').each((_, anchor) => {
       const node = $(anchor), observedTitle = node.attr('title') || node.text().trim();
-      const url = resolveSafeUrl(node.attr('href') || '', baseUrl, { allowHttp: false, allowedHosts: ['ffosta-tv.autos'] });
+      const url = resolveSafeUrl(node.attr('href') || '', baseUrl, { allowHttp: false, allowedHosts: allowedHosts() });
       if (!url || !observedTitle) return;
       episodes.push({ title: observedTitle, url, ref: refFor(url), season,
         number: extractEpisodeNumber(observedTitle, url) });

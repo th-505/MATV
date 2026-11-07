@@ -36,6 +36,9 @@ export function wrapConfiguredProvider(entry,{scope='najd',run=runInNajdConfigur
  const meta={...entry.meta};Object.defineProperty(meta,'domains',{enumerable:true,get:()=>run(()=>{const c=getProviderConfig(entry.meta.id);return c?.primary_domain?[c.primary_domain,...entry.meta.domains.filter(x=>x!==c.primary_domain)]:entry.meta.domains})});
  Object.defineProperty(meta,'enabled',{enumerable:true,get:()=>run(()=>getProviderConfig(entry.meta.id)?.enabled!==false)});
  const module={...entry.module,PROVIDER_META:meta};
+ // Reference decoding is synchronous but still belongs to its owner's family.
+ // This keeps configured primary-domain validation out of the other lane.
+ if(typeof entry.module.decodeProviderRef==='function')module.decodeProviderRef=(...args)=>run(()=>entry.module.decodeProviderRef(...args));
  for(const[name,fn]of Object.entries(entry.module))if(typeof fn==='function'&&/^(scrape|resolveStream)/.test(name))module[name]=(...args)=>run(async()=>{
   const config=getProviderConfig(entry.meta.id);if(config?.enabled===false)throw Error('SOURCE_DISABLED');
   if(name==='scrapeSearch'&&config?.card_selector)return configuredSearch(entry,args[0],args[1]||1,config,args[2]||{});
