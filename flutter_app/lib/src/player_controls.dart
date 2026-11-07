@@ -71,7 +71,23 @@ class _PlayerControlsState extends State<PlayerControls> {
               focusNode: _rewindFocus,
               tooltip: 'رجوع 10 ثوانٍ',
               onPressed: widget.onRewind,
-              icon: const Icon(Icons.replay_10),
+              icon: const Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.replay),
+                  Padding(
+                    padding: EdgeInsets.only(top: 3),
+                    child: Text(
+                      '10',
+                      style: TextStyle(
+                        fontFamily: 'ThmanyahSans',
+                        fontSize: 11,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             IconButton.filled(
               key: const Key('player-play-toggle'),
@@ -105,7 +121,23 @@ class _PlayerControlsState extends State<PlayerControls> {
               focusNode: _forwardFocus,
               tooltip: 'تقديم 10 ثوانٍ',
               onPressed: widget.onForward,
-              icon: const Icon(Icons.forward_10),
+              icon: const Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.rotate_right),
+                  Padding(
+                    padding: EdgeInsets.only(top: 3),
+                    child: Text(
+                      '10',
+                      style: TextStyle(
+                        fontFamily: 'ThmanyahSans',
+                        fontSize: 11,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (widget.showSpeed)
               NajdChoiceButton<double>(

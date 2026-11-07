@@ -9,9 +9,12 @@ class NajdPreferences extends ChangeNotifier {
   double holdSpeed = 2;
   bool providerBeta = false;
   String metadataLanguage = 'auto';
+  int episodeGroupSize = 24;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
+    final groupSize = prefs.getInt('najd.episodes.group-size.v1') ?? 24;
+    episodeGroupSize = groupSize >= 1 && groupSize <= 500 ? groupSize : 24;
     holdToBoost = prefs.getBool('najd.player.hold.v1') ?? true;
     final speed = prefs.getDouble('najd.player.hold-speed.v1') ?? 2;
     holdSpeed = holdSpeeds.contains(speed) ? speed : 2;
@@ -21,6 +24,16 @@ class NajdPreferences extends ChangeNotifier {
         ? language
         : 'auto';
     notifyListeners();
+  }
+
+  Future<void> setEpisodeGroupSize(int value) async {
+    if (value < 1 || value > 500) return;
+    episodeGroupSize = value;
+    notifyListeners();
+    await (await SharedPreferences.getInstance()).setInt(
+      'najd.episodes.group-size.v1',
+      value,
+    );
   }
 
   Future<void> setHold(bool value) async {

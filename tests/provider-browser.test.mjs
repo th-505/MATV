@@ -26,3 +26,13 @@ test('provider browsing keeps the selected source and registered categories', as
   await assert.rejects(() => browser.catalog('missing', '', 1), /UNAVAILABLE/);
   assert.equal(calls.length, 1, 'invalid routes must never invoke a scraper');
 });
+
+test('successful metadata is coalesced and bounded, while failures and empty pages are never cached',async()=>{
+ let calls=0,release;const gate=new Promise(r=>release=r);let clock=100;
+ const meta={id:'sample',name:'Sample',domains:['https://sample.example'],capabilities:{catalog:true,live:true}};
+ const browser=createProviderBrowser({now:()=>clock,catalogTtlMs:1000,providers:()=>[meta],lookup:()=>({meta,module:{CONFIG:{categories:{live:'/'}},scrapeCatalog:async()=>{calls++;await gate;return[{ref:'sample:observed',title:'Observed',type:'live'}]}}})});
+ assert.equal(browser.sources()[0].content_type,'live');
+ const a=browser.catalog('sample','live'),b=browser.catalog('sample','live');await new Promise(r=>setImmediate(r));assert.equal(calls,1);release();const[first,second]=await Promise.all([a,b]);first.items[0].title='caller mutation';assert.equal(second.items[0].title,'Observed');assert.equal((await browser.catalog('sample','live')).items[0].title,'Observed');assert.equal(calls,1);clock+=1001;await browser.catalog('sample','live');assert.equal(calls,2);
+ let attempts=0;const fail=createProviderBrowser({providers:()=>[meta],lookup:()=>({meta,module:{CONFIG:{categories:{live:'/'}},scrapeCatalog:async()=>{attempts++;if(attempts===1)throw Object.assign(Error('blocked'),{code:'ACCESS_BLOCKED'});return[];}}})});
+ await assert.rejects(()=>fail.catalog('sample','live'),/SOURCE_UNAVAILABLE/);await fail.catalog('sample','live');await fail.catalog('sample','live');assert.equal(attempts,3);
+});

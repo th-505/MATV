@@ -1,3 +1,4 @@
+import 'src/episode_preferences.dart';
 import 'src/browser_content_route.dart';
 import 'src/browser_navigation_stub.dart'
     if (dart.library.js_interop) 'src/browser_navigation_web.dart';
@@ -1233,6 +1234,17 @@ class LivePage extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
       ),
+      ListTile(
+        leading: const Icon(Icons.sensors),
+        title: const Text('مصادر البث المباشر'),
+        subtitle: const Text('القنوات والمصادر الحية في قائمة مستقلة'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ProviderBrowserPage(api: api, store: store, liveOnly: true),
+          ),
+        ),
+      ),
       if (channels.isEmpty)
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -1342,150 +1354,182 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Widget _section(String title, IconData icon, List<Widget> children) =>
+      NajdSurface(
+        padding: EdgeInsets.zero,
+        child: ExpansionTile(
+          key: PageStorageKey('settings-$title'),
+          maintainState: true,
+          leading: Icon(icon),
+          title: Text(title),
+          childrenPadding: const EdgeInsets.all(12),
+          children: children,
+        ),
+      );
+  Widget _open(String title, IconData icon, WidgetBuilder builder) => ListTile(
+    leading: Icon(icon),
+    title: Text(title),
+    trailing: const Icon(Icons.chevron_left),
+    onTap: () =>
+        Navigator.of(context).push(MaterialPageRoute(builder: builder)),
+  );
+  void _information(String title, String text) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: SingleChildScrollView(child: Text(text)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إغلاق'),
+        ),
+      ],
+    ),
+  );
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16),
-    children:
-        [
-              const NajdSectionHeading('الإعدادات'),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 18),
-                child: Text('خصص تجربة المشاهدة واحفظ تفضيلاتك على هذا الجهاز'),
+    children: [
+      const NajdSectionHeading('الإعدادات'),
+      const Padding(
+        padding: EdgeInsets.only(bottom: 18),
+        child: Text('خصص تجربة المشاهدة واحفظ تفضيلاتك على هذا الجهاز'),
+      ),
+      _section('الحساب والمكتبة', Icons.person_outline, [
+        _open(
+          'الحساب والربط',
+          Icons.link,
+          (_) => NajdAccountPage(store: widget.store),
+        ),
+        _open(
+          'مكتبتي والتنزيلات',
+          Icons.video_library_outlined,
+          (_) => Scaffold(
+            appBar: AppBar(title: const Text('قائمتي والتنزيلات')),
+            body: LibraryPage(api: widget.api, store: widget.store),
+          ),
+        ),
+      ]),
+      _section('المظهر والحلقات', Icons.palette_outlined, [
+        const _NajdAppearanceOptions(),
+        const EpisodePreferencesTile(),
+      ]),
+      _section('المشغل', Icons.play_circle_outline, [
+        const _PlaybackPreferencesPanel(),
+        ListTile(
+          leading: const Icon(Icons.picture_in_picture_alt),
+          title: const Text('صورة داخل صورة'),
+          subtitle: const Text('تفعيلها من المزيد داخل المشغل'),
+          onTap: () => _information(
+            'صورة داخل صورة',
+            'على الآيفون يستخدم الفيديو المتوافق AVKit، وعلى أندرويد يستخدم وضع النظام. في المتصفح يعتمد الدعم على Safari أو واجهة المتصفح. الكمبيوتر يستخدم نافذة مصغرة عائمة. تختلف الصيغ المدعومة بين الأنظمة.',
+          ),
+        ),
+      ]),
+      _section('المصادر والتصفح', Icons.travel_explore, [
+        const _ProviderBetaPreferencesPanel(),
+      ]),
+      _section('التخزين والخصوصية', Icons.storage_outlined, [
+        if (widget.clearCache != null)
+          ListTile(
+            title: const Text('مسح الكاش المحلي'),
+            leading: const Icon(Icons.cleaning_services_outlined),
+            enabled: !_busy,
+            onTap: () => _clear('مسح الكاش المحلي', widget.clearCache!),
+          ),
+        if (!kIsWeb && widget.clearDownloads != null)
+          ListTile(
+            title: const Text('حذف الملفات المحمّلة'),
+            leading: const Icon(Icons.delete_outline),
+            enabled: !_busy,
+            onTap: () => _clear('حذف الملفات المحمّلة', widget.clearDownloads!),
+          ),
+        ListTile(
+          title: const Text('مسح سجل المشاهدة'),
+          leading: const Icon(Icons.history),
+          enabled: !_busy,
+          onTap: () => _clear('مسح سجل المشاهدة', widget.store.clearHistory),
+        ),
+        ListTile(
+          title: const Text('مسح سجل البحث'),
+          leading: const Icon(Icons.search_off),
+          enabled: !_busy,
+          onTap: () => _clear('مسح سجل البحث', widget.store.clearSearchHistory),
+        ),
+      ]),
+      _section('الأجهزة والتحكم', Icons.devices_outlined, [
+        if (isTvTarget && widget.pointer != null)
+          AnimatedBuilder(
+            animation: widget.pointer!,
+            builder: (context, _) => SwitchListTile(
+              title: const Text('الفأرة الافتراضية'),
+              subtitle: const Text(
+                'زر القائمة أو F8 للتبديل؛ الأسهم للحركة وOK للاختيار',
               ),
-              ListTile(
-                leading: const Icon(Icons.fact_check_outlined),
-                title: const Text('فحص الخدمات والقواشط'),
-                subtitle: const Text('نجد · بيتا · TMDB · الترجمة · المزامنة'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ServiceChecksPage(api: widget.api, store: widget.store),
-                  ),
-                ),
-              ),
-              const NajdSurface(child: _NajdAppearanceOptions()),
-              const _PlaybackPreferencesPanel(),
-              FocusHighlight(
-                child: ListTile(
-                  title: const Text('مكتبتي والتنزيلات'),
-                  leading: const Icon(Icons.video_library_outlined),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('قائمتي والتنزيلات')),
-                        body: LibraryPage(api: widget.api, store: widget.store),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('الحساب والربط'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => NajdAccountPage(store: widget.store),
-                  ),
-                ),
-              ),
-              if (const bool.fromEnvironment('NAJD_DEVELOPER_DIAGNOSTICS'))
-                ListTile(
-                  leading: const Icon(Icons.aspect_ratio),
-                  title: const Text('قياسات الشاشة الحالية'),
-                  subtitle: Text(
-                    '${MediaQuery.sizeOf(context).width.round()} × ${MediaQuery.sizeOf(context).height.round()} · كثافة ${MediaQuery.devicePixelRatioOf(context).toStringAsFixed(2)}\nحدود آمنة: ${MediaQuery.viewPaddingOf(context)}',
-                  ),
-                ),
-
-              if (isTvTarget && widget.pointer != null)
-                AnimatedBuilder(
-                  animation: widget.pointer!,
-                  builder: (context, _) => SwitchListTile(
-                    title: const Text('الفأرة الافتراضية'),
-                    subtitle: const Text(
-                      'زر القائمة أو F8 للتبديل؛ الأسهم للحركة وOK للاختيار',
-                    ),
-                    value: widget.pointer!.enabled,
-                    onChanged: widget.pointer!.setEnabled,
-                  ),
-                ),
-              const NajdSectionHeading('التخزين والتحميلات والسجل'),
-              if (widget.clearCache != null)
-                ListTile(
-                  title: const Text('مسح الكاش المحلي'),
-                  leading: const Icon(Icons.cleaning_services_outlined),
-                  enabled: !_busy,
-                  onTap: () => _clear('مسح الكاش المحلي', widget.clearCache!),
-                ),
-              if (!kIsWeb && widget.clearDownloads != null)
-                ListTile(
-                  title: const Text('حذف الملفات المحمّلة'),
-                  leading: const Icon(Icons.delete_outline),
-                  enabled: !_busy,
-                  onTap: () =>
-                      _clear('حذف الملفات المحمّلة', widget.clearDownloads!),
-                ),
-              ListTile(
-                title: const Text('مسح سجل المشاهدة'),
-                enabled: !_busy,
-                leading: const Icon(Icons.history),
-                onTap: () =>
-                    _clear('مسح سجل المشاهدة', widget.store.clearHistory),
-              ),
-              ListTile(
-                title: const Text('مسح سجل البحث'),
-                enabled: !_busy,
-                leading: const Icon(Icons.search_off),
-                onTap: () =>
-                    _clear('مسح سجل البحث', widget.store.clearSearchHistory),
-              ),
-              const _ProviderBetaPreferencesPanel(),
-              if (kIsWeb)
-                ListTile(
-                  leading: const Icon(Icons.install_mobile),
-                  title: const Text('تثبيت نجد كتطبيق'),
-                  onTap: () {
-                    if (BrowserNavigation().requestInstall()) return;
-                    showDialog<void>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('إضافة نجد إلى جهازك'),
-                        content: const Text(
-                          'على iPhone أو iPad: افتح الموقع في Safari، ثم مشاركة ← إضافة إلى الشاشة الرئيسية. على الكمبيوتر وأندرويد: افتح قائمة المتصفح واختر تثبيت التطبيق أو إضافة إلى الشاشة الرئيسية. إذا كان مثبتًا بالفعل افتحه من أيقونته.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('حسنًا'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              const AboutListTile(
-                applicationName: NajdUi.brand,
-                applicationVersion:
-                    '$productVersion $productChannel ($productBuild)',
-                child: Text('عن نجد والتراخيص'),
-              ),
-              Padding(
-                key: const Key('settings-product-version'),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'الإصدار v$productVersion · $productChannel · البناء $productBuild',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              if (_busy) const LinearProgressIndicator(),
-            ]
-            .map(
-              (child) => child is ListTile
-                  ? NajdSurface(padding: const EdgeInsets.all(6), child: child)
-                  : child,
-            )
-            .toList(),
+              value: widget.pointer!.enabled,
+              onChanged: widget.pointer!.setEnabled,
+            ),
+          ),
+        ListTile(
+          leading: const Icon(Icons.keyboard_outlined),
+          title: const Text('اختصارات التحكم'),
+          onTap: () => _information(
+            'التحكم بالمشغل',
+            'Space للتشغيل والإيقاف، F لملء الشاشة، Esc للخروج منها، وسهما اليمين واليسار للتقديم والرجوع على الكمبيوتر. في الريموت تحرك بالأسهم واختر بزر OK. اسحب جانب الشاشة للصوت أو السطوع على الأجهزة اللمسية.',
+          ),
+        ),
+        if (kIsWeb)
+          ListTile(
+            leading: const Icon(Icons.install_mobile),
+            title: const Text('تثبيت نجد كتطبيق'),
+            onTap: () {
+              if (BrowserNavigation().requestInstall()) return;
+              _information(
+                'إضافة نجد إلى جهازك',
+                'على iPhone أو iPad: افتح الموقع في Safari ثم مشاركة ← إضافة إلى الشاشة الرئيسية. على الكمبيوتر وأندرويد: افتح قائمة المتصفح واختر تثبيت التطبيق.',
+              );
+            },
+          ),
+      ]),
+      _section('الفحص والمساعدة', Icons.fact_check_outlined, [
+        _open(
+          'فحص الخدمات والقواشط',
+          Icons.fact_check_outlined,
+          (_) => ServiceChecksPage(api: widget.api, store: widget.store),
+        ),
+        ListTile(
+          leading: const Icon(Icons.video_file_outlined),
+          title: const Text('صيغ الفيديو المدعومة'),
+          onTap: () => _information(
+            'صيغ الفيديو والبث',
+            'MP4 حاوية ملف، وHLS بث متكيف بفهرس M3U8. توجد أيضًا DASH وWebM وMKV وMPEG-TS. التوافق يعتمد على النظام والترميز داخل الحاوية، وليس الامتداد وحده؛ الآيفون وPiP لهما قيود AVKit. الجودة الفعلية تأتي من المصدر ولا يزيدها تكبير الصورة.',
+          ),
+        ),
+        if (const bool.fromEnvironment('NAJD_DEVELOPER_DIAGNOSTICS'))
+          ListTile(
+            leading: const Icon(Icons.aspect_ratio),
+            title: const Text('قياسات الشاشة الحالية'),
+            subtitle: Text(
+              '${MediaQuery.sizeOf(context).width.round()} × ${MediaQuery.sizeOf(context).height.round()} · كثافة ${MediaQuery.devicePixelRatioOf(context).toStringAsFixed(2)}',
+            ),
+          ),
+      ]),
+      const AboutListTile(
+        applicationName: NajdUi.brand,
+        applicationVersion: '$productVersion $productChannel ($productBuild)',
+        child: Text('عن نجد والتراخيص'),
+      ),
+      Padding(
+        key: const Key('settings-product-version'),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'الإصدار v$productVersion · $productChannel · البناء $productBuild',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ),
+      if (_busy) const LinearProgressIndicator(),
+    ],
   );
 }
 

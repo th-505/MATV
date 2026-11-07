@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'pip_event.dart';
+import 'desktop_window_stub.dart' if (dart.library.io) 'desktop_window_io.dart';
 
 /// OS PiP only. Unsupported desktop platforms fail closed rather than faking it.
 class NajdPipBridge {
   static const _channel = MethodChannel('najd/pip');
   static final _events = StreamController<Map>.broadcast();
   static bool _installed = false;
+  final _desktop = DesktopWindowBridge();
   final String _session = '${DateTime.now().microsecondsSinceEpoch}';
   bool get needsNativeHandoff => defaultTargetPlatform == TargetPlatform.iOS;
   Stream<NajdPipEvent> get events => _events.stream
@@ -38,6 +40,7 @@ class NajdPipBridge {
   }
 
   Future<bool> supported(String format) async {
+    if (_desktop.miniSupported) return true;
     if (![
       TargetPlatform.android,
       TargetPlatform.iOS,
@@ -80,6 +83,11 @@ class NajdPipBridge {
     required double width,
     required double height,
   }) async {
+    if (_desktop.miniSupported) {
+      final active = await _desktop.enterMini(width, height);
+      if (active) _events.add({'session': _session, 'active': true});
+      return active;
+    }
     _install();
     try {
       return await _channel.invokeMethod<bool>('enter', {
@@ -99,6 +107,11 @@ class NajdPipBridge {
   }
 
   Future<void> close() async {
+    if (_desktop.miniSupported) {
+      await _desktop.leaveMini();
+      _events.add({'session': _session, 'active': false});
+      return;
+    }
     try {
       await _channel.invokeMethod('close', {'session': _session});
     } catch (_) {}

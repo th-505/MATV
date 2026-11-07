@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mitv/src/najd_theme.dart';
 
 void main() {
-  test('three Thmanyah families cover all fifteen semantic roles without altering custom font selection', () {
+  test('three Thmanyah families cover all fifteen semantic roles and ignores retired custom-font overrides', () {
     final appearance = NajdAppearance.instance;
     appearance.fontFamily = null;
     appearance.markBundledFontReady(serif: true);
@@ -44,7 +44,7 @@ void main() {
           .textTheme
           .bodyMedium!
           .fontFamily,
-      'UserLocalFont',
+      'ThmanyahSans',
     );
     appearance.fontFamily = null;
     appearance.bundledFontReady = false;

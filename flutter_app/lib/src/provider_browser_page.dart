@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import 'api_client.dart';
 import 'details_page.dart';
+import 'player_page.dart';
 import 'library_store.dart';
 import 'models.dart';
 import 'najd_panels.dart';
@@ -19,9 +20,11 @@ class ProviderBrowserPage extends StatefulWidget {
     super.key,
     required this.api,
     required this.store,
+    this.liveOnly = false,
   });
   final MitvApi api;
   final LocalLibraryStore store;
+  final bool liveOnly;
   @override
   State<ProviderBrowserPage> createState() => _ProviderBrowserPageState();
 }
@@ -57,12 +60,23 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
       _error = null;
     });
     try {
-      final sources = await _browserApi.browserSources();
+      final sources = (await _browserApi.browserSources())
+          .where(
+            (s) => widget.liveOnly
+                ? s['content_type'] == 'live'
+                : s['content_type'] != 'live',
+          )
+          .toList();
       final prefs = await SharedPreferences.getInstance();
       Map saved = const {};
       try {
         final value = jsonDecode(
-          prefs.getString('provider.browser.selection.v1') ?? '{}',
+          prefs.getString(
+                widget.liveOnly
+                    ? 'provider.browser.live-selection.v1'
+                    : 'provider.browser.selection.v1',
+              ) ??
+              '{}',
         );
         if (value is Map) saved = value;
       } catch (_) {}
@@ -109,7 +123,12 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
     final value = jsonEncode({'provider': _provider, 'category': _category});
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('provider.browser.selection.v1', value);
+      await prefs.setString(
+        widget.liveOnly
+            ? 'provider.browser.live-selection.v1'
+            : 'provider.browser.selection.v1',
+        value,
+      );
     } catch (_) {}
   }
 
@@ -282,6 +301,23 @@ class _ProviderBrowserPageState extends State<ProviderBrowserPage> {
                   itemBuilder: (context, index) => NajdWorkCard(
                     item: _items[index],
                     onTap: () {
+                      final item = _items[index];
+                      if (item.type == 'live') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlayerPage(
+                              api: _browserApi.browserSession(origin: item),
+                              store: widget.store,
+                              item: item,
+                              title: item.title,
+                              sourceRef: item.ref,
+                              isLive: true,
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(

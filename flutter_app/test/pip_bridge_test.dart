@@ -20,10 +20,11 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
   });
-  test('unsupported desktop and iOS format never promise OS PiP', () async {
+  test('desktop uses a floating window while an unsupported iOS format stays unavailable', () async {
     final bridge = NajdPipBridge();
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    expect(await bridge.supported('mp4'), false);
+    expect(await bridge.supported('mp4'), true);
+    expect(bridge.needsNativeHandoff, false);
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     expect(await bridge.supported('mkv'), false);
     expect(calls, isEmpty);

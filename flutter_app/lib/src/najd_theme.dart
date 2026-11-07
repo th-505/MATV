@@ -18,7 +18,7 @@ class NajdAppearance extends ChangeNotifier {
   bool bundledFontReady = false;
   bool bundledSerifReady = false;
   String get activeFontFamily =>
-      fontFamily ?? (bundledFontReady ? 'ThmanyahSans' : 'NajdArabicFallback');
+      bundledFontReady ? 'ThmanyahSans' : 'NajdArabicFallback';
   void markBundledFontReady({bool serif = false}) {
     bundledFontReady = true;
     bundledSerifReady = serif;
@@ -105,7 +105,7 @@ Future<bool> loadPrivateNajdFonts() async {
 class NajdThemes {
   static TextTheme typography(TextTheme base) {
     final appearance = NajdAppearance.instance;
-    if (!appearance.bundledSerifReady || appearance.fontFamily != null) {
+    if (!appearance.bundledSerifReady) {
       return base;
     }
     TextStyle? role(TextStyle? style, String family, FontWeight weight) =>
