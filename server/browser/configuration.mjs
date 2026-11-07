@@ -5,7 +5,7 @@ import {
   runInBrowserLane,
 } from "./traffic.mjs";
 import { validateProviderConfig } from "../scrapers/shared/provider-config.mjs";
-import { getProvider } from "../scrapers/registry.mjs";
+import { getProvider } from "./registry.mjs";
 export function createBrowserConfiguration({
   store = createBrowserStore(),
   now = Date.now,

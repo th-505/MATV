@@ -3,7 +3,9 @@ const configScope=new AsyncLocalStorage();
 // Private owner-managed runtime settings. Domain/query changes do not require app rebuilds.
 const rows=new Map();
 const origins=new Map();
-export function registerProviderOrigins(id,domains){origins.set(id,new Set(domains.map(x=>{try{return new URL(x).origin}catch{return "https://"+x}})));}
+export function registerProviderOrigins(id,domains,scope='najd'){origins.set(scope+':'+id,new Set(domains.map(x=>{try{return new URL(x).origin}catch{return "https://"+x}})));}
+const providerOrigins=id=>origins.get((configScope.getStore()?.registryScope||'najd')+':'+id);
+export function runInNajdConfiguration(task){return configScope.getStore()?.registryScope==='beta'?configScope.run(undefined,task):task()}
 const FIELDS=new Set(['primary_domain','search_path','search_parameter','search_method','card_selector','title_selector','link_selector','poster_selector','year_selector','default_type']);
 const selector=s=>typeof s==='string'&&s.length<=180&&!/[{};\\()]/.test(s);
 export function validateProviderConfig(config){
@@ -32,14 +34,14 @@ export function installProviderConfigs(entries){
  rows.clear();for(const[k,v]of next)rows.set(k,v);return rows.size;
 }
 export function getProviderConfig(id){const scoped=configScope.getStore();if(scoped?.exclusive)return scoped.values.get(id)||null;return scoped?.get(id)||rows.get(id)||null}
-export function withProviderConfigs(entries,callback){const values=new Map();for(const row of entries||[])values.set(row.provider,{...validateProviderConfig(row.config||{}),enabled:row.enabled!==false,revision:row.revision||0});return configScope.run({exclusive:true,values},callback)}
+export function withProviderConfigs(entries,callback,registryScope='najd'){const values=new Map();for(const row of entries||[])values.set(row.provider,{...validateProviderConfig(row.config||{}),enabled:row.enabled!==false,revision:row.revision||0});return configScope.run({exclusive:true,values,registryScope},callback)}
 export function withProviderConfig(id,config,callback){return configScope.run(new Map([[id,{...validateProviderConfig(config),enabled:true,revision:0}]]),callback)}
 export function effectiveProviderDomains(id,defaults){const c=getProviderConfig(id);return c?.primary_domain?[new URL(c.primary_domain).hostname,...defaults.map(x=>{try{return new URL(x).hostname}catch{return x}})]:defaults.map(x=>{try{return new URL(x).hostname}catch{return x}})}
 function moveOrigin(value,origin){try{const u=new URL(value);return origin+u.pathname+u.search+u.hash}catch{return value}}
 export function rewriteProviderRequest(target,options={}){
- if(options.searchPageUrl){try{const n=new URL(options.searchPageUrl);const defaults=origins.get(options.providerId);const current=getProviderConfig(options.providerId)?.primary_domain;if(defaults?.has(n.origin)||n.origin===current)target=n.href;}catch{throw Error('INVALID_PROVIDER_PAGE_URL')}}
+ if(options.searchPageUrl){try{const n=new URL(options.searchPageUrl);const defaults=providerOrigins(options.providerId);const current=getProviderConfig(options.providerId)?.primary_domain;if(defaults?.has(n.origin)||n.origin===current)target=n.href;}catch{throw Error('INVALID_PROVIDER_PAGE_URL')}}
  const c=getProviderConfig(options.providerId);if(!c)return {url:target,options};if(!c.enabled)throw Error('SOURCE_DISABLED');
- let u=new URL(target);if(!origins.get(options.providerId)?.has(u.origin)&&u.origin!==c.primary_domain)return {url:target,options};const previousOrigin=u.origin;const changed=c.primary_domain&&c.primary_domain!==u.origin;
+ let u=new URL(target);if(!providerOrigins(options.providerId)?.has(u.origin)&&u.origin!==c.primary_domain)return {url:target,options};const previousOrigin=u.origin;const changed=c.primary_domain&&c.primary_domain!==u.origin;
  if(c.primary_domain)u=new URL(moveOrigin(u.href,c.primary_domain));
  let next={...options,headers:{...(options.headers||{})}};
  if(changed){next.cookies='';for(const k of Object.keys(next.headers))if(/^(cookie|authorization)$/i.test(k))delete next.headers[k];

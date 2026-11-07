@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { getProvider } from '../server/scrapers/registry.mjs';
 import { SOURCE_REGISTRY, getSource, createSourceSearch, createMultiSourceSearch, listSourceCapabilities, titleMatchesQuery } from '../server/scrapers/source-registry.mjs';
 
-assert.equal(SOURCE_REGISTRY.length, 22);
+assert.equal(SOURCE_REGISTRY.length, 23);
+assert.equal(getSource('fivetv').id, 'fivetv');
 assert.equal(getSource('brstej').id, 'brstej');
 assert.equal(getSource('fosta').id, 'fosta');
 assert.equal(getSource('wecima').id, 'mycima');
@@ -39,7 +40,7 @@ await assert.rejects(failedSearch('a', 'mycima'), /INVALID_QUERY/);
 assert.equal(loads, 1);
 const emptySearch = createSourceSearch({ loadModule: async () => ({ scrapeSearch: async () => [] }) });
 assert.deepEqual(await emptySearch('title', 'mycima'), []);
-console.log('Pinned source routing: 22 concrete search modules, aliases, filtering, errors, and no fallback passed.');
+console.log('Pinned source routing: 23 concrete search modules, aliases, filtering, errors, and no fallback passed.');
 
 const capabilities = listSourceCapabilities();
 assert.equal(capabilities.length, SOURCE_REGISTRY.length);

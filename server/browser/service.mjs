@@ -3,14 +3,14 @@ import {sourceEpisodeEvidence} from "../scrapers/shared/source-episode-evidence.
 import {resolveProviderMedia} from "../scrapers/shared/provider-media.mjs";
 import {createOptionalCacheReader} from "../optional-cache.mjs";
 import { createConcurrencyQueue } from "../scrapers/shared/concurrency.mjs";
-import { getProvider } from "../scrapers/registry.mjs";
+import { getProvider } from "./registry.mjs";
 import { fetchProviderHtml } from "../scrapers/shared/http.mjs";
 import {
   workReference,
   providerForReference,
   scraperReference,
   sourceWorkRef,
-} from "../harvest/work-reference.mjs";
+} from "./references.mjs";
 import { scanSourceGraph, referenceUrl } from "./source-graph.mjs";
 import {
   directCandidate,
