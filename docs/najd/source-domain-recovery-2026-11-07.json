@@ -1,0 +1,110 @@
+{
+  "observed_at": "2026-11-07T01:36:11.397Z",
+  "basis": "Real guarded HTTPS searches, source HTML details and movie catalog samples in both independently owned families. No direct container/decoder or physical device playback certification. No media URLs, tokens or headers recorded.",
+  "results": [
+    {
+      "scope": "najd",
+      "provider": "fosta",
+      "primary": "ffosta-tv.lat",
+      "query": "تحت الأرض",
+      "search": {
+        "state": "passed",
+        "results": 50,
+        "next_page": 2
+      },
+      "series_details": {
+        "state": "passed",
+        "title": "مسلسل تحت الأرض",
+        "episodes": 30,
+        "server_links": 0
+      },
+      "movie_catalog": {
+        "cards": 50
+      },
+      "movie_details": {
+        "state": "passed",
+        "title": "فيلم High End The Watch Theft Ring 2026 مترجم كامل بجودة عالية HD",
+        "episodes": 0,
+        "server_links": 0
+      }
+    },
+    {
+      "scope": "beta",
+      "provider": "fosta",
+      "primary": "ffosta-tv.lat",
+      "query": "تحت الأرض",
+      "search": {
+        "state": "passed",
+        "results": 50,
+        "next_page": 2
+      },
+      "series_details": {
+        "state": "passed",
+        "title": "مسلسل تحت الأرض",
+        "episodes": 30,
+        "server_links": 0
+      },
+      "movie_catalog": {
+        "cards": 50
+      },
+      "movie_details": {
+        "state": "passed",
+        "title": "فيلم High End The Watch Theft Ring 2026 مترجم كامل بجودة عالية HD",
+        "episodes": 0,
+        "server_links": 0
+      }
+    },
+    {
+      "scope": "najd",
+      "provider": "brstej",
+      "primary": "prstej.study",
+      "query": "حب اسود",
+      "search": {
+        "state": "passed",
+        "results": 15,
+        "next_page": 2
+      },
+      "series_details": {
+        "state": "passed",
+        "title": "حب ابيض اسود",
+        "episodes": 99,
+        "server_links": 0
+      },
+      "movie_catalog": {
+        "cards": 12
+      },
+      "movie_details": {
+        "state": "passed",
+        "title": "مشاهدة فيلم عمهم 2022 اون لاين HD",
+        "episodes": 0,
+        "server_links": 0
+      }
+    },
+    {
+      "scope": "beta",
+      "provider": "brstej",
+      "primary": "prstej.study",
+      "query": "حب اسود",
+      "search": {
+        "state": "passed",
+        "results": 15,
+        "next_page": 2
+      },
+      "series_details": {
+        "state": "passed",
+        "title": "حب ابيض اسود",
+        "episodes": 99,
+        "server_links": 0
+      },
+      "movie_catalog": {
+        "cards": 12
+      },
+      "movie_details": {
+        "state": "passed",
+        "title": "مشاهدة فيلم عمهم 2022 اون لاين HD",
+        "episodes": 0,
+        "server_links": 0
+      }
+    }
+  ]
+}

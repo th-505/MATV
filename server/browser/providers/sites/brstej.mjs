@@ -1,3 +1,4 @@
+import {effectiveProviderDomains} from '../../../scrapers/shared/provider-config.mjs';
 // Beta-owned implementation. Edit independently from Najd source parsers.
 // Independent Brstej adapter. Public DOM/routes observed 2026-11-04.
 import * as cheerio from 'cheerio';
@@ -7,9 +8,10 @@ import {normalizeCatalogItem, normalizeDetailsResult, normalizeEpisodeList, norm
 import {attachResultMeta} from '../../../scrapers/shared/errors.mjs';
 import {extractRawStreamsFromText, isValidDirectMediaUrl, unwrapEmbedToDirectStreams} from '../../../scrapers/stream-unwrapper.mjs';
 import {BRSTEJ_CATEGORIES, BRSTEJ_CATEGORY_LABELS} from './brstej-categories.mjs';
-// The supplied .beer origin redirects to this observed public primary (2026-11-06).
-const ORIGIN='https://su.brstej.com', HOSTS=['su.brstej.com','brstejj.pics','brstejj.beer'];
-export const PROVIDER_META = Object.freeze({id:'brstej',name:'برستيج',code:'BR',domains:[ORIGIN,'https://brstejj.pics','https://brstejj.beer'],mirrorOf:null,resolveOnDetails:true,
+// Search redirect observed on 2026-11-07; retain previous origins for stored references.
+const ORIGIN='https://prstej.study', HOSTS=['prstej.study','su.brstej.com','brstejj.pics','brstejj.beer'];
+const allowedHosts=()=>effectiveProviderDomains('brstej',HOSTS);
+export const PROVIDER_META = Object.freeze({id:'brstej',name:'برستيج',code:'BR',domains:[ORIGIN,'https://su.brstej.com','https://brstejj.pics','https://brstejj.beer'],mirrorOf:null,resolveOnDetails:true,
   capabilities:{catalog:true,search:true,details:true,episodes:true,servers:true,resolve:true,live:false},
   searchSpec:{method:'GET',pathTemplate:'/search.php?keywords={query}',queryParam:'keywords',pagination:true},notImplemented:{}});
 export const BRSTEJ_CONFIG=Object.freeze({id:'brstej',baseUrl:ORIGIN,
@@ -20,13 +22,13 @@ const refFor=url=>'brstej:'+Buffer.from(url).toString('base64url');
 export function decodeProviderRef(input){
   let value=String(input||'');
   if(value.startsWith('brstej:')){value=value.slice(7);if(!value.startsWith('https://'))value=Buffer.from(value,'base64url').toString('utf8');}
-  const url=assertSafeScraperUrl(value,{allowHttp:false,allowedHosts:HOSTS});
+  const url=assertSafeScraperUrl(value,{allowHttp:false,allowedHosts:allowedHosts()});
   const key=url.pathname==='/series1.php'?'id':'vid';
   if(!['/series1.php','/video.php','/play.php'].includes(url.pathname)||!/^\w{1,64}$/.test(url.searchParams.get(key)||''))throw Error('BRSTEJ_INVALID_REFERENCE');
   return url.href;
 }
 async function page(url,options={}){
-  return fetchProviderHtml(url,{...options,providerId:'brstej',allowHttp:false,allowedHosts:HOSTS,
+  return fetchProviderHtml(url,{...options,providerId:'brstej',allowHttp:false,allowedHosts:allowedHosts(),
     maxRetries:0,timeoutMs:Math.min(15000,options.timeoutMs||12000),maxBytes:4*1024*1024});
 }
 export function parseBrstejCatalog(html,baseUrl=ORIGIN){
@@ -34,7 +36,7 @@ export function parseBrstejCatalog(html,baseUrl=ORIGIN){
   // Scope to observed content cards, excluding navigation/footer/recommendations.
   $('.ptoday-card,.pgh-series-card,.prs-card,.pmc-card,.pcg-card,.pln-card,.psd-card,.thumbnail').each((_,el)=>{
     const card=$(el),anchor=card.is('a')?card:card.find('h3 a[href],h2 a[href],a[href*="video.php?vid="],a[href*="series1.php?id="]').first();
-    const url=resolveSafeUrl(anchor.attr('href')||'',baseUrl,{allowHttp:false,allowedHosts:HOSTS});
+    const url=resolveSafeUrl(anchor.attr('href')||'',baseUrl,{allowHttp:false,allowedHosts:allowedHosts()});
     if(!url||!['/video.php','/series1.php'].includes(new URL(url).pathname)||seen.has(url))return;
     const image=card.find('img').first();
     const title=(anchor.attr('title')||anchor.attr('aria-label')||card.find('h3,h2,.ptoday-title,.pgh-series-title').first().text()||image.attr('alt')||anchor.text()).replace(/\s+/g,' ').trim();
@@ -46,7 +48,7 @@ export function parseBrstejCatalog(html,baseUrl=ORIGIN){
   });
   const current=Number(new URL(baseUrl).searchParams.get('page'))||1;
   const next=$('main a[rel=next],main .pagination li.active + li a,main .prs-pagination li.active + li a,main .psd-pages a[rel=next]').first().attr('href');
-  const safe=next&&resolveSafeUrl(next,baseUrl,{allowHttp:false,allowedHosts:HOSTS});
+  const safe=next&&resolveSafeUrl(next,baseUrl,{allowHttp:false,allowedHosts:allowedHosts()});
   const n=safe?Number(new URL(safe).searchParams.get('page')):null;
   return attachResultMeta(items,{ok:true,providerId:'brstej',url:baseUrl,next_page:Number.isInteger(n)&&n>current?n:null});
 }
@@ -72,7 +74,7 @@ export function parseBrstejDetails(html,baseUrl){
     $(el).find('.pds-episode').each((_,card)=>{
       const anchor=$(card).find('h4 a[href*="video.php?vid="]').first();
       const observed=anchor.attr('title')||anchor.text().trim();
-      const url=resolveSafeUrl(anchor.attr('href')||'',baseUrl,{allowHttp:false,allowedHosts:HOSTS});
+      const url=resolveSafeUrl(anchor.attr('href')||'',baseUrl,{allowHttp:false,allowedHosts:allowedHosts()});
       const number=extractEpisodeNumber(observed,url);if(!url||!number)return;
       episodes.push({title:observed,url,ref:refFor(url),season,number});
     });
