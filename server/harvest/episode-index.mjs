@@ -29,7 +29,7 @@ export function scanEpisodeIndex(html,url,{provider,domains,title='',episodes=[]
  });
  const pages=new Set();
  const current=new URL(url);const page=Number(current.searchParams.get('page')||current.searchParams.get('paged')||current.searchParams.get('p'))||Number(current.pathname.match(/\/page\/(\d+)/)?.[1])||1;
- $('a[rel="next"][href],.pagination a[href],.page-numbers a[href],.sh-pagination a[href],.episodes-pagination a[href]').each((_,el)=>{
+ $('a[rel="next"][href],.pagination a[href],a.page-numbers[href],.page-numbers a[href],.sh-pagination a[href],.episodes-pagination a[href]').each((_,el)=>{
   const a=$(el),next=safePage(a.attr('href'),url,domains);if(!next||next===url)return;const n=new URL(next);
   const number=Number(n.searchParams.get('page')||n.searchParams.get('paged')||n.searchParams.get('p'))||Number(n.pathname.match(/\/page\/(\d+)/)?.[1])||null;
   const samePath=n.pathname.replace(/\/page\/\d+\/?$/,'/')===current.pathname.replace(/\/page\/\d+\/?$/,'/');
@@ -45,6 +45,6 @@ export function scanEpisodeIndex(html,url,{provider,domains,title='',episodes=[]
   const a=$(el),href=safePage(a.attr('href'),url,domains);if(!href||href===url)return;
   if(/series|serie|season|مسلسل|انمي|anime/i.test(new URL(href).pathname)&&title&&cleanTitle(a.text())===cleanTitle(title))parents.add(href);
  });
- const declared=identityDigits($('.br-series-stats').text()).match(/(\d{1,5})\s*(?:حلقات|حلقة)/)?.[1];
+ const declared=identityDigits($('.br-series-stats').text()).match(/(\d{1,5})\s*(?:حلقات|حلقة)/)?.[1]||identityDigits($('.anime-info').text()).match(/عدد الحلقات\s*:\s*(\d{1,5})/)?.[1];
  return {source_declared_references:declared?Number(declared):null,episodes:[...byRef.values()],pages:[...pages],parents:[...parents],page_fingerprint:shortHash([...byRef.keys()].sort().join('\n')),declared_title:$('h1').first().text().trim()};
 }

@@ -32,7 +32,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/3cktv.mjs",
       "metadata_line": 37,
-      "source_sha256": "2b558173cc210a42a5518509e5627d61c50636377c188f1a3ba55f5085c7a747",
+      "source_sha256": "0e858afab9c47ca1c2a61998716ee64c708b7180b39e2f4d8f2a13a9b272c69a",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -198,7 +198,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/anime4up.mjs",
       "metadata_line": 50,
-      "source_sha256": "366396df3406dbe173cae28dc55a4e1a4e573803b72bfec3d8ce980c5f1d6f5a",
+      "source_sha256": "e6679f0bf9bd50d6c40dcbe00647c80a110079e5f49c8a28ebe24daf720c962d",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -264,7 +264,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/arabseed.mjs",
       "metadata_line": 34,
-      "source_sha256": "06af817f2a4ecdd0dd2f8b76694b68be909f126592e67463ef4c87d9911fc5a2",
+      "source_sha256": "a92a775294383adf98bc9a9101667bd8ba2acd3e7e9039099ce6f3a89edc6550",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -297,7 +297,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/brstej.mjs",
       "metadata_line": 13,
-      "source_sha256": "0c95bea38e465d295c6e44bbc29c8fb6e57fdf9a14ac83e3fb3230394d4ffa4c",
+      "source_sha256": "a388a3ab48f629d248cc7a50efbc2040d8ba9d65a5299c966a9b138d5e9100a1",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -330,7 +330,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/cimanow.mjs",
       "metadata_line": 32,
-      "source_sha256": "7aa29ae187adb628931d8c1c258db8f3289a153801357e16db08d2926ee8dea0",
+      "source_sha256": "6b152153ba45e694c5a83ba69bee04679d6053fd3ab86a682d72bf786a603ae1",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -363,7 +363,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/egydead.mjs",
       "metadata_line": 50,
-      "source_sha256": "c67e84db4d645f36121fecfb2cef688aaad0fc5055346a0ed31d2b32bcf3545e",
+      "source_sha256": "4a500ac68b9c38cc0a660cce2b0303c12a5b5077b1377f72dcbc47430ad51f13",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -396,7 +396,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/egydead_live.mjs",
       "metadata_line": 37,
-      "source_sha256": "23f4d936175ee30105f91d1a4b2847a3942294c4a8e1934202c7d8014cba3cdc",
+      "source_sha256": "c1a625e88c44ef773fb39ffafb766e1275c65250f8548e30891f658111b816c6",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -427,7 +427,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/fivetv.mjs",
       "metadata_line": 18,
-      "source_sha256": "a2f0a184092d19e142e75df1a2c5b5c9c5760f3ad1d659fe214a8c8b50746423",
+      "source_sha256": "4be48f9b91eff6c2847f04a20068ce17f265912e68945124cd8c35b21908c828",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -526,7 +526,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/laroza.mjs",
       "metadata_line": 60,
-      "source_sha256": "fbdb96bba37eb270e3ee48bebd37567a81448765b39cf7afffb75c2f572d8df3",
+      "source_sha256": "0019358da8da2495d87294d828dc807f35375a3e7071f3d24702d6db70272b39",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -659,7 +659,7 @@
       "mirror_of": null,
       "path": "server/scrapers/sites/qfilm.mjs",
       "metadata_line": 38,
-      "source_sha256": "46b1ca222573b1a0c2ab67c4df01bc7719b569792425ea13fa8f7d0e7286c762",
+      "source_sha256": "4008bedc8ac90f71fc6dcfbb2bcbb2ed1c77d5d840212e717be48dd073173f1c",
       "registered": true,
       "declared_capabilities": {
         "catalog": true,
@@ -854,7 +854,7 @@
       "id": "3cktv",
       "scope": "beta",
       "path": "server/browser/providers/sites/3cktv.mjs",
-      "source_sha256": "8dee5d9ff45f0b5d622e35db62922145c355410cebf31c668cf660ad2dbcea4c",
+      "source_sha256": "f7225d0895f09042adf4b15ccc152758bebbe7283a8075759c04d316007407d3",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -899,7 +899,7 @@
       "id": "anime4up",
       "scope": "beta",
       "path": "server/browser/providers/sites/anime4up.mjs",
-      "source_sha256": "44a2677404e793498efa4be8c1ecac14645c13619db076483f0795f3658cab44",
+      "source_sha256": "3d76b3880178e29f47773e087f2ec750e1e0f3ee133d90c8b0f4d103b161a0c6",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -917,7 +917,7 @@
       "id": "arabseed",
       "scope": "beta",
       "path": "server/browser/providers/sites/arabseed.mjs",
-      "source_sha256": "c67756580a1d23ff033acf89558cc5ff59835c63381f827d8fc7bd960eee4742",
+      "source_sha256": "4c16899e6a5d2064704c15bdeefc028eec2c5cb9f5f907c163dd144215dfa460",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -926,7 +926,7 @@
       "id": "brstej",
       "scope": "beta",
       "path": "server/browser/providers/sites/brstej.mjs",
-      "source_sha256": "3857a1506830075de228d8e9282e5e3259f2519ef75bd0ed3bd05a75c3e203c5",
+      "source_sha256": "4457a30b6e6c6d6f76ec4749c88da32af835c5e84888f40802ffd2484639c5f6",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -935,7 +935,7 @@
       "id": "cimanow",
       "scope": "beta",
       "path": "server/browser/providers/sites/cimanow.mjs",
-      "source_sha256": "6a3333037d662980aef1e2fd75b9b3552e526a018b0a88aff9d00074959e13af",
+      "source_sha256": "9bc60411b54e5df7ba34f7c7b2594db465549cddde2e5e2fc6bf4859186d517d",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -944,7 +944,7 @@
       "id": "egydead",
       "scope": "beta",
       "path": "server/browser/providers/sites/egydead.mjs",
-      "source_sha256": "a2321c76f55c4a8686dc3332d99b8d1060a145d928ca163acde04245cf81605a",
+      "source_sha256": "56961c0d7e97c95cdb8e7b22dec0fbc852afc5fbff6575c39c4481ac0415244e",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -953,7 +953,7 @@
       "id": "egydead_live",
       "scope": "beta",
       "path": "server/browser/providers/sites/egydead_live.mjs",
-      "source_sha256": "e023faa8e5ea7c7a1c0c27324473936528009decebf34b35fdcb4eb34ac9f933",
+      "source_sha256": "b71696db125a114588a14a65e7aa3b6c4c1cbf4741cdc1bfa3fe518f0452684a",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -962,7 +962,7 @@
       "id": "fivetv",
       "scope": "beta",
       "path": "server/browser/providers/sites/fivetv.mjs",
-      "source_sha256": "726679b91d4754c6c6c4df0c455eaadae8c91e27da69ef4b6c665fd13d65b1aa",
+      "source_sha256": "fe73beab2c4c0e7d698ac34b5f145d53b483e82d4f2eb867e6fcac740664bbfa",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -989,7 +989,7 @@
       "id": "laroza",
       "scope": "beta",
       "path": "server/browser/providers/sites/laroza.mjs",
-      "source_sha256": "9c7e1e29236f58ec1d6388279826825bc37f2d5451759256bb6a422c91c92a77",
+      "source_sha256": "b96c9d4a27ed8cb44f102bbbc9f1f4c43a3df042b049ce63c5bb44e7946c5d4e",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"
@@ -1025,7 +1025,7 @@
       "id": "qfilm",
       "scope": "beta",
       "path": "server/browser/providers/sites/qfilm.mjs",
-      "source_sha256": "6e6ed5532b7890d59adb5ab8074e0fd191be7758c302a5bf7754c996a31ba58c",
+      "source_sha256": "047c03a8c26884aae602e1c9a59175ad622a553c104e22f0f0158aaa00f3cc88",
       "registered": true,
       "mirror_of": null,
       "live_validation": "not_run"

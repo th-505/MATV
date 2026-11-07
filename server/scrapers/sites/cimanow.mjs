@@ -34,6 +34,7 @@ export const PROVIDER_META = Object.freeze({
   name: 'سيما ناو (CimaNow)',
   code: 'CW',
   domains: [
+    'https://cimanow.info',
     'https://cimanow.me',
     'https://cimanow.name',
     'https://vip.cimanowinc.com',
@@ -66,8 +67,9 @@ export const CIMANOW_CONFIG = Object.freeze({
   id: 'cimanow',
   name: 'سيما ناو (CimaNow)',
   code: 'CW',
-  baseUrl: 'https://cimanow.me',
+  baseUrl: 'https://cimanow.info',
   domains: [
+    'https://cimanow.info',
     'https://cimanow.me',
     'https://cimanow.name',
     'https://vip.cimanowinc.com',
@@ -99,6 +101,7 @@ export const CIMANOW_CONFIG = Object.freeze({
 });
 
 const ACTIVE_DOMAINS = [
+  'https://cimanow.info',
   'https://cimanow.me',
   'https://cimanow.name',
   'https://vip.cimanowinc.com',
@@ -119,6 +122,8 @@ export function rewriteToActiveCimaNowDomain(rawUrl = '', preferredOrigin = CIMA
     const parsed = new URL(trimmed);
     const host = parsed.hostname.toLowerCase();
     if (
+      host === 'cimanow.info' ||
+      host === 'cimanow.me' ||
       host === 'vip.cimanowinc.com' ||
       host === 'cimanow.cc' ||
       host === 'cimanow.net' ||
@@ -208,6 +213,7 @@ async function fetchCimaNowHtmlWithFallback(targetUrl, options = {}) {
         providerId: PROVIDER_META.id
       });
       if (res.ok && res.html) {
+        if(new URL(url).pathname!=='/'&&new URL(res.url||url).pathname==='/')throw new ScraperError(SCRAPER_ERROR_CODES.STRUCTURE_CHANGED,'CIMANOW_UNRELATED_HOME_REDIRECT');
         return res;
       }
     } catch (err) {

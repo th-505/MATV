@@ -325,6 +325,15 @@ async function extractServersFromDocument($, html = '', pageUrl = PRIMARY_BASE_U
     }
   });
 
+  // Observed public watch control: same source and the same video identity.
+  $('#BiBplayer a.xtgo[href]').each((_,el)=>{
+    const target=resolveSafeUrl($(el).attr('href'),pageUrl,{allowHttp:false});
+    if(!target)return;
+    const u=new URL(target),parent=new URL(pageUrl);
+    if(u.origin!==parent.origin||u.pathname!=='/play.php'||!u.searchParams.get('vid')||u.searchParams.get('vid')!==parent.searchParams.get('vid')||seenUrls.has(target))return;
+    seenUrls.add(target);candidateEmbedUrls.push(target);
+  });
+
   // 3. Optional unwrapping of candidate embed URLs when explicitly requested
   if (options.unwrap === true && candidateEmbedUrls.length > 0) {
     const unwrappedGroups = await Promise.all(

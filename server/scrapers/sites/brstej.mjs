@@ -8,9 +8,9 @@ import {attachResultMeta} from '../shared/errors.mjs';
 import {extractRawStreamsFromText, isValidDirectMediaUrl, unwrapEmbedToDirectStreams} from '../stream-unwrapper.mjs';
 import {BRSTEJ_CATEGORIES, BRSTEJ_CATEGORY_LABELS} from './brstej-categories.mjs';
 // Search redirect observed on 2026-11-07; retain previous origins for stored references.
-const ORIGIN='https://prstej.study', HOSTS=['prstej.study','su.brstej.com','brstejj.pics','brstejj.beer'];
+const ORIGIN='https://brstej.garden', HOSTS=['brstej.garden','prstej.study','su.brstej.com','brstejj.pics','brstejj.beer'];
 const allowedHosts=()=>effectiveProviderDomains('brstej',HOSTS);
-export const PROVIDER_META = Object.freeze({id:'brstej',name:'برستيج',code:'BR',domains:[ORIGIN,'https://su.brstej.com','https://brstejj.pics','https://brstejj.beer'],mirrorOf:null,resolveOnDetails:true,
+export const PROVIDER_META = Object.freeze({id:'brstej',name:'برستيج',code:'BR',domains:[ORIGIN,'https://prstej.study','https://su.brstej.com','https://brstejj.pics','https://brstejj.beer'],mirrorOf:null,resolveOnDetails:true,
   capabilities:{catalog:true,search:true,details:true,episodes:true,servers:true,resolve:true,live:false},
   searchSpec:{method:'GET',pathTemplate:'/search.php?keywords={query}',queryParam:'keywords',pagination:true},notImplemented:{}});
 export const BRSTEJ_CONFIG=Object.freeze({id:'brstej',baseUrl:ORIGIN,

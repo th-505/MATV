@@ -1,0 +1,646 @@
+{
+  "observed_at": "2026-11-07T13:15:14.351781+00:00",
+  "basis": "Bounded real HTTPS metadata, source details and container probes, not physical-device decoding. Default diagnostic samples and named positive samples are distinct. No signed media URLs or credentials retained.",
+  "families": {
+    "najd": {
+      "state": "ready",
+      "checks": [
+        {
+          "id": "najd:brstej",
+          "label": "نجد · برستيج",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "failed",
+              "reason": "SEARCH_UNCONFIRMED"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 3,
+              "server_scan": {
+                "resolver_targets": 4,
+                "resolver_attempted": 4,
+                "server_scan_complete": true,
+                "observed_media_candidates": 3,
+                "inspected_media_candidates": 3
+              }
+            }
+          ],
+          "duration_ms": 21908
+        },
+        {
+          "id": "najd:cimanow",
+          "label": "نجد · سيما ناو (CimaNow)",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "failed",
+              "reason": "STRUCTURE_CHANGED"
+            }
+          ],
+          "duration_ms": 15856
+        },
+        {
+          "id": "najd:egydead",
+          "label": "نجد · إيجي ديد (EgyDead)",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 14982
+        },
+        {
+          "id": "najd:3cktv",
+          "label": "نجد · 3ckTV",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 20837
+        },
+        {
+          "id": "najd:anime4up",
+          "label": "نجد · Anime4Up",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 4947
+        },
+        {
+          "id": "najd:qfilm",
+          "label": "نجد · كيو فيلم (QFilm)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 1,
+              "server_scan": {
+                "resolver_targets": 1,
+                "resolver_attempted": 1,
+                "server_scan_complete": true,
+                "observed_media_candidates": 1,
+                "inspected_media_candidates": 1
+              }
+            }
+          ],
+          "duration_ms": 4139
+        },
+        {
+          "id": "najd:arabseed",
+          "label": "نجد · عرب سيد (ArabSeed)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 1,
+              "server_scan": {
+                "resolver_targets": 0,
+                "resolver_attempted": 0,
+                "server_scan_complete": true,
+                "observed_media_candidates": 1,
+                "inspected_media_candidates": 1
+              }
+            }
+          ],
+          "duration_ms": 5836
+        },
+        {
+          "id": "najd:witanime",
+          "label": "نجد · WitAnime",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "ACCESS_BLOCKED"
+            }
+          ],
+          "duration_ms": 171
+        },
+        {
+          "id": "najd:egydead_live",
+          "label": "نجد · إيجي ديد لايف (EgyDead Live TV)",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 1540
+        },
+        {
+          "id": "najd:laroza",
+          "label": "نجد · لاروزا (Laroza)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 4,
+              "server_scan": {
+                "resolver_targets": 4,
+                "resolver_attempted": 4,
+                "server_scan_complete": true,
+                "observed_media_candidates": 4,
+                "inspected_media_candidates": 4
+              }
+            }
+          ],
+          "duration_ms": 9022
+        },
+        {
+          "id": "najd:fivetv",
+          "label": "نجد · فايف تي في (5TV)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 2,
+              "server_scan": {
+                "resolver_targets": 5,
+                "resolver_attempted": 5,
+                "server_scan_complete": true,
+                "observed_media_candidates": 3,
+                "inspected_media_candidates": 3
+              }
+            }
+          ],
+          "duration_ms": 12867
+        }
+      ]
+    },
+    "beta": {
+      "state": "ready",
+      "checks": [
+        {
+          "id": "beta:brstej",
+          "label": "بيتا · برستيج",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "failed",
+              "reason": "SEARCH_UNCONFIRMED"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 3,
+              "server_scan": {
+                "resolver_targets": 4,
+                "resolver_attempted": 4,
+                "server_scan_complete": true,
+                "observed_media_candidates": 3,
+                "inspected_media_candidates": 3
+              }
+            }
+          ],
+          "duration_ms": 9423
+        },
+        {
+          "id": "beta:cimanow",
+          "label": "بيتا · سيما ناو (CimaNow)",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "failed",
+              "reason": "STRUCTURE_CHANGED"
+            }
+          ],
+          "duration_ms": 3160
+        },
+        {
+          "id": "beta:egydead",
+          "label": "بيتا · إيجي ديد (EgyDead)",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "DIRECT_MEDIA_NOT_FOUND"
+            }
+          ],
+          "duration_ms": 4911
+        },
+        {
+          "id": "beta:3cktv",
+          "label": "بيتا · 3ckTV",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 10437
+        },
+        {
+          "id": "beta:anime4up",
+          "label": "بيتا · Anime4Up",
+          "state": "partial",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "failed",
+              "reason": "SERVER_EXTRACTION_FAILED"
+            }
+          ],
+          "duration_ms": 4131
+        },
+        {
+          "id": "beta:qfilm",
+          "label": "بيتا · كيو فيلم (QFilm)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 1,
+              "server_scan": {
+                "resolver_targets": 1,
+                "resolver_attempted": 1,
+                "server_scan_complete": true,
+                "observed_media_candidates": 1,
+                "inspected_media_candidates": 1
+              }
+            }
+          ],
+          "duration_ms": 3362
+        },
+        {
+          "id": "beta:arabseed",
+          "label": "بيتا · عرب سيد (ArabSeed)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 1,
+              "server_scan": {
+                "resolver_targets": 0,
+                "resolver_attempted": 0,
+                "server_scan_complete": true,
+                "observed_media_candidates": 1,
+                "inspected_media_candidates": 1
+              }
+            }
+          ],
+          "duration_ms": 5553
+        },
+        {
+          "id": "beta:witanime",
+          "label": "بيتا · WitAnime",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "ACCESS_BLOCKED"
+            }
+          ],
+          "duration_ms": 121
+        },
+        {
+          "id": "beta:egydead_live",
+          "label": "بيتا · إيجي ديد لايف (EgyDead Live TV)",
+          "state": "failed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "failed",
+              "reason": "EMPTY_RESULT"
+            }
+          ],
+          "duration_ms": 1299
+        },
+        {
+          "id": "beta:laroza",
+          "label": "بيتا · لاروزا (Laroza)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 4,
+              "server_scan": {
+                "resolver_targets": 4,
+                "resolver_attempted": 4,
+                "server_scan_complete": true,
+                "observed_media_candidates": 4,
+                "inspected_media_candidates": 4
+              }
+            }
+          ],
+          "duration_ms": 4846
+        },
+        {
+          "id": "beta:fivetv",
+          "label": "بيتا · فايف تي في (5TV)",
+          "state": "passed",
+          "stages": [
+            {
+              "stage": "catalog",
+              "state": "passed"
+            },
+            {
+              "stage": "search",
+              "state": "passed"
+            },
+            {
+              "stage": "details",
+              "state": "passed"
+            },
+            {
+              "stage": "media",
+              "state": "passed",
+              "verified_sources": 2,
+              "server_scan": {
+                "resolver_targets": 5,
+                "resolver_attempted": 5,
+                "server_scan_complete": true,
+                "observed_media_candidates": 3,
+                "inspected_media_candidates": 3
+              }
+            }
+          ],
+          "duration_ms": 8928
+        }
+      ]
+    }
+  },
+  "named_positive_evidence": {
+    "laroza": {
+      "owner_url": "https://laroza.buzz/home.24",
+      "home_cards": 109,
+      "catalog_cards": 48,
+      "observed_episodes": 10
+    },
+    "anime4up": {
+      "query": "One Piece",
+      "observed_episodes_on_first_page": 48,
+      "declared_count": 1202,
+      "observed_last_page": 26,
+      "episode_server_candidates": 25,
+      "complete_index_certified": false
+    },
+    "3cktv": {
+      "observed_watch_control": "a#btnWatch.single-watch-btn",
+      "observed_embed_alternatives": 4,
+      "observed_direct_candidates": 1,
+      "availability_intermittent": true
+    }
+  },
+  "fixture_provenance": [
+    {
+      "capture": "brstej-brstej.garden.html",
+      "full_private_capture_sha256": "10535a873be55412d1887dd14575c00fb045828cf2dd7752ddf30899c6b93359",
+      "committed_capture": false
+    },
+    {
+      "capture": "fivetv-ho42195qa.5ivtv.in.html",
+      "full_private_capture_sha256": "c747b3ff9b83ba0316c292ba1b0ebe06de4a18f06b22f737affe3966c45223a3",
+      "committed_capture": false
+    },
+    {
+      "capture": "laroza-buzz.html",
+      "full_private_capture_sha256": "8f8b544ad4f5f7995d6edbae2fc6eda90ff725702c4e63eeb0303e8e9248acb1",
+      "committed_capture": false
+    },
+    {
+      "capture": "arabseed-movies-work.html",
+      "full_private_capture_sha256": "8f64920b367adbdb709196dec705fb53a3c613a6d934e2f13f91b73aca0d48b2",
+      "committed_capture": false
+    },
+    {
+      "capture": "egydead-watch.html",
+      "full_private_capture_sha256": "622d7b72f1ed58e01d2cbf87a0628591ab6c4e3bd60991b4d7b996081c14537b",
+      "committed_capture": false
+    },
+    {
+      "capture": "3cktv-follow.html",
+      "full_private_capture_sha256": "5a2c31210447d47113936099046c69744991dd865e1894610c72aa50ccc76086",
+      "committed_capture": false
+    },
+    {
+      "capture": "qfilm-follow.html",
+      "full_private_capture_sha256": "51ce403e9ae46f5b58b3f00e9a0f1153ca68e6f3259279a586f5cd78fa4ad47a",
+      "committed_capture": false
+    },
+    {
+      "capture": "anime4up-onepiece.html",
+      "full_private_capture_sha256": "c83356355a4b4719c9f29e2d19e0673a0b5ab2383ab740526c49574fb782ce54",
+      "committed_capture": false
+    }
+  ]
+}
