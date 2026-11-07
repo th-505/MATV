@@ -82,6 +82,13 @@ jobs:
         env:
           CHROMIUM_BIN: /usr/bin/google-chrome
         run: node scripts/flutter_web_smoke.mjs hls
+      - name: Verify Web section, title and exact episode routes survive refresh and browser history
+        timeout-minutes: 3
+        env:
+          CHROMIUM_BIN: /usr/bin/google-chrome
+          NAJD_TEST_API_BASE: ${{ env.MITV_API_BASE }}
+          NAJD_FONT_OUTPUT: ${{ runner.temp }}/najd-navigation
+        run: node scripts/web_navigation_render_test.mjs
       - name: Record immutable source identity and package Web bundle
         run: |
           set -euo pipefail

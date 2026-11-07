@@ -1,0 +1,12 @@
+{
+  "initial_settings": true,
+  "refresh_settings": true,
+  "history_search": true,
+  "browser_back": true,
+  "browser_forward": true,
+  "title_refresh": true,
+  "player_episode_refresh": true,
+  "unnecessary_home_fetches": 0,
+  "errors": [],
+  "basis": "Controlled Chromium metadata/API fixtures; verifies routing and exact episode identity, not live source decoding. CI reruns this against packaged source."
+}

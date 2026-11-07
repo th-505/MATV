@@ -1,3 +1,5 @@
+import 'browser_navigation_stub.dart'
+    if (dart.library.js_interop) 'browser_navigation_web.dart';
 import 'viewport_profile.dart';
 import 'app_target.dart';
 
@@ -341,9 +343,11 @@ class _NajdIntroState extends State<NajdIntro> {
   void initState() {
     super.initState();
     _visible =
+        !BrowserNavigation().skipIntro &&
         !Uri.base.queryParameters.containsKey('ref') &&
         !Uri.base.fragment.contains('najd_link=');
     if (_visible) {
+      BrowserNavigation().markIntroSeen();
       _timer = Timer(widget.duration, _dismiss);
       _continueTimer = Timer(const Duration(seconds: 3), () {
         if (mounted && _visible) setState(() => _canContinue = true);

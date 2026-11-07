@@ -15,11 +15,19 @@ EpisodeItem ep(int number, {int season = 1, String? ref, bool known = true}) =>
       hasEpisodeNumber: known,
     );
 void main() {
+  test('previous crosses observed seasons and never creates episode zero', () {
+    final queue = [ep(1), ep(16), ep(1, season: 2), ep(2, season: 2)];
+    expect(previousObservedEpisode(queue, number: 1, season: 1), isNull);
+    expect(previousObservedEpisode(queue, number: 1, season: 2)?.number, 16);
+    expect(previousObservedEpisode(queue, number: 1, season: 2)?.season, 1);
+    expect(previousObservedEpisode(queue, number: 2, season: 2)?.number, 1);
+  });
   test('next episode uses actual season/number and skips alternate copies', () {
     final queue = [
       ep(1216, ref: 'alternate'),
       ep(1217),
       ep(1216),
+      ep(0, season: 2),
       ep(1, season: 2),
       ep(1218, known: false),
     ];

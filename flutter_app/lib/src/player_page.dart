@@ -1,3 +1,7 @@
+import 'desktop_window_stub.dart' if (dart.library.io) 'desktop_window_io.dart';
+import 'browser_content_route.dart';
+import 'browser_navigation_stub.dart'
+    if (dart.library.js_interop) 'browser_navigation_web.dart';
 import 'browser_video_stub.dart'
     if (dart.library.js_interop) 'browser_video_web.dart';
 import 'playback_handoff.dart';
@@ -131,6 +135,7 @@ EpisodeItem? nextObservedEpisode(
         (e) =>
             e.watchAvailable &&
             e.hasEpisodeNumber &&
+            e.number > 0 &&
             e.ref.isNotEmpty &&
             ((e.season ?? season) > season ||
                 ((e.season ?? season) == season && e.number > number)),
@@ -141,6 +146,30 @@ EpisodeItem? nextObservedEpisode(
     return s != 0 ? s : a.number.compareTo(b.number);
   });
   return candidates.isEmpty ? null : candidates.first;
+}
+
+EpisodeItem? previousObservedEpisode(
+  List<EpisodeItem> episodes, {
+  required int? number,
+  required int? season,
+}) {
+  if (number == null || season == null) return null;
+  final candidates = episodes
+      .where(
+        (e) =>
+            e.watchAvailable &&
+            e.hasEpisodeNumber &&
+            e.number > 0 &&
+            e.ref.isNotEmpty &&
+            ((e.season ?? season) < season ||
+                ((e.season ?? season) == season && e.number < number)),
+      )
+      .toList();
+  candidates.sort((a, b) {
+    final order = (b.season ?? season).compareTo(a.season ?? season);
+    return order != 0 ? order : b.number.compareTo(a.number);
+  });
+  return candidates.firstOrNull;
 }
 
 class PlayerPage extends StatefulWidget {
@@ -272,6 +301,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   int _boostSerial = 0;
   Future<void> _rateQueue = Future.value();
   double _videoScale = 1;
+  double? _seekPreviewMs;
   Timer? _controlsTimer;
   DateTime _lastBrightnessUpdate = DateTime.fromMillisecondsSinceEpoch(0);
   bool _gestureRight = false;
@@ -292,6 +322,29 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   DownloadService? _downloadService;
   DownloadCancellationToken? _downloadToken;
   DownloadProgress? _downloadProgress;
+
+  final _desktopWindow = DesktopWindowBridge();
+  Object? _browserRoute;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!kIsWeb || _browserRoute != null) return;
+    final route = ModalRoute.of(context);
+    if (route == null) return;
+    _browserRoute = route;
+    if (widget.localFileUri != null || widget.isLive) return;
+    BrowserNavigation().enterContent(
+      route,
+      'player',
+      browserContentIdentity(
+        widget.item,
+        sourceRef: widget.sourceRef,
+        episodeId: widget.episodeId,
+        episodeNumber: widget.episodeNumber,
+        providerCatalogRef: widget.providerCatalogRef,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -377,7 +430,14 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   Future<void> _enterDisplay() async {
-    if (kIsWeb || isDesktopTarget) return;
+    if (kIsWeb) return;
+    if (isDesktopTarget) {
+      final entered = await _desktopWindow.enter();
+      if (mounted && identical(_displayOwner, this)) {
+        setState(() => _fullscreen = entered);
+      }
+      return;
+    }
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     if (!isTvTarget && !isDesktopTarget) {
       await SystemChrome.setPreferredOrientations([
@@ -450,6 +510,14 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
       }
       return;
     }
+    if (isDesktopTarget) {
+      final target = !_fullscreen;
+      if (await _desktopWindow.setFullscreen(target) && mounted) {
+        setState(() => _fullscreen = target);
+        _revealControls();
+      }
+      return;
+    }
     setState(() => _fullscreen = !_fullscreen);
     _revealControls();
     await SystemChrome.setEnabledSystemUIMode(
@@ -468,6 +536,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   Future<void> _restoreDisplay() async {
+    await _desktopWindow.leave();
     try {
       if (_nativeBrightness) {
         await ScreenBrightness.instance.resetApplicationScreenBrightness();
@@ -1043,7 +1112,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     onSelected: _selectSource,
   );
 
-  Future<void> _episodeMenu() async {
+  Future<void> _episodeMenu({int? season}) async {
     _controlsTimer?.cancel();
     final selected = await showNajdOptions<EpisodeItem>(
       context,
@@ -1053,7 +1122,9 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
           : null,
       icon: Icons.video_library_outlined,
       options: [
-        for (final ep in _queue)
+        for (final ep in _queue.where(
+          (ep) => season == null || ep.season == season,
+        ))
           NajdOption(
             ep,
             ep.title.isEmpty ? 'الحلقة ${ep.number}' : ep.title,
@@ -1069,6 +1140,28 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
     if (selected != null && selected.ref != widget.sourceRef) {
       await _advanceEpisode(selected);
     }
+    _revealControls();
+  }
+
+  Future<void> _seasonMenu() async {
+    final seasons =
+        _queue.map((ep) => ep.season).whereType<int>().toSet().toList()..sort();
+    _controlsTimer?.cancel();
+    final selected = await showNajdOptions<int>(
+      context,
+      title: 'المواسم',
+      icon: Icons.video_library_outlined,
+      options: [
+        for (final season in seasons)
+          NajdOption(
+            season,
+            'الموسم $season',
+            selected: season == widget.item.season,
+          ),
+      ],
+    );
+    if (!mounted) return;
+    if (selected != null) await _episodeMenu(season: selected);
     _revealControls();
   }
 
@@ -1216,29 +1309,21 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
   }
 
   bool _nextPrepared = false, _nextRenewed = false, _advancing = false;
-  EpisodeItem? get _previousEpisode {
-    final current = widget.episodeNumber;
-    if (current == null) return null;
-    final candidates =
-        _queue
-            .where(
-              (e) =>
-                  e.hasEpisodeNumber &&
-                  e.number < current &&
-                  (e.season == null ||
-                      widget.item.season == null ||
-                      e.season == widget.item.season),
-            )
-            .toList()
-          ..sort((a, b) => b.number.compareTo(a.number));
-    return candidates.firstOrNull;
-  }
+  EpisodeItem? get _previousEpisode => widget.item.type == 'movie'
+      ? null
+      : previousObservedEpisode(
+          _queue,
+          number: widget.episodeNumber,
+          season: widget.item.season,
+        );
 
-  EpisodeItem? get _nextEpisode => nextObservedEpisode(
-    _queue,
-    number: widget.episodeNumber,
-    season: widget.item.season,
-  );
+  EpisodeItem? get _nextEpisode => widget.item.type == 'movie'
+      ? null
+      : nextObservedEpisode(
+          _queue,
+          number: widget.episodeNumber,
+          season: widget.item.season,
+        );
   Future<void> _prepareNext(EpisodeItem episode, {bool refresh = false}) async {
     try {
       await widget.api.resolvePlayback(episode.ref, refresh: refresh);
@@ -1850,6 +1935,7 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    if (_browserRoute != null) BrowserNavigation().leaveContent(_browserRoute!);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
     unawaited(_pip.close());
@@ -1895,15 +1981,40 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
                   Directionality(
                     textDirection: TextDirection.ltr,
                     child: Slider(
-                      value: value.position.inMilliseconds.toDouble().clamp(
-                        0,
-                        maximum > 0 ? maximum : 1,
-                      ),
+                      key: const Key('player-seek-slider'),
+                      value:
+                          (_seekPreviewMs ??
+                                  value.position.inMilliseconds.toDouble())
+                              .clamp(0, maximum > 0 ? maximum : 1),
                       max: maximum > 0 ? maximum : 1,
                       onChanged: maximum > 0
-                          ? (v) => activeController.seekTo(
-                              Duration(milliseconds: v.round()),
-                            )
+                          ? (v) => setState(() => _seekPreviewMs = v)
+                          : null,
+                      onChangeStart: maximum > 0
+                          ? (v) {
+                              _controlsTimer?.cancel();
+                              setState(() => _seekPreviewMs = v);
+                            }
+                          : null,
+                      onChangeEnd: maximum > 0
+                          ? (v) async {
+                              try {
+                                await activeController.seekTo(
+                                  Duration(milliseconds: v.round()),
+                                );
+                              } catch (_) {
+                                if (mounted) {
+                                  _subtitleNotice(
+                                    'تعذر الانتقال إلى هذا الوقت. أعد المحاولة.',
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _seekPreviewMs = null);
+                                  _revealControls();
+                                }
+                              }
+                            }
                           : null,
                     ),
                   ),
@@ -2404,9 +2515,10 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
           onPressed: () => _advanceEpisode(_nextEpisode!),
           icon: const Icon(Icons.skip_next, color: Colors.white),
         ),
-      if (_queue.isNotEmpty ||
-          widget.episodeNumber != null ||
-          widget.item.type == 'series')
+      if (widget.item.type != 'movie' &&
+          (_queue.isNotEmpty ||
+              widget.episodeNumber != null ||
+              widget.item.type == 'series'))
         TextButton.icon(
           key: const Key('player-episodes'),
           style: TextButton.styleFrom(
@@ -2416,6 +2528,19 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
           onPressed: _queue.isNotEmpty ? _episodeMenu : _providerCatalogue,
           icon: const Icon(Icons.video_library_outlined, size: 20),
           label: const Text('الحلقات', style: TextStyle(fontSize: 12)),
+        ),
+      if (widget.item.type != 'movie' &&
+          widget.episodeNumber != null &&
+          _queue.map((ep) => ep.season).whereType<int>().toSet().length > 1)
+        TextButton.icon(
+          key: const Key('player-seasons'),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            minimumSize: Size(48, isTvTarget ? 64 : 48),
+          ),
+          onPressed: _seasonMenu,
+          icon: const Icon(Icons.collections_bookmark_outlined, size: 20),
+          label: const Text('المواسم', style: TextStyle(fontSize: 12)),
         ),
       TextButton.icon(
         key: const Key('player-audio-subtitles'),
@@ -2478,12 +2603,50 @@ class _PlayerPageState extends State<PlayerPage> with WidgetsBindingObserver {
             if (event.pointer == _holdPointer) unawaited(_endBoost());
           },
           child: Focus(
-            autofocus: isTvTarget,
+            autofocus: true,
             onKeyEvent: (_, event) {
               if (event.logicalKey == LogicalKeyboardKey.mediaFastForward) {
                 if (event is KeyRepeatEvent) unawaited(_startBoost());
                 if (event is KeyUpEvent) unawaited(_endBoost());
                 return KeyEventResult.handled;
+              }
+              if (event is KeyDownEvent) {
+                final key = event.logicalKey;
+                if (key == LogicalKeyboardKey.keyF) {
+                  unawaited(_toggleFullscreen());
+                  return KeyEventResult.handled;
+                }
+                if (key == LogicalKeyboardKey.escape &&
+                    !kIsWeb &&
+                    _fullscreen) {
+                  unawaited(_toggleFullscreen());
+                  return KeyEventResult.handled;
+                }
+              }
+              if (event is KeyDownEvent && active != null) {
+                final key = event.logicalKey;
+                if (key == LogicalKeyboardKey.space ||
+                    key == LogicalKeyboardKey.mediaPlayPause) {
+                  unawaited(_togglePlay(active));
+                  _revealControls();
+                  return KeyEventResult.handled;
+                }
+                // Remote arrows remain available for focus navigation.
+                if (!isTvTarget &&
+                    (key == LogicalKeyboardKey.arrowLeft ||
+                        key == LogicalKeyboardKey.arrowRight)) {
+                  unawaited(
+                    _seekBy(
+                      Duration(
+                        seconds: key == LogicalKeyboardKey.arrowRight
+                            ? 10
+                            : -10,
+                      ),
+                    ),
+                  );
+                  _revealControls();
+                  return KeyEventResult.handled;
+                }
               }
               if (isTvTarget && event is KeyDownEvent) _revealControls();
               return KeyEventResult.ignored;

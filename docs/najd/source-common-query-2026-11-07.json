@@ -1,0 +1,213 @@
+{
+  "observed_at": "2026-11-07T00:50:24.683Z",
+  "query": "تحت الأرض",
+  "parallel_workers": 20,
+  "scope": "Najd source search only, one Arabic query using the production (query,page,options) interface with strict:true, raw candidates without identity verification, no playback claim, no Supabase load. Anime/sports libraries are not expected to contain this TV title. Local registry includes unreleased TurkishSerie. Timeouts do not establish missing content or parser failure.",
+  "providers": [
+    {
+      "provider": "3cktv",
+      "state": "results",
+      "results": 2,
+      "unique_refs": 2,
+      "titles": [
+        "مسلسل أبي البطل مترجم",
+        "مسلسل صمود مترجم"
+      ],
+      "elapsed_ms": 9317
+    },
+    {
+      "provider": "3isk",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 10046
+    },
+    {
+      "provider": "ahwak",
+      "state": "results",
+      "results": 50,
+      "unique_refs": 50,
+      "titles": [
+        "مسلسل تحت الأرض الحلقة 14 الرابعة عشر HD",
+        "مسلسل تحت الأرض الحلقة 30 الثلاثون والاخيرة HD"
+      ],
+      "elapsed_ms": 7490
+    },
+    {
+      "provider": "akwam",
+      "state": "results",
+      "results": 23,
+      "unique_refs": 23,
+      "titles": [
+        "Who",
+        "Meet Me at the Eclipse"
+      ],
+      "elapsed_ms": 8196
+    },
+    {
+      "provider": "alooy",
+      "state": "results",
+      "results": 3,
+      "unique_refs": 3,
+      "titles": [
+        "تحت الأرض",
+        "تحت الأرض ج2"
+      ],
+      "elapsed_ms": 7583
+    },
+    {
+      "provider": "anime4up",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 9515
+    },
+    {
+      "provider": "arabseed",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 10247
+    },
+    {
+      "provider": "brstej",
+      "state": "failed",
+      "reason": "UNSAFE_URL",
+      "elapsed_ms": 7152
+    },
+    {
+      "provider": "cimanow",
+      "state": "results",
+      "results": 50,
+      "unique_refs": 50,
+      "titles": [
+        "مسلسل تحت الارض الموسم الثاني الحلقة 5 مترجمة",
+        "برنامج تحت الضغط الحلقة 8 الثامنة"
+      ],
+      "elapsed_ms": 8650
+    },
+    {
+      "provider": "egydead",
+      "state": "failed",
+      "reason": "NETWORK_TIMEOUT",
+      "elapsed_ms": 7422
+    },
+    {
+      "provider": "egydead_live",
+      "state": "unsupported",
+      "reason": "UNSUPPORTED_CAPABILITY",
+      "elapsed_ms": 1
+    },
+    {
+      "provider": "fosta",
+      "state": "failed",
+      "reason": "UNSAFE_URL",
+      "elapsed_ms": 7792
+    },
+    {
+      "provider": "ipauniverse",
+      "state": "results",
+      "results": 4,
+      "unique_refs": 4,
+      "titles": [
+        "Waste Underground",
+        "رجال تحت الأرض"
+      ],
+      "elapsed_ms": 7383
+    },
+    {
+      "provider": "laroza",
+      "state": "failed",
+      "reason": "AUDIT_DEADLINE",
+      "elapsed_ms": 12502
+    },
+    {
+      "provider": "mewsry",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 11325
+    },
+    {
+      "provider": "moviztime",
+      "state": "results",
+      "results": 30,
+      "unique_refs": 30,
+      "titles": [
+        "مسلسل Silo مترجم الموسم الأول كامل",
+        "مسلسل Silo مترجم الموسم الثالث كامل"
+      ],
+      "elapsed_ms": 10978
+    },
+    {
+      "provider": "mycima",
+      "state": "results",
+      "results": 40,
+      "unique_refs": 40,
+      "titles": [
+        "مشاهدة مسلسل تحت الأرض ج2 حلقة 5     ( 2026  )",
+        "مشاهدة مسلسل تحت الأرض ج2 حلقة 4     ( 2026  )"
+      ],
+      "elapsed_ms": 9263
+    },
+    {
+      "provider": "qfilm",
+      "state": "results",
+      "results": 10,
+      "unique_refs": 10,
+      "titles": [
+        "فيلم ولاد رزق 2: عودة أسود الأرض (2019)",
+        "فيلم الأرض (1970)"
+      ],
+      "elapsed_ms": 7403
+    },
+    {
+      "provider": "ristoanime",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 7343
+    },
+    {
+      "provider": "shahid4u",
+      "state": "results",
+      "results": 10,
+      "unique_refs": 10,
+      "titles": [
+        "مشاهدة مسلسل تحت الأرض الموسم الثاني الحلقة 4 الرابعة مترجمة",
+        "مشاهدة مسلسل تحت الأرض الحلقة 20 العشرون مترجمة"
+      ],
+      "elapsed_ms": 9348
+    },
+    {
+      "provider": "turkishserie",
+      "state": "failed",
+      "reason": "NETWORK_TIMEOUT",
+      "elapsed_ms": 8051
+    },
+    {
+      "provider": "witanime",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 7211
+    },
+    {
+      "provider": "yallashoot",
+      "state": "empty",
+      "results": 0,
+      "unique_refs": 0,
+      "titles": [],
+      "elapsed_ms": 0
+    }
+  ],
+  "unreleased_providers": [
+    "turkishserie"
+  ]
+}
