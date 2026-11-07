@@ -125,6 +125,8 @@ void main() {
         expect(store.continueWatching, isEmpty);
         expect(store.isFavorite(film.ref), isTrue);
         await render(SettingsPage(api: api, store: store), 'settings');
+        await tester.tap(find.text('المظهر والحلقات'));
+        await tester.pumpAndSettle();
         expect(find.byKey(const Key('stitch-theme-light')), findsOneWidget);
         expect(find.byKey(const Key('stitch-theme-dark')), findsOneWidget);
         for (final state in [

@@ -27,6 +27,7 @@ final class NajdPipController: NSObject, AVPictureInPictureControllerDelegate {
   private var controller: AVPictureInPictureController?
   private var ready: NSKeyValueObservation?
   private var possible: NSKeyValueObservation?
+  private var displayReady: NSKeyValueObservation?
   private var ticker: Any?
   private var pending: FlutterResult?
   private var session = ""
@@ -106,11 +107,27 @@ final class NajdPipController: NSObject, AVPictureInPictureControllerDelegate {
     layer = output
     controller = AVPictureInPictureController(playerLayer: output)
     controller?.delegate = self
+    if #available(iOS 14.2, *) {
+      controller?.canStartPictureInPictureAutomaticallyFromInline = true
+    }
+    displayReady = output.observe(\.isReadyForDisplay, options: [.initial, .new]) { [weak self] _, _ in
+      DispatchQueue.main.async { self?.attemptStart() }
+    }
     let position = max(0, (args["position_ms"] as? NSNumber)?.doubleValue ?? 0) / 1000
     ready = item.observe(\.status, options: [.initial, .new]) { [weak self] current, _ in
       guard let self = self else { return }
       if current.status == .failed { DispatchQueue.main.async { self.finishFailure() }; return }
       guard current.status == .readyToPlay, !self.seekReady else { return }
+      // A non-DVR live stream starts at the live edge, without an invalid seek.
+      if current.duration.isIndefinite && current.seekableTimeRanges.isEmpty {
+        DispatchQueue.main.async {
+          guard self.pending != nil else { return }
+          self.seekReady = true
+          self.player?.playImmediately(atRate: self.requestedRate)
+          self.attemptStart()
+        }
+        return
+      }
       self.player?.seek(to: CMTime(seconds: position, preferredTimescale: 600),
         toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] completed in
         DispatchQueue.main.async {
@@ -135,7 +152,8 @@ final class NajdPipController: NSObject, AVPictureInPictureControllerDelegate {
     }
   }
   private func attemptStart() {
-    guard pending != nil, seekReady, !starting, controller?.isPictureInPicturePossible == true else { return }
+    guard pending != nil, seekReady, !starting, layer?.isReadyForDisplay == true,
+      controller?.isPictureInPicturePossible == true else { return }
     starting = true
     controller?.startPictureInPicture()
   }
@@ -148,6 +166,7 @@ final class NajdPipController: NSObject, AVPictureInPictureControllerDelegate {
   private func cleanup() {
     ready?.invalidate(); ready = nil
     possible?.invalidate(); possible = nil
+    displayReady?.invalidate(); displayReady = nil
     if let ticker = ticker { player?.removeTimeObserver(ticker) }
     ticker = nil
     player?.pause()

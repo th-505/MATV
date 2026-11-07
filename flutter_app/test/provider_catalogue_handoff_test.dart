@@ -216,6 +216,7 @@ void main() {
       await tester.pumpAndSettle();
       final provider = find.byKey(const ValueKey('source-edition-$own'));
       await tester.ensureVisible(provider);
+      await tester.pumpAndSettle();
       await tester.tap(provider);
       await tester.pumpAndSettle();
       expect(find.text('ملخص المصدر الأصلي'), findsOneWidget);

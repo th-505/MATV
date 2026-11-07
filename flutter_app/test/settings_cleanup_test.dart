@@ -27,6 +27,20 @@ class _CleanupApi extends MitvApi {
 }
 
 Future<void> revealSetting(WidgetTester tester, String label) async {
+  if (find.text(label).evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      find.text('التخزين والخصوصية'),
+      180,
+      scrollable: find
+          .descendant(
+            of: find.byType(SettingsPage),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(find.text('التخزين والخصوصية'));
+    await tester.pumpAndSettle();
+  }
   await tester.scrollUntilVisible(
     find.text(label),
     180,

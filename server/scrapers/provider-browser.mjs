@@ -1,3 +1,4 @@
+import {getProviderConfig} from './shared/provider-config.mjs';
 import {runInBrowserLane} from '../browser/traffic.mjs';
 import {classifyNetworkError} from './shared/errors.mjs';
 import { getProvider, listIndependentProviders } from '../browser/registry.mjs';
@@ -5,7 +6,10 @@ import { createConcurrencyQueue } from './shared/concurrency.mjs';
 
 // This route never mutates the canonical discovery or preferred-source state.
 export function createProviderBrowser({ lookup = getProvider, providers = listIndependentProviders,
-  queue = createConcurrencyQueue({ concurrency: 4, maxQueued: 40 }) } = {}) {
+  queue = createConcurrencyQueue({ concurrency: 4, maxQueued: 40 }), now=Date.now, catalogTtlMs=120000 } = {}) {
+  const successful=new Map(), pending=new Map();let cachedBytes=0;
+  function drop(key){const old=successful.get(key);if(old)cachedBytes-=old.bytes;successful.delete(key);}
+
   function entry(id) {
     const provider = lookup(id);
     if (!provider || provider.meta.mirrorOf || provider.meta.enabled === false) throw Error('BROWSER_PROVIDER_UNAVAILABLE');
@@ -26,7 +30,7 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
     sources: () => runInBrowserLane(()=>providers().filter(meta => meta.enabled !== false && meta.capabilities?.catalog
       && typeof lookup(meta.id)?.module.scrapeCatalog === 'function')
       .map(meta => ({ id: meta.id, name: meta.name, domain: new URL(meta.domains[0]).hostname,
-        categories: categories(meta.id) }))),
+        content_type:meta.capabilities?.live===true?'live':'vod',categories: categories(meta.id) }))),
     async catalog(id, category, page = 1) { return runInBrowserLane(async()=>{
       const provider = entry(id);
       if (typeof provider.module.scrapeCatalog !== 'function') throw Error('BROWSER_CATALOG_UNSUPPORTED');
@@ -34,6 +38,13 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
       const allowed = categories(id);
       const selected = category || allowed[0]?.id;
       if (selected && !allowed.some(item => item.id === selected)) throw Error('BROWSER_BAD_CATEGORY');
+      const config=getProviderConfig(id);
+      const key=JSON.stringify([id,selected,page,config?.revision||0,config?.primary_domain||provider.meta.domains[0]]);
+      const cached=successful.get(key);
+      if(cached&&cached.expires>now())return structuredClone(cached.data);
+      if(cached)drop(key);
+      if(pending.has(key))return structuredClone(await pending.get(key));
+      async function fetchPage(){
       let result;
       try{result=await queue.run(()=>runInBrowserLane(()=>provider.module.scrapeCatalog(selected,page,{strict:true,allowHttp:false,timeoutMs:8000,maxRetries:0})));}
       catch(error){const failure=new Error('BROWSER_SOURCE_UNAVAILABLE');failure.code=error.code||classifyNetworkError(error).code;throw failure;}
@@ -58,6 +69,20 @@ export function createProviderBrowser({ lookup = getProvider, providers = listIn
         pagination: { page, next_page: observedNext ? nextPage : null,
           has_more: explicitPagination ? observedNext || meta.has_more === true : items.length > 0,
           basis: explicitPagination ? 'observed-source-pagination' : 'adapter-page-probe' } };
+      }
+      const work=fetchPage().then(data=>{
+        if(data.items.length){
+          const bytes=Buffer.byteLength(JSON.stringify(data));
+          if(bytes<=256*1024){
+            drop(key);
+            while(successful.size>=80||cachedBytes+bytes>8*1024*1024){drop(successful.keys().next().value);}
+            successful.set(key,{data:structuredClone(data),bytes,expires:now()+Math.max(0,Math.min(120000,catalogTtlMs))});cachedBytes+=bytes;
+          }
+        }
+        return data;
+      }).finally(()=>pending.delete(key));
+      pending.set(key,work);
+      return structuredClone(await work);
     });},
   };
 }

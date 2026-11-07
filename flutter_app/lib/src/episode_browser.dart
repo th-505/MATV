@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_target.dart';
+import 'app_preferences.dart';
 import 'models.dart';
 
 /// Present only observed episodes. A page is 24 records, never a guessed range.
@@ -25,7 +26,20 @@ class EpisodeBrowser extends StatefulWidget {
 }
 
 class _EpisodeBrowserState extends State<EpisodeBrowser> {
-  static const pageSize = 24;
+  int get pageSize => NajdPreferences.instance.episodeGroupSize;
+  late int _lastGroupSize;
+  void _preferencesChanged() {
+    if (_lastGroupSize == pageSize) return;
+    _lastGroupSize = pageSize;
+    if (mounted) setState(() => _page = 0);
+  }
+
+  @override
+  void dispose() {
+    NajdPreferences.instance.removeListener(_preferencesChanged);
+    super.dispose();
+  }
+
   int _page = 0;
   int? _season;
   bool _descending = false;
@@ -34,6 +48,8 @@ class _EpisodeBrowserState extends State<EpisodeBrowser> {
   @override
   void initState() {
     super.initState();
+    _lastGroupSize = pageSize;
+    NajdPreferences.instance.addListener(_preferencesChanged);
     for (final ep in widget.episodes) {
       if (ep.ref == widget.initialEpisodeRef) {
         _season = ep.season ?? 1;
