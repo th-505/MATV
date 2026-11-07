@@ -9,8 +9,8 @@ for(const[scope,family]of[['najd',najd],['beta',beta]]){
  test(scope+' 3ckTV follows its observed watch bridge and keeps every iframe server tab',async()=>{
  const frames=['one','two','three','four'].map(n=>`<li data-server="&lt;iframe src=&quot;https://player.example/embed/${n}&quot;&gt;&lt;/iframe&gt;">${n}</li>`).join('');const sent=[];
  const rows=await family.getProvider('3cktv').module.scrapeServers('https://e.3cktv.com/video/observed-ep-1/',{
- maxRetries:0,dnsLookupImpl:async()=>[{address:'93.184.216.34',family:4}],unwrapEmbed:async()=>[],fetchImpl:async url=>{
- const u=new URL(url);sent.push(u.hostname);return new Response(u.hostname==='yespress7.com'?`<ul class="servList">${frames}</ul>`:'<a id="btnWatch" class="single-watch-btn" href="https://yespress7.com/trend/1010.php?post=fixture">مشاهدة الحلقة</a>',{headers:{'content-type':'text/html'}});
+ maxRetries:0,headers:{Cookie:'source-session=fixture',Authorization:'Bearer fixture','X-CSRF-Token':'fixture'},dnsLookupImpl:async()=>[{address:'93.184.216.34',family:4}],unwrapEmbed:async()=>[],fetchImpl:async (url,init)=>{
+ const u=new URL(url);sent.push(u.hostname);if(u.hostname==='yespress7.com'){for(const key of Object.keys(init.headers||{}))assert(!['cookie','authorization','x-csrf-token'].includes(key.toLowerCase()),'source credentials cannot enter the external bridge');}return new Response(u.hostname==='yespress7.com'?`<ul class="servList">${frames}</ul>`:'<a id="btnWatch" class="single-watch-btn" href="https://yespress7.com/trend/1010.php?post=fixture">مشاهدة الحلقة</a>',{headers:{'content-type':'text/html'}});
  }});assert.deepEqual(sent,['e.3cktv.com','yespress7.com']);assert.equal(rows.length,4);assert(rows.every(s=>s.type==='embed'&&!s.verified));
  });
  test(scope+' observed TV anime does not become a movie or manufacture missing episodes',async()=>{
