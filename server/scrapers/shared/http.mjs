@@ -460,7 +460,7 @@ export async function fetchSafeResponse(targetUrl, options = {}) {
             bytes = prefixBytes ? await readBytePrefix(res,Math.min(65536,Math.max(1,Number(prefixBytes)||1))) : await readBoundedBytes(res,Math.min(8*1024*1024,Math.max(1,Number(maxBytes)||1)));
             // Inspect only a prefix for HTML challenges. Never log media bytes.
             text = bytes.subarray(0,4096).toString('utf8');
-          } else text = await readBoundedText(res);
+          } else text = await readBoundedText(res,Math.min(8*1024*1024,Math.max(1,Number(maxBytes)||1)));
 
           searchTraceEvent('upstream_response', { url: hopUrl, status: res.status, bytes: bytes?.length ?? Buffer.byteLength(text), content_type: res.headers?.get?.('content-type') || '', challenge: isCloudflareOrAccessBlock(res.status, text, res.headers), html_title: text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g, '').trim() || '' });
           if(responseType !== 'bytes')searchTraceHtml(text,hopUrl);

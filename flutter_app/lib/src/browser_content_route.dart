@@ -68,8 +68,9 @@ class BrowserContentRoute {
         _metadataRef(q[name] ?? '') ? q[name]! : '';
     for (final name in ['season', 'episode', 'number']) {
       if (q.containsKey(name) &&
-          number(name, name == 'season' ? 1000 : 100000) == null)
+          number(name, name == 'season' ? 1000 : 100000) == null) {
         return null;
+      }
     }
     for (final name in ['source', 'catalog', 'origin']) {
       if ((q[name] ?? '').isNotEmpty && reference(name).isEmpty) return null;

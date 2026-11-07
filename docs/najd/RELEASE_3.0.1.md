@@ -6,7 +6,7 @@
 - Device pairing displays a locally generated QR for the short-lived link. After linking and approval, use Player → More → Send playback to choose a linked receiver. The TV remains receive-only; media credentials are not put in sharing URLs.
 - Web settings include installation guidance/prompt support. Versioned Najd icon URLs refresh Web metadata; existing OS-installed shortcut metadata can remain cached.
 - Bundled Thmanyah remains automatic: three families, five original weights each, OTF for native and WOFF2 for Web. No font import setting. Version/build remain visible below licenses.
-- Background indexing and media verification each default to one slot while interactive search keeps twenty slots. Automatic backlog/hourly scans are disabled on the primary service. Short post-deploy CPU samples fell from about 95.5% to below 1% of the free service's 0.15 CPU quota; this is not a sustained-load guarantee or a Supabase/final-bill measurement.
+- Canonical background indexing and media verification each default to one slot while interactive search keeps twenty slots. Automatic backlog/hourly scans are disabled on the primary service. Explicitly requested indexing takes priority over queued candidate work; Beta retains its independent queues. Short post-deploy CPU samples fell from about 95.5% to below 1% of the free service's 0.15 CPU quota; this is not a sustained-load guarantee or a Supabase/final-bill measurement.
 
 Android uses the existing permanent release signing key. The iPhone IPA is unsigned. Provider availability remains mixed; raw search cards are not proof of identity, episode indexing or playback. Native PiP depends on platform/format support and is not certified on every physical device.
 
