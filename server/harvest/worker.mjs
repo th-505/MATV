@@ -6,12 +6,15 @@ export function createHarvestWorker({store,handlers,concurrency=2,indexConcurren
  let lanes=typeof store?.claimLane==='function'?{search:20,index:cap(indexConcurrency,4),media:cap(mediaConcurrency,2)}:null;
  const capacity=()=>lanes?Object.values(lanes).reduce((sum,n)=>sum+n,0):concurrency;
  const nextSweep={search:0,index:0,media:0};const retryAt={search:0,index:0,media:0};const failures={search:0,index:0,media:0};
- const laneActive={search:0,index:0,media:0};const lanePolling=new Set();const known={search:new Set(),index:new Set(),media:new Set()};let knownSupported=typeof store?.claimKnown==='function';
+ const laneActive={search:0,index:0,media:0};const lanePolling=new Set();const known={search:new Map(),index:new Map(),media:new Map()};let knownSupported=typeof store?.claimKnown==='function';
  function remember(job,interactive=false){
   if(!knownSupported||!job?.job_key)return;
   if(!scanBacklog&&job.stage==='episode'&&!interactive&&Number(job.priority||0)<10)return;
   const lane=job.stage==='episode'?'media':job.stage==='provider'&&job.payload?.phase==='search'?'search':'index';
-  const keys=known[lane];keys.add(job.job_key);if(keys.size>1000)keys.delete(keys.values().next().value);
+  const keys=known[lane],raw=Number(job.priority||0);
+  const priority=(Number.isFinite(raw)?Math.max(-1000,Math.min(1000,raw)):0)+(interactive?10000:0);
+  keys.set(job.job_key,Math.max(keys.get(job.job_key)??-Infinity,priority));
+  if(keys.size>1000)keys.delete(keys.keys().next().value);
  }
  store?.onQueued?.(job=>{remember(job);if(!stopped)queueMicrotask(pulse)});
  const reason=e=>['AbortError','TimeoutError'].includes(e?.name)?'HARVEST_DB_TIMEOUT':/^[A-Z][A-Z0-9_]{2,79}$/.test(e?.code||e?.message)?e.code||e.message:'HARVEST_JOB_FAILED';
@@ -34,7 +37,7 @@ export function createHarvestWorker({store,handlers,concurrency=2,indexConcurren
    if(lanes){
     const claimed=await Promise.allSettled(Object.entries(lanes).map(async([lane,limit])=>{
      const capacity=limit-laneActive[lane];if(capacity<=0||lanePolling.has(lane))return;
-     const keys=knownSupported?[...known[lane]].slice(0,capacity):[];
+     const keys=knownSupported?[...known[lane]].sort((a,b)=>b[1]-a[1]).slice(0,capacity).map(([key])=>key):[];
      if(!scanBacklog&&!keys.length)return;
      if(now()<retryAt[lane]||(!force&&!keys.length&&now()<nextSweep[lane]))return;
      lanePolling.add(lane);

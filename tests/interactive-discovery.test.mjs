@@ -174,3 +174,20 @@ test('background catalogue and media each get one slot without reducing twenty i
  assert.deepEqual(limits,{search:20,index:1,media:1});
  assert.equal(worker.metrics().concurrency,22);
 });
+
+
+test('foreground indexing goes ahead of queued candidate indexing after the current slot completes',async()=>{
+ let queued;const started=[],releases=new Map();
+ const jobs={active:{job_key:'active',stage:'work',priority:1},candidate:{job_key:'candidate',stage:'work',priority:100},foreground:{job_key:'foreground',stage:'work',priority:1}};
+ const store={onQueued:fn=>{queued=fn},claimLane:async()=>[],claimKnown:async(w,n,lane,keys)=>lane==='index'?keys.map(key=>jobs[key]):[],heartbeat:async()=>{},complete:async()=>{},fail:async()=>{}};
+ const worker=createHarvestWorker({store,scanBacklog:false,pollMs:60000,handlers:{work:async job=>{started.push(job.job_key);await new Promise(resolve=>releases.set(job.job_key,resolve));return {}}}});
+ queued(jobs.active);worker.start();await new Promise(r=>setImmediate(r));
+ queued(jobs.candidate);worker.wake({jobs:[jobs.foreground]});
+ assert.deepEqual(started,['active']);
+ releases.get('active')();await new Promise(r=>setImmediate(r));
+ assert.deepEqual(started,['active','foreground']);
+ releases.get('foreground')();await new Promise(r=>setImmediate(r));
+ assert.deepEqual(started,['active','foreground','candidate']);
+ releases.get('candidate')();await worker.stop();
+ assert.equal(worker.metrics().concurrency,22);
+});
