@@ -315,4 +315,55 @@ void main() {
       api.close();
     },
   );
+  testWidgets('dragging previews the position without repeated decoder seeks', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = await LocalLibraryStore.create();
+    final api = TimelineApi([source('primary', '3isk')]);
+    late FakeEngine engine;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PlayerPage(
+          api: api,
+          store: store,
+          item: const CatalogItem(
+            id: 'seek',
+            ref: 'legacy:seek',
+            title: 'Seek',
+            poster: '',
+            type: 'movie',
+          ),
+          title: 'Seek',
+          persistProgress: false,
+          playerFactory: (uri, type, headers, software) => engine = FakeEngine(
+            uri,
+            mediaType: type,
+            headers: headers,
+            software: software,
+            fail: false,
+          ),
+        ),
+      ),
+    );
+    await settle(tester);
+    engine.seeks.clear();
+    final slider = find.byKey(const Key('player-seek-slider'));
+    final gesture = await tester.startGesture(tester.getCenter(slider));
+    await gesture.moveBy(const Offset(40, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(50, 0));
+    await tester.pump();
+    expect(tester.widget<Slider>(slider).value, greaterThan(0));
+    expect(engine.value.position, Duration.zero);
+    expect(engine.seeks, isEmpty);
+    await gesture.up();
+    await tester.pump();
+    expect(engine.seeks, hasLength(1));
+    expect(engine.seeks.single, greaterThan(Duration.zero));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    api.close();
+    store.dispose();
+  });
 }

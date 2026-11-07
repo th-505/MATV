@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'cloud_library.dart';
 import 'app_target.dart';
@@ -404,6 +405,32 @@ class _NajdLinkPanelState extends State<NajdLinkPanel> {
       ],
       if (ticket != null) ...[
         Text('ينتهي الطلب: ${ticket!['expires_at']}'),
+        if (ownsTicket &&
+            !_receiverOnly &&
+            link.isNotEmpty &&
+            status?['expired'] != true &&
+            status?['approved'] != true)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Semantics(
+              label: 'رمز QR لربط الجهاز؛ امسحه بكاميرا الجهاز الآخر',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  QrImageView(
+                    data: link,
+                    size: 220,
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'امسح الرمز بكاميرا الجهاز الآخر، ثم وافق على الربط هنا',
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (ownsTicket && !_receiverOnly)
           Wrap(
             spacing: 8,

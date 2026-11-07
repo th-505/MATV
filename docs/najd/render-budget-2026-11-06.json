@@ -1,0 +1,20 @@
+{
+  "observed_at": "2026-11-06T23:37:00Z",
+  "service": "NajdTV Render API",
+  "plan": "free",
+  "instances": 1,
+  "deploy": "dep-dbn685cfrrcc73e4s1kg",
+  "cpu_limit": 0.15,
+  "before": {
+    "observed_at": "2026-11-06T23:31:14.237Z",
+    "cpu": 0.14325395,
+    "percent_of_limit": 95.5026333
+  },
+  "after": {
+    "cpu": 0.0011414667,
+    "percent_of_limit": 0.7609778,
+    "memory_bytes": 90935300
+  },
+  "health": "ok",
+  "scope": "One short post-deploy sample; not a Supabase measurement or sustained-load guarantee."
+}

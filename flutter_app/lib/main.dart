@@ -1,3 +1,6 @@
+import 'src/browser_content_route.dart';
+import 'src/browser_navigation_stub.dart'
+    if (dart.library.js_interop) 'src/browser_navigation_web.dart';
 import 'src/catalog_collections_page.dart';
 import 'src/playback_handoff.dart';
 import 'src/service_checks_page.dart';
@@ -50,13 +53,16 @@ class MitvApp extends StatefulWidget {
   State<MitvApp> createState() => _MitvAppState();
 }
 
-class _MitvAppState extends State<MitvApp> {
+class _MitvAppState extends State<MitvApp> with WidgetsBindingObserver {
   late final Future<LocalLibraryStore> storeFuture = LocalLibraryStore.create();
   final _pointer = VirtualPointerController();
+  final _browserObserver = BrowserRouteObserver();
+  final _navigatorKey = GlobalKey<NavigatorState>();
   late final Future<CloudLibrarySync?> _cloudFuture;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(NajdPreferences.instance.load());
     if (!_fontLicensesRegistered) {
       _fontLicensesRegistered = true;
@@ -76,10 +82,77 @@ class _MitvAppState extends State<MitvApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pointer.dispose();
     unawaited(CloudLibrarySync.closeDefault());
     super.dispose();
   }
+
+  // Web section URLs are handled by BrowserNavigation. Do not let the
+  // legacy Navigator push a second Shell for the same popstate event.
+  @override
+  Future<bool> didPushRouteInformation(
+    RouteInformation routeInformation,
+  ) async => kIsWeb;
+
+  @override
+  Future<bool> didPopRoute() async => kIsWeb
+      ? true
+      : await (_navigatorKey.currentState?.maybePop() ?? Future.value(false));
+
+  Widget _navigationTree() => Navigator(
+    key: _navigatorKey,
+    // The URL/history bridge owns browser entries. Navigator's default single
+    // entry mode unwinds existing multi-entry history on a page refresh.
+    reportsRouteUpdateToEngine: false,
+    observers: [_browserObserver],
+    onGenerateRoute: (settings) =>
+        MaterialPageRoute(settings: settings, builder: _buildHome),
+  );
+
+  Widget _buildHome(BuildContext context) => Directionality(
+    textDirection: TextDirection.rtl,
+    child: FutureBuilder<LocalLibraryStore>(
+      future: storeFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return PlaybackInbox(
+          onOpen: (entry) {
+            final api = MitvApi();
+            final scoped = entry.catalogItem.discoveryScope == 'beta'
+                ? api.browserSession(origin: entry.catalogItem)
+                : api;
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (_) => PlayerPage(
+                      api: scoped,
+                      store: snapshot.data!,
+                      item: entry.catalogItem,
+                      title: entry.title,
+                      sourceRef: historyPlaybackReference(entry),
+                      episodeId: entry.episodeId,
+                      episodeNumber: entry.episodeNumber,
+                      initialPosition: Duration(milliseconds: entry.positionMs),
+                      watchEntry: entry,
+                    ),
+                  ),
+                )
+                .whenComplete(() {
+                  if (!identical(scoped, api)) scoped.close();
+                  api.close();
+                });
+          },
+          child: Shell(store: snapshot.data!, pointer: _pointer),
+        );
+      },
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -94,58 +167,16 @@ class _MitvAppState extends State<MitvApp> {
         builder: (context, child) => NajdTvViewport(
           child: NajdIntro(
             child: isTvTarget
-                ? VirtualPointerScope(controller: _pointer, child: child!)
-                : child!,
+                ? VirtualPointerScope(
+                    controller: _pointer,
+                    child: _navigationTree(),
+                  )
+                : _navigationTree(),
           ),
         ),
         locale: const Locale('ar'),
         supportedLocales: const [Locale('ar')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: Directionality(
-          textDirection: TextDirection.rtl,
-          child: FutureBuilder<LocalLibraryStore>(
-            future: storeFuture,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-              return PlaybackInbox(
-                onOpen: (entry) {
-                  final api = MitvApi();
-                  final scoped = entry.catalogItem.discoveryScope == 'beta'
-                      ? api.browserSession(origin: entry.catalogItem)
-                      : api;
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                  Navigator.of(context)
-                      .push(
-                        MaterialPageRoute(
-                          builder: (_) => PlayerPage(
-                            api: scoped,
-                            store: snapshot.data!,
-                            item: entry.catalogItem,
-                            title: entry.title,
-                            sourceRef: historyPlaybackReference(entry),
-                            episodeId: entry.episodeId,
-                            episodeNumber: entry.episodeNumber,
-                            initialPosition: Duration(
-                              milliseconds: entry.positionMs,
-                            ),
-                            watchEntry: entry,
-                          ),
-                        ),
-                      )
-                      .whenComplete(() {
-                        if (!identical(scoped, api)) scoped.close();
-                        api.close();
-                      });
-                },
-                child: Shell(store: snapshot.data!, pointer: _pointer),
-              );
-            },
-          ),
-        ),
       ),
     );
   }
@@ -270,6 +301,7 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
+  final _browserNavigation = BrowserNavigation();
   int index = 0;
   bool _drawerOpen = false;
   bool _headerVisible = true;
@@ -289,9 +321,20 @@ class _ShellState extends State<Shell> {
   @override
   void initState() {
     super.initState();
+    final initialBrowserPage = _browserNavigation.page;
+    final restoredPage = NajdUi.pageIds.indexOf(initialBrowserPage);
+    if (restoredPage >= 0) index = restoredPage;
+    _browserNavigation.listen(_applyBrowserPage);
     _ownsApi = widget.api == null;
     api = widget.api ?? MitvApi();
-    _pages[index] = _createPage(index);
+    final restoringContent = ['title', 'player'].contains(initialBrowserPage);
+    if (!restoringContent) _pages[index] = _createPage(index);
+    if (restoringContent) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _browserNavigation.ready;
+        if (mounted) _applyBrowserPage(initialBrowserPage);
+      });
+    }
     if (kIsWeb && Uri.base.fragment.contains('najd_link=')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -303,7 +346,9 @@ class _ShellState extends State<Shell> {
         }
       });
     }
-    final ref = kIsWeb ? Uri.base.queryParameters['ref'] ?? '' : '';
+    final ref = kIsWeb && !['title', 'player'].contains(_browserNavigation.page)
+        ? Uri.base.queryParameters['ref'] ?? ''
+        : '';
     if (['alooy:', '3isk:', 'legacy:', 'laroza:'].any(ref.startsWith)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -326,12 +371,74 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
+    _browserNavigation.dispose();
     _menuFocus.dispose();
     for (final node in _navFocus) {
       node.dispose();
     }
     if (_ownsApi) api.close();
     super.dispose();
+  }
+
+  void _applyBrowserPage(String page) {
+    if (!mounted) return;
+    final target = _browserNavigation.currentRoute;
+    final navigator = Navigator.of(context);
+    var found = false;
+    _browserNavigation.applyHistory(
+      () => navigator.popUntil((route) {
+        if (_browserNavigation.matchesRoute(route, target)) {
+          found = true;
+          return true;
+        }
+        return route.isFirst;
+      }),
+    );
+    if (found) return;
+    final section = NajdUi.pageIds.indexOf(page.isEmpty ? 'home' : page);
+    if (section >= 0) {
+      _selectPage(section, updateUrl: false);
+      return;
+    }
+    final content = BrowserContentRoute.parse(target);
+    if (content == null) {
+      _selectPage(0, updateUrl: false);
+      _browserNavigation.push('home', replace: true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('رابط العمل غير صالح. يمكنك البحث عنه من جديد.'),
+        ),
+      );
+      return;
+    }
+    final scoped = content.item.discoveryScope == 'beta'
+        ? api.browserSession(origin: content.item)
+        : api;
+    scoped.rememberIdentity(content.item);
+    navigator
+        .push(
+          MaterialPageRoute<void>(
+            builder: (_) => content.page == 'player'
+                ? PlayerPage(
+                    api: scoped,
+                    store: widget.store,
+                    item: content.item,
+                    title: content.item.title,
+                    sourceRef: content.sourceRef,
+                    episodeId: content.episodeId,
+                    episodeNumber: content.episodeNumber,
+                    providerCatalogRef: content.providerCatalogRef,
+                  )
+                : DetailsPage(
+                    api: scoped,
+                    store: widget.store,
+                    item: content.item,
+                  ),
+          ),
+        )
+        .whenComplete(() {
+          if (!identical(scoped, api)) scoped.close();
+        });
   }
 
   Future<void> _clearBrowsingCache() async {
@@ -412,8 +519,9 @@ class _ShellState extends State<Shell> {
     ),
     _ => throw RangeError.index(page, _pages),
   };
-  void _selectPage(int value) {
-    if (index == value) return;
+  void _selectPage(int value, {bool updateUrl = true}) {
+    if (index == value && _pages[value] != null) return;
+    if (updateUrl) _browserNavigation.push(NajdUi.pageIds[value]);
     setState(() {
       _pages[value] ??= _createPage(value);
       index = value;
@@ -1332,6 +1440,29 @@ class _SettingsPageState extends State<SettingsPage> {
                     _clear('مسح سجل البحث', widget.store.clearSearchHistory),
               ),
               const _ProviderBetaPreferencesPanel(),
+              if (kIsWeb)
+                ListTile(
+                  leading: const Icon(Icons.install_mobile),
+                  title: const Text('تثبيت نجد كتطبيق'),
+                  onTap: () {
+                    if (BrowserNavigation().requestInstall()) return;
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('إضافة نجد إلى جهازك'),
+                        content: const Text(
+                          'على iPhone أو iPad: افتح الموقع في Safari، ثم مشاركة ← إضافة إلى الشاشة الرئيسية. على الكمبيوتر وأندرويد: افتح قائمة المتصفح واختر تثبيت التطبيق أو إضافة إلى الشاشة الرئيسية. إذا كان مثبتًا بالفعل افتحه من أيقونته.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('حسنًا'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               const AboutListTile(
                 applicationName: NajdUi.brand,
                 applicationVersion:

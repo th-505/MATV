@@ -1,3 +1,6 @@
+import 'browser_content_route.dart';
+import 'browser_navigation_stub.dart'
+    if (dart.library.js_interop) 'browser_navigation_web.dart';
 import 'source_selection_memory.dart';
 import 'app_preferences.dart';
 import 'search_work_groups.dart';
@@ -103,6 +106,21 @@ class _DetailsPageState extends State<DetailsPage> {
   final Map<String, FocusNode> _episodeDownloadFocusNodes =
       <String, FocusNode>{};
 
+  Object? _browserRoute;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!kIsWeb || _browserRoute != null) return;
+    final route = ModalRoute.of(context);
+    if (route == null) return;
+    _browserRoute = route;
+    BrowserNavigation().enterContent(
+      route,
+      'title',
+      browserContentIdentity(widget.item),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +134,7 @@ class _DetailsPageState extends State<DetailsPage> {
 
   @override
   void dispose() {
+    if (_browserRoute != null) BrowserNavigation().leaveContent(_browserRoute!);
     for (final token in _downloadTokens.values) {
       token.cancel();
     }
